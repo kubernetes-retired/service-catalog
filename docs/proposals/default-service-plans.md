@@ -40,11 +40,11 @@ service without requiring upfront knowledge of the underlying broker.
 
 ## Summary
 
-1.  Add default provisioning and binding parameters to Service Classes.
+1.  Add default provisioning and binding parameters to Service Classes and Plans.
 1.  Add a "Service Type" field to classes and plans, e.g. mysql or redis.
-1.  Add a is-default-plan annotation to Service Plans to flag it as the default
+1.  Add an is-default-plan annotation to Service Plans to flag it as the default
     plan for a particular service type.
-1.  Service Instances and Bindings fall back to the defaults set on the class  
+1.  Service Instances and Bindings fall back to the defaults set on the plan or class  
     when parameters are not provided.
 1.  Services can be provisioned using only the Service Type, e.g. mysql, and the
     default plan and parameters are used.
@@ -130,25 +130,29 @@ Otherwise, the broker can provide additional manifests, or a helm chart, to incl
 
 #### Cluster Customization
 
-The cluster operator can define a new class, and provide a different set of defaults than what was included by the broker. The key details such as the broker, class and plan remain the same.
+The cluster operator can define a new class or plan, and provide a different set of defaults than what was included by the broker. The key details such as the broker, class and plan remain the same.
 
-##### Define a new set of defaults for a class
+##### Define a new set of defaults
 
 ```console
 $ svcat create class NAME --from EXISTING_NAME \
     [--type] [--provision-params] [--bind-params] [--bind-transform]
 
+$ svcat create plan NAME --from EXISTING_NAME \
+    [--type] [--provision-params] [--bind-params] [--bind-transform]
 ```
 
-1.  Copies an existing class definition.
-1.  Sets a new name on the class.
-1.  Sets metadata on the class to indicate that it is a user managed class.
-1.  Replace any defaults set on the original class.
+1.  Copies an existing resource definition.
+1.  Sets a new name on the resource.
+1.  Sets metadata on the resource to indicate that it is managed by the user (and not the broker).
+1.  Replace any defaults set on the original resource.
 
-##### Override the defaults for a broker level class
+##### Override the broker defaults
 
-1.  Define a new class (above).
-1.  Blacklist the original class so that it cannot be used anymore. _This relies upon functionality that is still in progress._
+1.  Define a new class or plan (above).
+1.  Blacklist the original resource so that it cannot be used anymore. _This relies upon functionality that is still in progress._
+
+\* The operator should not directly modify the defaults defined on a broker provided class or plan, because the changes are overwritten during relist.
 
 ##### Select a default plan for a service type
 
@@ -156,7 +160,6 @@ $ svcat create class NAME --from EXISTING_NAME \
 $ svcat set-default plan NAME
 OLD_NAME is no longer the default plan for TYPE
 NAME is the default plan for TYPE
-
 ```
 
 1.  If an existing plan is already the default for the type represented by the specified plan, the annotation marking the existing plan as the default is removed.
@@ -199,7 +202,7 @@ Note: The parameters defined on the instance are merged with the parameters defi
 
 #### Provisioning with Defaults
 
-Create a service instance using a class+plan. Individual parameters may be set on the instance to override a class-level default. Any unspecified parameters are defaulted using the values defined on the class.
+Create a service instance using a class+plan. Individual parameters may be set on the instance to override a class+plan default. Any unspecified parameters are defaulted using the values defined on the class+plan.
 
 
 ```console
@@ -220,7 +223,7 @@ spec:
 ```
 
 
-The requested service instance is combined with the defaults defined on the class:
+The requested service instance is combined with the defaults defined on the class+plan:
 
 
 ```yaml
@@ -239,10 +242,27 @@ spec:
     - name: "AllowAll"
   	  startIPAddress: "0.0.0.0"
   	  endIPAddress: "255.255.255.255"
+---
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServicePlan
+metadata:
+  name: "427559f1-bf2a-45d3-8844-32374a3e58aa"
+  annotations:
+    servicecatalog.kubernetes.io/is-default-plan: true
+spec:
+  serviceType: mysql
+  clusterServiceBrokerName: osba
+  clusterServiceClassRef:
+    name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
+  description: Basic Tier, 50 DTUs.
+  externalID: "427559f1-bf2a-45d3-8844-32374a3e58aa"
+  externalName: basic50
+  free: false
+  # No defaults defined, so the defaults on the class are used
 ```
 
 
-Yielding a final service instance. Notice that the default location parameter value "eastus" was overridden to "westus" and persisted in the status field.
+Yielding a final service instance. Notice that the default location parameter value "eastus" was overridden to "westus" and the entire final set of parameters were persisted on the instance. From this point forward, the instance manages its parameters independently of the defaults on the class+plan, just as Service Catalog works today.
 
 
 ```yaml
@@ -254,17 +274,13 @@ spec:
   clusterServiceClassExternalName: azure-mysql
   clusterServicePlanExternalName: basic50
   parameters:
-    location: westus
-status:
-  externalProperties:
-      parameters:
-        location: westus
-        resourceGroup: default
-        sslEnforcement: disabled
-        firewallRules:
-        - name: "AllowAll"
-    	    startIPAddress: "0.0.0.0"
-    	    endIPAddress: "255.255.255.255"
+      location: westus
+      resourceGroup: default
+      sslEnforcement: disabled
+      firewallRules:
+      - name: "AllowAll"
+        startIPAddress: "0.0.0.0"
+        endIPAddress: "255.255.255.255"
 ```
 
 
@@ -297,7 +313,7 @@ The requested service type is used to filter the plans by the type and select th
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServicePlan
 metadata:
-  name: "427559f1-bf2a-45d3-8844-32374a3e58aa"
+  name: "f9a3cc8e-a6e2-474d-b032-9837ea3dfcaa"
   annotations:
     servicecatalog.kubernetes.io/is-default-plan: true
 spec:
@@ -305,10 +321,12 @@ spec:
   clusterServiceBrokerName: osba
   clusterServiceClassRef:
     name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
-  description: Basic Tier, 50 DTUs.
-  externalID: "427559f1-bf2a-45d3-8844-32374a3e58aa"
-  externalName: basic50
+  description: "PremiumP1 Tier, 125 DTUs, 500GB, 35 days point-in-time restore"
+  externalID: "f9a3cc8e-a6e2-474d-b032-9837ea3dfcaa"
+  externalName: premium-p1
   free: false
+  defaultProvisionParameters:
+    backup-schedule: "1d"
 ```
 
 
@@ -335,7 +353,7 @@ spec:
 ```
 
 
-Yielding a final service instance. Notice that the default location parameter value "eastus" was overridden to "westus" and persisted in the status field.
+Yielding a final service instance. Notice that the default location parameter value "eastus" from the class was overridden by the instance to "westus" and also the "backup-schedule" parameter from the plan was merged with the class defaults as well. The entire final set of parameters were persisted on the instance. From this point forward, the instance manages its parameters independently of the defaults on the class+plan, just as Service Catalog works today.
 
 
 ```yaml
@@ -348,24 +366,22 @@ spec:
   clusterServiceClassRef:
     name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
   clusterServicePlanRef:
-    name: "427559f1-bf2a-45d3-8844-32374a3e58aa"
+    name: "f9a3cc8e-a6e2-474d-b032-9837ea3dfcaa"
   parameters:
+    backup-schedule: "1d"
     location: westus
+    resourceGroup: default
+    sslEnforcement: disabled
+    firewallRules:
+    - name: "AllowAll"
+      startIPAddress: "0.0.0.0"
+      endIPAddress: "255.255.255.255"
 status:
   externalProperties:
-    clusterServicePlanExternalName: basic50
-    clusterServicePlanExternalID: "427559f1-bf2a-45d3-8844-32374a3e58aa"
-    parameters:
-      location: westus
-      resourceGroup: default
-      sslEnforcement: disabled
-      firewallRules:
-      - name: "AllowAll"
-    	  startIPAddress: "0.0.0.0"
-    	  endIPAddress: "255.255.255.255"
+    clusterServicePlanExternalName: premium-p1
+    clusterServicePlanExternalID: "f9a3cc8e-a6e2-474d-b032-9837ea3dfcaa"
+    
 ```
-
-
 
 #### Service Instance Management
 
@@ -431,7 +447,7 @@ Spec: \
 
 #### Author
 
-Chart authors can use service types, instead of specifying specific broker's class, plan and parameters. Optional variables can be defined so an advanced user can specify a class/plan/parameters.
+Chart authors can use service types, instead of specifying specific broker's class, plan and parameters. Optional variables can be defined so an advanced user can specify a class, plan and parameters just like they can today with Service Catalog.
 
 
 ```yaml
@@ -509,13 +525,15 @@ Notes
 |-------|-------------|
 | Service Type | Examples: mysql, redis |
 | annotation: is-default-plan=true | <p>Specifies whether or not a Service Plan is the default for its Service Type.</p> <p>When annotated as the default and a Service Type is set, this plan is used to dynamically provision an instance for that type.</p> |
+| <p>Default Provision Parameters</p><p>Default Bind Parameters</p> | <p>Default parameters to supply to the broker during provisioning and binding.</p><p>Overrides the defaults defined on the class.</p>|
+| Default Bind Response Transform | <p>Default json key mapping to transform a non-standard broker response into something that can be relied upon.</p> <p>For example, if a broker returns "database.name" (a nested value) in the response, it can be changed to "database" to un-nest it and apply a standard name.</p><p>Overrides the defaults defined on the class.</p>|
 | Controller Reference|<p>Set by Service Catalog when populating the catalog from a broker list to indicate that it is managed by the controller.</p> <p>When not present, the plan is ignored during a relist. This gives operators a way to define custom plans.</p> |
 
 
 Notes:
 
 * The controller will enforce that only one default is set per service type.
-* For simplification, defaults are set at the class level only, plans cannot override them.
+* When a plan does not define any defaults, the defaults from the class are used. Otherwise the values are merged, with the plan level defaults "winning".
 
 
 ### Service Instance
@@ -524,7 +542,7 @@ Notes:
 | Field | Description |
 |-------|-------------|
 | Service Type | Examples: mysql, redis |
-| Provision Parameters | Overrides the default provision parameters defined on the class/plan. |
+| Provision Parameters | Overrides the default provision parameters defined on the class+plan. |
 
 Notes:
 * Merge provision defaults and overrides before sending to the broker.
@@ -536,7 +554,7 @@ Notes:
 |-------|-------------|
 | Service Type | Examples: mysql, redis |
 | Service Plan | When a ServicePlan is not specified, the default ServicePlan for the type is selected. |
-| Bind Parameters|Overrides the default bind parameters defined on the class/plan. |
+| Bind Parameters|Overrides the default bind parameters defined on the class+plan. |
 | Bind Response Transform|Allow overriding the default bind response transform set at the class level. |
 
 Notes:
