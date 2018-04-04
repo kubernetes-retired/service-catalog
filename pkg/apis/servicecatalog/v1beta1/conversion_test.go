@@ -22,8 +22,6 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
 type conversionFunc func(string, string) (string, string, error)
@@ -237,34 +235,6 @@ func runTestCases(t *testing.T, cases []testcase, testFuncName string, testFunc 
 					t.Errorf("%s:%s -- did not find expected error %q got %q", testFuncName, tc.name, tc.expectedError, err)
 				}
 			}
-		}
-	}
-}
-
-func TestConvert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions_AndBack(t *testing.T) {
-	originalIn := CatalogRestrictions{
-		ServiceClass: []string{"name not in (foo)"},
-		ServicePlan:  []string{"name == bar", "externalName==baz"},
-	}
-	var originalOut servicecatalog.CatalogRestrictions
-
-	Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(&originalIn, &originalOut, nil)
-
-	var convertedOut CatalogRestrictions
-
-	Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(&originalOut, &convertedOut, nil)
-
-	// original in and converted out should match, but string formatting and order modifications are  allowed.
-
-	for _, r := range convertedOut.ServiceClass {
-		if !findInRequirementsIgnoreSpaces(r, originalIn.ServiceClass) {
-			t.Fail()
-		}
-	}
-
-	for _, r := range convertedOut.ServicePlan {
-		if !findInRequirementsIgnoreSpaces(r, originalIn.ServicePlan) {
-			t.Fail()
 		}
 	}
 }
