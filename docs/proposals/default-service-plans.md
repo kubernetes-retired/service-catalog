@@ -145,10 +145,10 @@ The cluster operator can define a new class or plan, and provide a different set
 
 ```console
 $ svcat create class NAME --from EXISTING_NAME \
-    [--type] [--provision-params] [--bind-params] [--bind-transform]
+    [--type] [--provision-params] [--bind-params] [--secret-transform]
 
 $ svcat create plan NAME --from EXISTING_NAME \
-    [--type] [--provision-params] [--bind-params] [--bind-transform]
+    [--type] [--provision-params] [--bind-params] [--secret-transform]
 ```
 
 1.  Copies an existing resource definition.
@@ -473,14 +473,13 @@ A key goal of the implementation is to avoid going off and rewriting or requirin
 |-------|-------------|
 | Service Type | Examples: mysql, redis|
 | <p>Default Provision Parameters</p><p>Default Bind Parameters</p> | <p>Default parameters to supply to the broker during provisioning and binding.</p> <p>OSB API V3 - Make the schema required, and defaults optional.|
-| Default Bind Response Transform | <p>Default json key mapping to transform a non-standard broker response into something that can be relied upon.</p> <p>For example, if a broker returns "database.name" (a nested value) in the response, it can be changed to "database" to un-nest it and apply a standard name.</p>|
+| Default Secret Transform | Default json key mapping to transform a non-standard broker response into something that can be relied upon. See #1868 for implementation details. |
 | Controller Reference |<p>Set by Service Catalog when populating the catalog from a broker list to indicate that it is managed by the controller.</p> <p>When not present, the class is ignored during a relist. This gives operators a way to define custom classes.</p>|
 
 Notes
 
 * Relist needs to take into account if the class is managed by the controller or was created by the cluster operator.
 * Defaults can be defined at the Cluster or Namespace level.
-* For simplification, only broker bind response bodies can be transformed, not provision, since that's where we require that functionality today.
 
 
 ### Service Plan
@@ -490,7 +489,7 @@ Notes
 | Service Type | Examples: mysql, redis |
 | annotation: is-default-plan=true | <p>Specifies whether or not a Service Plan is the default for its Service Type.</p> <p>When annotated as the default and a Service Type is set, this plan is used to dynamically provision an instance for that type.</p> |
 | <p>Default Provision Parameters</p><p>Default Bind Parameters</p> | <p>Default parameters to supply to the broker during provisioning and binding.</p><p>Overrides the defaults defined on the class.</p>|
-| Default Bind Response Transform | <p>Default json key mapping to transform a non-standard broker response into something that can be relied upon.</p> <p>For example, if a broker returns "database.name" (a nested value) in the response, it can be changed to "database" to un-nest it and apply a standard name.</p><p>Overrides the defaults defined on the class.</p>|
+| Default Secret Transform | Default json key mapping to transform a non-standard broker response into something that can be relied upon. See #1868 for implementation details. |
 | Controller Reference|<p>Set by Service Catalog when populating the catalog from a broker list to indicate that it is managed by the controller.</p> <p>When not present, the plan is ignored during a relist. This gives operators a way to define custom plans.</p> |
 
 
@@ -518,8 +517,8 @@ Notes:
 |-------|-------------|
 | Service Type | Examples: mysql, redis |
 | Service Plan | When a ServicePlan is not specified, the default ServicePlan for the type is selected. |
-| Bind Parameters|Overrides the default bind parameters defined on the class+plan. |
-| Bind Response Transform|Allow overriding the default bind response transform set at the class level. |
+| Parameters| Overrides the default bind parameters defined on the class+plan. |
+| Secret Transform| Overrides the default secret transform set on the class+plan. |
 
 Notes:
 
