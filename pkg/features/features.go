@@ -56,7 +56,7 @@ const (
 	// ResponseSchema enables the storage of the binding response schema
 	// in ServicePlans
 	// owner: @luksa
-	// alpha: v0.1.12
+	// alpha: v0.1.13
 	ResponseSchema utilfeature.Feature = "ResponseSchema"
 )
 
