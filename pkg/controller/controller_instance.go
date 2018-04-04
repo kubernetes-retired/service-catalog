@@ -986,7 +986,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 
 	if instance.Spec.ClusterServicePlanName != "" {
-		sp, err := c.servicePlanLister.Get(instance.Spec.ClusterServicePlanName)
+		sp, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanName)
 		if err == nil {
 			instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
 				Name: sp.Name,

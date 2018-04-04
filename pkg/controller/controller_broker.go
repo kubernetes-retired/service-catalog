@@ -559,7 +559,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 	servicePlan.Spec.ClusterServiceBrokerName = broker.Name
 
 	if existingServicePlan == nil {
-		otherServicePlan, err := c.servicePlanLister.Get(servicePlan.Name)
+		otherServicePlan, err := c.clusterServicePlanLister.Get(servicePlan.Name)
 		if err != nil {
 			// we expect _not_ to find a service class this way, so a not-
 			// found error is expected and legitimate.
