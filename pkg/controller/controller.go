@@ -94,7 +94,7 @@ func NewController(
 		recorder:                    recorder,
 		reconciliationRetryDuration: reconciliationRetryDuration,
 		brokerQueue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-broker"),
-		serviceClassQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-class"),
+		clusterServiceClassQueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-service-class"),
 		servicePlanQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-plan"),
 		instanceQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance"),
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
@@ -111,11 +111,11 @@ func NewController(
 		DeleteFunc: controller.brokerDelete,
 	})
 
-	controller.serviceClassLister = clusterServiceClassInformer.Lister()
+	controller.clusterServiceClassLister = clusterServiceClassInformer.Lister()
 	clusterServiceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    controller.serviceClassAdd,
-		UpdateFunc: controller.serviceClassUpdate,
-		DeleteFunc: controller.serviceClassDelete,
+		AddFunc:    controller.clusterServiceClassAdd,
+		UpdateFunc: controller.clusterServiceClassUpdate,
+		DeleteFunc: controller.clusterServiceClassDelete,
 	})
 
 	controller.servicePlanLister = clusterServicePlanInformer.Lister()
@@ -157,7 +157,7 @@ type controller struct {
 	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1beta1Interface
 	brokerClientCreateFunc      osb.CreateFunc
 	brokerLister                listers.ClusterServiceBrokerLister
-	serviceClassLister          listers.ClusterServiceClassLister
+	clusterServiceClassLister   listers.ClusterServiceClassLister
 	instanceLister              listers.ServiceInstanceLister
 	bindingLister               listers.ServiceBindingLister
 	servicePlanLister           listers.ClusterServicePlanLister
@@ -166,7 +166,7 @@ type controller struct {
 	recorder                    record.EventRecorder
 	reconciliationRetryDuration time.Duration
 	brokerQueue                 workqueue.RateLimitingInterface
-	serviceClassQueue           workqueue.RateLimitingInterface
+	clusterServiceClassQueue    workqueue.RateLimitingInterface
 	servicePlanQueue            workqueue.RateLimitingInterface
 	instanceQueue               workqueue.RateLimitingInterface
 	bindingQueue                workqueue.RateLimitingInterface
@@ -199,7 +199,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	for i := 0; i < workers; i++ {
 		createWorker(c.brokerQueue, "ClusterServiceBroker", maxRetries, true, c.reconcileClusterServiceBrokerKey, stopCh, &waitGroup)
-		createWorker(c.serviceClassQueue, "ClusterServiceClass", maxRetries, true, c.reconcileClusterServiceClassKey, stopCh, &waitGroup)
+		createWorker(c.clusterServiceClassQueue, "ClusterServiceClass", maxRetries, true, c.reconcileClusterServiceClassKey, stopCh, &waitGroup)
 		createWorker(c.servicePlanQueue, "ClusterServicePlan", maxRetries, true, c.reconcileClusterServicePlanKey, stopCh, &waitGroup)
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
 		createWorker(c.bindingQueue, "ServiceBinding", maxRetries, true, c.reconcileServiceBindingKey, stopCh, &waitGroup)
@@ -220,7 +220,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	glog.Info("Shutting down service-catalog controller")
 
 	c.brokerQueue.ShutDown()
-	c.serviceClassQueue.ShutDown()
+	c.clusterServiceClassQueue.ShutDown()
 	c.servicePlanQueue.ShutDown()
 	c.instanceQueue.ShutDown()
 	c.bindingQueue.ShutDown()
@@ -375,7 +375,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 // a brokerClient to use for that method given an ServiceInstance.
 func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, string, osb.Client, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+	serviceClass, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		return nil, "", nil, &operationError{
 			reason: errorNonexistentClusterServiceClassReason,
@@ -425,7 +425,7 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+	serviceClass, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
 			"References a non-existent ClusterServiceClass %q - %c",

@@ -28,20 +28,20 @@ import (
 
 // Service class handlers and control-loop
 
-func (c *controller) serviceClassAdd(obj interface{}) {
+func (c *controller) clusterServiceClassAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-	c.serviceClassQueue.Add(key)
+	c.clusterServiceClassQueue.Add(key)
 }
 
-func (c *controller) serviceClassUpdate(oldObj, newObj interface{}) {
-	c.serviceClassAdd(newObj)
+func (c *controller) clusterServiceClassUpdate(oldObj, newObj interface{}) {
+	c.clusterServiceClassAdd(newObj)
 }
 
-func (c *controller) serviceClassDelete(obj interface{}) {
+func (c *controller) clusterServiceClassDelete(obj interface{}) {
 	serviceClass, ok := obj.(*v1beta1.ClusterServiceClass)
 	if serviceClass == nil || !ok {
 		return
@@ -50,12 +50,12 @@ func (c *controller) serviceClassDelete(obj interface{}) {
 	glog.V(4).Infof("Received delete event for ServiceClass %v; no further processing will occur", serviceClass.Name)
 }
 
-// reconcileServiceClassKey reconciles a ServiceClass due to controller resync
-// or an event on the ServiceClass.  Note that this is NOT the main
-// reconciliation loop for ServiceClass. ServiceClasses are primarily
+// reconcileServiceClassKey reconciles a ClusterServiceClass due to controller resync
+// or an event on the ClusterServiceClass.  Note that this is NOT the main
+// reconciliation loop for ClusterServiceClass. ClusterServiceClasses are primarily
 // reconciled in a separate flow when a ClusterServiceBroker is reconciled.
 func (c *controller) reconcileClusterServiceClassKey(key string) error {
-	plan, err := c.serviceClassLister.Get(key)
+	plan, err := c.clusterServiceClassLister.Get(key)
 	if errors.IsNotFound(err) {
 		glog.Infof("ClusterServiceClass %q: Not doing work because it has been deleted", key)
 		return nil
