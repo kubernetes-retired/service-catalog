@@ -102,7 +102,8 @@ type CommonServiceBrokerSpec struct {
 	// can be manually incremented by a user to manually trigger a relist.
 	RelistRequests int64
 
-	// CatalogRestrictions allows adding restrictions onto Class/Plans on list/relist.
+	// CatalogRestrictions is a set of restrictions on which of a broker's services
+	// and plans have resources created for them.
 	CatalogRestrictions *CatalogRestrictions
 }
 
