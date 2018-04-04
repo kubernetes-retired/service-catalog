@@ -6,24 +6,33 @@
 * [Goals and Non-Goals](#goals-and-non-goals)
 * [Storage Classes vs. Service Classes](#storage-classes-vs-service-classes)
 * [User Experience](#user-experience)
-  * [Cluster Operator](#cluster-operator)
-     * [Broker Installation](#broker-installation)
-     * [Cluster Customization](#cluster-customization)
-  * [Developer](#developer)
-     * [Service Class Discovery](#service-class-discovery)
-     * [Legacy Provisioning](#legacy-provisioning)
-     * [Provisioning with Defaults](#provisioning-with-defaults)
-     * [Provisioning by Service Type](#provisioning-by-service-type)
-     * [Service Instance Management](#service-instance-management)
-  * [Helm Charts](#helm-charts)
-     * [Broker](#broker)
-     * [Author](#author)
-     * [Consumer](#consumer)
+ * [Cluster Operator](#cluster-operator)
+    * [Broker Installation](#broker-installation)
+    * [Cluster Customization](#cluster-customization)
+       * [Define a new set of defaults](#define-a-new-set-of-defaults)
+       * [Override the broker defaults](#override-the-broker-defaults)
+       * [Select a default plan for a service type](#select-a-default-plan-for-a-service-type)
+ * [Developer](#developer)
+    * [Service Class Discovery](#service-class-discovery)
+    * [Legacy Provisioning](#legacy-provisioning)
+    * [Provisioning with Defaults](#provisioning-with-defaults)
+    * [Provisioning by Service Type](#provisioning-by-service-type)
+    * [Service Instance Management](#service-instance-management)
+ * [Helm Charts](#helm-charts)
+    * [Author](#author)
+    * [Consumer](#consumer)
 * [Implementation](#implementation)
-  * [Service Class](#service-class)
-  * [Service Plan](#service-plan)
-  * [Service Instance](#service-instance)
-  * [Service Binding](#service-binding)
+ * [Service Class](#service-class)
+ * [Service Plan](#service-plan)
+ * [Service Instance](#service-instance)
+ * [Service Binding](#service-binding)
+ * [OSB Compatibility](#osb-compatibility)
+    * [Plan Tags](#plan-tags)
+    * [Service Types](#service-types)
+    * [Suggested Plan](#suggested-plan)
+    * [Parameter Defaults](#parameter-defaults)
+    * [Schemas](#schemas)
+    * [Plan Attributes](#plan-attributes)
 
 ## Abstract
 
@@ -126,7 +135,7 @@ proposing that we "fill in the gaps" following the precedent set by storage.
 
 If the broker supports providing default provision and bind parameters with their catalog, no additional steps are required because everything is populated during a relist.
 
-Otherwise, the broker can provide additional manifests, or a helm chart, to include out-of-band support for the features in this proposal. See [details](#broker).
+Otherwise, the broker can provide additional manifests, or a helm chart, to include out-of-band support for the features in this proposal. See [details](#osb-compatibility).
 
 #### Cluster Customization
 
@@ -408,46 +417,9 @@ Parameters:
 
 ### Helm Charts
 
-
-#### Broker
-
-In the interim between this proposal and any upstream changes to the OSB API, brokers should include defaults for their Service Classes in their Helm charts.
-
-Note: The defaults must be created by Helm before Service Catalog performs a list against the broker because Helm cannot modify resources that it did not create. To ensure proper ordering, the ServiceClass resources should include a "pre-install" Helm hook.
-
-
-```yaml
-apiVersion: servicecatalog.k8s.io/v1beta1
-kind: ClusterServiceClass
-metadata:
-  # Must match the name set during relist
-  name: b9978372-8dac-40ac-ae65-758b4a5075a5
-  # Ensure this the resource is created by Helm before broker list
-  annotations:
-    "helm.sh/hooks": pre-install # this needs to be deleted when the broker is deleted because helm won't cleanup this itself due to the hook
-  # indicates that this is a broker-provided class
-  ownerReferences:
-  - apiVersion: servicecatalog.k8s.io/v1beta1
-  	controller: true \
-Spec: \
-  externalId: b9978372-8dac-40ac-ae65-758b4a5075a5
-  # Only need specify new values not yet included in the OSB API
-  serviceType: mysql
-  defaultProvisionParameters:
-  	location: eastus
-  	resourceGroup: default
-  	sslEnforcement: disabled
-  	firewallRules:
-  	- name: "AllowAll"
-      startIPAddress: "0.0.0.0"
-      endIPAddress: "255.255.255.255"
-```
-
-
-
 #### Author
 
-Chart authors can use service types, instead of specifying specific broker's class, plan and parameters. Optional variables can be defined so an advanced user can specify a class, plan and parameters just like they can today with Service Catalog.
+Chart authors can use service types, instead of specifying specific broker's class, plan and parameters. Optional variables can be defined so an advanced user can specify a class, plan and parameters just like they can today with Service Catalog. [See OSB Service Types](#service-types) for more information.
 
 
 ```yaml
@@ -466,14 +438,6 @@ spec:
   {{- end}}
 
 ```
-
-
-We will need to coordinate with OSB API to define an agreed upon set of service types. Below is just a suggestion:
-
-* **{{ service-name }}-database-only**: Represents a database only (requires an existing database server Service Instance). Example: mysql-database-only
-* **{{ service-name }}-server-only**: Represents a database management system or server only. Example: mysql-server-only
-* **{{ service-name }}-database-and-server**: Represents both a database server and a logical database. Example: mysql-database-and-server
-* **{{ service-name }}**: Represents a service where there are not parent-child relationships between service instances. _Parent-child relationships are a new concept in OSB that is still being discussed._ Example: redis, rabbitmq
 
 
 #### Consumer
@@ -560,3 +524,111 @@ Notes:
 Notes:
 
 * Merge bind defaults and overrides and before sending to the broker.
+
+### OSB Compatibility
+
+These are the various changes that I am proposing to OSB API v3, and what we can
+do today to be compatible with v2.
+
+For OSB v2 brokers, or v3 brokers that chose to not implement optional features,
+brokers (or a motivated operator) can include defaults for their Service Classes
+in a Helm chart.
+
+Note: The defaults must be created by Helm before Service Catalog performs a list
+against the broker because Helm cannot modify resources that it did not create.
+To ensure proper ordering, the ServiceClass resources should include a "pre-install"
+Helm hook.
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceClass
+metadata:
+  # Must match the name set during relist
+  name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
+  # Ensure this the resource is created by Helm before broker list
+  annotations:
+    "helm.sh/hooks": pre-install
+  # Indicates that this is a broker-provided class
+  ownerReferences:
+  - apiVersion: servicecatalog.k8s.io/v1beta1
+  	controller: true
+Spec:
+  externalId: "997b8372-8dac-40ac-ae65-758b4a5075a5"
+  # Only need specify new fields not set during List
+  serviceType: mysql
+  defaultProvisionParameters:
+  	location: eastus
+  	resourceGroup: default
+  	sslEnforcement: disabled
+  	firewallRules:
+  	- name: "AllowAll"
+      startIPAddress: "0.0.0.0"
+      endIPAddress: "255.255.255.255"
+```
+
+#### Plan Tags
+The following changes all mention tags, but currently tags are only at the class level.
+It would be much easier if plans also had tags.
+
+#### Service Types
+Optionally have brokers include the service type for a class during List,
+e.g. mysql database, redis cache.
+
+This can be accomplished without a schema change by having the broker specify the
+service type using a pre-defined format, for example `ServiceType=mysql`.
+Service Catalog would scan the tags for the service type and parse it.
+
+Brokers must agree upon a standard set of names to use for those service types
+so that people can rely upon using the same one across brokers.
+
+Below is one possible format:
+
+* **{{ service-name }}-database-only**: Represents a database only 
+  (requires an existing database server Service Instance).
+  Example: mysql-database-only
+* **{{ service-name }}-server-only**: Represents a database management system or server only.
+  Example: mysql-server-only
+* **{{ service-name }}-database-and-server**: Represents both a database server and a logical database.
+  Example: mysql-database-and-server
+* **{{ service-name }}**: Represents a service where there are not parent-child relationships between service instances. 
+  Example: redis, rabbitmq
+
+_Parent-child relationships are a new concept in OSB that is still being discussed
+but is already implemented by some brokers, such as Azure._ 
+
+#### Suggested Plan
+Optionally have brokers suggest a default plan for a particular service type. 
+During a list, the broker can include a tag using a pre-defined format, for example
+`SuggestedPlan=true`. Service Catalog would scan the tags for suggested plans,
+and flag them when found.
+
+#### Parameter Defaults
+Optionally have brokers include default parameters for provisioning and binding
+during List.
+
+*Open Question:* How does a broker distinguish between a default that it will apply
+when no value is provided, and a suggested default that the platform can provide when
+no value is provided. i.e. broker defaults vs, the broker's suggestion of a complete working
+request that will successfully provision.
+
+#### Schemas
+Require the broker to return a schema for the provision and bind parameters.
+
+Additionally, brokers should agree upon a standard json schema for common binding responses so
+that people can rely upon using the same schema across brokers (like CF does).
+
+While isn't strictly necessary for this proposal, but would be so incredibly helpful
+that I am pushing for it regardless. Service Catalog has ways to work around this
+now with #1868 but not having to do it in the first place is preferable.
+
+#### Plan Attributes
+Optionally have brokers include tags for plans, which can be used to specify
+attributes about the plan such as database cores (or whatever the term is to indicate how huuuuuuuge a db is).
+
+Examples:
+`Cores=4`
+`Memory=16`
+
+Again, while not strictly necessary, it would be useful. Right now an operator
+usually ends up going to the broker's website to look up the attributes of a plan
+and this would save us all a lot of time.
