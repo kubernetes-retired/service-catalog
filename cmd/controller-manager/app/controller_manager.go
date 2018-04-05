@@ -370,11 +370,14 @@ func StartControllers(s *options.ControllerManagerServer,
 		return err
 	}
 
-	glog.V(5).Info("Running controller")
-	go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
-
 	glog.V(1).Info("Starting shared informers")
 	informerFactory.Start(stop)
+
+	glog.V(5).Info("Waiting for caches to sync")
+	informerFactory.WaitForCacheSync(stop)
+
+	glog.V(5).Info("Running controller")
+	go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
 
 	select {}
 }
