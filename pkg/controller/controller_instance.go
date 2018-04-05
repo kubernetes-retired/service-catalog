@@ -1264,7 +1264,7 @@ func isServiceInstancePropertiesStateEqual(s1 *v1beta1.ServiceInstanceProperties
 	if s1 == nil && s2 == nil {
 		return true
 	}
-	if s1 == nil && s2 != nil || s1 != nil && s2 == nil {
+	if (s1 == nil && s2 != nil) || (s1 != nil && s2 == nil) {
 		return false
 	}
 	if s1.ClusterServicePlanExternalID != s2.ClusterServicePlanExternalID {
@@ -1279,10 +1279,10 @@ func isServiceInstancePropertiesStateEqual(s1 *v1beta1.ServiceInstanceProperties
 	if s1.UserInfo != nil || s2.UserInfo != nil {
 		u1 := s1.UserInfo
 		u2 := s2.UserInfo
-		if u1 == nil && u2 != nil || u1 != nil && u2 == nil {
+		if (u1 == nil && u2 != nil) || (u1 != nil && u2 == nil) {
 			return false
 		}
-		if u1.Username != u2.Username {
+		if u1.UID != u2.UID {
 			return false
 		}
 	}
