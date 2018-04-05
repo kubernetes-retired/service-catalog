@@ -122,7 +122,8 @@ type CommonServiceBrokerSpec struct {
 	// +optional
 	RelistRequests int64 `json:"relistRequests"`
 
-	// CatalogRestrictions allows adding restrictions onto Class/Plans on relist.
+	// CatalogRestrictions is a set of restrictions on which of a broker's services
+	// and plans have resources created for them.
 	// +optional
 	CatalogRestrictions *CatalogRestrictions `json:"catalogRestrictions,omitempty"`
 }

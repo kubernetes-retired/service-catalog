@@ -314,7 +314,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"catalogRestrictions": {
 							SchemaProps: spec.SchemaProps{
-								Description: "CatalogRestrictions allows adding restrictions onto Class/Plans on relist.",
+								Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
 							},
 						},
@@ -825,7 +825,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"catalogRestrictions": {
 							SchemaProps: spec.SchemaProps{
-								Description: "CatalogRestrictions allows adding restrictions onto Class/Plans on relist.",
+								Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
 							},
 						},
@@ -1769,7 +1769,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"catalogRestrictions": {
 							SchemaProps: spec.SchemaProps{
-								Description: "CatalogRestrictions allows adding restrictions onto Class/Plans on relist.",
+								Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
 							},
 						},

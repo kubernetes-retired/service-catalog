@@ -59,6 +59,10 @@ func (c *client) ProvisionInstance(r *ProvisionRequest) (*ProvisionResponse, err
 			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
+		if !c.APIVersion.AtLeast(Version2_13()) || !c.EnableAlphaFeatures {
+			userResponse.ExtensionAPIs = nil
+		}
+
 		return userResponse, nil
 	case http.StatusAccepted:
 		if !r.AcceptsIncomplete {
