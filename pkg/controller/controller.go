@@ -423,7 +423,7 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 // done to validate service plan, service class exist, and handles creating
 // a brokerclient to use for a given ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
-func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, original, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
+func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, originalBinding, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
@@ -433,7 +433,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
-			original,
+			originalBinding,
 			binding,
 			v1beta1.ServiceBindingConditionReady,
 			v1beta1.ConditionFalse,
@@ -452,7 +452,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
-			original,
+			originalBinding,
 			binding,
 			v1beta1.ServiceBindingConditionReady,
 			v1beta1.ConditionFalse,
@@ -468,7 +468,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		s := fmt.Sprintf("References a non-existent ClusterServiceBroker %q", serviceClass.Spec.ClusterServiceBrokerName)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
-			original,
+			originalBinding,
 			binding,
 			v1beta1.ServiceBindingConditionReady,
 			v1beta1.ConditionFalse,
@@ -484,7 +484,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
 		glog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
-			original,
+			originalBinding,
 			binding,
 			v1beta1.ServiceBindingConditionReady,
 			v1beta1.ConditionFalse,
