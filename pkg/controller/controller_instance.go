@@ -34,7 +34,9 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
+	"time"
 )
 
 const (
@@ -377,6 +379,16 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
 		return nil
 	}
+	if !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
+		instance, err = c.updateServiceInstanceInProgressProperties(instance, inProgressProperties)
+		if err != nil {
+			// There has been an update to the instance. Start reconciliation
+			// over with a fresh view of the instance.
+			return err
+		}
+		// updateServiceInstanceInProgressProperties has updated the instance, so we need to continue in the next iteration
+		return nil
+	}
 
 	glog.V(4).Info(pcb.Messagef(
 		"Provisioning a new ServiceInstance of %s at ClusterServiceBroker %q",
@@ -485,6 +497,16 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			return err
 		}
 		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+		return nil
+	}
+	if !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
+		instance, err = c.updateServiceInstanceInProgressProperties(instance, inProgressProperties)
+		if err != nil {
+			// There has been an update to the instance. Start reconciliation
+			// over with a fresh view of the instance.
+			return err
+		}
+		// updateServiceInstanceInProgressProperties has updated the instance, so we need to continue in the next iteration
 		return nil
 	}
 
@@ -1226,6 +1248,48 @@ func (c *controller) prepareObservedGeneration(toUpdate *v1beta1.ServiceInstance
 		v1beta1.ServiceInstanceConditionFailed)
 }
 
+// updateServiceInstanceInProgressProperties updates the status with new
+// InProgressProperties value
+func (c *controller) updateServiceInstanceInProgressProperties(toUpdate *v1beta1.ServiceInstance, inProgressProperties *v1beta1.ServiceInstancePropertiesState) (*v1beta1.ServiceInstance, error) {
+	toUpdate.Status.InProgressProperties = inProgressProperties
+	updatedInstance, err := c.updateServiceInstanceStatus(toUpdate)
+	if err != nil {
+		return nil, err
+	}
+	return updatedInstance, nil
+}
+
+// isServiceInstancePropertiesStateEqual checks whether two ServiceInstancePropertiesState objects are equal
+func isServiceInstancePropertiesStateEqual(s1 *v1beta1.ServiceInstancePropertiesState, s2 *v1beta1.ServiceInstancePropertiesState) bool {
+	if s1 == nil && s2 == nil {
+		return true
+	}
+	if s1 == nil && s2 != nil || s1 != nil && s2 == nil {
+		return false
+	}
+	if s1.ClusterServicePlanExternalID != s2.ClusterServicePlanExternalID {
+		return false
+	}
+	if s1.ClusterServicePlanExternalName != s2.ClusterServicePlanExternalName {
+		return false
+	}
+	if s1.ParametersChecksum != s2.ParametersChecksum {
+		return false
+	}
+	if s1.UserInfo != nil || s2.UserInfo != nil {
+		u1 := s1.UserInfo
+		u2 := s2.UserInfo
+		if u1 == nil && u2 != nil || u1 != nil && u2 == nil {
+			return false
+		}
+		if u1.Username != u2.Username {
+			return false
+		}
+	}
+
+	return true
+}
+
 // recordStartOfServiceInstanceOperation updates the instance to indicate that
 // there is an operation being performed. If the instance was already
 // performing a different operation, that operation is replaced. The Status of
@@ -1588,19 +1652,40 @@ func (c *controller) processServiceInstanceOperationError(instance *v1beta1.Serv
 // processProvisionSuccess handles the logging and updating of a
 // ServiceInstance that has successfully been provisioned at the broker.
 func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, dashboardURL *string) error {
-	setServiceInstanceDashboardURL(instance, dashboardURL)
-	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
-	instance.Status.ExternalProperties = instance.Status.InProgressProperties
-	clearServiceInstanceCurrentOperation(instance)
-	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
-	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
+	instanceToUpdate := instance // Initially try to update instance directly
 
-	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
-		return err
-	}
+	const interval = 100 * time.Millisecond
+	const timeout = 10 * time.Second
+	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		copyProvisionSuccessStatus(instanceToUpdate, instance, dashboardURL)
 
-	c.recorder.Eventf(instance, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
-	return nil
+		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+			if !errors.IsConflict(err) {
+				return false, err
+			}
+			// Fetch a fresh instance to resolve the update conflict
+			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+		}
+
+		c.recorder.Eventf(instanceToUpdate, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
+		return true, nil
+	})
+
+	return err
+}
+
+// copyProvisionSuccessStatus sets successful provision status fields
+// in the target ServiceInstance based on the source ServiceInstance
+func copyProvisionSuccessStatus(target, source *v1beta1.ServiceInstance, dashboardURL *string) {
+	setServiceInstanceDashboardURL(target, dashboardURL)
+	setServiceInstanceCondition(target, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
+	target.Status.ExternalProperties = source.Status.InProgressProperties
+	clearServiceInstanceCurrentOperation(target)
+	target.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
+	target.Status.ReconciledGeneration = source.Status.ObservedGeneration
 }
 
 // processTerminalProvisionFailure handles the logging and updating of a
