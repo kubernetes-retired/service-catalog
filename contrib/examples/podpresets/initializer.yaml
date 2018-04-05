@@ -1,0 +1,18 @@
+# Note: this is already included when deployed with helm
+apiVersion: admissionregistration.k8s.io/v1alpha1
+kind: InitializerConfiguration
+metadata:
+  name: podpreset-initializer-config
+  namespace: default
+initializers:
+  # the name needs to be fully qualified, i.e., containing at least two "."
+  - name: podpreset.initializer.k8s.io
+    rules:
+      # apiGroups, apiVersion, resources all support wildcard "*".
+      # "*" cannot be mixed with non-wildcard.
+      - apiGroups:
+          - "*"
+        apiVersions:
+          - v1
+        resources:
+          - pods

@@ -27,6 +27,32 @@ spec:
   {{- end }}
 {{ end }}
 ---
+{{- if .Values.useAggregator }}
+{{- if .Values.apiserver.podPresetEnabled }}
+{{- if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1beta1" }}
+apiVersion: apiregistration.k8s.io/v1beta1
+{{- else if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1alpha1" }}
+apiVersion: apiregistration.k8s.io/v1alpha1
+{{- end }}
+kind: APIService
+metadata:
+  name: v1alpha1.settings.servicecatalog.k8s.io
+spec:
+  group: settings.servicecatalog.k8s.io
+  version: v1alpha1
+  service:
+    namespace: {{ .Release.Namespace }}
+    name: {{ template "fullname" . }}-apiserver
+  caBundle: {{ b64enc $ca.Cert }}
+  {{ if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1alpha1" -}}
+  priority: {{ .Values.apiserver.aggregator.priority }}
+  {{ else if .Capabilities.APIVersions.Has "apiregistration.k8s.io/v1beta1" -}}
+  groupPriorityMinimum: {{ .Values.apiserver.aggregator.groupPriorityMinimum }}
+  versionPriority: {{ .Values.apiserver.aggregator.versionPriority }}
+  {{- end }}
+{{ end }}
+{{ end }}
+---
 apiVersion: v1
 kind: Secret
 metadata:

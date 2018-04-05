@@ -1,0 +1,11 @@
+apiVersion: settings.servicecatalog.k8s.io/v1alpha1
+kind: PodPreset
+metadata:
+  name: add-port-env
+spec:
+  selector:
+    matchLabels:
+      mutate: "true"
+  env:
+    - name: PORT
+      value: "6379"
