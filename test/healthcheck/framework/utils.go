@@ -18,6 +18,7 @@ package framework
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/golang/glog"
@@ -84,7 +85,7 @@ func CreateKubeNamespace(c kubernetes.Interface) (*corev1.Namespace, error) {
 		return true, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, logErrorf("Error creating test namespace: %v", err.Error())
 	}
 	return got, nil
 }
@@ -115,4 +116,27 @@ func endpointAvailable(c kubernetes.Interface, namespace, name string) wait.Cond
 
 		return true, nil
 	}
+}
+
+// logErrorf creates a new error using msg and param for the formated message.
+// The message is logged and the new error returned.  This function attempts to
+// log the location of the caller (file name & line number) so as to maintain
+// context of where the error occured
+func logErrorf(msg, param string) error {
+	_, file, line, _ := runtime.Caller(1)
+
+	// only use the last 30 characters
+	context := len(file) - 30
+	if context < 0 {
+		context = 0
+	}
+	partialFileName := file[context:]
+	format := fmt.Sprintf("...%s:%d: %v", partialFileName, line, msg)
+	e := fmt.Errorf(format, param)
+	glog.Error(e)
+	return e
+}
+
+func logError(msg string) error {
+	return logErrorf(msg, "")
 }

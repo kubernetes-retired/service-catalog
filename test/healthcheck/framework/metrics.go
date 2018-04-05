@@ -31,7 +31,7 @@ import (
 var registerMetrics sync.Once
 
 const (
-	healthcheckNamespace = "catalog_health" // Prometheus namespace (nothing to do with k8s namespace)
+	promNamespace = "catalog_health" // Prometheus namespace (nothing to do with k8s namespace)
 )
 
 var (
@@ -43,7 +43,7 @@ var (
 	// ExecutionCount is the number of times the HealthCheck has executed
 	ExecutionCount = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: healthcheckNamespace,
+			Namespace: promNamespace,
 			Name:      "execution_count",
 			Help:      "Number of times the health check has run.",
 		},
@@ -52,7 +52,7 @@ var (
 	// ErrorCount is the number of times HealthCheck has errored during the end to end test
 	ErrorCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: healthcheckNamespace,
+			Namespace: promNamespace,
 			Name:      "error_count",
 			Help:      "Number of times the health check ended in error, by error.",
 		},
@@ -62,7 +62,7 @@ var (
 	// eventHandlingTime is a histogram recording how long a operation took
 	eventHandlingTime = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Namespace: healthcheckNamespace,
+			Namespace: promNamespace,
 			Name:      "successful_duration_milliseconds",
 			Help:      "Bucketed histogram of processing time (s) of successfully executed operation, by operation.",
 			Buckets:   []float64{100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 10000, 15000, 20000, 25000, 30000},

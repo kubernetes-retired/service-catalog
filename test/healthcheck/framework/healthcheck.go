@@ -17,9 +17,7 @@ limitations under the License.
 package framework
 
 import (
-	"errors"
 	goflag "flag"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -66,19 +64,12 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		glog.Infof("Sheduled health checks will be run every %v", options.HealthCheckInterval)
+		glog.Infof("Scheduled health checks will be run every %v", options.HealthCheckInterval)
 
 		// Every X interval run the health check
 		ticker := time.NewTicker(options.HealthCheckInterval)
 		for range ticker.C {
-			err = healthCheck(options)
-			if err != nil {
-				glog.Errorf("Error running health check: %v", err)
-				cleanup()
-				ErrorCount.WithLabelValues(err.Error()).Inc()
-			} else {
-				glog.V(2).Info("Successfully ran health check")
-			}
+			healthCheck(options)
 		}
 	},
 }
@@ -90,12 +81,13 @@ var (
 
 	// Namespace in which all test resources should reside
 	namespace        *corev1.Namespace
-	upsbrokername    = "ups-broker"
-	serviceclassName = "user-provided-service"
-	serviceclassID   = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
-	serviceplanID    = "86064792-7ea2-467b-af93-ac9694d96d52"
-	instanceName     = "ups-instance"
-	bindingName      = "ups-binding"
+	upsbrokername          = "ups-broker"
+	serviceclassName       = "user-provided-service"
+	serviceclassID         = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+	serviceplanID          = "86064792-7ea2-467b-af93-ac9694d96d52"
+	instanceName           = "ups-instance"
+	bindingName            = "ups-binding"
+	frameworkError   error = nil
 )
 
 func initialize(s *HealthCheckServer) error {
@@ -133,15 +125,37 @@ func initialize(s *HealthCheckServer) error {
 // binding and does validation along the way and then tears it down.  Some basic
 // Prometheus metrics are maintained that can be alerted off from.
 func healthCheck(s *HealthCheckServer) error {
-	var e error
 	ExecutionCount.Inc()
 	hcStartTime := time.Now()
+
+	frameworkError = verifyBrokerIsReady()
+
+	frameworkError = createNamespace()
+
+	frameworkError = createInstance()
+
+	frameworkError = createBinding()
+
+	frameworkError = deprovision()
+
+	frameworkError = deleteNamespace()
+
+	if frameworkError == nil {
+		ReportOperationCompleted("healthcheck_completed", hcStartTime)
+		glog.V(2).Info("Successfully ran health check")
+	} else {
+		cleanup()
+		ErrorCount.WithLabelValues(frameworkError.Error()).Inc()
+	}
+	return frameworkError
+}
+
+// verifyBrokerIsReady verifies the Broker is found and appears ready
+func verifyBrokerIsReady() error {
 	glog.V(4).Infof("checking for %v", upsbrokername)
 	err := WaitForEndpoint(kubeClientSet, "ups-broker", "ups-broker-ups-broker")
 	if err != nil {
-		e = fmt.Errorf("no broker endpoint: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("no broker endpoint: %v", err.Error())
 	}
 
 	url := "http://" + upsbrokername + "." + "ups-broker" + ".svc.cluster.local"
@@ -164,25 +178,22 @@ func healthCheck(s *HealthCheckServer) error {
 		},
 	)
 	if err != nil {
-		e = fmt.Errorf("broker not ready: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("broker not ready: %v", err.Error())
 	}
 
 	err = util.WaitForClusterServiceClassToExist(serviceCatalogClientSet.ServicecatalogV1beta1(), serviceclassID)
 	if err != nil {
-		e = fmt.Errorf("service class not found: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("service class not found: %v", err.Error())
 	}
+	return nil
+}
 
-	namespace, err = CreateKubeNamespace(kubeClientSet)
-	if err != nil {
-		e = fmt.Errorf("error creating namespace: %v", err)
-		glog.Error(e)
-		return e
+// createInstance creates a Service Instance and verifies it becomes ready
+// and it's references are resolved
+func createInstance() error {
+	if frameworkError != nil {
+		return frameworkError
 	}
-
 	glog.V(4).Info("Creating a ServiceInstance")
 	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
@@ -197,17 +208,14 @@ func healthCheck(s *HealthCheckServer) error {
 		},
 	}
 	operationStartTime := time.Now()
+	var err error
 	instance, err = serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(namespace.Name).Create(instance)
 	if err != nil {
-		e = fmt.Errorf("error creating instance: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("error creating instance: %v", err.Error())
 	}
 
 	if instance == nil {
-		e = fmt.Errorf("error creating instance - instance is null")
-		glog.Error(e)
-		return e
+		return logError("error creating instance - instance is null")
 	}
 
 	glog.V(4).Info("Waiting for ServiceInstance to be ready")
@@ -220,41 +228,38 @@ func healthCheck(s *HealthCheckServer) error {
 		},
 	)
 	if err != nil {
-		e = fmt.Errorf("instance not ready: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("instance not ready: %v", err.Error())
 	}
 	ReportOperationCompleted("create_instance", operationStartTime)
 
-	glog.V(4).Info("Verify references are resolved")
+	glog.V(4).Info("Verifing references are resolved")
 	sc, err := serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(namespace.Name).Get(instanceName, metav1.GetOptions{})
 	if err != nil {
-		e = fmt.Errorf("error getting instance: %v", err)
-		return e
+		return logErrorf("error getting instance: %v", err.Error())
 	}
 
 	if sc.Spec.ClusterServiceClassRef == nil {
-		err = errors.New("ClusterServiceClassRef should not be null")
-		glog.Error(err)
-		return err
+		return logError("ClusterServiceClassRef should not be null")
 	}
 	if sc.Spec.ClusterServicePlanRef == nil {
-		err = errors.New("ClusterServicePlanRef should not be null")
-		glog.Error(err)
-		return err
+		return logError("ClusterServicePlanRef should not be null")
 	}
 
 	if strings.Compare(sc.Spec.ClusterServiceClassRef.Name, serviceclassID) != 0 {
-		err = errors.New("ClusterServiceClassReName should not be null")
-		glog.Error(err)
-		return err
+		return logError("ClusterServiceClassRef.Name should not be null")
 	}
 	if strings.Compare(sc.Spec.ClusterServicePlanRef.Name, serviceplanID) != 0 {
-		err = errors.New("ClusterServicePlanReName should not be null")
-		glog.Error(err)
-		return err
+		return logError("ClusterServicePlanRef.Name should not be null")
 	}
+	return nil
+}
 
+// createBinding creates a binding and verifies the binding and secret are
+// correct
+func createBinding() error {
+	if frameworkError != nil {
+		return frameworkError
+	}
 	glog.V(4).Info("Creating a ServiceBinding")
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -268,17 +273,13 @@ func healthCheck(s *HealthCheckServer) error {
 			SecretName: "my-secret",
 		},
 	}
-	operationStartTime = time.Now()
-	binding, err = serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(namespace.Name).Create(binding)
+	operationStartTime := time.Now()
+	binding, err := serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(namespace.Name).Create(binding)
 	if err != nil {
-		err = fmt.Errorf("Error creating binding: %v", err)
-		glog.Error(err)
-		return err
+		return logErrorf("Error creating binding: %v", err.Error())
 	}
 	if binding == nil {
-		err = fmt.Errorf("Binding should not be null")
-		glog.Error(err)
-		return err
+		return logError("Binding should not be null")
 	}
 
 	glog.V(4).Info("Waiting for ServiceBinding to be ready")
@@ -291,45 +292,43 @@ func healthCheck(s *HealthCheckServer) error {
 		},
 	)
 	if err != nil {
-		e = fmt.Errorf("binding not ready: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("binding not ready: %v", err.Error())
 	}
 	ReportOperationCompleted("binding_ready", operationStartTime)
 
 	glog.V(4).Info("Validating that a secret was created after binding")
 	_, err = kubeClientSet.CoreV1().Secrets(namespace.Name).Get("my-secret", metav1.GetOptions{})
 	if err != nil {
-		e = fmt.Errorf("Error getting secret: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("Error getting secret: %v", err.Error())
 	}
 	glog.V(4).Info("Successfully created instance & binding.  Cleaning up.")
+	return nil
+}
 
+// deprovision deletes the service binding, deprovisions the service instance
+// and verifies it does the appropriate cleanup.
+func deprovision() error {
+	if frameworkError != nil {
+		return frameworkError
+	}
 	glog.V(4).Info("Deleting the ServiceBinding.")
-	operationStartTime = time.Now()
-	err = serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(namespace.Name).Delete(bindingName, nil)
+	operationStartTime := time.Now()
+	err := serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(namespace.Name).Delete(bindingName, nil)
 	if err != nil {
-		e = fmt.Errorf("error deleting binding: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("error deleting binding: %v", err.Error())
 	}
 
 	glog.V(4).Info("Waiting for ServiceBinding to be removed")
 	err = util.WaitForBindingToNotExist(serviceCatalogClientSet.ServicecatalogV1beta1(), namespace.Name, bindingName)
 	if err != nil {
-		e = fmt.Errorf("binding not removed: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("binding not removed: %v", err.Error())
 	}
 	ReportOperationCompleted("binding_deleted", operationStartTime)
 
 	glog.V(4).Info("Verifying that the secret was deleted after deleting the binding")
 	_, err = kubeClientSet.CoreV1().Secrets(namespace.Name).Get("my-secret", metav1.GetOptions{})
 	if err == nil {
-		e = errors.New("secret not deleted")
-		glog.Error(e)
-		return e
+		return logError("secret not deleted")
 	}
 
 	// Deprovisioning the ServiceInstance
@@ -337,29 +336,15 @@ func healthCheck(s *HealthCheckServer) error {
 	operationStartTime = time.Now()
 	err = serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(namespace.Name).Delete(instanceName, nil)
 	if err != nil {
-		e = fmt.Errorf("error deleting instance: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("error deleting instance: %v", err.Error())
 	}
 
 	glog.V(4).Info("Waiting for ServiceInstance to be removed")
 	err = util.WaitForInstanceToNotExist(serviceCatalogClientSet.ServicecatalogV1beta1(), namespace.Name, instanceName)
 	if err != nil {
-		e = fmt.Errorf("instance not removed: %v", err)
-		glog.Error(e)
-		return e
+		return logErrorf("instance not removed: %v", err.Error())
 	}
 	ReportOperationCompleted("instance_deleted", operationStartTime)
-
-	glog.V(4).Info("Deleting the test namespace")
-	err = DeleteKubeNamespace(kubeClientSet, namespace.Name)
-	if err != nil {
-		e = fmt.Errorf("error deleting namespace: %v", err)
-		glog.Error(e)
-		return e
-	}
-
-	ReportOperationCompleted("healthcheck_completed", hcStartTime)
 	return nil
 }
 
@@ -379,4 +364,23 @@ func cleanup() {
 		}
 		namespace = nil
 	}
+}
+
+func createNamespace() error {
+	if frameworkError != nil {
+		return frameworkError
+	}
+	namespace, frameworkError = CreateKubeNamespace(kubeClientSet)
+	return frameworkError
+}
+
+func deleteNamespace() error {
+	if frameworkError != nil {
+		return frameworkError
+	}
+	err := DeleteKubeNamespace(kubeClientSet, namespace.Name)
+	if err != nil {
+		return logErrorf("failed to delete namespace: %v", err.Error())
+	}
+	return err
 }
