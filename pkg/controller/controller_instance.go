@@ -369,7 +369,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	if instance.Status.CurrentOperation == "" {
+	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationProvision, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
@@ -377,16 +377,6 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			return err
 		}
 		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-		return nil
-	}
-	if !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
-		instance, err = c.updateServiceInstanceInProgressProperties(instance, inProgressProperties)
-		if err != nil {
-			// There has been an update to the instance. Start reconciliation
-			// over with a fresh view of the instance.
-			return err
-		}
-		// updateServiceInstanceInProgressProperties has updated the instance, so we need to continue in the next iteration
 		return nil
 	}
 
@@ -489,7 +479,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	if instance.Status.CurrentOperation == "" {
+	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
@@ -497,16 +487,6 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			return err
 		}
 		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-		return nil
-	}
-	if !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
-		instance, err = c.updateServiceInstanceInProgressProperties(instance, inProgressProperties)
-		if err != nil {
-			// There has been an update to the instance. Start reconciliation
-			// over with a fresh view of the instance.
-			return err
-		}
-		// updateServiceInstanceInProgressProperties has updated the instance, so we need to continue in the next iteration
 		return nil
 	}
 
@@ -1204,10 +1184,34 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceIn
 //
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
-func (c *controller) updateServiceInstanceStatus(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
+func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	glog.V(4).Info(pcb.Message("Updating status"))
-	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateStatus(toUpdate)
+
+	const interval = 100 * time.Millisecond
+	const timeout = 10 * time.Second
+	var updatedInstance *v1beta1.ServiceInstance
+
+	instanceToUpdate := instance
+	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(instanceToUpdate)
+		if err != nil {
+			if !errors.IsConflict(err) {
+				return false, err
+			}
+			// Fetch a fresh instance to resolve the update conflict and retry
+			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+			instanceToUpdate.Status = instance.Status
+			return false, nil
+		}
+
+		updatedInstance = upd
+		return true, nil
+	})
+
 	if err != nil {
 		glog.Errorf(pcb.Messagef("Failed to update status: %v", err))
 	}
@@ -1246,17 +1250,6 @@ func (c *controller) prepareObservedGeneration(toUpdate *v1beta1.ServiceInstance
 	removeServiceInstanceCondition(
 		toUpdate,
 		v1beta1.ServiceInstanceConditionFailed)
-}
-
-// updateServiceInstanceInProgressProperties updates the status with new
-// InProgressProperties value
-func (c *controller) updateServiceInstanceInProgressProperties(toUpdate *v1beta1.ServiceInstance, inProgressProperties *v1beta1.ServiceInstancePropertiesState) (*v1beta1.ServiceInstance, error) {
-	toUpdate.Status.InProgressProperties = inProgressProperties
-	updatedInstance, err := c.updateServiceInstanceStatus(toUpdate)
-	if err != nil {
-		return nil, err
-	}
-	return updatedInstance, nil
 }
 
 // isServiceInstancePropertiesStateEqual checks whether two ServiceInstancePropertiesState objects are equal
@@ -1652,40 +1645,19 @@ func (c *controller) processServiceInstanceOperationError(instance *v1beta1.Serv
 // processProvisionSuccess handles the logging and updating of a
 // ServiceInstance that has successfully been provisioned at the broker.
 func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, dashboardURL *string) error {
-	instanceToUpdate := instance // Initially try to update instance directly
+	setServiceInstanceDashboardURL(instance, dashboardURL)
+	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
+	instance.Status.ExternalProperties = instance.Status.InProgressProperties
+	clearServiceInstanceCurrentOperation(instance)
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
+	instance.Status.ReconciledGeneration = instance.Status.ObservedGeneration
 
-	const interval = 100 * time.Millisecond
-	const timeout = 10 * time.Second
-	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
-		copyProvisionSuccessStatus(instanceToUpdate, instance, dashboardURL)
+	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+		return err
+	}
 
-		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
-			if !errors.IsConflict(err) {
-				return false, err
-			}
-			// Fetch a fresh instance to resolve the update conflict
-			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
-			if err != nil {
-				return false, err
-			}
-		}
-
-		c.recorder.Eventf(instanceToUpdate, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
-		return true, nil
-	})
-
-	return err
-}
-
-// copyProvisionSuccessStatus sets successful provision status fields
-// in the target ServiceInstance based on the source ServiceInstance
-func copyProvisionSuccessStatus(target, source *v1beta1.ServiceInstance, dashboardURL *string) {
-	setServiceInstanceDashboardURL(target, dashboardURL)
-	setServiceInstanceCondition(target, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, successProvisionReason, successProvisionMessage)
-	target.Status.ExternalProperties = source.Status.InProgressProperties
-	clearServiceInstanceCurrentOperation(target)
-	target.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
-	target.Status.ReconciledGeneration = source.Status.ObservedGeneration
+	c.recorder.Eventf(instance, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
+	return nil
 }
 
 // processTerminalProvisionFailure handles the logging and updating of a
