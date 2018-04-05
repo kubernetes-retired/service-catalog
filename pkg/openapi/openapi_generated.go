@@ -1352,6 +1352,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},
+						"inlineParameters": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InlineParameters is a blob of the inline parameters and their values that the broker knows about for this ServiceBinding. It does not include parameters from external sources, e.g. Secrets.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
 						"parameterChecksum": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ParametersChecksum is the checksum of the parameters that were sent.",
@@ -2145,6 +2151,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Parameters is a blob of the parameters and their values that the broker knows about for this ServiceInstance.  If a parameter was sourced from a secret, its value will be \"<redacted>\" in this blob.",
+								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+							},
+						},
+						"inlineParameters": {
+							SchemaProps: spec.SchemaProps{
+								Description: "InlineParameters is a blob of the inline parameters and their values that the broker knows about for this ServiceInstance. It does not include parameters from external sources, e.g. Secrets.",
 								Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 							},
 						},

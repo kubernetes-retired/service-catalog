@@ -906,6 +906,15 @@ func (in *ServiceBindingPropertiesState) DeepCopyInto(out *ServiceBindingPropert
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	if in.InlineParameters != nil {
+		in, out := &in.InlineParameters, &out.InlineParameters
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(runtime.RawExtension)
+			(*in).DeepCopyInto(*out)
+		}
+	}
 	if in.UserInfo != nil {
 		in, out := &in.UserInfo, &out.UserInfo
 		if *in == nil {
@@ -1375,6 +1384,15 @@ func (in *ServiceInstancePropertiesState) DeepCopyInto(out *ServiceInstancePrope
 	*out = *in
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(runtime.RawExtension)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	if in.InlineParameters != nil {
+		in, out := &in.InlineParameters, &out.InlineParameters
 		if *in == nil {
 			*out = nil
 		} else {

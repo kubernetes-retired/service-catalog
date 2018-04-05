@@ -2922,10 +2922,18 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+	servicePlan := getTestClusterServicePlan()
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(servicePlan)
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
+		ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
+		Parameters:                     instance.Spec.Parameters,
+		InlineParameters:               instance.Spec.Parameters,
+		UserInfo:                       instance.Spec.UserInfo,
+	}
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 	instance.Status.ObservedGeneration = instance.Generation

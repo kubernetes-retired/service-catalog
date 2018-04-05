@@ -1005,6 +1005,7 @@ func Convert_servicecatalog_ServiceBindingList_To_v1beta1_ServiceBindingList(in 
 
 func autoConvert_v1beta1_ServiceBindingPropertiesState_To_servicecatalog_ServiceBindingPropertiesState(in *ServiceBindingPropertiesState, out *servicecatalog.ServiceBindingPropertiesState, s conversion.Scope) error {
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.InlineParameters = (*runtime.RawExtension)(unsafe.Pointer(in.InlineParameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
 	return nil
@@ -1017,6 +1018,7 @@ func Convert_v1beta1_ServiceBindingPropertiesState_To_servicecatalog_ServiceBind
 
 func autoConvert_servicecatalog_ServiceBindingPropertiesState_To_v1beta1_ServiceBindingPropertiesState(in *servicecatalog.ServiceBindingPropertiesState, out *ServiceBindingPropertiesState, s conversion.Scope) error {
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.InlineParameters = (*runtime.RawExtension)(unsafe.Pointer(in.InlineParameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
 	return nil
@@ -1445,6 +1447,7 @@ func autoConvert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_Servic
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
 	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.InlineParameters = (*runtime.RawExtension)(unsafe.Pointer(in.InlineParameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
 	return nil
@@ -1459,6 +1462,7 @@ func autoConvert_servicecatalog_ServiceInstancePropertiesState_To_v1beta1_Servic
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
 	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
+	out.InlineParameters = (*runtime.RawExtension)(unsafe.Pointer(in.InlineParameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
 	return nil

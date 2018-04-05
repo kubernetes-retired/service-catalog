@@ -80,10 +80,12 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 		func(ps *servicecatalog.ServiceInstancePropertiesState, c fuzz.Continue) {
 			c.FuzzNoCustom(ps)
 			ps.Parameters = nil
+			ps.InlineParameters = nil
 		},
 		func(ps *servicecatalog.ServiceBindingPropertiesState, c fuzz.Continue) {
 			c.FuzzNoCustom(ps)
 			ps.Parameters = nil
+			ps.InlineParameters = nil
 		},
 	).Fuzz(internalObj)
 
