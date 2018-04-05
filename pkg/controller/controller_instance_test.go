@@ -2971,6 +2971,13 @@ func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T)
 		ParametersChecksum: "staleChecksum",
 	}
 	instance.Status.ObservedGeneration = instance.Generation
+	instance.Status.Conditions = []v1beta1.ServiceInstanceCondition{
+		{
+			Type:   v1beta1.ServiceInstanceConditionReady,
+			Status: v1beta1.ConditionFalse,
+			Reason: provisioningInFlightReason,
+		},
+	}
 
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
 	parameters.Args["first"] = "first-arg"
@@ -2989,24 +2996,24 @@ func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T)
 		t.Fatalf("This should not fail : %v", err)
 	}
 
+	// No OSB requests expected
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
-	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
-		AcceptsIncomplete: true,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-		Context: map[string]interface{}{
-			"platform":  "kubernetes",
-			"namespace": "test-ns",
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	// InProgressProperties fields should be updated
+	expectedParameters := map[string]interface{}{
+		"args": map[string]interface{}{
+			"first":  "first-arg",
+			"second": "new-second-arg",
 		},
-	})
+		"name": "test-param",
+	}
+	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, expectedParameters)
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -3017,12 +3024,9 @@ func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T)
 		t.Fatal(err)
 	}
 
+	// No events expected
 	events := getRecordedEvents(testController)
-
-	expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
-	}
+	checkEventCounts(events, []string{})
 }
 
 // TestReconcileServiceInstanceFailureOnFinalRetry verifies that reconciliation
