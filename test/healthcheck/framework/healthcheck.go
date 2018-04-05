@@ -215,7 +215,7 @@ func createInstance() error {
 	}
 
 	if instance == nil {
-		return logError("error creating instance - instance is null")
+		return logErrorf("error creating instance - instance is null", "")
 	}
 
 	glog.V(4).Info("Waiting for ServiceInstance to be ready")
@@ -239,17 +239,17 @@ func createInstance() error {
 	}
 
 	if sc.Spec.ClusterServiceClassRef == nil {
-		return logError("ClusterServiceClassRef should not be null")
+		return logErrorf("ClusterServiceClassRef should not be null", "")
 	}
 	if sc.Spec.ClusterServicePlanRef == nil {
-		return logError("ClusterServicePlanRef should not be null")
+		return logErrorf("ClusterServicePlanRef should not be null", "")
 	}
 
 	if strings.Compare(sc.Spec.ClusterServiceClassRef.Name, serviceclassID) != 0 {
-		return logError("ClusterServiceClassRef.Name should not be null")
+		return logErrorf("ClusterServiceClassRef.Name should not be null", "")
 	}
 	if strings.Compare(sc.Spec.ClusterServicePlanRef.Name, serviceplanID) != 0 {
-		return logError("ClusterServicePlanRef.Name should not be null")
+		return logErrorf("ClusterServicePlanRef.Name should not be null", "")
 	}
 	return nil
 }
@@ -279,7 +279,7 @@ func createBinding() error {
 		return logErrorf("Error creating binding: %v", err.Error())
 	}
 	if binding == nil {
-		return logError("Binding should not be null")
+		return logErrorf("Binding should not be null", "")
 	}
 
 	glog.V(4).Info("Waiting for ServiceBinding to be ready")
@@ -328,7 +328,7 @@ func deprovision() error {
 	glog.V(4).Info("Verifying that the secret was deleted after deleting the binding")
 	_, err = kubeClientSet.CoreV1().Secrets(namespace.Name).Get("my-secret", metav1.GetOptions{})
 	if err == nil {
-		return logError("secret not deleted")
+		return logErrorf("secret not deleted", "")
 	}
 
 	// Deprovisioning the ServiceInstance

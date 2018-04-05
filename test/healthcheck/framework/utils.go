@@ -136,7 +136,3 @@ func logErrorf(msg, param string) error {
 	glog.Error(e)
 	return e
 }
-
-func logError(msg string) error {
-	return logErrorf(msg, "")
-}
