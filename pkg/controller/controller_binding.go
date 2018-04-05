@@ -596,7 +596,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 func (c *controller) updateServiceBindingStatus(originalBinding, toUpdate *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, toUpdate.Namespace, toUpdate.Name)
 	if reflect.DeepEqual(originalBinding, toUpdate) {
-		glog.V(4).Info(pcb.Message("Not updating status, because it wasn't modified"))
+		glog.V(5).Info(pcb.Message("Not updating status, because it wasn't modified"))
 		return toUpdate, nil
 	}
 	glog.V(4).Info(pcb.Message("Updating status"))
@@ -624,7 +624,7 @@ func (c *controller) updateServiceBindingCondition(
 
 	setServiceBindingCondition(binding, conditionType, status, reason, message)
 	if reflect.DeepEqual(originalBinding, binding) {
-		glog.V(4).Info(pcb.Message("Not updating condition, because it wasn't modified"))
+		glog.V(5).Info(pcb.Message("Not updating condition, because it wasn't modified"))
 		return nil
 	}
 	glog.V(4).Info(pcb.Messagef(

@@ -1211,7 +1211,7 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceIn
 func (c *controller) updateServiceInstanceStatus(originalInstance, toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
 	if reflect.DeepEqual(originalInstance, toUpdate) {
-		glog.V(4).Info(pcb.Message("Not updating status, because it wasn't modified"))
+		glog.V(5).Info(pcb.Message("Not updating status, because it wasn't modified"))
 		return toUpdate, nil
 	}
 	glog.V(4).Info(pcb.Message("Updating status"))
@@ -1235,7 +1235,7 @@ func (c *controller) updateServiceInstanceCondition(
 
 	setServiceInstanceCondition(instance, conditionType, status, reason, message)
 	if reflect.DeepEqual(originalInstance, instance) {
-		glog.V(4).Info(pcb.Message("Not updating condition, because it wasn't modified"))
+		glog.V(5).Info(pcb.Message("Not updating condition, because it wasn't modified"))
 		return nil
 	}
 
