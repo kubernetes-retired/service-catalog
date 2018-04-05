@@ -18,11 +18,12 @@ package validation
 
 import (
 	"github.com/ghodss/yaml"
-	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // validateServiceInstanceName is the validation function for Instance names.
@@ -258,9 +259,19 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 // to the spec to go through.
 func internalValidateServiceInstanceUpdateAllowed(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	errors := field.ErrorList{}
-	if old.Generation != new.Generation && old.Status.CurrentOperation != "" {
-		errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
+
+	// If the OriginatingIdentityLocking feature is set then don't allow spec updates
+	// if processing of the current generation hasn't finished yet
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentityLocking) {
+		// TODO nilebox: The condition for locking should not be based on whether
+		// there is an operation in progress. It should be based on whether controller
+		// has finished processing the current generation (i.e. either succeeded, or failed and won't retry).
+		// In other words, check for ObservedGeneration + conditions instead of CurrentOperation
+		if old.Generation != new.Generation && old.Status.CurrentOperation != "" {
+			errors = append(errors, field.Forbidden(field.NewPath("spec"), "Another update for this service instance is in progress"))
+		}
 	}
+
 	planUpdated := old.Spec.ClusterServicePlanExternalName != new.Spec.ClusterServicePlanExternalName
 	planUpdated = planUpdated || old.Spec.ClusterServicePlanExternalID != new.Spec.ClusterServicePlanExternalID
 	planUpdated = planUpdated || old.Spec.ClusterServicePlanName != new.Spec.ClusterServicePlanName
