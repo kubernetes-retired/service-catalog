@@ -36,8 +36,8 @@ func getTestInstance() *servicecatalog.ServiceInstance {
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
 			PlanReference: servicecatalog.PlanReference{
-				ClusterServiceClassExternalName: "test-serviceclass",
-				ClusterServicePlanExternalName:  "test-plan",
+				ClusterServiceClassExternalName: "test-clusterserviceclass",
+				ClusterServicePlanExternalName:  "test-clusterserviceplan",
 			},
 			ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
 			ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
@@ -109,15 +109,15 @@ func TestInstanceUpdate(t *testing.T) {
 				i := getTestInstance()
 				i.Spec.ClusterServiceClassExternalName = ""
 				i.Spec.ClusterServicePlanExternalName = ""
-				i.Spec.ClusterServiceClassExternalID = "test-serviceclass"
-				i.Spec.ClusterServicePlanExternalID = "test-plan"
+				i.Spec.ClusterServiceClassExternalID = "test-clusterserviceclass"
+				i.Spec.ClusterServicePlanExternalID = "test-clusterserviceplan"
 				return i
 			}(),
 			newer: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
 				i.Spec.ClusterServiceClassExternalName = ""
 				i.Spec.ClusterServicePlanExternalName = ""
-				i.Spec.ClusterServiceClassExternalID = "test-serviceclass"
+				i.Spec.ClusterServiceClassExternalID = "test-clusterserviceclass"
 				i.Spec.ClusterServicePlanExternalID = "new plan"
 				return i
 			}(),
@@ -130,15 +130,15 @@ func TestInstanceUpdate(t *testing.T) {
 				i := getTestInstance()
 				i.Spec.ClusterServiceClassExternalName = ""
 				i.Spec.ClusterServicePlanExternalName = ""
-				i.Spec.ClusterServiceClassName = "test-serviceclass"
-				i.Spec.ClusterServicePlanName = "test-plan"
+				i.Spec.ClusterServiceClassName = "test-clusterserviceclass"
+				i.Spec.ClusterServicePlanName = "test-clusterserviceplan"
 				return i
 			}(),
 			newer: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
 				i.Spec.ClusterServiceClassExternalName = ""
 				i.Spec.ClusterServicePlanExternalName = ""
-				i.Spec.ClusterServiceClassName = "test-serviceclass"
+				i.Spec.ClusterServiceClassName = "test-clusterserviceclass"
 				i.Spec.ClusterServicePlanName = "new plan"
 				return i
 			}(),

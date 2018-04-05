@@ -58,7 +58,7 @@ func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "SCGUID"),
+					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "CSCGUID"),
 				}
 
 				expectNumberOfActions(t, name, actions, 1)
@@ -73,7 +73,7 @@ func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "SCGUID"),
+					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "CSCGUID"),
 				}
 
 				expectNumberOfActions(t, name, actions, 2)
@@ -95,7 +95,7 @@ func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "SCGUID"),
+					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "CSCGUID"),
 				}
 
 				expectNumberOfActions(t, name, actions, 2)

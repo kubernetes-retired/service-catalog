@@ -28,10 +28,10 @@ import (
 )
 
 const (
-	clusterServiceClassExternalName = "test-serviceclass"
-	clusterServiceClassExternalID   = "test-serviceclass-ext-id"
-	clusterServicePlanExternalName  = "test-plan"
-	clusterServicePlanExternalID    = "test-plan-ext-id"
+	clusterServiceClassExternalName = "test-clusterserviceclass"
+	clusterServiceClassExternalID   = "test-clusterserviceclass-ext-id"
+	clusterServicePlanExternalName  = "test-clusterserviceplan"
+	clusterServicePlanExternalID    = "test-clusterserviceplan-ext-id"
 	clusterServiceClassName         = "test-k8s-serviceclass"
 	clusterServicePlanName          = "test-k8s-plan-name"
 )

@@ -36,7 +36,7 @@ func validClusterServiceClass() *servicecatalog.ClusterServiceClass {
 				ExternalID:   "1234-4354a-49b",
 				Description:  "service description",
 			},
-			ClusterServiceBrokerName: "test-broker",
+			ClusterServiceBrokerName: "test-clusterservicebroker",
 		},
 	}
 }
@@ -186,7 +186,7 @@ func validServiceClass() *servicecatalog.ServiceClass {
 				ExternalID:   "1234-4354a-49b",
 				Description:  "service description",
 			},
-			ServiceBrokerName: "test-broker",
+			ServiceBrokerName: "test-clusterservicebroker",
 		},
 	}
 }

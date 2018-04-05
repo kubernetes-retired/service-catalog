@@ -37,7 +37,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker - no auth secret",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -53,7 +53,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker - basic auth - secret",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
@@ -77,7 +77,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker - bearer auth - secret",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
@@ -101,7 +101,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - clusterservicebroker with namespace",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "oops",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
@@ -118,7 +118,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - basic auth - secret missing namespace",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
@@ -141,7 +141,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - basic auth - secret missing name",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
@@ -164,7 +164,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - bearer auth - secret missing namespace",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
@@ -187,7 +187,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - bearer auth - secret missing name",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					AuthInfo: &servicecatalog.ClusterServiceBrokerAuthInfo{
@@ -210,7 +210,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - CABundle present with InsecureSkipTLSVerify",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -228,7 +228,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker - InsecureSkipTLSVerify without CABundle",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -245,7 +245,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker - CABundle without InsecureSkipTLSVerify",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -262,7 +262,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - manual behavior with RelistDuration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -278,7 +278,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker - manual behavior without RelistDuration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -294,7 +294,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - duration behavior without duration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -310,7 +310,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - relistBehavior is invalid",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -325,7 +325,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - relistBehavior is empty",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -340,7 +340,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - negative relistRequests value",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -357,7 +357,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker - negative relistDuration value",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -391,7 +391,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker update - equal relistRequests value",
 			newBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -404,7 +404,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			},
 			oldBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -421,7 +421,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "valid clusterservicebroker update - increasing relistRequests value",
 			newBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -434,7 +434,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			},
 			oldBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -451,7 +451,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			name: "invalid clusterservicebroker update - nonincreasing relistRequests value",
 			newBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -464,7 +464,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			},
 			oldBroker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -501,7 +501,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker - no auth secret",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -518,7 +518,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker - basic auth - secret",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -542,7 +542,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker - bearer auth - secret",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -566,7 +566,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - servicebroker without namespace",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
+					Name: "test-clusterservicebroker",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
@@ -582,7 +582,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - basic auth - secret missing name",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -604,7 +604,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - bearer auth - secret missing name",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -626,7 +626,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - CABundle present with InsecureSkipTLSVerify",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -645,7 +645,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker - InsecureSkipTLSVerify without CABundle",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -663,7 +663,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker - CABundle without InsecureSkipTLSVerify",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -681,7 +681,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - manual behavior with RelistDuration",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -698,7 +698,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker - manual behavior without RelistDuration",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -715,7 +715,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - duration behavior without duration",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -732,7 +732,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - relistBehavior is invalid",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -748,7 +748,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - relistBehavior is empty",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -764,7 +764,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - negative relistRequests value",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -782,7 +782,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker - negative relistDuration value",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -817,7 +817,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker update - equal relistRequests value",
 			newBroker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -831,7 +831,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			},
 			oldBroker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -849,7 +849,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "valid servicebroker update - increasing relistRequests value",
 			newBroker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -863,7 +863,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			},
 			oldBroker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -881,7 +881,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			name: "invalid servicebroker update - nonincreasing relistRequests value",
 			newBroker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
@@ -895,7 +895,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			},
 			oldBroker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-broker",
+					Name:      "test-clusterservicebroker",
 					Namespace: "test-ns",
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{

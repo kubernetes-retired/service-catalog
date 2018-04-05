@@ -27,15 +27,15 @@ import (
 func validClusterServicePlan() *servicecatalog.ClusterServicePlan {
 	return &servicecatalog.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-plan",
+			Name: "test-clusterserviceplan",
 		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
-				ExternalName: "test-plan",
+				ExternalName: "test-clusterserviceplan",
 				ExternalID:   "40d-0983-1b89",
 				Description:  "plan description",
 			},
-			ClusterServiceBrokerName: "test-broker",
+			ClusterServiceBrokerName: "test-clusterservicebroker",
 			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: "test-service-class",
 			},
@@ -46,16 +46,16 @@ func validClusterServicePlan() *servicecatalog.ClusterServicePlan {
 func validServicePlan() *servicecatalog.ServicePlan {
 	return &servicecatalog.ServicePlan{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-plan",
+			Name:      "test-clusterserviceplan",
 			Namespace: "test-ns",
 		},
 		Spec: servicecatalog.ServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
-				ExternalName: "test-plan",
+				ExternalName: "test-clusterserviceplan",
 				ExternalID:   "40d-0983-1b89",
 				Description:  "plan description",
 			},
-			ServiceBrokerName: "test-broker",
+			ServiceBrokerName: "test-clusterservicebroker",
 			ServiceClassRef: servicecatalog.LocalObjectReference{
 				Name: "test-service-class",
 			},
@@ -346,7 +346,7 @@ func TestValidateServicePlan(t *testing.T) {
 			servicePlan: func() *servicecatalog.ServicePlan {
 				s := validServicePlan()
 				s.ObjectMeta = metav1.ObjectMeta{
-					Name: "test-plan",
+					Name: "test-clusterserviceplan",
 				}
 				return s
 			}(),
