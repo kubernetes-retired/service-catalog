@@ -66,7 +66,7 @@ We can check the status of the broker:
 $ svcat describe broker ups-broker
   Name:     ups-broker
   URL:      http://ups-broker-ups-broker.ups-broker.svc.cluster.local
-  Status:   Ready - Successfully fetched catalog entries from broker @ 2018-03-02 16:03:52 +0000 UTC
+  Status:   Ready - Successfully fetched cluster catalog entries from broker @ 2018-03-02 16:03:52 +0000 UTC
 
 $ kubectl get clusterservicebrokers ups-broker -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
@@ -88,8 +88,8 @@ spec:
 status:
   conditions:
   - lastTransitionTime: 2017-11-01T14:12:30Z
-    message: Successfully fetched catalog entries from broker.
-    reason: FetchedCatalog
+    message: Successfully fetched cluster catalog entries from broker.
+    reason: FetchedClusterCatalog
     status: "True"
     type: Ready
   reconciledGeneration: 1
