@@ -370,19 +370,19 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
-	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
-		// TODO(#1562): ultimately here we need to use logic similar to what is done to determine the plan ID for
-		// deprovisioning. We need to allow a ServiceBinding to be deleted, with an unbind request sent to the broker,
-		// even if the ServiceInstance has been changed to a non-existent plan.
-		return fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
+	if instance.Spec.ClusterServiceClassRef == nil {
+		return fmt.Errorf("ClusterServiceClass reference for Instance has not been resolved yet")
+	}
+	if instance.Status.ExternalProperties == nil || instance.Status.ExternalProperties.ClusterServicePlanExternalID == "" {
+		return fmt.Errorf("ClusterServicePlanExternalID for Instance has not been set yet")
 	}
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
+	serviceClass, brokerName, brokerClient, err := c.getClusterServiceClassAndClusterServiceBrokerForServiceBinding(instance, binding)
 	if err != nil {
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
 
-	request, err := c.prepareUnbindRequest(binding, instance, serviceClass, servicePlan)
+	request, err := c.prepareUnbindRequest(binding, instance, serviceClass)
 	if err != nil {
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
@@ -1116,14 +1116,14 @@ func (c *controller) prepareBindRequest(
 // prepareUnbindRequest creates an unbind request object to be passed to the
 // broker client to delete the given binding.
 func (c *controller) prepareUnbindRequest(
-	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (
+	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass) (
 	*osb.UnbindRequest, error) {
 
 	request := &osb.UnbindRequest{
 		BindingID:  binding.Spec.ExternalID,
 		InstanceID: instance.Spec.ExternalID,
 		ServiceID:  serviceClass.Spec.ExternalID,
-		PlanID:     servicePlan.Spec.ExternalID,
+		PlanID:     instance.Status.ExternalProperties.ClusterServicePlanExternalID,
 	}
 
 	// Asynchronous binding operations is currently ALPHA and not

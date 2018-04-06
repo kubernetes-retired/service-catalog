@@ -988,89 +988,144 @@ func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 // TestReconcileBindingDelete tests reconcileBinding to ensure a binding
 // deletion works as expected.
 func TestReconcileServiceBindingDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		UnbindReaction: &fakeosb.UnbindReaction{
-			Response: &osb.UnbindResponse{},
+	cases := []struct {
+		name     string
+		instance *v1beta1.ServiceInstance
+		binding  *v1beta1.ServiceBinding
+	}{
+		{
+			name:     "normal binding",
+			instance: getTestServiceInstanceWithRefsAndExternalProperties(),
+			binding: &v1beta1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              testServiceBindingName,
+					Namespace:         testNamespace,
+					DeletionTimestamp: &metav1.Time{},
+					Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+					Generation:        2,
+				},
+				Spec: v1beta1.ServiceBindingSpec{
+					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:         testServiceBindingGUID,
+					SecretName:         testServiceBindingSecretName,
+				},
+				Status: v1beta1.ServiceBindingStatus{
+					ReconciledGeneration: 1,
+					ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
+					UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
+				},
+			},
 		},
-	})
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	binding := &v1beta1.ServiceBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              testServiceBindingName,
-			Namespace:         testNamespace,
-			DeletionTimestamp: &metav1.Time{},
-			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
-			Generation:        2,
-		},
-		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
-		},
-		Status: v1beta1.ServiceBindingStatus{
-			ReconciledGeneration: 1,
-			ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
-			UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
+		{
+			name: "binding with instance pointing to non-existent plan",
+			instance: &v1beta1.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
+				Spec: v1beta1.ServiceInstanceSpec{
+					ExternalID:             testServiceInstanceGUID,
+					ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: testClusterServiceClassGUID},
+					ClusterServicePlanRef:  nil,
+					PlanReference: v1beta1.PlanReference{
+						ClusterServiceClassExternalName: testClusterServiceClassName,
+						ClusterServicePlanExternalName:  testNonExistentClusterServicePlanName,
+					},
+				},
+				Status: v1beta1.ServiceInstanceStatus{
+					ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
+						ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+						ClusterServicePlanExternalName: testClusterServicePlanName,
+					},
+				},
+			},
+			binding: &v1beta1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              testServiceBindingName,
+					Namespace:         testNamespace,
+					DeletionTimestamp: &metav1.Time{},
+					Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+					Generation:        2,
+				},
+				Spec: v1beta1.ServiceBindingSpec{
+					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:         testServiceBindingGUID,
+					SecretName:         testServiceBindingSecretName,
+				},
+				Status: v1beta1.ServiceBindingStatus{
+					ReconciledGeneration: 1,
+					ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
+					UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
+				},
+			},
 		},
 	}
 
-	fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, binding, nil
-	})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				UnbindReaction: &fakeosb.UnbindReaction{
+					Response: &osb.UnbindResponse{},
+				},
+			})
 
-	if err := reconcileServiceBinding(t, testController, binding); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
-	fakeCatalogClient.ClearActions()
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+			sharedInformers.ServiceInstances().Informer().GetStore().Add(tc.instance)
 
-	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
-	fakeKubeClient.ClearActions()
+			binding := tc.binding
+			fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+				return true, binding, nil
+			})
 
-	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
+			if err := reconcileServiceBinding(t, testController, binding); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+			fakeCatalogClient.ClearActions()
 
-	err := reconcileServiceBinding(t, testController, binding)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+			assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
+			fakeKubeClient.ClearActions()
 
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
-	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
-		BindingID:  testServiceBindingGUID,
-		InstanceID: testServiceInstanceGUID,
-		ServiceID:  testClusterServiceClassGUID,
-		PlanID:     testClusterServicePlanGUID,
-	})
+			assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 
-	kubeActions := fakeKubeClient.Actions()
-	// The action should be deleting the secret
-	assertNumberOfActions(t, kubeActions, 1)
-	assertActionEquals(t, kubeActions[0], "delete", "secrets")
+			err := reconcileServiceBinding(t, testController, binding)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
 
-	deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
-	if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
-		t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
-	}
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+			assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+				BindingID:  testServiceBindingGUID,
+				InstanceID: testServiceInstanceGUID,
+				ServiceID:  testClusterServiceClassGUID,
+				PlanID:     testClusterServicePlanGUID,
+			})
 
-	actions := fakeCatalogClient.Actions()
-	// The action should be updating the ready condition
-	assertNumberOfActions(t, actions, 1)
+			kubeActions := fakeKubeClient.Actions()
+			// The action should be deleting the secret
+			assertNumberOfActions(t, kubeActions, 1)
+			assertActionEquals(t, kubeActions[0], "delete", "secrets")
 
-	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
-	assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
-	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+			deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+			if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+				t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
+			}
 
-	events := getRecordedEvents(testController)
+			actions := fakeCatalogClient.Actions()
+			// The action should be updating the ready condition
+			assertNumberOfActions(t, actions, 1)
 
-	expectedEvent := normalEventBuilder(successUnboundReason)
-	if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
+			updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
+			assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+			assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+			events := getRecordedEvents(testController)
+
+			expectedEvent := normalEventBuilder(successUnboundReason)
+			if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
@@ -1279,7 +1334,7 @@ func TestReconcileServiceBindingDeleteFailedServiceBinding(t *testing.T) {
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefsAndExternalProperties())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := getTestServiceBindingWithFailedStatus()
@@ -2773,7 +2828,7 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefsAndExternalProperties())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
@@ -2869,7 +2924,7 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefsAndExternalProperties())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
