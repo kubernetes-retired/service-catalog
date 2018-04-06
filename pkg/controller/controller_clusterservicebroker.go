@@ -52,8 +52,8 @@ const (
 	errorDeletingClusterServicePlanMessage   string = "Error deleting cluster service plan."
 	errorAuthCredentialsReason               string = "ErrorGettingAuthCredentials"
 
-	successFetchedClusterCatalogReason               string = "FetchedClusterCatalog"
-	successFetchedClusterCatalogMessage              string = "Successfully fetched cluster catalog entries from broker."
+	successFetchedClusterCatalogReason        string = "FetchedClusterCatalog"
+	successFetchedClusterCatalogMessage       string = "Successfully fetched cluster catalog entries from broker."
 	successClusterServiceBrokerDeletedReason  string = "DeletedClusterServiceBrokerSuccessfully"
 	successClusterServiceBrokerDeletedMessage string = "The broker %v was deleted successfully."
 
