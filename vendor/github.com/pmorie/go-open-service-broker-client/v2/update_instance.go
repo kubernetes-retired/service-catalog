@@ -15,6 +15,11 @@ type updateInstanceRequestBody struct {
 	PreviousValues *PreviousValues        `json:"previous_values,omitempty"`
 }
 
+type updateInstanceResponseBody struct {
+	DashboardURL *string `json:"dashboard_url"`
+	Operation    *string `json:"operation"`
+}
+
 func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceResponse, error) {
 	if err := validateUpdateInstanceRequest(r); err != nil {
 		return nil, err
@@ -43,11 +48,20 @@ func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceRespon
 	}
 	switch response.StatusCode {
 	case http.StatusOK:
-		if err := c.unmarshalResponse(response, &struct{}{}); err != nil {
+		responseBodyObj := &updateInstanceResponseBody{}
+		if err := c.unmarshalResponse(response, responseBodyObj); err != nil {
 			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
-		return &UpdateInstanceResponse{}, nil
+		userResponse := &UpdateInstanceResponse{
+			Async:        false,
+			OperationKey: nil,
+		}
+		if c.validateAlphaAPIMethodsAllowed() == nil {
+			userResponse.DashboardURL = responseBodyObj.DashboardURL
+		}
+
+		return userResponse, nil
 	case http.StatusAccepted:
 		if !r.AcceptsIncomplete {
 			// If the client did not signify that it could handle asynchronous
@@ -55,7 +69,7 @@ func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceRespon
 			return nil, c.handleFailureResponse(response)
 		}
 
-		responseBodyObj := &asyncSuccessResponseBody{}
+		responseBodyObj := &updateInstanceResponseBody{}
 		if err := c.unmarshalResponse(response, responseBodyObj); err != nil {
 			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
@@ -70,6 +84,9 @@ func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceRespon
 		userResponse := &UpdateInstanceResponse{
 			Async:        true,
 			OperationKey: opPtr,
+		}
+		if c.validateAlphaAPIMethodsAllowed() == nil {
+			userResponse.DashboardURL = responseBodyObj.DashboardURL
 		}
 
 		// TODO: fix op key handling
