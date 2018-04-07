@@ -214,7 +214,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@#
 	$(DOCKER_CMD) go vet $(SC_PKG)/...
 	@echo Running repo-infra verify scripts
-	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -v generated | grep -v .pkg > .out 2>&1 || true
+	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -Fv -e generated -e .pkg -e docsite > .out 2>&1 || true
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
