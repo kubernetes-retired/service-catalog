@@ -72,7 +72,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	if err := s.GenericServerRunOptions.ApplyTo(&genericConfig.Config); err != nil {
 		return nil, nil, err
 	}
-	if err := s.SecureServingOptions.ApplyTo(&genericConfig.Config.SecureServing); err != nil {
+	if err := s.SecureServingOptions.ApplyTo(&genericConfig.Config); err != nil {
 		return nil, nil, err
 	}
 	if !s.DisableAuth && inCluster {
