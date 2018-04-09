@@ -26,10 +26,12 @@ import (
 	"github.com/golang/glog"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/admission"
 	admissionmetrics "k8s.io/apiserver/pkg/admission/metrics"
 	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 	kubeinformers "k8s.io/client-go/informers"
 	kubeclientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -161,12 +163,12 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 }
 
 // buildAdmission constructs the admission chain
+// TODO nilebox: Switch to RecommendedOptions and use method (a *AdmissionOptions) ApplyTo
 func buildAdmission(s *ServiceCatalogServerOptions,
 	client internalclientset.Interface, sharedInformers informers.SharedInformerFactory,
 	kubeClient kubeclientset.Interface, kubeSharedInformers kubeinformers.SharedInformerFactory) (admission.Interface, error) {
 
-	admissionControlPluginNames := s.AdmissionOptions.EnablePlugins
-	// TODO nilebox: check s.AdmissionOptions.DisablePlugins as well
+	admissionControlPluginNames := enabledPluginNames(s.AdmissionOptions)
 	glog.Infof("Admission control plugin names: %v", admissionControlPluginNames)
 	var err error
 
@@ -176,6 +178,26 @@ func buildAdmission(s *ServiceCatalogServerOptions,
 		return nil, fmt.Errorf("failed to read plugin config: %v", err)
 	}
 	return s.AdmissionOptions.Plugins.NewFromPlugins(admissionControlPluginNames, admissionConfigProvider, pluginInitializer, admission.DecoratorFunc(admissionmetrics.WithControllerMetrics))
+}
+
+// enabledPluginNames makes use of RecommendedPluginOrder, DefaultOffPlugins,
+// EnablePlugins, DisablePlugins fields
+// to prepare a list of ordered plugin names that are enabled.
+// TODO nilebox: remove this method once switched to RecommendedOptions
+func enabledPluginNames(a *genericserveroptions.AdmissionOptions) []string {
+	allOffPlugins := append(a.DefaultOffPlugins.List(), a.DisablePlugins...)
+	disabledPlugins := sets.NewString(allOffPlugins...)
+	enabledPlugins := sets.NewString(a.EnablePlugins...)
+	disabledPlugins = disabledPlugins.Difference(enabledPlugins)
+
+	orderedPlugins := []string{}
+	for _, plugin := range a.RecommendedPluginOrder {
+		if !disabledPlugins.Has(plugin) {
+			orderedPlugins = append(orderedPlugins, plugin)
+		}
+	}
+
+	return orderedPlugins
 }
 
 // addPostStartHooks adds the common post start hooks we invoke when using either server storage option.
