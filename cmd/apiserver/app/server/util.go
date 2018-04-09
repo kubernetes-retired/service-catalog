@@ -70,21 +70,21 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	if err := s.GenericServerRunOptions.ApplyTo(&genericConfig.Config); err != nil {
 		return nil, nil, err
 	}
-	if err := s.SecureServingOptions.ApplyTo(&genericConfig.Config); err != nil {
+	if err := s.SecureServingOptions.ApplyTo(&genericConfig.Config.SecureServing); err != nil {
 		return nil, nil, err
 	}
 	if !s.DisableAuth && inCluster {
-		if err := s.AuthenticationOptions.ApplyTo(&genericConfig.Config); err != nil {
+		if err := s.AuthenticationOptions.ApplyTo(&genericConfig.Config.Authentication, genericConfig.Config.SecureServing, genericConfig.Config.OpenAPIConfig); err != nil {
 			return nil, nil, err
 		}
-		if err := s.AuthorizationOptions.ApplyTo(&genericConfig.Config); err != nil {
+		if err := s.AuthorizationOptions.ApplyTo(&genericConfig.Config.Authorization); err != nil {
 			return nil, nil, err
 		}
 	} else {
 		// always warn when auth is disabled, since this should only be used for testing
 		glog.Warning("Authentication and authorization disabled for testing purposes")
-		genericConfig.Authenticator = &authenticator.AnyUserAuthenticator{}
-		genericConfig.Authorizer = authorizerfactory.NewAlwaysAllowAuthorizer()
+		genericConfig.Authentication.Authenticator = &authenticator.AnyUserAuthenticator{}
+		genericConfig.Authorization.Authorizer = authorizerfactory.NewAlwaysAllowAuthorizer()
 	}
 
 	if err := s.AuditOptions.ApplyTo(&genericConfig.Config); err != nil {
@@ -165,7 +165,8 @@ func buildAdmission(s *ServiceCatalogServerOptions,
 	client internalclientset.Interface, sharedInformers informers.SharedInformerFactory,
 	kubeClient kubeclientset.Interface, kubeSharedInformers kubeinformers.SharedInformerFactory) (admission.Interface, error) {
 
-	admissionControlPluginNames := s.AdmissionOptions.PluginNames
+	admissionControlPluginNames := s.AdmissionOptions.EnablePlugins
+	// TODO nilebox: check s.AdmissionOptions.DisablePlugins as well
 	glog.Infof("Admission control plugin names: %v", admissionControlPluginNames)
 	var err error
 
@@ -174,7 +175,7 @@ func buildAdmission(s *ServiceCatalogServerOptions,
 	if err != nil {
 		return nil, fmt.Errorf("failed to read plugin config: %v", err)
 	}
-	return s.AdmissionOptions.Plugins.NewFromPlugins(admissionControlPluginNames, admissionConfigProvider, pluginInitializer, admissionmetrics.WithControllerMetrics)
+	return s.AdmissionOptions.Plugins.NewFromPlugins(admissionControlPluginNames, admissionConfigProvider, pluginInitializer, admission.DecoratorFunc(admissionmetrics.WithControllerMetrics))
 }
 
 // addPostStartHooks adds the common post start hooks we invoke when using either server storage option.
