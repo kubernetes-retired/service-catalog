@@ -389,7 +389,7 @@ status:
   externalProperties:
     clusterServicePlanExternalName: premium-p1
     clusterServicePlanExternalID: "f9a3cc8e-a6e2-474d-b032-9837ea3dfcaa"
-    
+
 ```
 
 #### Service Instance Management
@@ -529,7 +529,7 @@ In the simplest case, there is one broker that provides default plans, the opera
 | Field | Description |
 |-------|-------------|
 | Service Type | Examples: mysql, redis |
-| Provision Parameters | Overrides the default provision parameters defined on the class+plan. |
+| Parameters | Overrides the default provision parameters defined on the class+plan. |
 
 Notes:
 * Merge provision defaults and overrides before sending to the broker.
