@@ -488,6 +488,7 @@ Notes
 |-------|-------------|
 | Service Type | Examples: mysql, redis |
 | annotation: is-default-plan=true | <p>Specifies whether or not a Service Plan is the default for its Service Type.</p> <p>When annotated as the default and a Service Type is set, this plan is used to dynamically provision an instance for that type.</p> |
+| annotation: is-suggested-plan=true | <p>Specifies whether or not a Service Plan is the broker suggested default for its Service Type.</p> <p>When annotated as the default and a Service Type is set, *and no plans with `is-default-plan` are defined, this plan is used to dynamically provision an instance for that type.</p> |
 | <p>Default Provision Parameters</p><p>Default Bind Parameters</p> | <p>Default parameters to supply to the broker during provisioning and binding.</p><p>Overrides the defaults defined on the class.</p>|
 | Default Secret Transform | Default json key mapping to transform a non-standard broker response into something that can be relied upon. See #1868 for implementation details. |
 | Controller Reference|<p>Set by Service Catalog when populating the catalog from a broker list to indicate that it is managed by the controller.</p> <p>When not present, the plan is ignored during a relist. This gives operators a way to define custom plans.</p> |
@@ -498,6 +499,29 @@ Notes:
 * The controller will enforce that only one default is set per service type.
 * When a plan does not define any defaults, the defaults from the class are used. Otherwise the values are merged, with the plan level defaults "winning".
 
+### Default Plan Resolution
+
+1. During a list, brokers provide classes+plans. A broker can suggest a plan as
+   a good default by including a pre-defined tag, such as `SuggestedPlan=true`.
+1. Service catalog looks for that tag during List and populates an annotation,
+   `is-suggested-plan`.
+1. Cluster operators can flag a plan as the default using svcat. This will add a
+   different annotation `is-default-plan`, and Service catalog will handle
+   unsetting the `is-default-plan` annotation on any other plan of the same service
+   type.
+
+When service catalog searches for the default plan it will:
+
+1. List all plans that have that are flagged as suggested or default for that service type.
+1. When more than one plan has `is-default-plan` set, the operation should fail.
+1. When there is one plan with `is-default-plan` set, that plan is used as the default.
+1. Otherwise, when more than one plan has `is-suggested-plan` set, the operation
+    should fail. This happens when multiple brokers exist on the cluster, provide
+    a default plan for a particular service type, and the operator has not picked
+    a default.
+1. When there is on plan with `is-suggested-plan` set, that plan is used as the default.
+
+In the simplest case, there is one broker that provides default plans, the operator does nothing and people can still get a default plan resolved without any extra work. Otherwise, the operator must step in and pick a default (or the user needs to be specific instead of relying on a default).
 
 ### Service Instance
 
@@ -582,21 +606,21 @@ so that people can rely upon using the same one across brokers.
 
 Below is one possible format:
 
-* **{{ service-name }}-database-only**: Represents a database only 
+* **{{ service-name }}-database-only**: Represents a database only
   (requires an existing database server Service Instance).
   Example: mysql-database-only
 * **{{ service-name }}-server-only**: Represents a database management system or server only.
   Example: mysql-server-only
 * **{{ service-name }}-database-and-server**: Represents both a database server and a logical database.
   Example: mysql-database-and-server
-* **{{ service-name }}**: Represents a service where there are not parent-child relationships between service instances. 
+* **{{ service-name }}**: Represents a service where there are not parent-child relationships between service instances.
   Example: redis, rabbitmq
 
 _Parent-child relationships are a new concept in OSB that is still being discussed
-but is already implemented by some brokers, such as Azure._ 
+but is already implemented by some brokers, such as Azure._
 
 #### Suggested Plan
-Optionally have brokers suggest a default plan for a particular service type. 
+Optionally have brokers suggest a default plan for a particular service type.
 During a list, the broker can include a tag using a pre-defined format, for example
 `SuggestedPlan=true`. Service Catalog would scan the tags for suggested plans,
 and flag them when found.
