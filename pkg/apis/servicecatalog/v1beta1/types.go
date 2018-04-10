@@ -1263,9 +1263,14 @@ type ClusterObjectReference struct {
 // Catalog transform the Secret, the following SecretTransform must
 // be specified in ServiceBinding.spec.secretTransform:
 // - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}}
+// Only one of the SecretTransform's members may be specified.
 type SecretTransform struct {
-	RenameKey   *RenameKeyTransform   `json:"renameKey,omitempty"`
-	AddKey      *AddKeyTransform      `json:"addKey,omitempty"`
+	// RenameKey represents a transform that renames a credentials Secret entry's key
+	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
+	// AddKey represents a transform that adds an additional key to the credentials Secret
+	AddKey *AddKeyTransform `json:"addKey,omitempty"`
+	// AddKeysFrom represents a transform that merges all the entries of an existing Secret
+	// into the credentials Secret
 	AddKeysFrom *AddKeysFromTransform `json:"addKeysFrom,omitempty"`
 }
 
@@ -1279,8 +1284,10 @@ type SecretTransform struct {
 // the following entry will appear in the Secret:
 //     "DB_USER": "johndoe"
 type RenameKeyTransform struct {
+	// The name of the key to rename
 	From string `json:"from"`
-	To   string `json:"to"`
+	// The new name for the key
+	To string `json:"to"`
 }
 
 // AddKeyTransform specifies that Service Catalog should add an
@@ -1293,8 +1300,12 @@ type RenameKeyTransform struct {
 // (non-secret) values. To add sensitive information, the
 // AddKeysFromTransform should be used instead.
 type AddKeyTransform struct {
-	Key         string  `json:"key"`
-	Value       []byte  `json:"value"`
+	// The name of the key to add
+	Key string `json:"key"`
+	// The binary value (possibly non-string) to add to the Secret under the specified key. If both
+	// value and stringValue are specified, then value is ignored and stringValue is stored.
+	Value []byte `json:"value"`
+	// The string (non-binary) value to add to the Secret under the specified key.
 	StringValue *string `json:"stringValue"`
 }
 
@@ -1305,5 +1316,6 @@ type AddKeyTransform struct {
 // the entries of the Secret "bar" from Namespace "foo" will be merged into
 // the credentials Secret.
 type AddKeysFromTransform struct {
+	// The reference to the Secret that should be merged into the credentials Secret.
 	SecretRef *ObjectReference `json:"secretRef,omitempty"`
 }
