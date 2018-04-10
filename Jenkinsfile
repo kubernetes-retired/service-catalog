@@ -138,6 +138,7 @@ node {
       }
     } catch (Exception e) {
       echo 'Run failed.'
+      print e
       currentBuild.result = 'FAILURE'
     } finally {
       archiveArtifacts artifacts: 'walkthrough*.txt', fingerprint: true
