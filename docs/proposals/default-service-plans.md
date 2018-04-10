@@ -874,7 +874,7 @@ users to provision specifying only the service type.
 * Output the service type in `svcat get` and `svcat describe`.
 * Indicate default service plans in `svcat get` with an `*` after the service type, e.g. `redis*`.
 * Add a default: true/false field to `svcat describe` for service plans.
-* Resolve the default when during service instance reconciliation when no plan is specified.
+* Resolve the default during service instance reconciliation when no plan is specified.
 * Support `svcat set plan --default`.
 
 Details:
