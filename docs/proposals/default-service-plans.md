@@ -17,6 +17,7 @@
       * [Service Class Discovery](#service-class-discovery)
       * [Legacy Provisioning](#legacy-provisioning)
       * [Provisioning with Defaults](#provisioning-with-defaults)
+      * [Binding with Defaults](#binding-with-defaults)
       * [Provisioning by Service Type](#provisioning-by-service-type)
       * [Service Instance Management](#service-instance-management)
       * [Service Binding Management](#service-binding-management)
@@ -351,6 +352,77 @@ spec:
 ```
 
 
+#### Binding with Defaults
+
+Create a service binding. Individual parameters may be set on the binding to override a class+plan default. Any unspecified parameters are defaulted using the values defined on the class+plan.
+
+
+```console
+$ svcat bind mydb --name mydb-admin --param user=admin
+```
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceBinding
+metadata:
+  name: mydb-admin
+spec:
+  instanceRef:
+    name: mydb
+  parameters:
+    user: admin
+```
+
+
+The requested service binding is combined with the defaults defined on the class+plan:
+
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceClass
+metadata:
+  name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
+spec:
+  externalName: azure-mysql
+  # spec truncated for clarity
+  # No binding defaults defined, so the defaults on the plan are used
+---
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServicePlan
+metadata:
+  name: "427559f1-bf2a-45d3-8844-32374a3e58aa"
+spec:
+  clusterServiceClassRef:
+    name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
+  externalName: basic50
+  # spec truncated for clarity
+  defaultBindingParameters:
+    user: reader
+  defaultSecretTransform:
+  - renameKey:
+      from: db-name
+      to: database
+```
+
+
+Yielding a final service binding. From this point forward, the binding manages its spec independently of the defaults on the class+plan, just as Service Catalog works today.
+
+
+```yaml
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceBinding
+metadata:
+  name: mydb-admin
+spec:
+  instanceRef:
+    name: mydb
+  parameters:
+    user: admin
+  secretTransform:
+  - renameKey:
+      from: db-name
+      to: database
+```
 
 #### Provisioning by Service Type
 
@@ -489,6 +561,9 @@ $ svcat describe binding mydb-admin
 
 Parameters:
   user: admin
+
+Secret Transform:
+  db-name -> database
 ```
 
 ### Helm Charts
@@ -754,7 +829,7 @@ resources.
 
 Details:
 * [Provisioning with Default Parameters](#provisioning-with-defaults)
-* Binding with Default Parameters
+* [Binding with Default Parameters](#binding-with-defaults)
 * [Modify existing defaults](#modify-existing-defaults)
 * [Service Instance Management](#service-instance-management)
 * [Service Binding Management](#service-binding-management)
@@ -771,7 +846,7 @@ resources.
 * Support `svcat set class|plan --secret-transform`.
 
 Details:
-* Binding with Default Secret Transformations
+* [Binding with Default Secret Transforms](#binding-with-defaults)
 * [Modify existing defaults](#modify-existing-defaults)
 
 ### User-Defined Plans
