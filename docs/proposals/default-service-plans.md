@@ -6,33 +6,43 @@
 * [Goals and Non-Goals](#goals-and-non-goals)
 * [Storage Classes vs. Service Classes](#storage-classes-vs-service-classes)
 * [User Experience](#user-experience)
- * [Cluster Operator](#cluster-operator)
-    * [Broker Installation](#broker-installation)
-    * [Cluster Customization](#cluster-customization)
-       * [Define a new set of defaults](#define-a-new-set-of-defaults)
-       * [Override the broker defaults](#override-the-broker-defaults)
-       * [Select a default plan for a service type](#select-a-default-plan-for-a-service-type)
- * [Developer](#developer)
-    * [Service Class Discovery](#service-class-discovery)
-    * [Legacy Provisioning](#legacy-provisioning)
-    * [Provisioning with Defaults](#provisioning-with-defaults)
-    * [Provisioning by Service Type](#provisioning-by-service-type)
-    * [Service Instance Management](#service-instance-management)
- * [Helm Charts](#helm-charts)
-    * [Author](#author)
-    * [Consumer](#consumer)
+   * [Cluster Operator](#cluster-operator)
+      * [Broker Installation](#broker-installation)
+      * [Cluster Customization](#cluster-customization)
+         * [Modify existing defaults](#modify-existing-defaults)
+         * [Define a new set of defaults](#define-a-new-set-of-defaults)
+         * [Override the broker defaults](#override-the-broker-defaults)
+         * [Select a default plan for a service type](#select-a-default-plan-for-a-service-type)
+   * [Developer](#developer)
+      * [Service Class Discovery](#service-class-discovery)
+      * [Legacy Provisioning](#legacy-provisioning)
+      * [Provisioning with Defaults](#provisioning-with-defaults)
+      * [Provisioning by Service Type](#provisioning-by-service-type)
+      * [Service Instance Management](#service-instance-management)
+      * [Service Binding Management](#service-binding-management)
+   * [Helm Charts](#helm-charts)
+      * [Author](#author)
+      * [Consumer](#consumer)
 * [Implementation](#implementation)
-  * [Service Class](#service-class)
-  * [Service Plan](#service-plan)
-  * [Service Instance](#service-instance)
-  * [Service Binding](#service-binding)
-  * [OSB Compatibility](#osb-compatibility)
-    * [Plan Tags](#plan-tags)
-    * [Service Types](#service-types)
-    * [Suggested Plan](#suggested-plan)
-    * [Parameter Defaults](#parameter-defaults)
-    * [Schemas](#schemas)
-    * [Plan Attributes](#plan-attributes)
+   * [Service Class](#service-class)
+   * [Service Plan](#service-plan)
+   * [Default Plan Resolution](#default-plan-resolution)
+   * [Service Instance](#service-instance)
+   * [Service Binding](#service-binding)
+   * [OSB Compatibility](#osb-compatibility)
+      * [Plan Tags](#plan-tags)
+      * [Service Types](#service-types)
+      * [Suggested Plan](#suggested-plan)
+      * [Parameter Defaults](#parameter-defaults)
+      * [Schemas](#schemas)
+      * [Plan Attributes](#plan-attributes)
+* [Milestones](#milestones)
+   * [Default Parameters](#default-parameters)
+   * [Default Secret Transform](#default-secret-transform)
+   * [User-Defined Plans](#user-defined-plans)
+   * [Default Plans by Service Type](#default-plans-by-service-type)
+   * [Suggested Parameters](#suggested-parameters)
+   * [Suggested Plans](#suggested-plans)
 
 ## Abstract
 
@@ -141,14 +151,26 @@ Otherwise, the broker can provide additional manifests, or a helm chart, to incl
 
 The cluster operator can define a new class or plan, and provide a different set of defaults than what was included by the broker. The key details such as the broker, class and plan remain the same.
 
+##### Modify existing defaults
+
+```console
+$ svcat set class NAME [--provision-params] [--bind-params] [--secret-transform]
+
+$ svcat set plan NAME [--provision-params] [--bind-params] [--secret-transform] [--default]
+```
+
+This updates the existing resources with the specified changes.
+
+NOTE: Once the broker starts providing defaults, if a cluster operator patches a service class/plan
+to set defaults, their changes will be overwritten at the next relist.
+Ideally svcat would warn about that when we finally get to that state.
+
 ##### Define a new set of defaults
 
 ```console
-$ svcat create class NAME --from EXISTING_NAME \
-    [--type] [--provision-params] [--bind-params] [--secret-transform]
+$ svcat create class NAME --from EXISTING_NAME [--type] [--provision-params] [--bind-params] [--secret-transform]
 
-$ svcat create plan NAME --from EXISTING_NAME \
-    [--type] [--provision-params] [--bind-params] [--secret-transform]
+$ svcat create plan NAME --from EXISTING_NAME [--type] [--provision-params] [--bind-params] [--secret-transform] [--default]
 ```
 
 1.  Copies an existing resource definition.
@@ -166,7 +188,7 @@ $ svcat create plan NAME --from EXISTING_NAME \
 ##### Select a default plan for a service type
 
 ```console
-$ svcat set-default plan NAME
+$ svcat set plan NAME --default
 OLD_NAME is no longer the default plan for TYPE
 NAME is the default plan for TYPE
 ```
@@ -186,19 +208,55 @@ Defaults are indicated with `*` after the type.
 $ svcat get classes
 	TYPE     	NAME           	DESCRIPTION          	SCOPE
 +------------+------------------+---------------------+-----------+
-  redis        azure-redis        Azure Redis       	broker (osba)
-  postgres     azure-postgresql   Azure PostgreSQL  	broker (osba)
+  postgres     postgres-dev       Dev DB   	           ns (dev)
+
+$ svcat describe class postgres-dev
+  Name: postgres-dev
+  Scope: namespace
+  Namespace: dev
+  ...
+
+$ svcat get classes --namespace qa
+	TYPE     	NAME           	DESCRIPTION          	SCOPE
++------------+------------------+---------------------+-----------+
+  postgres     postgres-qa        QA DB   	           ns (qa)
+
+$ svcat get classes --cluster
+	TYPE     	NAME           	DESCRIPTION          	SCOPE
++------------+------------------+---------------------+-----------+
+  redis        azure-redis        Azure Redis       	broker (azure)
+  postgres     azure-postgresql   Azure PostgreSQL  	broker (azure)
   postgres     postgres-dev       Dev DB   	           cluster
+
+$ svcat describe class postgres-dev --cluster
+  Name: postgres-dev
+  Scope: cluster
+  ...
+
+$ svcat describe class azure-postgresql --cluster
+  Name: azure-postgresql
+  Scope: broker
+  Broker: azure
+  ...
+
+$ svcat get classes --cluster --all-namespaces
+	TYPE     	NAME           	DESCRIPTION          	SCOPE
++------------+------------------+---------------------+-----------+
+  redis        azure-redis        Azure Redis       	broker (azure)
+  postgres     azure-postgresql   Azure PostgreSQL  	broker (azure)
+  postgres     postgres-dev       Dev DB   	           cluster
+  postgres     postgres-dev       Dev DB   	           ns (dev)
+  postgres     postgres-qa        QA DB   	           ns (qa)
 
 $ svcat get classes --type redis
 	TYPE     	NAME           	DESCRIPTION          	SCOPE
 +------------+------------------+---------------------+-----------+
-  redis        azure-redis    	 Azure Redis       	broker (osba)
+  redis        azure-redis    	 Azure Redis       	broker (azure)
 
 $ svcat get plans --default
-	TYPE     	NAME     CLASS DESCRIPTION          	SCOPE
+	TYPE  NAME     CLASS DESCRIPTION          	SCOPE
 +------------+--------+--------------+---------------+-----------+
-  redis*     basic    azure-redis    Azure Redis     broker (osba)
+  redis*     basic    azure-redis    Azure Redis     broker (azure)
   postgres*  tiny     postgres-dev   Tiny Dev DB   	cluster
 ```
 
@@ -260,7 +318,7 @@ metadata:
     servicecatalog.kubernetes.io/is-default-plan: true
 spec:
   serviceType: mysql
-  clusterServiceBrokerName: osba
+  clusterServiceBrokerName: azure
   clusterServiceClassRef:
     name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
   description: Basic Tier, 50 DTUs.
@@ -327,7 +385,7 @@ metadata:
     servicecatalog.kubernetes.io/is-default-plan: true
 spec:
   serviceType: mysql
-  clusterServiceBrokerName: osba
+  clusterServiceBrokerName: azure
   clusterServiceClassRef:
     name: "997b8372-8dac-40ac-ae65-758b4a5075a5"
   description: "PremiumP1 Tier, 125 DTUs, 500GB, 35 days point-in-time restore"
@@ -394,6 +452,7 @@ status:
 
 #### Service Instance Management
 
+The service type and final set of parameters should be displayed when viewing a service instance.
 
 ```console
 $ svcat describe instance mydb
@@ -413,6 +472,23 @@ Parameters:
   - name: "AllowAll"
     startIPAddress: "0.0.0.0"
     endIPAddress: "255.255.255.255"
+```
+
+#### Service Binding Management
+
+The service type and final set of parameters should be displayed when viewing a service binding.
+
+```console
+$ svcat describe binding mydb-admin
+  Name:    	mydb-admin
+  Namespace:    default
+  Status:  	Ready - The binding was injected successfully @
+                2017-11-30 13:11:49 -0600 CST
+  Type:    	mysql
+  Instance: mydb
+
+Parameters:
+  user: admin
 ```
 
 ### Helm Charts
@@ -655,3 +731,98 @@ Examples:
 Again, while not strictly necessary, it would be useful. Right now an operator
 usually ends up going to the broker's website to look up the attributes of a plan
 and this would save us all a lot of time.
+
+## Milestones
+This breaks down the proposed changes into smaller chunks of useful work:
+
+### Default Parameters
+An operator can define default parameters for classes and plans either
+by installing Helm charts before installing the broker, or by editing existing
+resources.
+
+* Add default provisioning parameters field to service classes and plans.
+* Add default binding parameters field to classes and plans.
+* Merge the instance's parameters with the class+plan defaults
+  during service instance reconciliation.
+* Merge the binding's parameters with the class+plan defaults
+  during service binding reconciliation.
+* Output default parameters in `svcat describe` for classes and plans.
+* Make sure that the controller doesn't completely overwrite class and plan resources
+  during a relist so that defaults applied out-of-band are not lost. This may not
+  require any changes, but we should check.
+* Support `svcat set class|plan --provision-params --bind-params`.
+
+Details:
+* [Provisioning with Default Parameters](#provisioning-with-defaults)
+* Binding with Default Parameters
+* [Modify existing defaults](#modify-existing-defaults)
+* [Service Instance Management](#service-instance-management)
+* [Service Binding Management](#service-binding-management)
+
+### Default Secret Transform
+An operator can define default secret transformations for classes and plans either
+by installing Helm charts before installing the broker, or by patching existing
+resources.
+
+* Add default secret transformation field to service classes and plans.
+* Merge the bindings's secret transformation with the class+plan defaults during
+  service binding reconciliation.
+* Output default secret transforms in `svcat describe` for classes and plans.
+* Support `svcat set class|plan --secret-transform`.
+
+Details:
+* Binding with Default Secret Transformations
+* [Modify existing defaults](#modify-existing-defaults)
+
+### User-Defined Plans
+An operator can create custom service classes and plans based on an existing resource.
+
+* Set a controller reference on broker-managed service classes and plans during relist.
+* Only reconcile service classes or plans that have a controller reference to avoid
+  overwriting or deleting user-defined resources.
+* Output a scope column in `svcat get` for classes and plans that indicates the
+  origin+scope of the resource. For example: `broker (azure)`, `cluster`, `ns (dev)`.
+* Output a scope and either a broker or namespace field in `svcat describe` for classes
+  and plans.
+* Support `svcat create` for classes and plans.
+
+Details:
+* [Create a New Class or Plan](#define-a-new-set-of-defaults)
+* [Override a Class or Plan](#override-the-broker-defaults)
+* [Service Class Discovery](#service-class-discovery)
+
+### Default Plans by Service Type
+An operator can mark a plan as the default for a particular service type, allowing
+users to provision specifying only the service type.
+
+* Add the ServiceType field to service classes, plans, instances and bindings.
+* Output the service type in `svcat get` and `svcat describe`.
+* Indicate default service plans in `svcat get` with an `*` after the service type, e.g. `redis*`.
+* Add a default: true/false field to `svcat describe` for service plans.
+* Resolve the default when during service instance reconciliation when no plan is specified.
+* Support `svcat set plan --default`.
+
+Details:
+* [Modify existing defaults](#modify-existing-defaults)
+* [Provisioning by Service Type](#provisioning-by-service-type)
+* [Default Plan Resolution](#default-plan-resolution)
+
+### Suggested Parameters
+Brokers can provide a set of suggested parameters that can be used by the platform to provision or
+bind when no parameters are specified. The service class and plan default provision
+and bind parameters are set during relist automatically when present.
+
+Details are TBD based on the open questions in [Default Parameters](#default-parameters).
+
+### Suggested Plans
+Brokers can indicate that a plan is the suggested default plan for a service type.
+
+* Parse tags and mark the plan as suggested during relist.
+* Parse tags and populate service type on classes and plans during relist.
+* Default plan resolution falls back to suggested plans when no default plans are set.
+* Indicate suggested service plans in `svcat get` with an `*` after the service type
+  when no default for that type is set.
+
+Details:
+* [Default Plan Resolution](#default-plan-resolution)
+* [Service Class Discovery](#service-class-discovery)
