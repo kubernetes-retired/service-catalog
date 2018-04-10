@@ -43,6 +43,7 @@ import (
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
 	"github.com/kubernetes-incubator/service-catalog/pkg/openapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
+	"k8s.io/apiserver/pkg/admission/initializer"
 )
 
 // serviceCatalogConfig is a placeholder for configuration
@@ -150,7 +151,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 
 		// TODO: we need upstream to package AlwaysAdmit, or stop defaulting to it!
 		// NOTE: right now, we only run admission controllers when on kube cluster.
-		genericConfig.AdmissionControl, err = buildAdmission(s, client, sharedInformers, kubeClient, kubeSharedInformers)
+		genericConfig.AdmissionControl, err = buildAdmission(genericConfig, s, client, sharedInformers, kubeClient, kubeSharedInformers)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to initialize admission: %v", err)
 		}
@@ -164,20 +165,25 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 
 // buildAdmission constructs the admission chain
 // TODO nilebox: Switch to RecommendedOptions and use method (a *AdmissionOptions) ApplyTo
-func buildAdmission(s *ServiceCatalogServerOptions,
+func buildAdmission(c *genericapiserver.RecommendedConfig, s *ServiceCatalogServerOptions,
 	client internalclientset.Interface, sharedInformers informers.SharedInformerFactory,
 	kubeClient kubeclientset.Interface, kubeSharedInformers kubeinformers.SharedInformerFactory) (admission.Interface, error) {
 
-	admissionControlPluginNames := enabledPluginNames(s.AdmissionOptions)
-	glog.Infof("Admission control plugin names: %v", admissionControlPluginNames)
-	var err error
+	pluginNames := enabledPluginNames(s.AdmissionOptions)
+	glog.Infof("Admission control plugin names: %v", pluginNames)
 
-	pluginInitializer := scadmission.NewPluginInitializer(client, sharedInformers, kubeClient, kubeSharedInformers)
-	admissionConfigProvider, err := admission.ReadAdmissionConfiguration(admissionControlPluginNames, s.AdmissionOptions.ConfigFile, api.Scheme)
+	genericInitializer := initializer.New(kubeClient, kubeSharedInformers, c.Authorization.Authorizer, api.Scheme)
+	scPluginInitializer := scadmission.NewPluginInitializer(client, sharedInformers, kubeClient, kubeSharedInformers)
+	initializersChain := admission.PluginInitializers{
+		scPluginInitializer,
+		genericInitializer,
+	}
+
+	pluginsConfigProvider, err := admission.ReadAdmissionConfiguration(pluginNames, s.AdmissionOptions.ConfigFile, api.Scheme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read plugin config: %v", err)
 	}
-	return s.AdmissionOptions.Plugins.NewFromPlugins(admissionControlPluginNames, admissionConfigProvider, pluginInitializer, admission.DecoratorFunc(admissionmetrics.WithControllerMetrics))
+	return s.AdmissionOptions.Plugins.NewFromPlugins(pluginNames, pluginsConfigProvider, initializersChain, admission.DecoratorFunc(admissionmetrics.WithControllerMetrics))
 }
 
 // enabledPluginNames makes use of RecommendedPluginOrder, DefaultOffPlugins,
