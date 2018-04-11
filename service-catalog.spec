@@ -53,6 +53,7 @@
 Name:           %{package_name}
 Version:        %{version}
 Release:        %{release}%{?dist}
+Epoch:          1
 Summary:        Consume services in Kubernetes using the Open Service Broker API
 License:        ASL 2.0
 URL:            https://%{import_path}
