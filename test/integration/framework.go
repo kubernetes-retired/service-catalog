@@ -130,7 +130,7 @@ func withConfigGetFreshApiserverAndClient(
 		t.Fatalf("%v", err)
 	}
 
-	config := &restclient.Config{}
+	config := &restclient.Config{QPS: 50, Burst: 100}
 	config.Host = secureAddr
 	config.Insecure = true
 	config.CertFile = secureServingOptions.ServerCert.CertKey.CertFile
