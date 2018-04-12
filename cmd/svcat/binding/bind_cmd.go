@@ -29,6 +29,7 @@ type bindCmd struct {
 	*command.Namespaced
 	instanceName string
 	bindingName  string
+	externalID   string
 	secretName   string
 	rawParams    []string
 	jsonParams   string
@@ -67,6 +68,9 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"",
 		"",
 		"The name of the binding. Defaults to the name of the instance.",
+	)
+	cmd.Flags().StringVar(&bindCmd.externalID, "external-id", "",
+		"The external ID for the binding for use with OSB API (Optional)",
 	)
 	cmd.Flags().StringVarP(
 		&bindCmd.secretName,
@@ -121,7 +125,7 @@ func (c *bindCmd) Run() error {
 }
 
 func (c *bindCmd) bind() error {
-	binding, err := c.App.Bind(c.Namespace, c.bindingName, c.instanceName, c.secretName, c.params, c.secrets)
+	binding, err := c.App.Bind(c.Namespace, c.bindingName, c.externalID, c.instanceName, c.secretName, c.params, c.secrets)
 	if err != nil {
 		return err
 	}

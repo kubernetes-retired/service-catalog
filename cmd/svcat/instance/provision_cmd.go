@@ -28,6 +28,7 @@ import (
 type provisonCmd struct {
 	*command.Namespaced
 	instanceName string
+	externalID   string
 	className    string
 	planName     string
 	rawParams    []string
@@ -67,6 +68,8 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(provisionCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), false)
+	cmd.Flags().StringVar(&provisionCmd.externalID, "external-id", "",
+		"The external ID of the instance for use with the OSB SB API (Optional)")
 	cmd.Flags().StringVar(&provisionCmd.className, "class", "",
 		"The class name (Required)")
 	cmd.MarkFlagRequired("class")
@@ -119,7 +122,7 @@ func (c *provisonCmd) Run() error {
 }
 
 func (c *provisonCmd) Provision() error {
-	instance, err := c.App.Provision(c.Namespace, c.instanceName, c.className, c.planName, c.params, c.secrets)
+	instance, err := c.App.Provision(c.Namespace, c.instanceName, c.externalID, c.className, c.planName, c.params, c.secrets)
 	if err != nil {
 		return err
 	}

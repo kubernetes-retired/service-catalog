@@ -7,6 +7,8 @@ tree:
     application to connect to the instance
   command: ./svcat bind
   flags:
+  - name: external-id
+    desc: The external ID for the binding for use with OSB API (Optional)
   - name: name
     desc: The name of the binding. Defaults to the name of the instance.
   - name: param
@@ -158,6 +160,8 @@ tree:
   flags:
   - name: class
     desc: The class name (Required)
+  - name: external-id
+    desc: The external ID of the instance for use with the OSB SB API (Optional)
   - name: param
     shorthand: p
     desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE.

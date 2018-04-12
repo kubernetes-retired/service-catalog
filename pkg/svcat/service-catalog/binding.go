@@ -65,7 +65,7 @@ func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 }
 
 // Bind an instance to a secret.
-func (sdk *SDK) Bind(namespace, bindingName, instanceName, secretName string,
+func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretName string,
 	params interface{}, secrets map[string]string) (*v1beta1.ServiceBinding, error) {
 
 	// Manually defaulting the name of the binding
@@ -87,6 +87,10 @@ func (sdk *SDK) Bind(namespace, bindingName, instanceName, secretName string,
 			Parameters:     BuildParameters(params),
 			ParametersFrom: BuildParametersFrom(secrets),
 		},
+	}
+
+	if externalID != "" {
+		request.Spec.ExternalID = externalID
 	}
 
 	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(request)

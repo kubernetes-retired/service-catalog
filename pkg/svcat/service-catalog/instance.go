@@ -142,7 +142,7 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 }
 
 // Provision creates an instance of a service class and plan.
-func (sdk *SDK) Provision(namespace, instanceName, className, planName string,
+func (sdk *SDK) Provision(namespace, instanceName, externalID, className, planName string,
 	params interface{}, secrets map[string]string) (*v1beta1.ServiceInstance, error) {
 
 	request := &v1beta1.ServiceInstance{
@@ -158,6 +158,10 @@ func (sdk *SDK) Provision(namespace, instanceName, className, planName string,
 			Parameters:     BuildParameters(params),
 			ParametersFrom: BuildParametersFrom(secrets),
 		},
+	}
+
+	if externalID != "" {
+		request.Spec.ExternalID = externalID
 	}
 
 	result, err := sdk.ServiceCatalog().ServiceInstances(namespace).Create(request)
