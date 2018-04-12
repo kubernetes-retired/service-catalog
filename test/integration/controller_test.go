@@ -1255,11 +1255,11 @@ type controllerTest struct {
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingBrokerSuccess bool
-	// true if the verification that the broker was created and reconciled
+	// true if the verification that the instance was created and reconciled
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingInstanceSuccess bool
-	// true if the verification that the broker was created and reconciled
+	// true if the verification that the binding was created and reconciled
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingBindingSuccess bool
