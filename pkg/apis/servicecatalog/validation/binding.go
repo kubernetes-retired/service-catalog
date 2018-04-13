@@ -18,10 +18,11 @@ package validation
 
 import (
 	"github.com/ghodss/yaml"
+	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // validateServiceBindingName is the validation function for ServiceBinding names.
@@ -219,9 +220,15 @@ func validateServiceBindingUpdate(binding *sc.ServiceBinding) field.ErrorList {
 // to the spec to go through.
 func internalValidateServiceBindingUpdateAllowed(new *sc.ServiceBinding, old *sc.ServiceBinding) field.ErrorList {
 	errors := field.ErrorList{}
-	if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
-		errors = append(errors, field.Forbidden(field.NewPath("spec"), "another change to the spec is in progress"))
+
+	// If the OriginatingIdentityLocking feature is set then don't allow spec updates
+	// if processing of the current generation hasn't finished yet
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentityLocking) {
+		if old.Generation != new.Generation && old.Status.ReconciledGeneration != old.Generation {
+			errors = append(errors, field.Forbidden(field.NewPath("spec"), "another change to the spec is in progress"))
+		}
 	}
+
 	return errors
 }
 

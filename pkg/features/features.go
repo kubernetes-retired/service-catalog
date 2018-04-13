@@ -64,6 +64,12 @@ const (
 	// owner: @jberkhahn
 	// alpha: v0.1.13
 	UpdateDashboardURL utilfeature.Feature = "UpdateDashboardURL"
+
+	// OriginatingIdentityLocking controls whether we lock OSB API resources
+	// for updating while we are still processing the current spec.
+	// owner: @nilebox
+	// alpha: v0.1.14
+	OriginatingIdentityLocking utilfeature.Feature = "OriginatingIdentityLocking"
 )
 
 func init() {
@@ -74,10 +80,11 @@ func init() {
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout service catalog binaries.
 var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.FeatureSpec{
-	PodPreset:               {Default: false, PreRelease: utilfeature.Alpha},
-	OriginatingIdentity:     {Default: false, PreRelease: utilfeature.Alpha},
-	AsyncBindingOperations:  {Default: false, PreRelease: utilfeature.Alpha},
-	NamespacedServiceBroker: {Default: false, PreRelease: utilfeature.Alpha},
-	ResponseSchema:          {Default: false, PreRelease: utilfeature.Alpha},
-	UpdateDashboardURL:      {Default: false, PreRelease: utilfeature.Alpha},
+	PodPreset:                  {Default: false, PreRelease: utilfeature.Alpha},
+	OriginatingIdentity:        {Default: false, PreRelease: utilfeature.Alpha},
+	AsyncBindingOperations:     {Default: false, PreRelease: utilfeature.Alpha},
+	NamespacedServiceBroker:    {Default: false, PreRelease: utilfeature.Alpha},
+	ResponseSchema:             {Default: false, PreRelease: utilfeature.Alpha},
+	UpdateDashboardURL:         {Default: false, PreRelease: utilfeature.Alpha},
+	OriginatingIdentityLocking: {Default: true, PreRelease: utilfeature.Alpha},
 }
