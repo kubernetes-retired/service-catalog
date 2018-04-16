@@ -54,13 +54,9 @@ func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {
 			Response: getTestLargeCatalogResponse(),
 		}
 
-		err := util.WaitForClusterServiceClassToExist(ct.client, uuid)
-		if err != nil {
-			t.Fatalf("error waiting for ClusterServiceClass to exist: %v", err)
-		}
-		t.Log("class added")
+		time.Sleep(time.Millisecond * 300)
 
-		err = util.WaitForClusterServiceClassToNotExist(ct.client, uuid)
+		err := util.WaitForClusterServiceClassToNotExist(ct.client, uuid)
 		if err != nil {
 			t.Fatalf("error waiting for remove ClusterServiceClass to not exist: %v", err)
 		}
