@@ -17,11 +17,18 @@ limitations under the License.
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
+	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
+
+type instance struct {
+	Kind                    string `json:"kind"`
+	v1beta1.ServiceInstance `json:",inline"`
+}
 
 func getInstanceStatusCondition(status v1beta1.ServiceInstanceStatus) v1beta1.ServiceInstanceCondition {
 	if len(status.Conditions) > 0 {
@@ -40,8 +47,7 @@ func getInstanceStatusShort(status v1beta1.ServiceInstanceStatus) string {
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
 }
 
-// WriteInstanceList prints a list of instances.
-func WriteInstanceList(w io.Writer, instances ...v1beta1.ServiceInstance) {
+func writeInstanceListTable(w io.Writer, instances []v1beta1.ServiceInstance) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -62,6 +68,57 @@ func WriteInstanceList(w io.Writer, instances ...v1beta1.ServiceInstance) {
 	}
 
 	t.Render()
+}
+
+func writeInstanceListJSON(w io.Writer, instances []v1beta1.ServiceInstance) {
+	p := v1beta1.ServiceInstanceList{
+		Items: instances,
+	}
+	j, _ := json.MarshalIndent(p, "", "   ")
+	w.Write(j)
+
+}
+
+func writeInstanceJSON(w io.Writer, item v1beta1.ServiceInstance) {
+	j, _ := json.MarshalIndent(item, "", "   ")
+	w.Write(j)
+}
+
+func writeInstanceListYAML(w io.Writer, instances []v1beta1.ServiceInstance) {
+	p := v1beta1.ServiceInstanceList{
+		Items: instances,
+	}
+	y, _ := yaml.Marshal(p)
+	w.Write(y)
+}
+
+func writeInstanceYAML(w io.Writer, item v1beta1.ServiceInstance) {
+	y, _ := yaml.Marshal(item)
+	w.Write(y)
+}
+
+// WriteInstanceList prints a list of instances.
+func WriteInstanceList(w io.Writer, outputFormat string, instances ...v1beta1.ServiceInstance) {
+	switch outputFormat {
+	case "json":
+		writeInstanceListJSON(w, instances)
+	case "yaml":
+		writeInstanceListYAML(w, instances)
+	case "table":
+		writeInstanceListTable(w, instances)
+	}
+}
+
+// WriteInstance prints a single instance
+func WriteInstance(w io.Writer, outputFormat string, instance v1beta1.ServiceInstance) {
+	switch outputFormat {
+	case "json":
+		writeInstanceJSON(w, instance)
+	case "yaml":
+		writeInstanceYAML(w, instance)
+	case "table":
+		writeInstanceListTable(w, []v1beta1.ServiceInstance{instance})
+	}
 }
 
 // WriteParentInstance prints identifying information for a parent instance.

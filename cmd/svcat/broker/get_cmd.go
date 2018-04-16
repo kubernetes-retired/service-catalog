@@ -24,7 +24,12 @@ import (
 
 type getCmd struct {
 	*command.Context
-	name string
+	name         string
+	outputFormat string
+}
+
+func (c *getCmd) SetFormat(format string) {
+	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get brokers" command
@@ -41,7 +46,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
-
+	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -67,7 +72,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteBrokerList(c.Output, brokers...)
+	output.WriteBrokerList(c.Output, c.outputFormat, brokers...)
 	return nil
 }
 
@@ -77,6 +82,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteBrokerList(c.Output, *broker)
+	output.WriteBroker(c.Output, c.outputFormat, *broker)
 	return nil
 }

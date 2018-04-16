@@ -17,10 +17,12 @@ limitations under the License.
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -31,8 +33,7 @@ func getClassStatusText(status v1beta1.ClusterServiceClassStatus) string {
 	return statusActive
 }
 
-// WriteClassList prints a list of classes.
-func WriteClassList(w io.Writer, classes ...v1beta1.ClusterServiceClass) {
+func writeClassListTable(w io.Writer, classes []v1beta1.ClusterServiceClass) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -47,6 +48,56 @@ func WriteClassList(w io.Writer, classes ...v1beta1.ClusterServiceClass) {
 		})
 	}
 	t.Render()
+}
+
+func writeClassListJSON(w io.Writer, classes []v1beta1.ClusterServiceClass) {
+	classList := v1beta1.ClusterServiceClassList{
+		Items: classes,
+	}
+	j, _ := json.MarshalIndent(classList, "", "   ")
+	w.Write(j)
+}
+
+func writeClassListYAML(w io.Writer, classes []v1beta1.ClusterServiceClass) {
+	classList := v1beta1.ClusterServiceClassList{
+		Items: classes,
+	}
+	y, _ := yaml.Marshal(classList)
+	w.Write(y)
+}
+
+// WriteClassList prints a list of classes in the specified output format.
+func WriteClassList(w io.Writer, outputFormat string, classes ...v1beta1.ClusterServiceClass) {
+	switch outputFormat {
+	case "json":
+		writeClassListJSON(w, classes)
+	case "yaml":
+		writeClassListYAML(w, classes)
+	case "table":
+		writeClassListTable(w, classes)
+	}
+}
+
+func writeClassJSON(w io.Writer, class v1beta1.ClusterServiceClass) {
+	j, _ := json.MarshalIndent(class, "", "   ")
+	w.Write(j)
+}
+
+func writeClassYAML(w io.Writer, class v1beta1.ClusterServiceClass) {
+	y, _ := yaml.Marshal(class)
+	w.Write(y)
+}
+
+// WriteClass prints a single class in the specified output format.
+func WriteClass(w io.Writer, outputFormat string, class v1beta1.ClusterServiceClass) {
+	switch outputFormat {
+	case "json":
+		writeClassJSON(w, class)
+	case "yaml":
+		writeClassYAML(w, class)
+	case "table":
+		writeClassListTable(w, []v1beta1.ClusterServiceClass{class})
+	}
 }
 
 // WriteParentClass prints identifying information for a parent class.

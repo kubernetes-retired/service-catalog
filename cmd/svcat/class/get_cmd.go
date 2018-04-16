@@ -28,6 +28,11 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
+	outputFormat string
+}
+
+func (c *getCmd) SetFormat(format string) {
+	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get classes" command
@@ -52,6 +57,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
 	)
+	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -81,7 +87,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteClassList(c.Output, classes...)
+	output.WriteClassList(c.Output, c.outputFormat, classes...)
 	return nil
 }
 
@@ -98,6 +104,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteClassList(c.Output, *class)
+	output.WriteClass(c.Output, c.outputFormat, *class)
 	return nil
 }

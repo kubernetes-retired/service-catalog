@@ -17,8 +17,10 @@ limitations under the License.
 package command
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"strings"
 )
 
 // Command represents an svcat command.
@@ -41,12 +43,26 @@ type NamespacedCommand interface {
 	SetNamespace(namespace string)
 }
 
+// FormattedCommand represents a command that can have it's output
+// formatted
+type FormattedCommand interface {
+	// SetFormat sets the commands output format
+	SetFormat(format string)
+}
+
 // PreRunE validates os args, and then saves them on the svcat command.
 func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 	return func(c *cobra.Command, args []string) error {
 		if nsCmd, ok := cmd.(NamespacedCommand); ok {
 			namespace := DetermineNamespace(c.Flags(), nsCmd.GetContext().App.CurrentNamespace)
 			nsCmd.SetNamespace(namespace)
+		}
+		if fmtCmd, ok := cmd.(FormattedCommand); ok {
+			fmtString, err := determineOutputFormat(c.Flags())
+			if err != nil {
+				return err
+			}
+			fmtCmd.SetFormat(fmtString)
 		}
 		return cmd.Validate(args)
 	}
@@ -92,4 +108,30 @@ func DetermineNamespace(flags *pflag.FlagSet, currentNamespace string) string {
 	}
 
 	return currentNamespace
+}
+
+// AddOutputFlags adds common output flags to a command that can have variable output formats.
+func AddOutputFlags(flags *pflag.FlagSet) {
+	flags.StringP(
+		"output",
+		"o",
+		"",
+		"The output format to use. Valid options are table, json or yaml. If not present, defaults to table",
+	)
+}
+
+func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
+	format, _ := flags.GetString("output")
+	format = strings.ToLower(format)
+
+	switch format {
+	case "", "table":
+		return "table", nil
+	case "json":
+		return "json", nil
+	case "yaml":
+		return "yaml", nil
+	default:
+		return "", fmt.Errorf("unknown output format: %s", format)
+	}
 }

@@ -33,9 +33,14 @@ type getCmd struct {
 	uuid         string
 	name         string
 
-	classFilter string
-	classUUID   string
-	className   string
+	classFilter  string
+	classUUID    string
+	className    string
+	outputFormat string
+}
+
+func (c *getCmd) SetFormat(format string) {
+	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get plans" command
@@ -72,6 +77,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"",
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
 	)
+	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -139,7 +145,7 @@ func (c *getCmd) getAll() error {
 		return fmt.Errorf("unable to list plans (%s)", err)
 	}
 
-	output.WritePlanList(c.Output, plans, classes)
+	output.WritePlanList(c.Output, c.outputFormat, plans, classes)
 	return nil
 }
 
@@ -160,14 +166,13 @@ func (c *getCmd) get() error {
 	if err != nil {
 		return err
 	}
-
 	// Retrieve the class as well because plans don't have the external class name
 	class, err := c.App.RetrieveClassByID(plan.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		return err
 	}
 
-	output.WritePlanList(c.Output, []v1beta1.ClusterServicePlan{*plan}, []v1beta1.ClusterServiceClass{*class})
+	output.WritePlan(c.Output, c.outputFormat, *plan, *class)
 
 	return nil
 }

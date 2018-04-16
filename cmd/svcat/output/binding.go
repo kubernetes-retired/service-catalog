@@ -17,9 +17,11 @@ limitations under the License.
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
+	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -40,8 +42,25 @@ func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
-// WriteBindingList prints a list of bindings.
-func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
+func writeBindingListJSON(w io.Writer, bindings []v1beta1.ServiceBinding) {
+	l := v1beta1.ServiceBindingList{
+		Items: bindings,
+	}
+	j, _ := json.MarshalIndent(l, "", "   ")
+
+	w.Write(j)
+}
+
+func writeBindingListYAML(w io.Writer, bindings []v1beta1.ServiceBinding) {
+	l := v1beta1.ServiceBindingList{
+		Items: bindings,
+	}
+	y, _ := yaml.Marshal(l)
+
+	w.Write(y)
+}
+
+func writeBindingListTable(w io.Writer, bindings []v1beta1.ServiceBinding) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -58,8 +77,41 @@ func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
 			getBindingStatusShort(binding.Status),
 		})
 	}
-
 	t.Render()
+}
+
+// WriteBindingList prints a list of bindings in the specified output format.
+func WriteBindingList(w io.Writer, outputFormat string, bindings ...v1beta1.ServiceBinding) {
+	switch outputFormat {
+	case "json":
+		writeBindingListJSON(w, bindings)
+	case "yaml":
+		writeBindingListYAML(w, bindings)
+	case "table":
+		writeBindingListTable(w, bindings)
+	}
+}
+
+func writeBindingJSON(w io.Writer, binding v1beta1.ServiceBinding) {
+	j, _ := json.MarshalIndent(binding, "", "   ")
+	w.Write(j)
+}
+
+func writeBindingYAML(w io.Writer, binding v1beta1.ServiceBinding) {
+	y, _ := yaml.Marshal(binding)
+	w.Write(y)
+}
+
+// WriteBinding prints a single bindings in the specified output format.
+func WriteBinding(w io.Writer, outputFormat string, binding v1beta1.ServiceBinding) {
+	switch outputFormat {
+	case "json":
+		writeBindingJSON(w, binding)
+	case "yaml":
+		writeBindingYAML(w, binding)
+	case "table":
+		writeBindingListTable(w, []v1beta1.ServiceBinding{binding})
+	}
 }
 
 // WriteBindingDetails prints details for a single binding.

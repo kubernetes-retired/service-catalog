@@ -17,11 +17,13 @@ limitations under the License.
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
 	"strconv"
 
+	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -46,12 +48,7 @@ func (a byClass) Less(i, j int) bool {
 	return a[i].Spec.ClusterServiceClassRef.Name < a[j].Spec.ClusterServiceClassRef.Name
 }
 
-// WritePlanList prints a list of plans.
-func WritePlanList(w io.Writer, plans []v1beta1.ClusterServicePlan, classes []v1beta1.ClusterServiceClass) {
-	classNames := map[string]string{}
-	for _, class := range classes {
-		classNames[class.Name] = class.Spec.ExternalName
-	}
+func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNames map[string]string) {
 
 	sort.Sort(byClass(plans))
 
@@ -69,6 +66,63 @@ func WritePlanList(w io.Writer, plans []v1beta1.ClusterServicePlan, classes []v1
 			plan.Name})
 	}
 	t.Render()
+}
+
+func writePlanListJSON(w io.Writer, plans []v1beta1.ClusterServicePlan) {
+	list := v1beta1.ClusterServicePlanList{
+		Items: plans,
+	}
+	j, _ := json.MarshalIndent(list, "", "   ")
+	w.Write(j)
+}
+
+func writePlanListYAML(w io.Writer, plans []v1beta1.ClusterServicePlan) {
+	list := v1beta1.ClusterServicePlanList{
+		Items: plans,
+	}
+	y, _ := yaml.Marshal(list)
+	w.Write(y)
+}
+
+// WritePlanList prints a list of plans in the specified output format.
+func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []v1beta1.ClusterServiceClass) {
+	classNames := map[string]string{}
+	for _, class := range classes {
+		classNames[class.Name] = class.Spec.ExternalName
+	}
+	switch outputFormat {
+	case "json":
+		writePlanListJSON(w, plans)
+	case "yaml":
+		writePlanListJSON(w, plans)
+	case "table":
+		writePlanListTable(w, plans, classNames)
+	}
+}
+
+func writePlanJSON(w io.Writer, plan v1beta1.ClusterServicePlan) {
+	j, _ := json.MarshalIndent(plan, "", "   ")
+	w.Write(j)
+}
+
+func writePlanYAML(w io.Writer, plan v1beta1.ClusterServicePlan) {
+	y, _ := yaml.Marshal(plan)
+	w.Write(y)
+}
+
+// WritePlan prints a single plan in the specified output format.
+func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan, class v1beta1.ClusterServiceClass) {
+
+	switch outputFormat {
+	case "json":
+		writePlanJSON(w, plan)
+	case "yaml":
+		writePlanJSON(w, plan)
+	case "table":
+		classNames := map[string]string{}
+		classNames[class.Name] = class.Spec.ExternalName
+		writePlanListTable(w, []v1beta1.ClusterServicePlan{plan}, classNames)
+	}
 }
 
 // WriteAssociatedPlans prints a list of plans associated with a class.
