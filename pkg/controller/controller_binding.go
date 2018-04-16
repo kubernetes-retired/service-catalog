@@ -526,6 +526,8 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 			for k, v := range secret.Data {
 				credentials[k] = v
 			}
+		} else if t.RemoveKey != nil {
+			delete(credentials, t.RemoveKey.Key)
 		}
 	}
 	return nil

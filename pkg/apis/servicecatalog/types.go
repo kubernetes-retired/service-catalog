@@ -1155,6 +1155,7 @@ type SecretTransform struct {
 	RenameKey   *RenameKeyTransform
 	AddKey      *AddKeyTransform
 	AddKeysFrom *AddKeysFromTransform
+	RemoveKey   *RemoveKeyTransform
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1177,4 +1178,10 @@ type AddKeyTransform struct {
 // an existing secret into the the Secret associated with the ServiceBinding.
 type AddKeysFromTransform struct {
 	SecretRef *ObjectReference
+}
+
+// RemoveKeyTransform specifies that one of the credentials keys returned
+// from the broker should not be included in the credentials Secret.
+type RemoveKeyTransform struct {
+	Key string
 }

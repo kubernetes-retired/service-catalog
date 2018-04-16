@@ -1272,6 +1272,8 @@ type SecretTransform struct {
 	// AddKeysFrom represents a transform that merges all the entries of an existing Secret
 	// into the credentials Secret
 	AddKeysFrom *AddKeysFromTransform `json:"addKeysFrom,omitempty"`
+	// RemoveKey represents a transform that removes a credentials Secret entry
+	RemoveKey *RemoveKeyTransform `json:"removeKey,omitempty"`
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1324,4 +1326,11 @@ type AddKeyTransform struct {
 type AddKeysFromTransform struct {
 	// The reference to the Secret that should be merged into the credentials Secret.
 	SecretRef *ObjectReference `json:"secretRef,omitempty"`
+}
+
+// RemoveKeyTransform specifies that one of the credentials keys returned
+// from the broker should not be included in the credentials Secret.
+type RemoveKeyTransform struct {
+	// The key to remove from the Secret
+	Key string `json:"key"`
 }

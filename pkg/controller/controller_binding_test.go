@@ -3919,6 +3919,19 @@ func TestTransformSecretData(t *testing.T) {
 				"bar": []byte("456"),
 			},
 		},
+		{
+			name: "RemoveKeyTransform",
+			transforms: []v1beta1.SecretTransform{
+				{RemoveKey: &v1beta1.RemoveKeyTransform{Key: "bar"}},
+			},
+			secretData: map[string]interface{}{
+				"foo": "123",
+				"bar": "456",
+			},
+			transformedSecretData: map[string]interface{}{
+				"foo": "123",
+			},
+		},
 	}
 
 	for _, tc := range cases {
