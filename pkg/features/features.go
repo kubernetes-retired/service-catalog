@@ -93,7 +93,7 @@ var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.Feat
 	PodPreset:                  {Default: false, PreRelease: utilfeature.Alpha},
 	OriginatingIdentity:        {Default: false, PreRelease: utilfeature.Alpha},
 	AsyncBindingOperations:     {Default: false, PreRelease: utilfeature.Alpha},
-	CatalogRestrictions:     {Default: false, PreRelease: utilfeature.Alpha},
+	CatalogRestrictions:        {Default: false, PreRelease: utilfeature.Alpha},
 	NamespacedServiceBroker:    {Default: false, PreRelease: utilfeature.Alpha},
 	ResponseSchema:             {Default: false, PreRelease: utilfeature.Alpha},
 	UpdateDashboardURL:         {Default: false, PreRelease: utilfeature.Alpha},
