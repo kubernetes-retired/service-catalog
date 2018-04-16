@@ -2406,58 +2406,88 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 // polling an instance that was asynchronously being deprovisioned and is still
 // in progress.
 func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
-			Response: &osb.LastOperationResponse{
-				State:       osb.StateInProgress,
-				Description: strPtr(lastOperationDescription),
+	cases := []struct {
+		name   string
+		setup  func(instance *v1beta1.ServiceInstance)
+		planID func() *string
+	}{
+		{
+			// simulates deprovision after user changed plan to non-existing plan
+			name: "nil plan",
+			setup: func(instance *v1beta1.ServiceInstance) {
+				instance.Spec.ClusterServicePlanExternalName = "plan-that-does-not-exist"
+				instance.Spec.ClusterServicePlanRef = nil
+			},
+			planID: func() *string {
+				return strPtr("")
 			},
 		},
-	})
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
-	instanceKey := testNamespace + "/" + testServiceInstanceName
-
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance")
+		{
+			name:  "With plan",
+			setup: func(instance *v1beta1.ServiceInstance) {},
+			planID: func() *string {
+				return strPtr(testClusterServicePlanGUID)
+			},
+		},
 	}
 
-	err := testController.pollServiceInstance(instance)
-	if err != nil {
-		t.Fatalf("pollServiceInstance failed: %s", err)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+					Response: &osb.LastOperationResponse{
+						State:       osb.StateInProgress,
+						Description: strPtr(lastOperationDescription),
+					},
+				},
+			})
+
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+			instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+			tc.setup(instance)
+			instanceKey := testNamespace + "/" + testServiceInstanceName
+
+			if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+				t.Fatalf("Expected polling queue to not have any record of test instance")
+			}
+
+			err := testController.pollServiceInstance(instance)
+			if err != nil {
+				t.Fatalf("pollServiceInstance failed: %s", err)
+			}
+
+			if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
+				t.Fatalf("Expected polling queue to have record of seeing test instance once")
+			}
+
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+			operationKey := osb.OperationKey(testOperation)
+			assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+				InstanceID:   testServiceInstanceGUID,
+				ServiceID:    strPtr(testClusterServiceClassGUID),
+				PlanID:       tc.planID(),
+				OperationKey: &operationKey,
+			})
+
+			// there should have been 1 action to update the instance status with the last operation
+			// description
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
+
+			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+			assertServiceInstanceAsyncStillInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+			assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, lastOperationDescription)
+
+			// verify no kube resources created.
+			// No actions
+			kubeActions := fakeKubeClient.Actions()
+			assertNumberOfActions(t, kubeActions, 0)
+		})
 	}
-
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
-		t.Fatalf("Expected polling queue to have record of seeing test instance once")
-	}
-
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
-	operationKey := osb.OperationKey(testOperation)
-	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
-		InstanceID:   testServiceInstanceGUID,
-		ServiceID:    strPtr(testClusterServiceClassGUID),
-		PlanID:       strPtr(testClusterServicePlanGUID),
-		OperationKey: &operationKey,
-	})
-
-	// there should have been 1 action to update the instance status with the last operation
-	// description
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStillInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, lastOperationDescription)
-
-	// verify no kube resources created.
-	// No actions
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
 }
 
 // TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer tests
