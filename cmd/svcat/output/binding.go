@@ -42,25 +42,17 @@ func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
-func writeBindingListJSON(w io.Writer, bindings []v1beta1.ServiceBinding) {
-	l := v1beta1.ServiceBindingList{
-		Items: bindings,
-	}
-	j, _ := json.MarshalIndent(l, "", "   ")
-
+func writeBindingListJSON(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
+	j, _ := json.MarshalIndent(bindingList, "", "   ")
 	w.Write(j)
 }
 
-func writeBindingListYAML(w io.Writer, bindings []v1beta1.ServiceBinding) {
-	l := v1beta1.ServiceBindingList{
-		Items: bindings,
-	}
-	y, _ := yaml.Marshal(l)
-
+func writeBindingListYAML(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
+	y, _ := yaml.Marshal(bindingList)
 	w.Write(y)
 }
 
-func writeBindingListTable(w io.Writer, bindings []v1beta1.ServiceBinding) {
+func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -69,7 +61,7 @@ func writeBindingListTable(w io.Writer, bindings []v1beta1.ServiceBinding) {
 		"Status",
 	})
 
-	for _, binding := range bindings {
+	for _, binding := range bindingList.Items {
 		t.Append([]string{
 			binding.Name,
 			binding.Namespace,
@@ -81,14 +73,14 @@ func writeBindingListTable(w io.Writer, bindings []v1beta1.ServiceBinding) {
 }
 
 // WriteBindingList prints a list of bindings in the specified output format.
-func WriteBindingList(w io.Writer, outputFormat string, bindings ...v1beta1.ServiceBinding) {
+func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.ServiceBindingList) {
 	switch outputFormat {
 	case "json":
-		writeBindingListJSON(w, bindings)
+		writeBindingListJSON(w, bindingList)
 	case "yaml":
-		writeBindingListYAML(w, bindings)
+		writeBindingListYAML(w, bindingList)
 	case "table":
-		writeBindingListTable(w, bindings)
+		writeBindingListTable(w, bindingList)
 	}
 }
 
@@ -110,7 +102,10 @@ func WriteBinding(w io.Writer, outputFormat string, binding v1beta1.ServiceBindi
 	case "yaml":
 		writeBindingYAML(w, binding)
 	case "table":
-		writeBindingListTable(w, []v1beta1.ServiceBinding{binding})
+		l := v1beta1.ServiceBindingList{
+			Items: []v1beta1.ServiceBinding{binding},
+		}
+		writeBindingListTable(w, &l)
 	}
 }
 

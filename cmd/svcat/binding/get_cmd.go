@@ -76,7 +76,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteBindingList(c.Output, c.outputFormat, bindings.Items...)
+	output.WriteBindingList(c.Output, c.outputFormat, bindings)
 	return nil
 }
 

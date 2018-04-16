@@ -47,7 +47,7 @@ func getInstanceStatusShort(status v1beta1.ServiceInstanceStatus) string {
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
 }
 
-func writeInstanceListTable(w io.Writer, instances []v1beta1.ServiceInstance) {
+func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -57,7 +57,7 @@ func writeInstanceListTable(w io.Writer, instances []v1beta1.ServiceInstance) {
 		"Status",
 	})
 
-	for _, instance := range instances {
+	for _, instance := range instanceList.Items {
 		t.Append([]string{
 			instance.Name,
 			instance.Namespace,
@@ -70,11 +70,8 @@ func writeInstanceListTable(w io.Writer, instances []v1beta1.ServiceInstance) {
 	t.Render()
 }
 
-func writeInstanceListJSON(w io.Writer, instances []v1beta1.ServiceInstance) {
-	p := v1beta1.ServiceInstanceList{
-		Items: instances,
-	}
-	j, _ := json.MarshalIndent(p, "", "   ")
+func writeInstanceListJSON(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
+	j, _ := json.MarshalIndent(instanceList, "", "   ")
 	w.Write(j)
 
 }
@@ -84,11 +81,8 @@ func writeInstanceJSON(w io.Writer, item v1beta1.ServiceInstance) {
 	w.Write(j)
 }
 
-func writeInstanceListYAML(w io.Writer, instances []v1beta1.ServiceInstance) {
-	p := v1beta1.ServiceInstanceList{
-		Items: instances,
-	}
-	y, _ := yaml.Marshal(p)
+func writeInstanceListYAML(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
+	y, _ := yaml.Marshal(instanceList)
 	w.Write(y)
 }
 
@@ -98,14 +92,14 @@ func writeInstanceYAML(w io.Writer, item v1beta1.ServiceInstance) {
 }
 
 // WriteInstanceList prints a list of instances.
-func WriteInstanceList(w io.Writer, outputFormat string, instances ...v1beta1.ServiceInstance) {
+func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.ServiceInstanceList) {
 	switch outputFormat {
 	case "json":
-		writeInstanceListJSON(w, instances)
+		writeInstanceListJSON(w, instanceList)
 	case "yaml":
-		writeInstanceListYAML(w, instances)
+		writeInstanceListYAML(w, instanceList)
 	case "table":
-		writeInstanceListTable(w, instances)
+		writeInstanceListTable(w, instanceList)
 	}
 }
 
@@ -117,7 +111,10 @@ func WriteInstance(w io.Writer, outputFormat string, instance v1beta1.ServiceIns
 	case "yaml":
 		writeInstanceYAML(w, instance)
 	case "table":
-		writeInstanceListTable(w, []v1beta1.ServiceInstance{instance})
+		p := v1beta1.ServiceInstanceList{
+			Items: []v1beta1.ServiceInstance{instance},
+		}
+		writeInstanceListTable(w, &p)
 	}
 }
 

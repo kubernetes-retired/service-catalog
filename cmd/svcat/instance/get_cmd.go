@@ -75,7 +75,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteInstanceList(c.Output, c.outputFormat, instances.Items...)
+	output.WriteInstanceList(c.Output, c.outputFormat, instances)
 	return nil
 }
 
