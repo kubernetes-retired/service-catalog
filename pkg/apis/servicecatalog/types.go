@@ -1114,7 +1114,7 @@ const (
 type ParametersFromSource struct {
 	// The Secret key to select from.
 	// The value must be a JSON object.
-	//+optional
+	// +optional
 	SecretKeyRef *SecretKeyReference
 }
 
@@ -1167,9 +1167,10 @@ type RenameKeyTransform struct {
 // AddKeyTransform specifies that Service Catalog should add an
 // additional entry to the Secret associated with the ServiceBinding.
 type AddKeyTransform struct {
-	Key         string
-	Value       []byte
-	StringValue *string
+	Key                string
+	Value              []byte
+	StringValue        *string
+	JSONPathExpression *string
 }
 
 // AddKeysFromTransform specifies that Service Catalog should merge

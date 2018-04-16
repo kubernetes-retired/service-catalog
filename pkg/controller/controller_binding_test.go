@@ -3805,8 +3805,8 @@ func TestTransformSecretData(t *testing.T) {
 	cases := []struct {
 		name                  string
 		transforms            []v1beta1.SecretTransform
-		secretData            map[string][]byte
-		transformedSecretData map[string][]byte
+		secretData            map[string]interface{}
+		transformedSecretData map[string]interface{}
 		otherSecret           *corev1.Secret
 	}{
 		{
@@ -3814,11 +3814,11 @@ func TestTransformSecretData(t *testing.T) {
 			transforms: []v1beta1.SecretTransform{
 				{RenameKey: &v1beta1.RenameKeyTransform{From: "foo", To: "bar"}},
 			},
-			secretData: map[string][]byte{
-				"foo": []byte("123"),
+			secretData: map[string]interface{}{
+				"foo": "123",
 			},
-			transformedSecretData: map[string][]byte{
-				"bar": []byte("123"),
+			transformedSecretData: map[string]interface{}{
+				"bar": "123",
 			},
 		},
 		{
@@ -3826,11 +3826,11 @@ func TestTransformSecretData(t *testing.T) {
 			transforms: []v1beta1.SecretTransform{
 				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", Value: []byte("456")}},
 			},
-			secretData: map[string][]byte{
-				"foo": []byte("123"),
+			secretData: map[string]interface{}{
+				"foo": "123",
 			},
-			transformedSecretData: map[string][]byte{
-				"foo": []byte("123"),
+			transformedSecretData: map[string]interface{}{
+				"foo": "123",
 				"bar": []byte("456"),
 			},
 		},
@@ -3839,12 +3839,42 @@ func TestTransformSecretData(t *testing.T) {
 			transforms: []v1beta1.SecretTransform{
 				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", StringValue: pointer("456")}},
 			},
-			secretData: map[string][]byte{
-				"foo": []byte("123"),
+			secretData: map[string]interface{}{
+				"foo": "123",
 			},
-			transformedSecretData: map[string][]byte{
-				"foo": []byte("123"),
-				"bar": []byte("456"),
+			transformedSecretData: map[string]interface{}{
+				"foo": "123",
+				"bar": "456",
+			},
+		},
+		{
+			name: "AddKeyTransform with JSONPathExpression",
+			transforms: []v1beta1.SecretTransform{
+				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", JSONPathExpression: pointer("{.foo}")}},
+			},
+			secretData: map[string]interface{}{
+				"foo": "123",
+			},
+			transformedSecretData: map[string]interface{}{
+				"foo": "123",
+				"bar": "123",
+			},
+		},
+		{
+			name: "AddKeyTransform with JSONPathExpression on non-flat credentials",
+			transforms: []v1beta1.SecretTransform{
+				{AddKey: &v1beta1.AddKeyTransform{Key: "child-of-foo", JSONPathExpression: pointer("{.foo.child}")}},
+			},
+			secretData: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"child": "123",
+				},
+			},
+			transformedSecretData: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"child": "123",
+				},
+				"child-of-foo": "123",
 			},
 		},
 		{
@@ -3852,12 +3882,12 @@ func TestTransformSecretData(t *testing.T) {
 			transforms: []v1beta1.SecretTransform{
 				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", Value: []byte("456"), StringValue: pointer("789")}},
 			},
-			secretData: map[string][]byte{
-				"foo": []byte("123"),
+			secretData: map[string]interface{}{
+				"foo": "123",
 			},
-			transformedSecretData: map[string][]byte{
-				"foo": []byte("123"),
-				"bar": []byte("789"),
+			transformedSecretData: map[string]interface{}{
+				"foo": "123",
+				"bar": "789",
 			},
 		},
 		{
@@ -3872,7 +3902,7 @@ func TestTransformSecretData(t *testing.T) {
 					},
 				},
 			},
-			secretData: map[string][]byte{
+			secretData: map[string]interface{}{
 				"foo": []byte("123"),
 			},
 			otherSecret: &corev1.Secret{
@@ -3884,7 +3914,7 @@ func TestTransformSecretData(t *testing.T) {
 					"bar": []byte("456"),
 				},
 			},
-			transformedSecretData: map[string][]byte{
+			transformedSecretData: map[string]interface{}{
 				"foo": []byte("123"),
 				"bar": []byte("456"),
 			},
@@ -3898,7 +3928,7 @@ func TestTransformSecretData(t *testing.T) {
 			addGetSecretReaction(fakeKubeClient, tc.otherSecret)
 		}
 
-		err := testController.transformSecretData(tc.transforms, tc.secretData)
+		err := testController.transformCredentials(tc.transforms, tc.secretData)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

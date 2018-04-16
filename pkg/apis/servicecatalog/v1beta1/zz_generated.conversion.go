@@ -163,6 +163,7 @@ func autoConvert_v1beta1_AddKeyTransform_To_servicecatalog_AddKeyTransform(in *A
 	out.Key = in.Key
 	out.Value = *(*[]byte)(unsafe.Pointer(&in.Value))
 	out.StringValue = (*string)(unsafe.Pointer(in.StringValue))
+	out.JSONPathExpression = (*string)(unsafe.Pointer(in.JSONPathExpression))
 	return nil
 }
 
@@ -175,6 +176,7 @@ func autoConvert_servicecatalog_AddKeyTransform_To_v1beta1_AddKeyTransform(in *s
 	out.Key = in.Key
 	out.Value = *(*[]byte)(unsafe.Pointer(&in.Value))
 	out.StringValue = (*string)(unsafe.Pointer(in.StringValue))
+	out.JSONPathExpression = (*string)(unsafe.Pointer(in.JSONPathExpression))
 	return nil
 }
 
