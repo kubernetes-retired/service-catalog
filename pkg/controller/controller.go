@@ -571,55 +571,10 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 	}, nil
 }
 
-// convertCatalog converts a service broker catalog into an array of
-// ClusterServiceClasses and an array of ClusterServicePlans.  The ClusterServiceClasses and
+// convertAndFilterCatalog converts a service broker catalog into an array of
+// ClusterServiceClasses and an array of ClusterServicePlans and filters these
+// through the restrictions provided. The ClusterServiceClasses and
 // ClusterServicePlans returned by this method are named in K8S with the OSB ID.
-// *deprecated* use convertAndFilterCatalog
-// TODO: delete convertCatalog when features.CatalogRestrictions flag is removed.
-func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
-	serviceClasses := make([]*v1beta1.ClusterServiceClass, len(in.Services))
-	servicePlans := []*v1beta1.ClusterServicePlan{}
-	for i, svc := range in.Services {
-		serviceClasses[i] = &v1beta1.ClusterServiceClass{
-			Spec: v1beta1.ClusterServiceClassSpec{
-				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-					Bindable:      svc.Bindable,
-					PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
-					ExternalID:    svc.ID,
-					ExternalName:  svc.Name,
-					Tags:          svc.Tags,
-					Description:   svc.Description,
-					Requires:      svc.Requires,
-				},
-			},
-		}
-
-		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
-			serviceClasses[i].Spec.BindingRetrievable = svc.BindingsRetrievable
-		}
-
-		if svc.Metadata != nil {
-			metadata, err := json.Marshal(svc.Metadata)
-			if err != nil {
-				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
-				glog.Error(err)
-				return nil, nil, err
-			}
-			serviceClasses[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
-		}
-
-		serviceClasses[i].SetName(svc.ID)
-
-		// set up the plans using the ClusterServiceClass Name
-		plans, err := convertClusterServicePlans(svc.Plans, serviceClasses[i].Name)
-		if err != nil {
-			return nil, nil, err
-		}
-		servicePlans = append(servicePlans, plans...)
-	}
-	return serviceClasses, servicePlans, nil
-}
-
 func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
 	var predicate filter.Predicate
 	var err error

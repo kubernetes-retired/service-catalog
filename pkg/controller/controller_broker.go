@@ -27,11 +27,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/sets"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
@@ -258,13 +256,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		// convert the broker's catalog payload into our API objects
 		glog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
 
-		var payloadServiceClasses []*v1beta1.ClusterServiceClass
-		var payloadServicePlans []*v1beta1.ClusterServicePlan
-		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.CatalogRestrictions) {
-			payloadServiceClasses, payloadServicePlans, err = convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions)
-		} else {
-			payloadServiceClasses, payloadServicePlans, err = convertCatalog(brokerCatalog)
-		}
+		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions)
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(pcb.Message(s))

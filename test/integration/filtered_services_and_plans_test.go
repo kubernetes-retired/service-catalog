@@ -20,55 +20,17 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"time"
-
-	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 	"github.com/pmorie/go-open-service-broker-client/v2/generator"
 )
-
-//
-// TODO(nicholss): add more complicated integration tests.
-//func TestClusterServicePlanRemovedFromCatalogAfterFiltered(t *testing.T) {
-//	ct := &controllerTest{
-//		t:      t,
-//		broker: getTestBroker(),
-//	}
-//
-//	ct.run(func(ct *controllerTest) {
-//		removedPlan := getTestClusterServicePlanRemoved()
-//		removedPlan, err := ct.client.ClusterServicePlans().Create(removedPlan)
-//		if err != nil {
-//			t.Fatalf("error creating ClusterServicePlan: %v", err)
-//		}
-//
-//		err = util.WaitForClusterServicePlanToExist(ct.client, testRemovedClusterServicePlanGUID)
-//		if err != nil {
-//			t.Fatalf("error waiting for ClusterServicePlan to exist: %v", err)
-//		}
-//
-//		t.Log("updating ClusterServiceClass status")
-//		removedPlan.Status.RemovedFromBrokerCatalog = true
-//		_, err = ct.client.ClusterServicePlans().UpdateStatus(removedPlan)
-//		if err != nil {
-//			t.Fatalf("error marking ClusterServicePlan as removed from catalog: %v", err)
-//		}
-//
-//		err = util.WaitForClusterServicePlanToNotExist(ct.client, testRemovedClusterServicePlanGUID)
-//		if err != nil {
-//			t.Fatalf("error waiting for remove ClusterServicePlan to not exist: %v", err)
-//		}
-//	})
-//}
 
 func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {
 
@@ -97,11 +59,6 @@ func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {
 			t.Fatalf("error waiting for ClusterServiceClass to exist: %v", err)
 		}
 		t.Log("class added")
-
-		// turn on the catalog restrictions feature.
-		//
-		utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.CatalogRestrictions))
-		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.CatalogRestrictions))
 
 		err = util.WaitForClusterServiceClassToNotExist(ct.client, uuid)
 		if err != nil {

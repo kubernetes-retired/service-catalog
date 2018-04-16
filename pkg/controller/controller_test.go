@@ -1175,9 +1175,9 @@ type bindingParameters struct {
 }
 
 func TestEmptyCatalogConversion(t *testing.T) {
-	serviceClasses, servicePlans, err := convertCatalog(&osb.CatalogResponse{})
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(&osb.CatalogResponse{}, nil)
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
 	if len(serviceClasses) != 0 {
 		t.Fatalf("Expected 0 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
@@ -1193,9 +1193,9 @@ func TestCatalogConversion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
-	serviceClasses, servicePlans, err := convertCatalog(catalog)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil)
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
 	if len(serviceClasses) != 1 {
 		t.Fatalf("Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
@@ -1217,9 +1217,9 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
-	serviceClasses, servicePlans, err := convertCatalog(catalog)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil)
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
 	if len(serviceClasses) != 1 {
 		t.Fatalf("Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
@@ -1301,9 +1301,9 @@ func TestCatalogConversionMultipleClusterServiceClasses(t *testing.T) {
 	// 	t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	// }
 
-	// serviceClasses, err := convertCatalog(catalog)
+	// serviceClasses, err := convertAndFilterCatalog(catalog)
 	// if err != nil {
-	// 	t.Fatalf("Failed to convertCatalog: %v", err)
+	// 	t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	// }
 	// if len(serviceClasses) != 2 {
 	// 	t.Fatalf("Expected 2 serviceclasses for empty catalog, but got: %d", len(serviceClasses))
@@ -1586,9 +1586,9 @@ func TestFilterServicePlans(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal test catalog: %v", err)
 			}
-			_, servicePlans, err := convertCatalog(catalog)
+			_, servicePlans, err := convertAndFilterCatalog(catalog, nil)
 			if err != nil {
-				t.Fatalf("Failed to convertCatalog: %v", err)
+				t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 			}
 			total := tc.accepted + tc.rejected
 			if len(servicePlans) != total {
@@ -1664,9 +1664,9 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
 
-	aclasses, aplans, err := convertCatalog(catalog)
+	aclasses, aplans, err := convertAndFilterCatalog(catalog, nil)
 	if err != nil {
-		t.Fatalf("Failed to convertCatalog: %v", err)
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
 
 	eclasses := []*v1beta1.ClusterServiceClass{

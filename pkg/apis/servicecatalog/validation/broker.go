@@ -20,10 +20,8 @@ import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
 )
 
@@ -221,26 +219,24 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		}
 	}
 
-	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.CatalogRestrictions) {
-		// TODO: could validate if the fields being selected are on the approve list, but this will require breaking
-		// apart the label selector.
-		if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServiceClass) > 0 {
-			// confirm that the restrictions can turn into a predicate.
-			_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServiceClass)
-			if err != nil {
-				commonErrs = append(commonErrs,
-					field.Invalid(fldPath.Child("catalogRestrictions", "serviceClass"),
-						spec.CatalogRestrictions.ServiceClass, err.Error()))
-			}
+	// TODO: could validate if the fields being selected are on the approve list, but this will require breaking
+	// apart the label selector.
+	if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServiceClass) > 0 {
+		// confirm that the restrictions can turn into a predicate.
+		_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServiceClass)
+		if err != nil {
+			commonErrs = append(commonErrs,
+				field.Invalid(fldPath.Child("catalogRestrictions", "serviceClass"),
+					spec.CatalogRestrictions.ServiceClass, err.Error()))
 		}
-		if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServicePlan) > 0 {
-			// confirm that the restrictions can turn into a predicate.
-			_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServicePlan)
-			if err != nil {
-				commonErrs = append(commonErrs,
-					field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
-						spec.CatalogRestrictions.ServiceClass, err.Error()))
-			}
+	}
+	if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServicePlan) > 0 {
+		// confirm that the restrictions can turn into a predicate.
+		_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServicePlan)
+		if err != nil {
+			commonErrs = append(commonErrs,
+				field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
+					spec.CatalogRestrictions.ServiceClass, err.Error()))
 		}
 	}
 

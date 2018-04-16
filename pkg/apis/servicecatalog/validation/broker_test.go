@@ -21,24 +21,15 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
-	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 )
-
-func featurePtr(feature utilfeature.Feature) *utilfeature.Feature {
-	return &feature
-}
 
 func TestValidateClusterServiceBroker(t *testing.T) {
 	cases := []struct {
-		name        string
-		broker      *servicecatalog.ClusterServiceBroker
-		featureFlag *utilfeature.Feature
-		valid       bool
+		name   string
+		broker *servicecatalog.ClusterServiceBroker
+		valid  bool
 	}{
 		{
 			// covers the case where there is no AuthInfo field specified. the validator should
@@ -396,8 +387,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       true,
+			valid: true,
 		},
 		{
 			name: "valid clusterservicebroker - complex catalogRequirements.serviceClass",
@@ -418,8 +408,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       true,
+			valid: true,
 		},
 		{
 			name: "invalid clusterservicebroker - catalogRequirements.serviceClass",
@@ -439,8 +428,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       false,
+			valid: false,
 		},
 		{
 			name: "valid clusterservicebroker - catalogRequirements.servicePlan",
@@ -460,8 +448,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       true,
+			valid: true,
 		},
 		{
 			name: "valid clusterservicebroker - complex catalogRequirements.servicePlan",
@@ -482,8 +469,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       true,
+			valid: true,
 		},
 		{
 			name: "invalid clusterservicebroker - catalogRequirements.servicePlan",
@@ -503,8 +489,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       false,
+			valid: false,
 		},
 		{
 			name: "valid clusterservicebroker - catalogRequirements with serviceClass and servicePlan",
@@ -529,26 +514,18 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			featureFlag: featurePtr(scfeatures.CatalogRestrictions),
-			valid:       true,
+			valid: true,
 		},
 	}
 
 	for _, tc := range cases {
-		// wrapped in a func to allow defer to turn off the featureFlag
-		func() {
-			if tc.featureFlag != nil {
-				utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", *tc.featureFlag))
-				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", *tc.featureFlag))
-			}
-			errs := ValidateClusterServiceBroker(tc.broker)
-			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
-				return
-			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
-			}
-		}()
+		errs := ValidateClusterServiceBroker(tc.broker)
+		if len(errs) != 0 && tc.valid {
+			t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			return
+		} else if len(errs) == 0 && !tc.valid {
+			t.Errorf("%v: unexpected success", tc.name)
+		}
 	}
 
 	updateCases := []struct {
