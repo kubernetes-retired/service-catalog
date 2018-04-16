@@ -72,6 +72,9 @@ func TestCommandValidation(t *testing.T) {
 		{"bind does not accept --param and --params-json",
 			`bind name --params-json '{}' --param k=v`,
 			"--params-json cannot be used with --param"},
+		{"completion no shell specified", "completion", "Shell not specified"},
+		{"completion too many args", "completion arg0 arg1", "Too many arguments. Expected only the shell type"},
+		{"completion unsupported shell", "completion unsupportedShell", "Unsupported shell type \"unsupportedShell\""},
 	}
 
 	for _, tc := range testcases {
@@ -121,6 +124,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all bindings", cmd: "get bindings --all-namespaces", golden: "output/get-bindings-all-namespaces.txt"},
 		{name: "get binding", cmd: "get binding ups-binding -n test-ns", golden: "output/get-binding.txt"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
+
+		{name: "completion bash", cmd: "completion bash", golden: "output/completion-bash.txt"},
 	}
 
 	for _, tc := range testcases {

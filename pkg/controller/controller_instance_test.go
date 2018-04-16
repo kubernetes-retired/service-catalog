@@ -92,8 +92,8 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msgf(
-		"References a non-existent ClusterServiceClass (ExternalName: %q) or there is more than one (found: %d)",
-		"nothere", 0,
+		"References a non-existent ClusterServiceClass %c or there is more than one (found: 0)",
+		instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -135,8 +135,8 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msgf(
-		"References a non-existent ClusterServiceClass (K8S: %q)",
-		"nothereclass",
+		"References a non-existent ClusterServiceClass %c",
+		instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -171,7 +171,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceBrokerReason).msgf(
 		"The instance references a non-existent broker %q",
-		"test-broker",
+		"test-clusterservicebroker",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -230,7 +230,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 	events := getRecordedEvents(testController)
 	expectedEvent := warningEventBuilder(errorAuthCredentialsReason).msgf(
 		"Error getting broker auth credentials for broker %q:",
-		"test-broker",
+		"test-clusterservicebroker",
 	).msg("no secret defined")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -278,7 +278,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -290,8 +290,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		`References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
-		"", "nothere", "SCGUID", "test-serviceclass", 0,
+		`References a non-existent ClusterServicePlan %b on ClusterServiceClass %s %c or there is more than one (found: 0)`,
+		instance.Spec.PlanReference, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -345,8 +345,8 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		"References a non-existent ClusterServicePlan with K8S name %q on ClusterServiceClass with K8S name %q",
-		"nothereplan", testClusterServiceClassGUID,
+		"References a non-existent ClusterServicePlan %v",
+		instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -757,7 +757,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -767,10 +767,10 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "SCGUID" {
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "PGUID" {
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
@@ -826,7 +826,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -836,10 +836,10 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "SCGUID" {
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "PGUID" {
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
@@ -1011,7 +1011,7 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
-		"SCGUID", "test-serviceclass", "test-broker", 500, "InternalServerError; Description: Something went wrong!; ResponseError: <nil>",
+		"CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker", 500, "InternalServerError; Description: Something went wrong!; ResponseError: <nil>",
 	)
 	expectedProvisionCallEvent := warningEventBuilder(errorProvisionCallFailedReason).msg(message)
 	expectedOrphanMitigationEvent := warningEventBuilder(startingInstanceOrphanMitigationReason).
@@ -1091,7 +1091,7 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
-		"SCGUID", "test-serviceclass", "test-broker", 400, "BadRequest; Description: Your parameters are incorrect!; ResponseError: <nil>",
+		"CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker", 400, "BadRequest; Description: Your parameters are incorrect!; ResponseError: <nil>",
 	)
 	expectedEvents := []string{
 		warningEventBuilder(errorProvisionCallFailedReason).msg(message).String(),
@@ -1220,7 +1220,7 @@ func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorDeletedClusterServicePlanReason).msgf(
 		"ClusterServicePlan (K8S: %q ExternalName: %q) has been deleted; cannot provision.",
-		"PGUID", "test-plan",
+		"CSPGUID", "test-clusterserviceplan",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1270,7 +1270,7 @@ func TestReconcileServiceInstanceFailsWithDeletedClass(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorDeletedClusterServiceClassReason).msgf(
 		"ClusterServiceClass (K8S: %q ExternalName: %q) has been deleted; cannot provision.",
-		"SCGUID", "test-serviceclass",
+		"CSCGUID", "test-clusterserviceclass",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1306,10 +1306,10 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "SCGUID" {
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "PGUID" {
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
@@ -4219,7 +4219,9 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msg("References a non-existent ClusterServiceClass (ExternalName: \"test-serviceclass\") or there is more than one (found: 0)")
+	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassReason).msg(
+		fmt.Sprintf(`References a non-existent ClusterServiceClass %c or there is more than one (found: 0)`,
+			instance.Spec.PlanReference))
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -4486,7 +4488,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -4511,11 +4513,160 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServicePlanReason).msgf(
-		`References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q) or there is more than one (found: %v)`,
-		"", "test-plan", "SCGUID", "test-serviceclass", 0,
+		`References a non-existent ClusterServicePlan %b on ClusterServiceClass %s %c or there is more than one (found: 0)`,
+		instance.Spec.PlanReference, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// TestReconcileServiceInstanceUpdateDashboardURLResponse tests updating a
+// ServiceInstance and a new DashboardURL is returned from the broker
+func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
+	cases := []struct {
+		name                     string
+		enableUpdateDashboardURL bool
+		newDashboardURL          string
+	}{
+		{
+			name: "new dashboard url returned and alpha feature enabled",
+			enableUpdateDashboardURL: true,
+			newDashboardURL:          "http://foobar.com",
+		},
+		{
+			name: "dashboard url blank not returned and alpha feature enabled",
+			enableUpdateDashboardURL: true,
+			newDashboardURL:          "",
+		},
+		{
+			name: "new dashboard url returned and alpha feature disabled",
+			enableUpdateDashboardURL: false,
+			newDashboardURL:          "http://banana.com",
+		},
+	}
+
+	for _, tc := range cases {
+		fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+			UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+				Response: &osb.UpdateInstanceResponse{
+					DashboardURL: &tc.newDashboardURL,
+				},
+			},
+		})
+		if tc.enableUpdateDashboardURL {
+			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL))
+			if err != nil {
+				t.Fatalf("Failed to enable updatable dashboard URL feature: %v", err)
+			}
+		} else {
+			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
+			if err != nil {
+				t.Fatalf("Failed to enable updatable dashboard URL feature: %v", err)
+			}
+		}
+		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
+
+		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+		sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+		instance := getTestServiceInstanceWithRefs()
+		instance.Generation = 2
+		instance.Status.ReconciledGeneration = 1
+		instance.Status.ObservedGeneration = 1
+		instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusProvisioned
+		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		instance.Status.DashboardURL = &testDashboardURL
+
+		oldParameters := map[string]interface{}{
+			"args": map[string]interface{}{
+				"first":  "first-arg",
+				"second": "second-arg",
+			},
+			"name": "test-param",
+		}
+		oldParametersMarshaled, err := MarshalRawParameters(oldParameters)
+		if err != nil {
+			t.Fatalf("Failed to marshal parameters: %v", err)
+		}
+		oldParametersRaw := &runtime.RawExtension{
+			Raw: oldParametersMarshaled,
+		}
+
+		oldParametersChecksum := generateChecksumOfParametersOrFail(t, oldParameters)
+
+		instance.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+			ClusterServicePlanExternalName: "old-plan-name",
+			ClusterServicePlanExternalID:   "old-plan-id",
+			Parameters:                     oldParametersRaw,
+			ParametersChecksum:             oldParametersChecksum,
+		}
+
+		parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
+		parameters.Args["first"] = "first-arg"
+		parameters.Args["second"] = "second-arg"
+
+		b, err := json.Marshal(parameters)
+		if err != nil {
+			t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+		}
+		instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+		if err := testController.reconcileServiceInstance(instance); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		instance = assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, oldParameters, oldParametersChecksum)
+		fakeCatalogClient.ClearActions()
+		fakeKubeClient.ClearActions()
+
+		if err = testController.reconcileServiceInstance(instance); err != nil {
+			t.Fatalf("This should not fail : %v", err)
+		}
+
+		brokerActions := fakeClusterServiceBrokerClient.Actions()
+		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+		expectedPlanID := testClusterServicePlanGUID
+		assertUpdateInstance(t, brokerActions[0], &osb.UpdateInstanceRequest{
+			AcceptsIncomplete: true,
+			InstanceID:        testServiceInstanceGUID,
+			ServiceID:         testClusterServiceClassGUID,
+			PlanID:            &expectedPlanID,
+			Context:           testContext,
+			Parameters:        nil, // no change to parameters
+		})
+
+		actions := fakeCatalogClient.Actions()
+		assertNumberOfActions(t, actions, 1)
+
+		updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+
+		if tc.enableUpdateDashboardURL {
+			if tc.newDashboardURL != "" {
+				assertServiceInstanceDashboardURL(t, updatedServiceInstance, tc.newDashboardURL)
+			} else {
+				assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+			}
+		} else {
+			assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+		}
+
+		// verify no kube resources created
+		// One single action comes from getting namespace uid
+		kubeActions := fakeKubeClient.Actions()
+		if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+			{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		events := getRecordedEvents(testController)
+
+		expectedEvent := normalEventBuilder(successUpdateInstanceReason).msg("The instance was updated successfully")
+		if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
@@ -4797,7 +4948,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-plan,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -4870,7 +5021,7 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=new-plan-name,spec.clusterServiceBrokerName=test-broker,spec.clusterServiceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=new-plan-name,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 

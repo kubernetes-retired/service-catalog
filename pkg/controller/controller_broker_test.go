@@ -251,7 +251,7 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-clusterservicebroker"),
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -300,7 +300,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-clusterservicebroker"),
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -368,7 +368,7 @@ func TestReconcileClusterServiceBrokerRemovedAndRestoredClusterServiceClass(t *t
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-clusterservicebroker"),
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -425,7 +425,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServicePlan(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-clusterservicebroker"),
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -469,7 +469,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-clusterservicebroker"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
@@ -521,7 +521,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-broker"),
+		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", "test-clusterservicebroker"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
@@ -618,7 +618,7 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEvent := normalEventBuilder(successClusterServiceBrokerDeletedReason).msg(
-		"The broker test-broker was deleted successfully.",
+		"The broker test-clusterservicebroker was deleted successfully.",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1256,7 +1256,7 @@ func TestReconcileClusterServicePlanFromClusterServiceBrokerCatalog(t *testing.T
 				return p
 			}(),
 			shouldError: true,
-			errText:     strPtr(`ClusterServiceBroker "test-broker": ClusterServicePlan "test-plan" already exists for Broker "something-else"`),
+			errText:     strPtr(`ClusterServiceBroker "test-clusterservicebroker": ClusterServicePlan "test-clusterserviceplan" already exists for Broker "something-else"`),
 		},
 		{
 			name:                "plan update",

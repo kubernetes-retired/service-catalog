@@ -62,6 +62,7 @@ const (
 	testClusterServicePlanName            = "test-plan"
 	testNonbindableClusterServicePlanName = "test-nb-plan"
 	testInstanceLastOperation             = "InstanceLastOperation"
+	testClassExternalID                   = "12345"
 	testPlanExternalID                    = "34567"
 	testNonbindablePlanExternalID         = "nb34567"
 	testInstanceName                      = "test-instance"
@@ -1004,7 +1005,7 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 		Services: []osb.Service{
 			{
 				Name:        testClusterServiceClassName,
-				ID:          "12345",
+				ID:          testClassExternalID,
 				Description: "a test service",
 				Bindable:    true,
 				Plans: []osb.Plan{

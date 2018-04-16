@@ -44,7 +44,9 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 	cases := []struct {
 		name                string
 		classExternalName   string
+		classExternalID     string
 		planExternalName    string
+		planExternalID      string
 		classK8sName        string
 		planK8sName         string
 		expectedErrorReason string
@@ -71,6 +73,30 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 			name:                "non-existent external class and plan name",
 			classExternalName:   "nothereclass",
 			planExternalName:    "nothereplan",
+			expectedErrorReason: "ReferencesNonexistentServiceClass",
+		},
+		{
+			name:                "existent external class and plan id",
+			classExternalID:     testClassExternalID,
+			planExternalID:      testPlanExternalID,
+			expectedErrorReason: "",
+		},
+		{
+			name:                "non-existent external class id",
+			classExternalID:     "nothereclass",
+			planExternalID:      testPlanExternalID,
+			expectedErrorReason: "ReferencesNonexistentServiceClass",
+		},
+		{
+			name:                "non-existent external plan id",
+			classExternalID:     testClassExternalID,
+			planExternalID:      "nothereplan",
+			expectedErrorReason: "ReferencesNonexistentServicePlan",
+		},
+		{
+			name:                "non-existent external class and plan id",
+			classExternalID:     "nothereclass",
+			planExternalID:      "nothereplan",
 			expectedErrorReason: "ReferencesNonexistentServiceClass",
 		},
 		{
@@ -108,6 +134,8 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 					i := getTestInstance()
 					i.Spec.PlanReference.ClusterServiceClassExternalName = tc.classExternalName
 					i.Spec.PlanReference.ClusterServicePlanExternalName = tc.planExternalName
+					i.Spec.PlanReference.ClusterServiceClassExternalID = tc.classExternalID
+					i.Spec.PlanReference.ClusterServicePlanExternalID = tc.planExternalID
 					i.Spec.PlanReference.ClusterServiceClassName = tc.classK8sName
 					i.Spec.PlanReference.ClusterServicePlanName = tc.planK8sName
 					return i
@@ -460,6 +488,65 @@ func TestCreateServiceInstanceWithParameters(t *testing.T) {
 					brokerAction := getLastBrokerAction(t, ct.osbClient, fakeosb.ProvisionInstance)
 					if e, a := tc.expectedParams, brokerAction.Request.(*osb.ProvisionRequest).Parameters; !reflect.DeepEqual(e, a) {
 						t.Fatalf("unexpected diff in provision parameters: expected %v, got %v", e, a)
+					}
+				}
+			})
+		})
+	}
+}
+
+// TestUpdateServiceInstanceNewDashboardResponse tests setting Dashboard URL when
+// and update Instance request returns a new DashboardURL.
+func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
+	dashURL := testDashboardURL
+	cases := []struct {
+		name        string
+		setup       func(t *controllerTest)
+		osbResponse *osb.UpdateInstanceResponse
+	}{
+		{
+			name: "alpha features enabled",
+			setup: func(ct *controllerTest) {
+				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL)); err != nil {
+					t.Fatalf("Failed to enable updatable dashboard url feature: %v", err)
+				}
+			},
+			osbResponse: &osb.UpdateInstanceResponse{
+				DashboardURL: &dashURL,
+			},
+		},
+		{
+			name: "alpha feature disabled",
+			setup: func(ct *controllerTest) {
+				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL)); err != nil {
+					t.Fatalf("Failed to enable updatable dashboard url feature: %v", err)
+				}
+			},
+			osbResponse: &osb.UpdateInstanceResponse{
+				DashboardURL: &dashURL,
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				setup: func(ct *controllerTest) {
+					ct.osbClient.UpdateInstanceReaction = &fakeosb.UpdateInstanceReaction{
+						Response: tc.osbResponse,
+					}
+				},
+			}
+			ct.run(func(ct *controllerTest) {
+				if utilfeature.DefaultFeatureGate.Enabled(scfeatures.UpdateDashboardURL) {
+					if ct.instance.Status.DashboardURL != &dashURL {
+						t.Fatalf("unexpected DashboardURL: expected %v got %v", dashURL, *tc.osbResponse.DashboardURL)
+					}
+				} else {
+					if ct.instance.Status.DashboardURL != nil {
+						t.Fatal("Dashboard URL should be nil")
 					}
 				}
 			})
@@ -1298,6 +1385,14 @@ func TestDeleteServiceInstance(t *testing.T) {
 				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, condition); err != nil {
 					ct.t.Fatalf("error waiting for instance condition: %v", err)
 				}
+				// instance can't be deleted later, as we've
+				// already started deleting it now.  Instance is
+				// still in "deleted" mode at the end, the
+				// reconciler will pick it up and delete
+				// it. Thus we should null it out before the
+				// test runner goes and tries to do automated
+				// cleanup.
+				ct.instance = nil
 			},
 		},
 		{

@@ -36,8 +36,8 @@ func getTestInstance() *servicecatalog.ServiceInstance {
 		},
 		Spec: servicecatalog.ServiceInstanceSpec{
 			PlanReference: servicecatalog.PlanReference{
-				ClusterServiceClassExternalName: "test-serviceclass",
-				ClusterServicePlanExternalName:  "test-plan",
+				ClusterServiceClassExternalName: "test-clusterserviceclass",
+				ClusterServicePlanExternalName:  "test-clusterserviceplan",
 			},
 			ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
 			ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
@@ -93,32 +93,53 @@ func TestInstanceUpdate(t *testing.T) {
 			shouldGenerationIncrement: true,
 		},
 		{
-			name:  "plan change",
+			name:  "external plan name change",
 			older: getTestInstance(),
 			newer: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
-				i.Spec.ClusterServicePlanExternalName = "new-test-plan"
+				i.Spec.ClusterServicePlanExternalName = "new-plan"
 				return i
 			}(),
 			shouldGenerationIncrement: true,
 			shouldPlanRefClear:        true,
 		},
 		{
-			name: "plan change using k8s name",
+			name: "external plan id change",
 			older: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
 				i.Spec.ClusterServiceClassExternalName = ""
 				i.Spec.ClusterServicePlanExternalName = ""
-				i.Spec.ClusterServiceClassName = "class-name"
-				i.Spec.ClusterServicePlanName = "old-plan-name"
+				i.Spec.ClusterServiceClassExternalID = "test-clusterserviceclass"
+				i.Spec.ClusterServicePlanExternalID = "test-clusterserviceplan"
 				return i
 			}(),
 			newer: func() *servicecatalog.ServiceInstance {
 				i := getTestInstance()
 				i.Spec.ClusterServiceClassExternalName = ""
 				i.Spec.ClusterServicePlanExternalName = ""
-				i.Spec.ClusterServiceClassName = "class-name"
-				i.Spec.ClusterServicePlanName = "new-plan-name"
+				i.Spec.ClusterServiceClassExternalID = "test-clusterserviceclass"
+				i.Spec.ClusterServicePlanExternalID = "new plan"
+				return i
+			}(),
+			shouldGenerationIncrement: true,
+			shouldPlanRefClear:        true,
+		},
+		{
+			name: "k8s plan change",
+			older: func() *servicecatalog.ServiceInstance {
+				i := getTestInstance()
+				i.Spec.ClusterServiceClassExternalName = ""
+				i.Spec.ClusterServicePlanExternalName = ""
+				i.Spec.ClusterServiceClassName = "test-clusterserviceclass"
+				i.Spec.ClusterServicePlanName = "test-clusterserviceplan"
+				return i
+			}(),
+			newer: func() *servicecatalog.ServiceInstance {
+				i := getTestInstance()
+				i.Spec.ClusterServiceClassExternalName = ""
+				i.Spec.ClusterServicePlanExternalName = ""
+				i.Spec.ClusterServiceClassName = "test-clusterserviceclass"
+				i.Spec.ClusterServicePlanName = "new plan"
 				return i
 			}(),
 			shouldGenerationIncrement: true,

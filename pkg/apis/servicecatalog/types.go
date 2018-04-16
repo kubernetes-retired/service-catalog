@@ -639,6 +639,14 @@ type ServiceInstance struct {
 // ServicePlan and ServiceClass. Because there are multiple ways to
 // specify the desired Class/Plan, this structure specifies the
 // allowed ways to specify the intent.
+//
+// Currently supported ways:
+//  - ClusterServiceClassExternalName and ClusterServicePlanExternalName
+//  - ClusterServiceClassExternalID and ClusterServicePlanExternalID
+//  - ClusterServiceClassName and ClusterServicePlanName
+//
+// For any of these ways, if a ClusterServiceClass only has one plan
+// then the corresponding service plan field is optional.
 type PlanReference struct {
 	// ClusterServiceClassExternalName is the human-readable name of the
 	// service as reported by the broker. Note that if the broker changes
@@ -654,6 +662,14 @@ type PlanReference struct {
 	// the current name of the ClusterServicePlan, you should follow the
 	// ClusterServicePlanRef below.
 	ClusterServicePlanExternalName string
+
+	// ClusterServiceClassExternalID is the broker's external id for the class.
+	//
+	// Immutable.
+	ClusterServiceClassExternalID string
+
+	// ClusterServicePlanExternalID is the broker's external id for the plan.
+	ClusterServicePlanExternalID string
 
 	// ClusterServiceClassName is the kubernetes name of the
 	// ClusterServiceClass.

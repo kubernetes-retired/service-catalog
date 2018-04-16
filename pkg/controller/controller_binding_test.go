@@ -255,8 +255,8 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 	assertNumEvents(t, events, 1)
 
 	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceClassMessage).msgf(
-		"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-		"nosuchclassid", testNonExistentClusterServiceClassName,
+		"References a non-existent ClusterServiceClass %q - %c",
+		instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -672,7 +672,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		"UNBINDABLE-SERVICE", "test-unbindable-serviceclass", "test-unbindable-plan",
+		"UNBINDABLE-CLUSTERSERVICECLASS", "test-unbindable-clusterserviceclass", "test-unbindable-clusterserviceplan",
 	).String()
 	expectedEvents := []string{expectedEvent, expectedEvent}
 	if err := checkEvents(events, expectedEvents); err != nil {
@@ -847,7 +847,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		"SCGUID", "test-serviceclass", "test-unbindable-plan",
+		"CSCGUID", "test-clusterserviceclass", "test-unbindable-clusterserviceplan",
 	).String()
 	expectedEvents := []string{
 		expectedEvent,
@@ -1397,7 +1397,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
+		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1563,7 +1563,7 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
+		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("fake creation failure")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1851,7 +1851,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
+		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1919,7 +1919,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "SCGUID", "test-serviceclass", "test-broker",
+		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
