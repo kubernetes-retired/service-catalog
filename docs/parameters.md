@@ -1,3 +1,8 @@
+---
+title: Parameters
+layout: docwithnav
+---
+
 # Passing parameters to brokers
 
 Table of Contents

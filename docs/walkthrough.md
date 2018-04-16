@@ -1,4 +1,7 @@
-# Service Catalog Demonstration Walkthrough
+---
+title: Walkthrough
+layout: docwithnav
+---
 
 This document assumes that you've installed Service Catalog onto your cluster.
 If you haven't, please see [install.md](./install.md). Optionally you may install
@@ -7,6 +10,8 @@ so that you may follow this walkthrough using svcat or using only kubectl.
 
 All commands in this document assume that you're operating out of the root
 of this repository.
+
+<a id="install" />
 
 # Step 1 - Installing the UPS Broker Server
 

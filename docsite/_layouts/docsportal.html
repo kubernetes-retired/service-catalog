@@ -1,0 +1,53 @@
+<!Doctype html>
+<html id="docs" class="{{ toc.bigheader }}">
+
+{% include head.html %}
+
+<body>
+
+{% include header.html %}
+
+<!--  HERO  -->
+<section id="hero" class="light-text">
+  <h1>{{ page.title }}</h1>
+  <h5>{{ page.abstract }}</h5>
+  <div id="vendorStrip" class="light-text">
+    <ul>
+      <li><a href="/docs/" {% if toc.bigheader == nil %}class="YAH"{% endif %}>HOME</a></li>
+      <li><a href="/docs/install" {% if toc.bigheader == "Install" %}class="YAH"{% endif %}>INSTALL</a></li>
+      <li><a href="/docs/walkthrough" {% if toc.bigheader == "Walkthrough" %}class="YAH"{% endif %}>WALKTHROUGH</a></li>
+      <li><a href="/docs/cli" {% if toc.bigheader == "CLI" %}class="YAH"{% endif %}>CLI</a></li>
+      <li><a href="/docs/concepts" {% if toc.bigheader == "Concepts" %}class="YAH"{% endif %}>CONCEPTS</a></li>
+    </ul>
+    <div id="searchBox">
+      <input type="text" id="search" placeholder="Search" onkeydown="if (event.keyCode==13) window.location.replace('/docs/search/?q=' + this.value)" autofocus="autofocus">
+    </div>
+  </div>
+</section>
+
+{% include deprecation-warning.html %}
+
+<section id="encyclopedia">
+  <div id="docsToc" style="display:none;"></div>
+
+  <div id="content">
+
+    {{ content }}
+
+    <div class="issue-button-container">
+        {% unless page.no_issue %}
+            <a href="" onclick="window.open('https://github.com/kubernetes-incubator/service-catalog/issues/new?title=Issue%20with%20' +
+            'svc-cat.io'+window.location.pathname)" class="button issue">Create an Issue</a>
+        {% endunless %}
+        {% unless page.noedit %}
+            <a href="/editdocs#{{ page.path }}" class="button issue">Edit this Page</a>
+        {% endunless %}
+    </div>
+  </div>
+</section>
+
+{% include_cached footer.html %}
+{% include footer-scripts.html %}
+
+</body>
+</html>

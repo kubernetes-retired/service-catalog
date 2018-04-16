@@ -1,0 +1,5 @@
+bigheader: "Install"
+abstract: "Instructions for installing Service Catalog on a Cluster."
+landing_page: /docs/install
+toc:
+- docs/install.md

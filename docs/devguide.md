@@ -1,4 +1,7 @@
-# Developer's Guide to Service-Catalog
+---
+title: Developer's Guide
+layout: docwithnav
+---
 
 Table of Contents
 - [Overview](#overview)

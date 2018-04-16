@@ -1,4 +1,7 @@
-# Code & Documentation Standards
+---
+title: Code & Documentation Standards
+layout: docwithnav
+---
 
 This document details our goals for code quality, coverage and documentation standards. At the time
 of this writing, these are standards that all of our code may not meet. We should always try to 
