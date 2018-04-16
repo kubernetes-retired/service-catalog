@@ -1385,6 +1385,14 @@ func TestDeleteServiceInstance(t *testing.T) {
 				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, condition); err != nil {
 					ct.t.Fatalf("error waiting for instance condition: %v", err)
 				}
+				// instance can't be deleted later, as we've
+				// already started deleting it now.  Instance is
+				// still in "deleted" mode at the end, the
+				// reconciler will pick it up and delete
+				// it. Thus we should null it out before the
+				// test runner goes and tries to do automated
+				// cleanup.
+				ct.instance = nil
 			},
 		},
 		{

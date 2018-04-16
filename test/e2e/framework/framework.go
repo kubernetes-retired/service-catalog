@@ -17,8 +17,8 @@ limitations under the License.
 package framework
 
 import (
-	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -63,12 +63,16 @@ func (f *Framework) BeforeEach() {
 	By("Creating a kubernetes client")
 	kubeConfig, err := LoadConfig(TestContext.KubeConfig, TestContext.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
+	kubeConfig.QPS = 50
+	kubeConfig.Burst = 100
 	f.KubeClientSet, err = kubernetes.NewForConfig(kubeConfig)
 	Expect(err).NotTo(HaveOccurred())
 	By("Creating a service catalog client")
-	serviceCatatlogConfig, err := LoadConfig(TestContext.ServiceCatalogConfig, TestContext.ServiceCatalogContext)
+	serviceCatalogConfig, err := LoadConfig(TestContext.ServiceCatalogConfig, TestContext.ServiceCatalogContext)
 	Expect(err).NotTo(HaveOccurred())
-	f.ServiceCatalogClientSet, err = clientset.NewForConfig(serviceCatatlogConfig)
+	serviceCatalogConfig.QPS = 50
+	serviceCatalogConfig.Burst = 100
+	f.ServiceCatalogClientSet, err = clientset.NewForConfig(serviceCatalogConfig)
 	Expect(err).NotTo(HaveOccurred())
 	By("Building a namespace api object")
 	namespace, err := CreateKubeNamespace(f.BaseName, f.KubeClientSet)
