@@ -41,6 +41,7 @@
    * [Default Parameters](#default-parameters)
    * [Default Secret Transform](#default-secret-transform)
    * [User-Defined Plans](#user-defined-plans)
+   * [Default Plans by Class](#default-plans-by-class)
    * [Default Plans by Service Type](#default-plans-by-service-type)
    * [Suggested Parameters](#suggested-parameters)
    * [Suggested Plans](#suggested-plans)
@@ -659,11 +660,12 @@ Notes:
 1. Cluster operators can flag a plan as the default using svcat. This will add a
    different annotation `is-default-plan`, and Service catalog will handle
    unsetting the `is-default-plan` annotation on any other plan of the same service
-   type.
+   type or class.
 
 When service catalog searches for the default plan it will:
 
-1. List all plans that have that are flagged as suggested or default for that service type.
+1. List all plans that have that are flagged as suggested or default for the specified class or service type.
+   Only one value may be set, the class or the service type, not both.
 1. When more than one plan has `is-default-plan` set, the operation should fail.
 1. When there is one plan with `is-default-plan` set, that plan is used as the default.
 1. Otherwise, when more than one plan has `is-suggested-plan` set, the operation
@@ -810,6 +812,14 @@ and this would save us all a lot of time.
 ## Milestones
 This breaks down the proposed changes into smaller chunks of useful work:
 
+1. [User-Defined Plans](#user-defined-plans)
+1. [Default Parameters](#default-parameters)
+1. [Default Secret Transform](#default-secret-transform)
+1. [Default Plans by Class](#default-plans-by-class)
+1. [Default Plans by Service Type](#default-plans-by-service-type)
+1. [Suggested Plans](#suggested-plans)
+1. [Suggested Parameters](#suggested-parameters) (TBD - unclear how to implement on v2)
+
 ### Default Parameters
 An operator can define default parameters for classes and plans either
 by installing Helm charts before installing the broker, or by editing existing
@@ -866,12 +876,10 @@ Details:
 * [Override a Class or Plan](#override-the-broker-defaults)
 * [Service Class Discovery](#service-class-discovery)
 
-### Default Plans by Service Type
-An operator can mark a plan as the default for a particular service type, allowing
-users to provision specifying only the service type.
+### Default Plans by Class
+An operator can mark a plan as the default for its class, allowing
+users to provision specifying only the class.
 
-* Add the ServiceType field to service classes, plans, instances and bindings.
-* Output the service type in `svcat get` and `svcat describe`.
 * Indicate default service plans in `svcat get` with an `*` after the service type, e.g. `redis*`.
 * Add a default: true/false field to `svcat describe` for service plans.
 * Resolve the default during service instance reconciliation when no plan is specified.
@@ -879,6 +887,16 @@ users to provision specifying only the service type.
 
 Details:
 * [Modify existing defaults](#modify-existing-defaults)
+* [Default Plan Resolution](#default-plan-resolution)
+
+### Default Plans by Service Type
+An operator can mark a plan as the default for a particular service type, allowing
+users to provision specifying only the service type.
+
+* Add the ServiceType field to service classes, plans, instances and bindings.
+* Output the service type in `svcat get` and `svcat describe`..
+
+Details:
 * [Provisioning by Service Type](#provisioning-by-service-type)
 * [Default Plan Resolution](#default-plan-resolution)
 
