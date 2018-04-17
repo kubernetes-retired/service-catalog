@@ -428,7 +428,7 @@ func TestCreateServiceBindingWithParameters(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
+			// t.Parallel()
 			ct := &controllerTest{
 				t:        t,
 				broker:   getTestBroker(),
@@ -491,18 +491,60 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 			},
 		},
 		{
-			name: "renameKey transform",
+			name: "multiple transforms",
+			secrets: []secretDef{
+				{
+					name: "other-secret",
+					data: map[string][]byte{
+						"key-from-other-secret": []byte("qux"),
+					},
+				},
+			},
 			secretTransforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:         "addedStringValue",
+						StringValue: pointer("stringValue"),
+					},
+				},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:   "addedByteArray",
+						Value: []byte("byteArray"),
+					},
+				},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:                "valueFromJSONPath",
+						JSONPathExpression: pointer("{.foo}"),
+					},
+				},
 				{
 					RenameKey: &v1beta1.RenameKeyTransform{
 						From: "foo",
 						To:   "bar",
 					},
 				},
+				{
+					AddKeysFrom: &v1beta1.AddKeysFromTransform{
+						SecretRef: &v1beta1.ObjectReference{
+							Name:      "other-secret",
+							Namespace: "some-namespace",
+						},
+					},
+				},
+				{
+					RemoveKey: &v1beta1.RemoveKeyTransform{
+						Key: "baz",
+					},
+				},
 			},
 			expectedSecretData: map[string][]byte{
-				"bar": []byte("bar"),
-				"baz": []byte("zap"),
+				"addedStringValue":      []byte("stringValue"),
+				"addedByteArray":        []byte("byteArray"),
+				"valueFromJSONPath":     []byte("bar"),
+				"bar":                   []byte("bar"),
+				"key-from-other-secret": []byte("qux"),
 			},
 		},
 	}
@@ -550,6 +592,10 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 			})
 		})
 	}
+}
+
+func pointer(obj string) *string {
+	return &obj
 }
 
 // TestDeleteServiceBindingRetry tests whether deletion of a service binding
