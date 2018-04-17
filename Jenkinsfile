@@ -65,7 +65,7 @@ def test_account = params.TEST_ACCOUNT
 def test_zone    = params.TEST_ZONE ?: 'us-west1-b'
 def namespace    = 'catalog'
 def root_path    = 'src/github.com/kubernetes-incubator/service-catalog'
-def timeoutMin   = 50
+def timeoutMin   = 70
 def certFolder   = '/tmp/sc-certs'
 
 node {
