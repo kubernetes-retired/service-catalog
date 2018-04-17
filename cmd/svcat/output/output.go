@@ -30,6 +30,12 @@ const (
 	statusDeprecated = "Deprecated"
 )
 
+const (
+	formatJSON  = "json"
+	formatTable = "table"
+	formatYAML  = "yaml"
+)
+
 func formatStatusShort(condition string, conditionStatus v1beta1.ConditionStatus, reason string) string {
 	if conditionStatus == v1beta1.ConditionTrue {
 		return condition

@@ -46,6 +46,9 @@ const (
 	// EnvPluginVerbose is the -v=LEVEL flag
 	EnvPluginVerbose = EnvPluginGlobalFlagPrefix + "_V"
 
+	// EnvPluginOutput is the -o=FORMAT flag
+	EnvPluginOutput = EnvPluginGlobalFlagPrefix + "_O"
+
 	// EnvPluginPath overrides where plugins should be installed.
 	EnvPluginPath = "KUBECTL_PLUGINS_PATH"
 )
@@ -64,6 +67,9 @@ func BindEnvironmentVariables(vip *viper.Viper) {
 
 	// Manually bind relevant glog variables
 	vip.BindEnv("v", EnvPluginVerbose)
+
+	// Manually bind relevant glog variables
+	vip.BindEnv("o", EnvPluginOutput)
 
 	// kubectl intercepts all flags passed to a plugin, and replaces them
 	// with prefixed environment variables

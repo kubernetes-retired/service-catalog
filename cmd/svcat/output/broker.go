@@ -17,11 +17,9 @@ limitations under the License.
 package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
-	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -59,52 +57,29 @@ func writeBrokerListTable(w io.Writer, brokers []v1beta1.ClusterServiceBroker) {
 	t.Render()
 }
 
-func writeBrokerListJSON(w io.Writer, brokers []v1beta1.ClusterServiceBroker) {
-	l := v1beta1.ClusterServiceBrokerList{
-		Items: brokers,
-	}
-	j, _ := json.MarshalIndent(l, "", "   ")
-	w.Write(j)
-}
-
-func writeBrokerListYAML(w io.Writer, brokers []v1beta1.ClusterServiceBroker) {
-	l := v1beta1.ClusterServiceBrokerList{
-		Items: brokers,
-	}
-	y, _ := yaml.Marshal(l)
-	w.Write(y)
-}
-
 // WriteBrokerList prints a list of brokers in the specified output format.
 func WriteBrokerList(w io.Writer, outputFormat string, brokers ...v1beta1.ClusterServiceBroker) {
+	l := v1beta1.ClusterServiceBrokerList{
+		Items: brokers,
+	}
 	switch outputFormat {
-	case "json":
-		writeBrokerListJSON(w, brokers)
-	case "yaml":
-		writeBrokerListYAML(w, brokers)
-	case "table":
+	case formatJSON:
+		writeJSON(w, l, 3)
+	case formatYAML:
+		writeYAML(w, l, 0)
+	case formatTable:
 		writeBrokerListTable(w, brokers)
 	}
-}
-
-func writeBrokerJSON(w io.Writer, broker v1beta1.ClusterServiceBroker) {
-	j, _ := json.MarshalIndent(broker, "", "   ")
-	w.Write(j)
-}
-
-func writeBrokerYAML(w io.Writer, broker v1beta1.ClusterServiceBroker) {
-	y, _ := yaml.Marshal(broker)
-	w.Write(y)
 }
 
 // WriteBroker prints a broker in the specified output format.
 func WriteBroker(w io.Writer, outputFormat string, broker v1beta1.ClusterServiceBroker) {
 	switch outputFormat {
-	case "json":
-		writeBrokerJSON(w, broker)
-	case "yaml":
-		writeBrokerYAML(w, broker)
-	case "table":
+	case formatJSON:
+		writeJSON(w, broker, 3)
+	case formatYAML:
+		writeYAML(w, broker, 0)
+	case formatTable:
 		writeBrokerListTable(w, []v1beta1.ClusterServiceBroker{broker})
 	}
 }

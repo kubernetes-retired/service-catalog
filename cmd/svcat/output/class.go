@@ -68,34 +68,27 @@ func writeClassListYAML(w io.Writer, classes []v1beta1.ClusterServiceClass) {
 
 // WriteClassList prints a list of classes in the specified output format.
 func WriteClassList(w io.Writer, outputFormat string, classes ...v1beta1.ClusterServiceClass) {
+	classList := v1beta1.ClusterServiceClassList{
+		Items: classes,
+	}
 	switch outputFormat {
-	case "json":
-		writeClassListJSON(w, classes)
-	case "yaml":
-		writeClassListYAML(w, classes)
-	case "table":
+	case formatJSON:
+		writeJSON(w, classList, 3)
+	case formatYAML:
+		writeYAML(w, classList, 0)
+	case formatTable:
 		writeClassListTable(w, classes)
 	}
-}
-
-func writeClassJSON(w io.Writer, class v1beta1.ClusterServiceClass) {
-	j, _ := json.MarshalIndent(class, "", "   ")
-	w.Write(j)
-}
-
-func writeClassYAML(w io.Writer, class v1beta1.ClusterServiceClass) {
-	y, _ := yaml.Marshal(class)
-	w.Write(y)
 }
 
 // WriteClass prints a single class in the specified output format.
 func WriteClass(w io.Writer, outputFormat string, class v1beta1.ClusterServiceClass) {
 	switch outputFormat {
-	case "json":
-		writeClassJSON(w, class)
-	case "yaml":
-		writeClassYAML(w, class)
-	case "table":
+	case formatJSON:
+		writeJSON(w, class, 3)
+	case formatYAML:
+		writeYAML(w, class, 0)
+	case formatTable:
 		writeClassListTable(w, []v1beta1.ClusterServiceClass{class})
 	}
 }

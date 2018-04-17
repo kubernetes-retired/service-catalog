@@ -132,6 +132,6 @@ func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
 	case "yaml":
 		return "yaml", nil
 	default:
-		return "", fmt.Errorf("unknown output format: %s", format)
+		return "", fmt.Errorf("invalid --output format %q, allowed values are table, json and yaml", format)
 	}
 }

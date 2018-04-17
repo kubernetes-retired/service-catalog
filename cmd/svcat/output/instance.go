@@ -17,18 +17,11 @@ limitations under the License.
 package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
-	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
-
-type instance struct {
-	Kind                    string `json:"kind"`
-	v1beta1.ServiceInstance `json:",inline"`
-}
 
 func getInstanceStatusCondition(status v1beta1.ServiceInstanceStatus) v1beta1.ServiceInstanceCondition {
 	if len(status.Conditions) > 0 {
@@ -70,35 +63,14 @@ func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceLi
 	t.Render()
 }
 
-func writeInstanceListJSON(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
-	j, _ := json.MarshalIndent(instanceList, "", "   ")
-	w.Write(j)
-
-}
-
-func writeInstanceJSON(w io.Writer, item v1beta1.ServiceInstance) {
-	j, _ := json.MarshalIndent(item, "", "   ")
-	w.Write(j)
-}
-
-func writeInstanceListYAML(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
-	y, _ := yaml.Marshal(instanceList)
-	w.Write(y)
-}
-
-func writeInstanceYAML(w io.Writer, item v1beta1.ServiceInstance) {
-	y, _ := yaml.Marshal(item)
-	w.Write(y)
-}
-
 // WriteInstanceList prints a list of instances.
 func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.ServiceInstanceList) {
 	switch outputFormat {
-	case "json":
-		writeInstanceListJSON(w, instanceList)
-	case "yaml":
-		writeInstanceListYAML(w, instanceList)
-	case "table":
+	case formatJSON:
+		writeJSON(w, instanceList, 3)
+	case formatYAML:
+		writeYAML(w, instanceList, 0)
+	case formatTable:
 		writeInstanceListTable(w, instanceList)
 	}
 }
@@ -107,9 +79,9 @@ func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.S
 func WriteInstance(w io.Writer, outputFormat string, instance v1beta1.ServiceInstance) {
 	switch outputFormat {
 	case "json":
-		writeInstanceJSON(w, instance)
+		writeJSON(w, instance, 3)
 	case "yaml":
-		writeInstanceYAML(w, instance)
+		writeYAML(w, instance, 0)
 	case "table":
 		p := v1beta1.ServiceInstanceList{
 			Items: []v1beta1.ServiceInstance{instance},

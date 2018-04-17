@@ -17,11 +17,9 @@ limitations under the License.
 package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
-	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -40,16 +38,6 @@ func getBindingStatusShort(status v1beta1.ServiceBindingStatus) string {
 func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
 	lastCond := getBindingStatusCondition(status)
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
-}
-
-func writeBindingListJSON(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
-	j, _ := json.MarshalIndent(bindingList, "", "   ")
-	w.Write(j)
-}
-
-func writeBindingListYAML(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
-	y, _ := yaml.Marshal(bindingList)
-	w.Write(y)
 }
 
 func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
@@ -75,33 +63,23 @@ func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList)
 // WriteBindingList prints a list of bindings in the specified output format.
 func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.ServiceBindingList) {
 	switch outputFormat {
-	case "json":
-		writeBindingListJSON(w, bindingList)
-	case "yaml":
-		writeBindingListYAML(w, bindingList)
-	case "table":
+	case formatJSON:
+		writeJSON(w, bindingList, 3)
+	case formatYAML:
+		writeYAML(w, bindingList, 0)
+	case formatTable:
 		writeBindingListTable(w, bindingList)
 	}
-}
-
-func writeBindingJSON(w io.Writer, binding v1beta1.ServiceBinding) {
-	j, _ := json.MarshalIndent(binding, "", "   ")
-	w.Write(j)
-}
-
-func writeBindingYAML(w io.Writer, binding v1beta1.ServiceBinding) {
-	y, _ := yaml.Marshal(binding)
-	w.Write(y)
 }
 
 // WriteBinding prints a single bindings in the specified output format.
 func WriteBinding(w io.Writer, outputFormat string, binding v1beta1.ServiceBinding) {
 	switch outputFormat {
-	case "json":
-		writeBindingJSON(w, binding)
-	case "yaml":
-		writeBindingYAML(w, binding)
-	case "table":
+	case formatJSON:
+		writeJSON(w, binding, 3)
+	case formatYAML:
+		writeYAML(w, binding, 0)
+	case formatTable:
 		l := v1beta1.ServiceBindingList{
 			Items: []v1beta1.ServiceBinding{binding},
 		}
