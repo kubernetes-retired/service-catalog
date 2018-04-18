@@ -91,7 +91,7 @@ func RunTLS(ctx context.Context, addr string, cert string, key string, c control
 }
 
 func run(ctx context.Context, addr string, listenAndServe func(srv *http.Server) error, c controller.Controller) error {
-	glog.Infof("Starting server on %d\n", addr)
+	glog.Infof("Starting server on %s\n", addr)
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: createHandler(c),
