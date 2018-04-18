@@ -31,6 +31,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/spf13/pflag"
 	clientgotesting "k8s.io/client-go/testing"
 
 	"encoding/json"
@@ -324,6 +325,71 @@ func TestParametersForBinding(t *testing.T) {
 	}
 }
 
+// TestPluginFlags ensures that flags are parsed the same in both standalone and plugin mode.
+func TestPluginFlags(t *testing.T) {
+	testcases := []struct {
+		name       string            // Test Name
+		cmd        string            // Base command
+		flags      string            // Standalone mode flags
+		pluginVars map[string]string // Kubectl Plugin Environment Variables
+	}{
+		{"global flag", "get instances", "--namespace=foo", map[string]string{
+			"KUBECTL_PLUGINS_CURRENT_NAMESPACE": "foo"}},
+		{"local flag", "get plan PLAN", "--class=foo", map[string]string{
+			"KUBECTL_PLUGINS_LOCAL_FLAG_CLASS": "foo"}},
+		{"bool flag", "describe plan PLAN", "--traverse", map[string]string{
+			"KUBECTL_PLUGINS_LOCAL_FLAG_TRAVERSE": "true"}},
+	}
+
+	norun := func(cmd *cobra.Command, args []string) error {
+		return nil
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup a standalone svcat command
+			fullCmd := tc.cmd + " " + tc.flags
+			_, standaloneCmd, err := buildCommand(fullCmd, newContext(), "")
+			if err != nil {
+				t.Fatalf("%+v", err)
+			}
+			standaloneCmd.RunE = norun
+			standaloneCmd.Execute()
+			standaloneFlags := make(map[string]string)
+			standaloneCmd.Flags().VisitAll(func(f *pflag.Flag) {
+				standaloneFlags[f.Name] = f.Value.String()
+			})
+
+			// Setup a plugin-mode svcat command
+			defer func() {
+				os.Unsetenv(plugin.EnvPluginCaller)
+				for k := range tc.pluginVars {
+					os.Unsetenv(k)
+				}
+			}()
+			os.Setenv(plugin.EnvPluginCaller, "enable plugin mode")
+			for k, v := range tc.pluginVars {
+				os.Setenv(k, v)
+			}
+			_, pluginCmd, err := buildCommand(tc.cmd, newContext(), "")
+			if err != nil {
+				t.Fatalf("%+v", err)
+			}
+			pluginCmd.RunE = norun
+			pluginCmd.Execute()
+			pluginFlags := make(map[string]string)
+			pluginCmd.Flags().VisitAll(func(f *pflag.Flag) {
+				pluginFlags[f.Name] = f.Value.String()
+			})
+
+			if !reflect.DeepEqual(standaloneFlags, pluginFlags) {
+				t.Fatalf("WANT: %v\n\nGOT: %v", standaloneFlags, pluginFlags)
+			}
+
+		})
+	}
+}
+
 // executeCommand runs a svcat command against a fake k8s api,
 // returning the cli output.
 func executeCommand(t *testing.T, cmd string, continueOnErr bool) string {
@@ -425,7 +491,9 @@ func validateCommand(t *testing.T, cmd string, wantError string) {
 func buildCommand(cmd string, cxt *command.Context, kubeconfig string) (rootCmd *cobra.Command, targetCmd *cobra.Command, err error) {
 	rootCmd = buildRootCommand(cxt)
 	args := strings.Split(cmd, " ")
-	args = append(args, "--kubeconfig", kubeconfig)
+	if kubeconfig != "" {
+		args = append(args, "--kubeconfig", kubeconfig)
+	}
 	rootCmd.SetArgs(args)
 
 	targetCmd, _, err = rootCmd.Find(args)
