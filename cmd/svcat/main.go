@@ -84,8 +84,10 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 				cxt.Output = cmd.OutOrStdout()
 			}
 
-			// Initialize flags from environment variables
-			bindViperToCobra(cxt.Viper, cmd)
+			// Initialize flags from kubectl plugin environment variables
+			if plugin.IsPlugin() {
+				plugin.BindEnvironmentVariables(cxt.Viper, cmd)
+			}
 
 			// Initialize the context if not already configured (by tests)
 			if cxt.App == nil {
@@ -110,12 +112,8 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 		},
 	}
 
-	if plugin.IsPlugin() {
-		plugin.BindEnvironmentVariables(cxt.Viper)
-	} else {
-		cmd.PersistentFlags().StringVar(&opts.KubeContext, "kube-context", "", "name of the kube context to use")
-		cmd.PersistentFlags().StringVar(&opts.KubeConfig, "kubeconfig", "", "path to kubeconfig file. Overrides $KUBECONFIG")
-	}
+	cmd.PersistentFlags().StringVar(&opts.KubeContext, "kube-context", "", "name of the kube context to use")
+	cmd.PersistentFlags().StringVar(&opts.KubeConfig, "kubeconfig", "", "path to kubeconfig file. Overrides $KUBECONFIG")
 
 	cmd.AddCommand(newGetCmd(cxt))
 	cmd.AddCommand(newDescribeCmd(cxt))
@@ -191,19 +189,6 @@ func newTouchCmd(cxt *command.Context) *cobra.Command {
 
 func newCompletionCmd(ctx *command.Context) *cobra.Command {
 	return completion.NewCompletionCmd(ctx)
-}
-
-// Bind the viper configuration back to the cobra command flags.
-// Allows us to interact with the cobra flags normally, and while still
-// using viper's automatic environment variable binding.
-func bindViperToCobra(vip *viper.Viper, cmd *cobra.Command) {
-	vip.BindPFlags(cmd.Flags())
-	vip.AutomaticEnv()
-	cmd.Flags().VisitAll(func(f *pflag.Flag) {
-		if !f.Changed && vip.IsSet(f.Name) {
-			cmd.Flags().Set(f.Name, vip.GetString(f.Name))
-		}
-	})
 }
 
 // getClients loads api clients based on the plugin context if present, otherwise the specified kube config.
