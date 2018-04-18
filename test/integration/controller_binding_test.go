@@ -18,16 +18,20 @@ package integration
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	// avoid error `servicecatalog/v1beta1 is not enabled`
+
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -174,6 +178,55 @@ func TestCreateServiceBindingNonBindable(t *testing.T) {
 				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, tc.condition); err != nil {
 					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, tc.condition, cond)
 				}
+			})
+		})
+	}
+}
+
+// TestCreateServiceBindingInstanceNotReady bind to a service instance in the ready false state.
+func TestCreateServiceBindingInstanceNotReady(t *testing.T) {
+	cases := []struct {
+		name             string
+		instanceNotReady bool
+		condition        v1beta1.ServiceBindingCondition
+	}{
+		{
+			name:             "service instance not ready",
+			instanceNotReady: true,
+			condition: v1beta1.ServiceBindingCondition{
+				Type:   v1beta1.ServiceBindingConditionReady,
+				Status: v1beta1.ConditionFalse,
+				Reason: "ErrorInstanceNotReady",
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				binding:  getTestBinding(),
+				setup: func(ct *controllerTest) {
+					if tc.instanceNotReady {
+						reactionError := osb.HTTPStatusCodeError{
+							StatusCode:   http.StatusBadGateway,
+							ErrorMessage: strPtr("error message"),
+							Description:  strPtr("response description"),
+						}
+						ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+							Error: reactionError,
+						}
+						ct.skipVerifyingInstanceSuccess = true
+					}
+				},
+				skipVerifyingBindingSuccess: true,
+			}
+			ct.run(func(ct *controllerTest) {
+				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, tc.condition); err != nil {
+					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, tc.condition, cond)
+				}
+				time.Sleep(time.Second * 5) // TODO(n3wscott): fix this trash
 			})
 		})
 	}
