@@ -3803,33 +3803,43 @@ func TestPollServiceBinding(t *testing.T) {
 
 func TestTransformSecretData(t *testing.T) {
 	cases := []struct {
-		name                  string
-		transforms            []v1beta1.SecretTransform
-		secretData            map[string]interface{}
-		transformedSecretData map[string]interface{}
-		otherSecret           *corev1.Secret
+		name                   string
+		transforms             []v1beta1.SecretTransform
+		credentials            map[string]interface{}
+		transformedCredentials map[string]interface{}
+		otherSecret            *corev1.Secret
 	}{
 		{
 			name: "RenameKeyTransform",
 			transforms: []v1beta1.SecretTransform{
-				{RenameKey: &v1beta1.RenameKeyTransform{From: "foo", To: "bar"}},
+				{
+					RenameKey: &v1beta1.RenameKeyTransform{
+						From: "foo",
+						To:   "bar",
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": "123",
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"bar": "123",
 			},
 		},
 		{
 			name: "AddKeyTransform with value",
 			transforms: []v1beta1.SecretTransform{
-				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", Value: []byte("456")}},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:   "bar",
+						Value: []byte("456"),
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": "123",
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": "123",
 				"bar": []byte("456"),
 			},
@@ -3837,12 +3847,17 @@ func TestTransformSecretData(t *testing.T) {
 		{
 			name: "AddKeyTransform with stringValue",
 			transforms: []v1beta1.SecretTransform{
-				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", StringValue: pointer("456")}},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:         "bar",
+						StringValue: pointer("456"),
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": "123",
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": "123",
 				"bar": "456",
 			},
@@ -3850,12 +3865,17 @@ func TestTransformSecretData(t *testing.T) {
 		{
 			name: "AddKeyTransform with JSONPathExpression",
 			transforms: []v1beta1.SecretTransform{
-				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", JSONPathExpression: pointer("{.foo}")}},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:                "bar",
+						JSONPathExpression: pointer("{.foo}"),
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": "123",
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": "123",
 				"bar": "123",
 			},
@@ -3863,14 +3883,19 @@ func TestTransformSecretData(t *testing.T) {
 		{
 			name: "AddKeyTransform with JSONPathExpression on non-flat credentials",
 			transforms: []v1beta1.SecretTransform{
-				{AddKey: &v1beta1.AddKeyTransform{Key: "child-of-foo", JSONPathExpression: pointer("{.foo.child}")}},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:                "child-of-foo",
+						JSONPathExpression: pointer("{.foo.child}"),
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": map[string]interface{}{
 					"child": "123",
 				},
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": map[string]interface{}{
 					"child": "123",
 				},
@@ -3880,12 +3905,18 @@ func TestTransformSecretData(t *testing.T) {
 		{
 			name: "AddKeyTransform stringValue precedence over value",
 			transforms: []v1beta1.SecretTransform{
-				{AddKey: &v1beta1.AddKeyTransform{Key: "bar", Value: []byte("456"), StringValue: pointer("789")}},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:         "bar",
+						Value:       []byte("456"),
+						StringValue: pointer("789"),
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": "123",
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": "123",
 				"bar": "789",
 			},
@@ -3902,7 +3933,7 @@ func TestTransformSecretData(t *testing.T) {
 					},
 				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": []byte("123"),
 			},
 			otherSecret: &corev1.Secret{
@@ -3914,7 +3945,7 @@ func TestTransformSecretData(t *testing.T) {
 					"bar": []byte("456"),
 				},
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": []byte("123"),
 				"bar": []byte("456"),
 			},
@@ -3922,13 +3953,17 @@ func TestTransformSecretData(t *testing.T) {
 		{
 			name: "RemoveKeyTransform",
 			transforms: []v1beta1.SecretTransform{
-				{RemoveKey: &v1beta1.RemoveKeyTransform{Key: "bar"}},
+				{
+					RemoveKey: &v1beta1.RemoveKeyTransform{
+						Key: "bar",
+					},
+				},
 			},
-			secretData: map[string]interface{}{
+			credentials: map[string]interface{}{
 				"foo": "123",
 				"bar": "456",
 			},
-			transformedSecretData: map[string]interface{}{
+			transformedCredentials: map[string]interface{}{
 				"foo": "123",
 			},
 		},
@@ -3941,12 +3976,12 @@ func TestTransformSecretData(t *testing.T) {
 			addGetSecretReaction(fakeKubeClient, tc.otherSecret)
 		}
 
-		err := testController.transformCredentials(tc.transforms, tc.secretData)
+		err := testController.transformCredentials(tc.transforms, tc.credentials)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if !reflect.DeepEqual(tc.secretData, tc.transformedSecretData) {
-			t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.transformedSecretData, tc.secretData)
+		if !reflect.DeepEqual(tc.credentials, tc.transformedCredentials) {
+			t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.transformedCredentials, tc.credentials)
 		}
 	}
 }
