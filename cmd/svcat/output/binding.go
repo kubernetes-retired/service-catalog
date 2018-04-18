@@ -64,7 +64,7 @@ func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList)
 func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.ServiceBindingList) {
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, bindingList, 3)
+		writeJSON(w, bindingList)
 	case formatYAML:
 		writeYAML(w, bindingList, 0)
 	case formatTable:
@@ -76,7 +76,7 @@ func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.Ser
 func WriteBinding(w io.Writer, outputFormat string, binding v1beta1.ServiceBinding) {
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, binding, 3)
+		writeJSON(w, binding)
 	case formatYAML:
 		writeYAML(w, binding, 0)
 	case formatTable:

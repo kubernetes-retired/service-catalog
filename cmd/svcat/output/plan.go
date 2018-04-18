@@ -77,7 +77,7 @@ func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServ
 	}
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, list, 3)
+		writeJSON(w, list)
 	case formatYAML:
 		writeYAML(w, list, 0)
 	case formatTable:
@@ -90,7 +90,7 @@ func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan
 
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, plan, 3)
+		writeJSON(w, plan)
 	case formatYAML:
 		writeYAML(w, plan, 0)
 	case formatTable:

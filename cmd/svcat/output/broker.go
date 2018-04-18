@@ -64,7 +64,7 @@ func WriteBrokerList(w io.Writer, outputFormat string, brokers ...v1beta1.Cluste
 	}
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, l, 3)
+		writeJSON(w, l)
 	case formatYAML:
 		writeYAML(w, l, 0)
 	case formatTable:
@@ -76,7 +76,7 @@ func WriteBrokerList(w io.Writer, outputFormat string, brokers ...v1beta1.Cluste
 func WriteBroker(w io.Writer, outputFormat string, broker v1beta1.ClusterServiceBroker) {
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, broker, 3)
+		writeJSON(w, broker)
 	case formatYAML:
 		writeYAML(w, broker, 0)
 	case formatTable:

@@ -73,7 +73,7 @@ func WriteClassList(w io.Writer, outputFormat string, classes ...v1beta1.Cluster
 	}
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, classList, 3)
+		writeJSON(w, classList)
 	case formatYAML:
 		writeYAML(w, classList, 0)
 	case formatTable:
@@ -85,7 +85,7 @@ func WriteClassList(w io.Writer, outputFormat string, classes ...v1beta1.Cluster
 func WriteClass(w io.Writer, outputFormat string, class v1beta1.ClusterServiceClass) {
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, class, 3)
+		writeJSON(w, class)
 	case formatYAML:
 		writeYAML(w, class, 0)
 	case formatTable:

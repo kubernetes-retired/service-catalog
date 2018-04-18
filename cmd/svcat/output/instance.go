@@ -67,7 +67,7 @@ func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceLi
 func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.ServiceInstanceList) {
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, instanceList, 3)
+		writeJSON(w, instanceList)
 	case formatYAML:
 		writeYAML(w, instanceList, 0)
 	case formatTable:
@@ -79,7 +79,7 @@ func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.S
 func WriteInstance(w io.Writer, outputFormat string, instance v1beta1.ServiceInstance) {
 	switch outputFormat {
 	case "json":
-		writeJSON(w, instance, 3)
+		writeJSON(w, instance)
 	case "yaml":
 		writeYAML(w, instance, 0)
 	case "table":
