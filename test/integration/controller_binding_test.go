@@ -504,7 +504,7 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 				{
 					AddKey: &v1beta1.AddKeyTransform{
 						Key:         "addedStringValue",
-						StringValue: pointer("stringValue"),
+						StringValue: strPtr("stringValue"),
 					},
 				},
 				{
@@ -516,7 +516,7 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 				{
 					AddKey: &v1beta1.AddKeyTransform{
 						Key:                "valueFromJSONPath",
-						JSONPathExpression: pointer("{.foo}"),
+						JSONPathExpression: strPtr("{.foo}"),
 					},
 				},
 				{
@@ -540,10 +540,10 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 				},
 			},
 			expectedSecretData: map[string][]byte{
-				"addedStringValue":      []byte("stringValue"),
-				"addedByteArray":        []byte("byteArray"),
-				"valueFromJSONPath":     []byte("bar"),
-				"bar":                   []byte("bar"),
+				"addedStringValue":  []byte("stringValue"),
+				"addedByteArray":    []byte("byteArray"),
+				"valueFromJSONPath": []byte("bar"),
+				"bar":               []byte("bar"),
 				"key-from-other-secret": []byte("qux"),
 			},
 		},
@@ -592,10 +592,6 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 			})
 		})
 	}
-}
-
-func pointer(obj string) *string {
-	return &obj
 }
 
 // TestDeleteServiceBindingRetry tests whether deletion of a service binding

@@ -499,7 +499,8 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 
 func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, credentials map[string]interface{}) error {
 	for _, t := range transforms {
-		if t.AddKey != nil {
+		switch {
+		case t.AddKey != nil:
 			var value interface{}
 			if t.AddKey.JSONPathExpression != nil {
 				result, err := evaluateJSONPath(*t.AddKey.JSONPathExpression, credentials)
@@ -513,10 +514,10 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 				value = t.AddKey.Value
 			}
 			credentials[t.AddKey.Key] = value
-		} else if t.RenameKey != nil {
+		case t.RenameKey != nil:
 			credentials[t.RenameKey.To] = credentials[t.RenameKey.From]
 			delete(credentials, t.RenameKey.From)
-		} else if t.AddKeysFrom != nil {
+		case t.AddKeysFrom != nil:
 			secret, err := c.kubeClient.CoreV1().
 				Secrets(t.AddKeysFrom.SecretRef.Namespace).
 				Get(t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
@@ -526,7 +527,7 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 			for k, v := range secret.Data {
 				credentials[k] = v
 			}
-		} else if t.RemoveKey != nil {
+		case t.RemoveKey != nil:
 			delete(credentials, t.RemoveKey.Key)
 		}
 	}
@@ -1376,10 +1377,10 @@ func (c *controller) processUnbindAsyncResponse(binding *v1beta1.ServiceBinding,
 // an error returned during reconciliation while polling a service binding.
 func (c *controller) handleServiceBindingPollingError(binding *v1beta1.ServiceBinding, err error) error {
 	// During polling, an error means we should:
-	// 	1) log the error
-	// 	2) attempt to requeue in the polling queue
-	// 		- if successful, we can return nil to avoid regular queue
-	// 		- if failure, return err to fall back to regular queue
+	//	1) log the error
+	//	2) attempt to requeue in the polling queue
+	//		- if successful, we can return nil to avoid regular queue
+	//		- if failure, return err to fall back to regular queue
 	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
 	glog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceBinding(binding)
