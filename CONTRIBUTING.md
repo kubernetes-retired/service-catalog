@@ -1,5 +1,7 @@
 # Contributing to service-catalog
 
+# TEST TEST TEST
+
 This document should concisely express the project development status,
 methodology, and contribution process.  As the community makes progress, we
 should keep this document in sync with reality.
