@@ -49,6 +49,7 @@ import (
 )
 
 var catalogRequestRegex = regexp.MustCompile("/apis/servicecatalog.k8s.io/v1beta1/(.*)")
+var coreRequestRegex = regexp.MustCompile("/api/v1/(.*)")
 
 func TestCommandValidation(t *testing.T) {
 	testcases := []struct {
@@ -446,11 +447,12 @@ func newAPIServer() *httptest.Server {
 // Example:
 // GET /apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers responds with testdata/clusterservicebrokers.json
 func apihandler(w http.ResponseWriter, r *http.Request) {
-	match := catalogRequestRegex.FindStringSubmatch(r.RequestURI)
+	catalogMatch := catalogRequestRegex.FindStringSubmatch(r.RequestURI)
+	coreMatch := coreRequestRegex.FindStringSubmatch(r.RequestURI)
 
-	if len(match) == 0 {
+	if len(catalogMatch) == 0 && len(coreMatch) == 0 {
 		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("unexpected request %s %s", r.Method, r.RequestURI)))
+		w.Write([]byte(fmt.Sprintf("unexpected request %s %s doesn't match %q or %q", r.Method, r.RequestURI, catalogRequestRegex, coreRequestRegex)))
 		return
 	}
 
@@ -458,20 +460,28 @@ func apihandler(w http.ResponseWriter, r *http.Request) {
 		// Anything more interesting than a GET, i.e. it relies upon server behavior
 		// probably should be an integration test instead
 		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("unexpected request %s %s", r.Method, r.RequestURI)))
+		w.Write([]byte(fmt.Sprintf("unallowed method for request %s %s", r.Method, r.RequestURI)))
 		return
 	}
 
-	relpath, err := url.PathUnescape(match[1])
+	var match string
+	if len(catalogMatch) > 0 {
+		match = filepath.Join("catalog", catalogMatch[1])
+	} else {
+		match = filepath.Join("core", coreMatch[1])
+	}
+
+	relpath, err := url.PathUnescape(match)
 	if err != nil {
 		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("could not unescape path %s (%s)", match[1], err)))
+		w.Write([]byte(fmt.Sprintf("could not unescape path %s (%s)", match, err)))
 		return
 	}
-	_, response, err := test.GetTestdata(filepath.Join("responses", relpath+".json"))
+	responseFile := filepath.Join("responses", relpath+".json")
+	_, response, err := test.GetTestdata(responseFile)
 	if err != nil {
 		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("unexpected request %s with no matching testdata (%s)", r.RequestURI, err)))
+		w.Write([]byte(fmt.Sprintf("request %s has no matching testdata at %s (%s)", r.RequestURI, responseFile, err)))
 		return
 	}
 
