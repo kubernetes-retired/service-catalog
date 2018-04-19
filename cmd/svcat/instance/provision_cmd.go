@@ -46,7 +46,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		Short: "Create a new instance of a service",
 		Example: `
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
-  svcat provision wordpress-mysql-instance --external-id wordpress-mysql-instance-external-id --class mysqldb --plan free
+  svcat provision wordpress-mysql-instance --external-id a7c00676-4398-11e8-842f-0ed5f89f718b --class mysqldb --plan free
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
   svcat provision secure-instance --class mysqldb --plan secureDB --params-json '{
     "encrypt" : true,

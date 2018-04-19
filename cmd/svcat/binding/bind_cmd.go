@@ -47,7 +47,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		Example: `
   svcat bind wordpress
   svcat bind wordpress-mysql-instance --name wordpress-mysql-binding --secret-name wordpress-mysql-secret
-  svcat bind wordpress-mysql-instance --name wordpress-mysql-binding --external-id wordpress-mysql-binding-external-id
+  svcat bind wordpress-mysql-instance --name wordpress-mysql-binding --external-id c8ca2fcc-4398-11e8-842f-0ed5f89f718b
   svcat bind wordpress-instance --params type=admin
   svcat bind wordpress-instance --params-json '{
 	"type": "admin",
