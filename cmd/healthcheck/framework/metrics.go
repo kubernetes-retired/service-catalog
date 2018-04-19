@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package metrics creates and registers metrics objects with Prometheus
-// and sets the Prometheus HTTP handler for /metrics
 package framework
 
 import (
@@ -31,7 +29,7 @@ import (
 var registerMetrics sync.Once
 
 const (
-	promNamespace = "catalog_health" // Prometheus namespace (nothing to do with k8s namespace)
+	promNamespace = "servicecatalog_health" // Prometheus namespace (nothing to do with k8s namespace)
 )
 
 var (
@@ -60,25 +58,25 @@ var (
 	)
 
 	// eventHandlingTime is a histogram recording how long a operation took
-	eventHandlingTime = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: promNamespace,
-			Name:      "successful_duration_milliseconds",
-			Help:      "Bucketed histogram of processing time (s) of successfully executed operation, by operation.",
-			Buckets:   []float64{100, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 10000, 15000, 20000, 25000, 30000},
+	eventHandlingTimeSummary = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  promNamespace,
+			Name:       "successful_duration_seconds",
+			Help:       "processing time (s) of successfully executed operation, by operation.",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		}, []string{"operation"})
 )
 
 // ReportOperationCompleted records the elapses time in milliseconds for a specified operation
 func ReportOperationCompleted(operation string, startTime time.Time) {
-	eventHandlingTime.WithLabelValues(operation).Observe(float64(time.Since(startTime).Nanoseconds() / 1000000))
+	eventHandlingTimeSummary.WithLabelValues(operation).Observe(time.Since(startTime).Seconds())
 }
 
 func register(registry *prometheus.Registry) {
 	registerMetrics.Do(func() {
 		registry.MustRegister(ExecutionCount)
 		registry.MustRegister(ErrorCount)
-		registry.MustRegister(eventHandlingTime)
+		registry.MustRegister(eventHandlingTimeSummary)
 	})
 }
 

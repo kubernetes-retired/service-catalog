@@ -27,9 +27,10 @@ spec:
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
         - -v4
-        - --alsologtostderr
+        - "--healthcheck-interval=19s"
         ports:
         - containerPort: 443
+          hostPort: 9443
         readinessProbe:
           httpGet:
             port: 443
@@ -39,7 +40,7 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 2
+          timeoutSeconds: 4
         livenessProbe:
           httpGet:
             port: 443
@@ -49,4 +50,4 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 2
+          timeoutSeconds: 4

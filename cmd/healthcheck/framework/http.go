@@ -26,8 +26,8 @@ import (
 	"k8s.io/apiserver/pkg/server/healthz"
 )
 
-// ServeHttp starts a new Http Server thread for /metrics and health probing
-func ServeHttp(healthcheckOptions *HealthCheckServer) error {
+// ServeHTTP starts a new Http Server thread for /metrics and health probing
+func ServeHTTP(healthcheckOptions *HealthCheckServer) error {
 
 	// Initialize SSL/TLS configuration.  Creats a self signed certificate and key if necessary
 	if err := healthcheckOptions.SecureServingOptions.MaybeDefaultWithSelfSignedCerts("" /*AdvertiseAddress*/, nil /*alternateDNS*/, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {

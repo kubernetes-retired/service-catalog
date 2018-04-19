@@ -18,7 +18,6 @@ package framework
 
 import (
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/golang/glog"
@@ -34,8 +33,8 @@ import (
 )
 
 const (
-	// How often to poll for conditions
-	Poll = 2 * time.Second
+	// Poll determines how often to poll for conditions
+	poll = 2 * time.Second
 
 	// Default time to wait for operations to complete
 	defaultTimeout = 30 * time.Second
@@ -75,7 +74,7 @@ func CreateKubeNamespace(c kubernetes.Interface) (*corev1.Namespace, error) {
 
 	// Be robust about making the namespace creation call.
 	var got *corev1.Namespace
-	err := wait.PollImmediate(Poll, defaultTimeout, func() (bool, error) {
+	err := wait.PollImmediate(poll, defaultTimeout, func() (bool, error) {
 		var err error
 		got, err = c.CoreV1().Namespaces().Create(ns)
 		if err != nil {
@@ -85,7 +84,7 @@ func CreateKubeNamespace(c kubernetes.Interface) (*corev1.Namespace, error) {
 		return true, nil
 	})
 	if err != nil {
-		return nil, logErrorf("Error creating test namespace: %v", err.Error())
+		return nil, fmt.Errorf("Error creating test namespace: %v", err.Error())
 	}
 	return got, nil
 }
@@ -97,7 +96,7 @@ func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 
 // WaitForEndpoint waits for 'defaultTimeout' interval for an enpoint to be available
 func WaitForEndpoint(c kubernetes.Interface, namespace, name string) error {
-	return wait.PollImmediate(Poll, defaultTimeout, endpointAvailable(c, namespace, name))
+	return wait.PollImmediate(poll, defaultTimeout, endpointAvailable(c, namespace, name))
 }
 
 func endpointAvailable(c kubernetes.Interface, namespace, name string) wait.ConditionFunc {
@@ -116,23 +115,4 @@ func endpointAvailable(c kubernetes.Interface, namespace, name string) wait.Cond
 
 		return true, nil
 	}
-}
-
-// logErrorf creates a new error using msg and param for the formated message.
-// The message is logged and the new error returned.  This function attempts to
-// log the location of the caller (file name & line number) so as to maintain
-// context of where the error occured
-func logErrorf(msg, param string) error {
-	_, file, line, _ := runtime.Caller(1)
-
-	// only use the last 30 characters
-	context := len(file) - 30
-	if context < 0 {
-		context = 0
-	}
-	partialFileName := file[context:]
-	format := fmt.Sprintf("...%s:%d: %v", partialFileName, line, msg)
-	e := fmt.Errorf(format, param)
-	glog.Error(e)
-	return e
 }

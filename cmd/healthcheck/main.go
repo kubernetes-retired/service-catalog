@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/test/healthcheck/framework"
+	"github.com/kubernetes-incubator/service-catalog/cmd/healthcheck/framework"
 )
 
 func main() {
