@@ -43,6 +43,9 @@ import (
 // strategy is used for serializing string values to avoid introducing those
 // errant quotes.
 func serialize(value interface{}) ([]byte, error) {
+	if byteArrayVal, ok := value.([]byte); ok {
+		return byteArrayVal, nil
+	}
 	if strVal, ok := value.(string); ok {
 		return []byte(strVal), nil
 	}

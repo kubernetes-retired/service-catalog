@@ -1114,7 +1114,7 @@ const (
 type ParametersFromSource struct {
 	// The Secret key to select from.
 	// The value must be a JSON object.
-	//+optional
+	// +optional
 	SecretKeyRef *SecretKeyReference
 }
 
@@ -1152,7 +1152,10 @@ type ClusterObjectReference struct {
 // SecretTransform is a single transformation of the credentials returned
 // from the broker
 type SecretTransform struct {
-	RenameKey *RenameKeyTransform
+	RenameKey   *RenameKeyTransform
+	AddKey      *AddKeyTransform
+	AddKeysFrom *AddKeysFromTransform
+	RemoveKey   *RemoveKeyTransform
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1160,4 +1163,25 @@ type SecretTransform struct {
 type RenameKeyTransform struct {
 	From string
 	To   string
+}
+
+// AddKeyTransform specifies that Service Catalog should add an
+// additional entry to the Secret associated with the ServiceBinding.
+type AddKeyTransform struct {
+	Key                string
+	Value              []byte
+	StringValue        *string
+	JSONPathExpression *string
+}
+
+// AddKeysFromTransform specifies that Service Catalog should merge
+// an existing secret into the the Secret associated with the ServiceBinding.
+type AddKeysFromTransform struct {
+	SecretRef *ObjectReference
+}
+
+// RemoveKeyTransform specifies that one of the credentials keys returned
+// from the broker should not be included in the credentials Secret.
+type RemoveKeyTransform struct {
+	Key string
 }

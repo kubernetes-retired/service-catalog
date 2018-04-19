@@ -553,6 +553,12 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 				To:   "renamedA",
 			},
 		},
+		{
+			AddKey: &v1beta1.AddKeyTransform{
+				Key:   "e",
+				Value: []byte("e"),
+			},
+		},
 	}
 
 	if err := testController.reconcileServiceBinding(binding); err != nil {
@@ -614,6 +620,13 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 	}
 	if e, a := "b", string(value); e != a {
 		t.Fatalf("Unexpected value of key 'renamedA' in created secret; %s", expectedGot(e, a))
+	}
+	value, ok = actionSecret.Data["e"]
+	if !ok {
+		t.Fatal("Didn't find secret key 'e' in created secret")
+	}
+	if e, a := "e", string(value); e != a {
+		t.Fatalf("Unexpected value of key 'e' in created secret; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)
@@ -790,7 +803,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 	}
 	value, ok = actionSecret.Data["c"]
 	if !ok {
-		t.Fatal("Didn't find secret key 'a' in created secret")
+		t.Fatal("Didn't find secret key 'c' in created secret")
 	}
 	if e, a := "d", string(value); e != a {
 		t.Fatalf("Unexpected value of key 'c' in created secret; %s", expectedGot(e, a))
@@ -3785,6 +3798,191 @@ func TestPollServiceBinding(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestTransformSecretData(t *testing.T) {
+	cases := []struct {
+		name                   string
+		transforms             []v1beta1.SecretTransform
+		credentials            map[string]interface{}
+		transformedCredentials map[string]interface{}
+		otherSecret            *corev1.Secret
+	}{
+		{
+			name: "RenameKeyTransform",
+			transforms: []v1beta1.SecretTransform{
+				{
+					RenameKey: &v1beta1.RenameKeyTransform{
+						From: "foo",
+						To:   "bar",
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": "123",
+			},
+			transformedCredentials: map[string]interface{}{
+				"bar": "123",
+			},
+		},
+		{
+			name: "AddKeyTransform with value",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:   "bar",
+						Value: []byte("456"),
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": "123",
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": "123",
+				"bar": []byte("456"),
+			},
+		},
+		{
+			name: "AddKeyTransform with stringValue",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:         "bar",
+						StringValue: strPtr("456"),
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": "123",
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": "123",
+				"bar": "456",
+			},
+		},
+		{
+			name: "AddKeyTransform with JSONPathExpression",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:                "bar",
+						JSONPathExpression: strPtr("{.foo}"),
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": "123",
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": "123",
+				"bar": "123",
+			},
+		},
+		{
+			name: "AddKeyTransform with JSONPathExpression on non-flat credentials",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:                "child-of-foo",
+						JSONPathExpression: strPtr("{.foo.child}"),
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"child": "123",
+				},
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"child": "123",
+				},
+				"child-of-foo": "123",
+			},
+		},
+		{
+			name: "AddKeyTransform stringValue precedence over value",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:         "bar",
+						Value:       []byte("456"),
+						StringValue: strPtr("789"),
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": "123",
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": "123",
+				"bar": "789",
+			},
+		},
+		{
+			name: "MergeSecretTransform",
+			transforms: []v1beta1.SecretTransform{
+				{
+					AddKeysFrom: &v1beta1.AddKeysFromTransform{
+						SecretRef: &v1beta1.ObjectReference{
+							Namespace: "ns",
+							Name:      "other-secret",
+						},
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": []byte("123"),
+			},
+			otherSecret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "other-secret",
+				},
+				Data: map[string][]byte{
+					"bar": []byte("456"),
+				},
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": []byte("123"),
+				"bar": []byte("456"),
+			},
+		},
+		{
+			name: "RemoveKeyTransform",
+			transforms: []v1beta1.SecretTransform{
+				{
+					RemoveKey: &v1beta1.RemoveKeyTransform{
+						Key: "bar",
+					},
+				},
+			},
+			credentials: map[string]interface{}{
+				"foo": "123",
+				"bar": "456",
+			},
+			transformedCredentials: map[string]interface{}{
+				"foo": "123",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		fakeKubeClient, _, _, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
+
+		if tc.otherSecret != nil {
+			addGetSecretReaction(fakeKubeClient, tc.otherSecret)
+		}
+
+		err := testController.transformCredentials(tc.transforms, tc.credentials)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !reflect.DeepEqual(tc.credentials, tc.transformedCredentials) {
+			t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.transformedCredentials, tc.credentials)
+		}
 	}
 }
 

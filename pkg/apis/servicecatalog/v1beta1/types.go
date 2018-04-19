@@ -1215,7 +1215,7 @@ type ServiceBindingPropertiesState struct {
 type ParametersFromSource struct {
 	// The Secret key to select from.
 	// The value must be a JSON object.
-	//+optional
+	// +optional
 	SecretKeyRef *SecretKeyReference `json:"secretKeyRef,omitempty"`
 }
 
@@ -1263,8 +1263,17 @@ type ClusterObjectReference struct {
 // Catalog transform the Secret, the following SecretTransform must
 // be specified in ServiceBinding.spec.secretTransform:
 // - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}}
+// Only one of the SecretTransform's members may be specified.
 type SecretTransform struct {
+	// RenameKey represents a transform that renames a credentials Secret entry's key
 	RenameKey *RenameKeyTransform `json:"renameKey,omitempty"`
+	// AddKey represents a transform that adds an additional key to the credentials Secret
+	AddKey *AddKeyTransform `json:"addKey,omitempty"`
+	// AddKeysFrom represents a transform that merges all the entries of an existing Secret
+	// into the credentials Secret
+	AddKeysFrom *AddKeysFromTransform `json:"addKeysFrom,omitempty"`
+	// RemoveKey represents a transform that removes a credentials Secret entry
+	RemoveKey *RemoveKeyTransform `json:"removeKey,omitempty"`
 }
 
 // RenameKeyTransform specifies that one of the credentials keys returned
@@ -1277,6 +1286,51 @@ type SecretTransform struct {
 // the following entry will appear in the Secret:
 //     "DB_USER": "johndoe"
 type RenameKeyTransform struct {
+	// The name of the key to rename
 	From string `json:"from"`
-	To   string `json:"to"`
+	// The new name for the key
+	To string `json:"to"`
+}
+
+// AddKeyTransform specifies that Service Catalog should add an
+// additional entry to the Secret associated with the ServiceBinding.
+// For example, given the following AddKeyTransform:
+//     {"key": "CONNECTION_POOL_SIZE", "stringValue": "10"}
+// the following entry will appear in the Secret:
+//     "CONNECTION_POOL_SIZE": "10"
+// Note that this transform should only be used to add non-sensitive
+// (non-secret) values. To add sensitive information, the
+// AddKeysFromTransform should be used instead.
+type AddKeyTransform struct {
+	// The name of the key to add
+	Key string `json:"key"`
+	// The binary value (possibly non-string) to add to the Secret under the specified key. If both
+	// value and stringValue are specified, then value is ignored and stringValue is stored.
+	Value []byte `json:"value"`
+	// The string (non-binary) value to add to the Secret under the specified key.
+	StringValue *string `json:"stringValue"`
+	// The JSONPath expression, the result of which will be added to the Secret under the specified key.
+	// For example, given the following credentials:
+	// { "foo": { "bar": "foobar" } }
+	// and the jsonPathExpression "{.foo.bar}", the value "foobar" will be
+	// stored in the credentials Secret under the specified key.
+	JSONPathExpression *string `json:"jsonPathExpression"`
+}
+
+// AddKeysFromTransform specifies that Service Catalog should merge
+// an existing secret into the the Secret associated with the ServiceBinding.
+// For example, given the following AddKeysFromTransform:
+//     {"secretRef": {"namespace": "foo", "name": "bar"}}
+// the entries of the Secret "bar" from Namespace "foo" will be merged into
+// the credentials Secret.
+type AddKeysFromTransform struct {
+	// The reference to the Secret that should be merged into the credentials Secret.
+	SecretRef *ObjectReference `json:"secretRef,omitempty"`
+}
+
+// RemoveKeyTransform specifies that one of the credentials keys returned
+// from the broker should not be included in the credentials Secret.
+type RemoveKeyTransform struct {
+	// The key to remove from the Secret
+	Key string `json:"key"`
 }
