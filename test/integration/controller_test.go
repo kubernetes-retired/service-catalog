@@ -1403,3 +1403,14 @@ func convertParametersIntoRawExtension(t *testing.T, parameters map[string]inter
 	}
 	return &runtime.RawExtension{Raw: marshalledParams}
 }
+
+func findKubeActions(kubeClient *fake.Clientset, verb, resource string) []clientgotesting.Action {
+	actions := kubeClient.Actions()
+	foundActions := make([]clientgotesting.Action, 0, len(actions))
+	for _, action := range actions {
+		if action.Matches(verb, resource) {
+			foundActions = append(foundActions, action)
+		}
+	}
+	return foundActions
+}
