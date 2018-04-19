@@ -35,6 +35,8 @@ func (sdk *SDK) ServiceCatalog() v1beta1.ServicecatalogV1beta1Interface {
 	return sdk.ServiceCatalogClient.ServicecatalogV1beta1()
 }
 
+// Core is the underlying generated Core API versioned interface
+// It should be used instead of accessing the client directly.
 func (sdk *SDK) Core() corev1.CoreV1Interface {
 	return sdk.K8sClient.CoreV1()
 }

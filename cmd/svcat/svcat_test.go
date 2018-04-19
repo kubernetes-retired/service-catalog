@@ -317,7 +317,7 @@ func TestParametersForBinding(t *testing.T) {
 			}
 
 			if eq := reflect.DeepEqual(params, tc.params); !eq {
-				t.Error(fmt.Sprintf("parameters mismatch, \nwant: %+v, \ngot: %+v", tc.params, params))
+				t.Errorf("parameters mismatch, \nwant: %+v, \ngot: %+v", tc.params, params)
 			}
 		})
 	}
