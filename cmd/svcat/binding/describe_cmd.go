@@ -75,6 +75,9 @@ func (c *describeCmd) describe() error {
 
 	output.WriteBindingDetails(c.Output, binding)
 
+	secret, err := c.App.RetrieveSecretByBinding(binding)
+	output.WriteAssociatedSecret(c.Output, secret, err)
+
 	if c.traverse {
 		instance, class, plan, broker, err := c.App.BindingParentHierarchy(binding)
 		if err != nil {

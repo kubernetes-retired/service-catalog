@@ -89,6 +89,7 @@ func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 		{"Name:", binding.Name},
 		{"Namespace:", binding.Namespace},
 		{"Status:", getBindingStatusFull(binding.Status)},
+		{"Secret:", binding.Spec.SecretName},
 		{"Instance:", binding.Spec.ServiceInstanceRef.Name},
 	})
 	t.Render()
@@ -114,6 +115,28 @@ func WriteAssociatedBindings(w io.Writer, bindings []v1beta1.ServiceBinding) {
 			binding.Name,
 			getBindingStatusShort(binding.Status),
 		})
+	}
+	t.Render()
+}
+
+// WriteAssociatedSecret prints the secret data associated with a binding.
+func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error) {
+	// Don't print anything the secret isn't ready yet
+	if secret == nil && err == nil {
+		return
+	}
+
+	fmt.Fprintln(w, "\nSecret Data:")
+	if err != nil {
+		// We should have been able to find a secret but couldn't for some reason,
+		// warn about it without blowing up the entire command.
+		fmt.Fprintf(w, "  %s", err.Error())
+		return
+	}
+
+	t := NewDetailsTable(w)
+	for key, value := range secret.Data {
+		t.Append([]string{key, fmt.Sprintf("%d bytes", len(value))})
 	}
 	t.Render()
 }
