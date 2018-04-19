@@ -17,17 +17,24 @@ limitations under the License.
 package servicecatalog
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // SDK wrapper around the generated Go client for the Kubernetes Service Catalog
 type SDK struct {
-	ServiceCatalogClient clientset.Interface
+	K8sClient            kubernetes.Interface
+	ServiceCatalogClient svcatclient.Interface
 }
 
 // ServiceCatalog is the underlying generated Service Catalog versioned interface
 // It should be used instead of accessing the client directly.
 func (sdk *SDK) ServiceCatalog() v1beta1.ServicecatalogV1beta1Interface {
 	return sdk.ServiceCatalogClient.ServicecatalogV1beta1()
+}
+
+func (sdk *SDK) Core() corev1.CoreV1Interface {
+	return sdk.K8sClient.CoreV1()
 }

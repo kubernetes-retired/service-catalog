@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubectl/pkg/pluginutils"
 
 	_ "github.com/golang/glog" // Initialize glog flags
@@ -33,12 +35,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions"
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	k8sclient "k8s.io/client-go/kubernetes"
 )
 
 // These are build-time values, set during an official release
@@ -86,31 +89,12 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 
 			// Initialize the context if not already configured (by tests)
 			if cxt.App == nil {
-
-				var client *clientset.Clientset
-				var namespace string
-				var err error
-				if plugin.IsPlugin() {
-					restConfig, config, err := pluginutils.InitClientAndConfig()
-					if err != nil {
-						return err
-					}
-					client, err = clientset.NewForConfig(restConfig)
-					if err != nil {
-						return err
-					}
-					namespace, _, err = config.Namespace()
-					if err != nil {
-						return err
-					}
-				} else {
-					// Initialize a service catalog client
-					client, namespace, err = getServiceCatalogClient(opts.KubeConfig, opts.KubeContext)
-					if err != nil {
-						return err
-					}
+				k8sClient, svcatClient, namespace, err := getClients(opts.KubeConfig, opts.KubeContext)
+				if err != nil {
+					return err
 				}
-				app, err := svcat.NewApp(client, namespace)
+
+				app, err := svcat.NewApp(k8sClient, svcatClient, namespace)
 				if err != nil {
 					return err
 				}
@@ -222,20 +206,29 @@ func bindViperToCobra(vip *viper.Viper, cmd *cobra.Command) {
 	})
 }
 
-// getServiceCatalogClient creates a Service Catalog config and client for a given kubeconfig context.
-func getServiceCatalogClient(kubeConfig, kubeContext string) (client *clientset.Clientset, namespaces string, err error) {
-	config := kube.GetConfig(kubeContext, kubeConfig)
+// getClients loads api clients based on the plugin context if present, otherwise the specified kube config.
+func getClients(kubeConfig, kubeContext string) (k8sClient k8sclient.Interface, svcatClient svcatclient.Interface, namespaces string, err error) {
+	var restConfig *rest.Config
+	var config clientcmd.ClientConfig
 
-	currentNamespace, _, err := config.Namespace()
-	if err != nil {
-		return nil, "", fmt.Errorf("could not determine the namespace for the current context %q: %s", kubeContext, err)
+	if plugin.IsPlugin() {
+		restConfig, config, err = pluginutils.InitClientAndConfig()
+		if err != nil {
+			return nil, nil, "", fmt.Errorf("could not get Kubernetes config from kubectl plugin context: %s", err)
+		}
+	} else {
+		config = kube.GetConfig(kubeContext, kubeConfig)
+		restConfig, err = config.ClientConfig()
+		if err != nil {
+			return nil, nil, "", fmt.Errorf("could not get Kubernetes config for context %q: %s", kubeContext, err)
+		}
 	}
 
-	restConfig, err := config.ClientConfig()
+	namespace, _, err := config.Namespace()
+	k8sClient, err = k8sclient.NewForConfig(restConfig)
 	if err != nil {
-		return nil, "", fmt.Errorf("could not get Kubernetes config for context %q: %s", kubeContext, err)
+		return nil, nil, "", err
 	}
-
-	client, err = clientset.NewForConfig(restConfig)
-	return client, currentNamespace, err
+	svcatClient, err = svcatclient.NewForConfig(restConfig)
+	return k8sClient, svcatClient, namespace, nil
 }
