@@ -34,6 +34,9 @@ import (
 	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
 )
 
+// TODO nilebox: This looks like a copy-paste of k8s.io/apiserver/pkg/admission/plugin/namespace/lifecycle/admission.go
+// Do we still need it given that API servers now have "default" admission controllers?
+
 const (
 	// PluginName is name of admission plug-in
 	PluginName = "KubernetesNamespaceLifecycle"

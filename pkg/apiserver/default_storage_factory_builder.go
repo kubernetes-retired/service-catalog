@@ -131,35 +131,13 @@ func mergeAPIResourceConfigs(defaultAPIResourceConfig *serverstorage.ResourceCon
 		if len(tokens) != 3 {
 			continue
 		}
-		groupVersionString := tokens[0] + "/" + tokens[1]
-		// HACK: Hack for "v1" legacy group version.
-		// Remove when we stop supporting the legacy group version.
-		if groupVersionString == "api/v1" {
-			groupVersionString = "v1"
-		}
-		groupVersion, err := schema.ParseGroupVersion(groupVersionString)
-		if err != nil {
-			return nil, fmt.Errorf("invalid key %s", key)
-		}
-		resource := tokens[2]
-		// Verify that the groupVersion is api.Registry.
-		if !api.Registry.IsRegisteredVersion(groupVersion) {
-			return nil, fmt.Errorf("group version %s that has not been registered", groupVersion.String())
-		}
 
-		if !resourceConfig.AnyResourcesForVersionEnabled(groupVersion) {
-			return nil, fmt.Errorf("%v is disabled, you cannot configure its resources individually", groupVersion)
-		}
+		// TODO nilebox: resourceConfig.EnableResources and resourceConfig.DisableResources
+		// methods were removed.
+		// Remove the resource loop after we make sure that we don't have
+		// overrides for resources in our config.
+		return nil, fmt.Errorf("resource overrides are not supported anymore: %v", key)
 
-		enabled, err := getRuntimeConfigValue(overrides, key, false)
-		if err != nil {
-			return nil, err
-		}
-		if enabled {
-			resourceConfig.EnableResources(groupVersion.WithResource(resource))
-		} else {
-			resourceConfig.DisableResources(groupVersion.WithResource(resource))
-		}
 	}
 	return resourceConfig, nil
 }

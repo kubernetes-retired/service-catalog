@@ -88,7 +88,7 @@ func withConfigGetFreshApiserverAndClient(
 		StorageTypeString:       serverConfig.storageType.String(),
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
-		SecureServingOptions:    secureServingOptions,
+		SecureServingOptions:    genericserveroptions.WithLoopback(secureServingOptions),
 		EtcdOptions:             etcdOptions,
 		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),

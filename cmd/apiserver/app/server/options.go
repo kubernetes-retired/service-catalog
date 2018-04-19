@@ -44,7 +44,7 @@ type ServiceCatalogServerOptions struct {
 	// the admission options
 	AdmissionOptions *genericserveroptions.AdmissionOptions
 	// the https configuration. certs, etc
-	SecureServingOptions *genericserveroptions.SecureServingOptions
+	SecureServingOptions *genericserveroptions.SecureServingOptionsWithLoopback
 	// authn for the API
 	AuthenticationOptions *genericserveroptions.DelegatingAuthenticationOptions
 	// authz for the API
@@ -67,7 +67,7 @@ func NewServiceCatalogServerOptions() *ServiceCatalogServerOptions {
 	opts := &ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
-		SecureServingOptions:    genericserveroptions.NewSecureServingOptions(),
+		SecureServingOptions:    genericserveroptions.WithLoopback(genericserveroptions.NewSecureServingOptions()),
 		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 		AuditOptions:            genericserveroptions.NewAuditOptions(),
