@@ -151,6 +151,7 @@ func (sdk *SDK) Provision(namespace, instanceName, externalID, className, planNa
 			Namespace: namespace,
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
+			ExternalID: externalID,
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: className,
 				ClusterServicePlanExternalName:  planName,
@@ -158,10 +159,6 @@ func (sdk *SDK) Provision(namespace, instanceName, externalID, className, planNa
 			Parameters:     BuildParameters(params),
 			ParametersFrom: BuildParametersFrom(secrets),
 		},
-	}
-
-	if externalID != "" {
-		request.Spec.ExternalID = externalID
 	}
 
 	result, err := sdk.ServiceCatalog().ServiceInstances(namespace).Create(request)

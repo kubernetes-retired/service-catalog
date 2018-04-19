@@ -80,6 +80,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 			Namespace: namespace,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
+			ExternalID: externalID,
 			ServiceInstanceRef: v1beta1.LocalObjectReference{
 				Name: instanceName,
 			},
@@ -87,10 +88,6 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 			Parameters:     BuildParameters(params),
 			ParametersFrom: BuildParametersFrom(secrets),
 		},
-	}
-
-	if externalID != "" {
-		request.Spec.ExternalID = externalID
 	}
 
 	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(request)
