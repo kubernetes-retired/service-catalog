@@ -3850,7 +3850,7 @@ func TestTransformSecretData(t *testing.T) {
 				{
 					AddKey: &v1beta1.AddKeyTransform{
 						Key:         "bar",
-						StringValue: pointer("456"),
+						StringValue: strPtr("456"),
 					},
 				},
 			},
@@ -3868,7 +3868,7 @@ func TestTransformSecretData(t *testing.T) {
 				{
 					AddKey: &v1beta1.AddKeyTransform{
 						Key:                "bar",
-						JSONPathExpression: pointer("{.foo}"),
+						JSONPathExpression: strPtr("{.foo}"),
 					},
 				},
 			},
@@ -3886,7 +3886,7 @@ func TestTransformSecretData(t *testing.T) {
 				{
 					AddKey: &v1beta1.AddKeyTransform{
 						Key:                "child-of-foo",
-						JSONPathExpression: pointer("{.foo.child}"),
+						JSONPathExpression: strPtr("{.foo.child}"),
 					},
 				},
 			},
@@ -3909,7 +3909,7 @@ func TestTransformSecretData(t *testing.T) {
 					AddKey: &v1beta1.AddKeyTransform{
 						Key:         "bar",
 						Value:       []byte("456"),
-						StringValue: pointer("789"),
+						StringValue: strPtr("789"),
 					},
 				},
 			},
@@ -3984,10 +3984,6 @@ func TestTransformSecretData(t *testing.T) {
 			t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.transformedCredentials, tc.credentials)
 		}
 	}
-}
-
-func pointer(s string) *string {
-	return &s
 }
 
 func assertServiceBindingBindInProgressIsTheOnlyCatalogAction(t *testing.T, fakeCatalogClient *fake.Clientset, binding *v1beta1.ServiceBinding) *v1beta1.ServiceBinding {
