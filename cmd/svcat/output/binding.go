@@ -21,22 +21,17 @@ import (
 	"io"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	svcatsdk "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"k8s.io/api/core/v1"
 )
 
-func getBindingStatusCondition(status v1beta1.ServiceBindingStatus) v1beta1.ServiceBindingCondition {
-	if len(status.Conditions) > 0 {
-		return status.Conditions[len(status.Conditions)-1]
-	}
-	return v1beta1.ServiceBindingCondition{}
-}
-
 func getBindingStatusShort(status v1beta1.ServiceBindingStatus) string {
-	lastCond := getBindingStatusCondition(status)
+	lastCond := svcatsdk.GetBindingStatusCondition(status)
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
 }
 
 func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
-	lastCond := getBindingStatusCondition(status)
+	lastCond := svcatsdk.GetBindingStatusCondition(status)
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
