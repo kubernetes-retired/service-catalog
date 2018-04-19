@@ -1,0 +1,34 @@
+items:
+- metadata:
+    creationTimestamp: 2018-01-11T21:00:47Z
+    finalizers:
+    - kubernetes-incubator/service-catalog
+    generation: 1
+    name: ups-binding
+    namespace: test-ns
+    resourceVersion: "16"
+    selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/servicebindings/ups-binding
+    uid: 7f2aefa0-f712-11e7-aa44-0242ac110005
+  spec:
+    externalID: 061e1d78-d27e-4958-97b8-e9f5aa2f99d7
+    instanceRef:
+      name: ups-instance
+    parameters: {}
+    secretName: ups-binding
+  status:
+    asyncOpInProgress: false
+    conditions:
+    - lastTransitionTime: 2018-01-11T21:00:47Z
+      message: Injected bind result
+      reason: InjectedBindResult
+      status: "True"
+      type: Ready
+    externalProperties:
+      parameterChecksum: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+      parameters: {}
+    orphanMitigationInProgress: false
+    reconciledGeneration: 1
+    unbindStatus: Required
+metadata:
+  resourceVersion: "121"
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/servicebindings

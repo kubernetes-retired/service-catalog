@@ -40,8 +40,7 @@ func getInstanceStatusShort(status v1beta1.ServiceInstanceStatus) string {
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
 }
 
-// WriteInstanceList prints a list of instances.
-func WriteInstanceList(w io.Writer, instances ...v1beta1.ServiceInstance) {
+func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -51,7 +50,7 @@ func WriteInstanceList(w io.Writer, instances ...v1beta1.ServiceInstance) {
 		"Status",
 	})
 
-	for _, instance := range instances {
+	for _, instance := range instanceList.Items {
 		t.Append([]string{
 			instance.Name,
 			instance.Namespace,
@@ -62,6 +61,33 @@ func WriteInstanceList(w io.Writer, instances ...v1beta1.ServiceInstance) {
 	}
 
 	t.Render()
+}
+
+// WriteInstanceList prints a list of instances.
+func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.ServiceInstanceList) {
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, instanceList)
+	case formatYAML:
+		writeYAML(w, instanceList, 0)
+	case formatTable:
+		writeInstanceListTable(w, instanceList)
+	}
+}
+
+// WriteInstance prints a single instance
+func WriteInstance(w io.Writer, outputFormat string, instance v1beta1.ServiceInstance) {
+	switch outputFormat {
+	case "json":
+		writeJSON(w, instance)
+	case "yaml":
+		writeYAML(w, instance, 0)
+	case "table":
+		p := v1beta1.ServiceInstanceList{
+			Items: []v1beta1.ServiceInstance{instance},
+		}
+		writeInstanceListTable(w, &p)
+	}
 }
 
 // WriteParentInstance prints identifying information for a parent instance.

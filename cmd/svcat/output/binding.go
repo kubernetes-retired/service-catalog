@@ -40,8 +40,7 @@ func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
-// WriteBindingList prints a list of bindings.
-func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
+func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -50,7 +49,7 @@ func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
 		"Status",
 	})
 
-	for _, binding := range bindings {
+	for _, binding := range bindingList.Items {
 		t.Append([]string{
 			binding.Name,
 			binding.Namespace,
@@ -58,8 +57,34 @@ func WriteBindingList(w io.Writer, bindings ...v1beta1.ServiceBinding) {
 			getBindingStatusShort(binding.Status),
 		})
 	}
-
 	t.Render()
+}
+
+// WriteBindingList prints a list of bindings in the specified output format.
+func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.ServiceBindingList) {
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, bindingList)
+	case formatYAML:
+		writeYAML(w, bindingList, 0)
+	case formatTable:
+		writeBindingListTable(w, bindingList)
+	}
+}
+
+// WriteBinding prints a single bindings in the specified output format.
+func WriteBinding(w io.Writer, outputFormat string, binding v1beta1.ServiceBinding) {
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, binding)
+	case formatYAML:
+		writeYAML(w, binding, 0)
+	case formatTable:
+		l := v1beta1.ServiceBindingList{
+			Items: []v1beta1.ServiceBinding{binding},
+		}
+		writeBindingListTable(w, &l)
+	}
 }
 
 // WriteBindingDetails prints details for a single binding.

@@ -40,8 +40,7 @@ func getBrokerStatusFull(status v1beta1.ClusterServiceBrokerStatus) string {
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
-// WriteBrokerList prints a list of brokers.
-func WriteBrokerList(w io.Writer, brokers ...v1beta1.ClusterServiceBroker) {
+func writeBrokerListTable(w io.Writer, brokers []v1beta1.ClusterServiceBroker) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -56,6 +55,33 @@ func WriteBrokerList(w io.Writer, brokers ...v1beta1.ClusterServiceBroker) {
 		})
 	}
 	t.Render()
+}
+
+// WriteBrokerList prints a list of brokers in the specified output format.
+func WriteBrokerList(w io.Writer, outputFormat string, brokers ...v1beta1.ClusterServiceBroker) {
+	l := v1beta1.ClusterServiceBrokerList{
+		Items: brokers,
+	}
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, l)
+	case formatYAML:
+		writeYAML(w, l, 0)
+	case formatTable:
+		writeBrokerListTable(w, brokers)
+	}
+}
+
+// WriteBroker prints a broker in the specified output format.
+func WriteBroker(w io.Writer, outputFormat string, broker v1beta1.ClusterServiceBroker) {
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, broker)
+	case formatYAML:
+		writeYAML(w, broker, 0)
+	case formatTable:
+		writeBrokerListTable(w, []v1beta1.ClusterServiceBroker{broker})
+	}
 }
 
 // WriteParentBroker prints identifying information for a parent broker.

@@ -1,0 +1,23 @@
+metadata:
+  creationTimestamp: 2018-01-11T20:53:30Z
+  finalizers:
+  - kubernetes-incubator/service-catalog
+  generation: 2
+  name: ups-broker
+  resourceVersion: "103"
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/ups-broker
+  uid: 7b0ce3d1-f711-11e7-aa44-0242ac110005
+spec:
+  relistBehavior: Duration
+  relistDuration: 15m0s
+  relistRequests: 1
+  url: http://ups-broker-ups-broker.ups-broker.svc.cluster.local
+status:
+  conditions:
+  - lastTransitionTime: 2018-01-11T20:53:31Z
+    message: Successfully fetched catalog entries from broker.
+    reason: FetchedCatalog
+    status: "True"
+    type: Ready
+  lastCatalogRetrievalTime: 2018-01-12T02:10:27Z
+  reconciledGeneration: 2

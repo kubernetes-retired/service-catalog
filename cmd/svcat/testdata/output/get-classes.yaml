@@ -1,0 +1,34 @@
+items:
+- metadata:
+    creationTimestamp: 2018-01-11T20:53:31Z
+    name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+    resourceVersion: "3"
+    selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+    uid: 7b3c2fe0-f711-11e7-aa44-0242ac110005
+  spec:
+    bindable: true
+    bindingRetrievable: false
+    clusterServiceBrokerName: ups-broker
+    description: A user provided service
+    externalID: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
+    externalName: user-provided-service
+    planUpdatable: true
+  status:
+    removedFromBrokerCatalog: false
+- metadata:
+    creationTimestamp: 2018-02-26T20:53:31Z
+    name: f1a80068-e366-494e-92d6-a0782337945b
+    resourceVersion: "6"
+    selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/f1a80068-e366-494e-92d6-a0782337945b
+    uid: 5be743ff-06bc-4d49-b762-c8b1470916c4
+  spec:
+    bindable: true
+    bindingRetrievable: false
+    clusterServiceBrokerName: ups-broker
+    description: Another provided service
+    externalID: f1a80068-e366-494e-92d6-a0782337945b
+    externalName: another-provided-service
+    planUpdatable: true
+  status:
+    removedFromBrokerCatalog: false
+metadata: {}

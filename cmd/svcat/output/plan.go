@@ -46,12 +46,7 @@ func (a byClass) Less(i, j int) bool {
 	return a[i].Spec.ClusterServiceClassRef.Name < a[j].Spec.ClusterServiceClassRef.Name
 }
 
-// WritePlanList prints a list of plans.
-func WritePlanList(w io.Writer, plans []v1beta1.ClusterServicePlan, classes []v1beta1.ClusterServiceClass) {
-	classNames := map[string]string{}
-	for _, class := range classes {
-		classNames[class.Name] = class.Spec.ExternalName
-	}
+func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNames map[string]string) {
 
 	sort.Sort(byClass(plans))
 
@@ -69,6 +64,40 @@ func WritePlanList(w io.Writer, plans []v1beta1.ClusterServicePlan, classes []v1
 			plan.Name})
 	}
 	t.Render()
+}
+
+// WritePlanList prints a list of plans in the specified output format.
+func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []v1beta1.ClusterServiceClass) {
+	classNames := map[string]string{}
+	for _, class := range classes {
+		classNames[class.Name] = class.Spec.ExternalName
+	}
+	list := v1beta1.ClusterServicePlanList{
+		Items: plans,
+	}
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, list)
+	case formatYAML:
+		writeYAML(w, list, 0)
+	case formatTable:
+		writePlanListTable(w, plans, classNames)
+	}
+}
+
+// WritePlan prints a single plan in the specified output format.
+func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan, class v1beta1.ClusterServiceClass) {
+
+	switch outputFormat {
+	case formatJSON:
+		writeJSON(w, plan)
+	case formatYAML:
+		writeYAML(w, plan, 0)
+	case formatTable:
+		classNames := map[string]string{}
+		classNames[class.Name] = class.Spec.ExternalName
+		writePlanListTable(w, []v1beta1.ClusterServicePlan{plan}, classNames)
+	}
 }
 
 // WriteAssociatedPlans prints a list of plans associated with a class.
