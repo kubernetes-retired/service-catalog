@@ -1503,7 +1503,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
-						"secretTransform": {
+						"secretTransforms": {
 							SchemaProps: spec.SchemaProps{
 								Description: "List of transformations that should be applied to the credentials associated with the ServiceBinding before they are inserted into the Secret.",
 								Type:        []string{"array"},

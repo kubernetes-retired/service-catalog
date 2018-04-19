@@ -557,7 +557,7 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 				instance: getTestInstance(),
 				binding: func() *v1beta1.ServiceBinding {
 					b := getTestBinding()
-					b.Spec.SecretTransform = tc.secretTransforms
+					b.Spec.SecretTransforms = tc.secretTransforms
 					return b
 				}(),
 				setup: func(ct *controllerTest) {

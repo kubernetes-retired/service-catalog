@@ -432,7 +432,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 		binding.Namespace, binding.Spec.SecretName, len(credentials),
 	))
 
-	err := c.transformCredentials(binding.Spec.SecretTransform, credentials)
+	err := c.transformCredentials(binding.Spec.SecretTransforms, credentials)
 	if err != nil {
 		return fmt.Errorf(`Unexpected error while transforming credentials for ServiceBinding "%s/%s": %v`, binding.Namespace, binding.Name, err)
 	}

@@ -509,7 +509,7 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 }
 
 // TestReconcileServiceBindingWithSecretTransform tests reconcileBinding to ensure a
-// binding with secretTransform performs the specified transformations.
+// binding with secretTransforms performs the specified transformations.
 func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -546,7 +546,7 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 		},
 	}
-	binding.Spec.SecretTransform = []v1beta1.SecretTransform{
+	binding.Spec.SecretTransforms = []v1beta1.SecretTransform{
 		{
 			RenameKey: &v1beta1.RenameKeyTransform{
 				From: "a",

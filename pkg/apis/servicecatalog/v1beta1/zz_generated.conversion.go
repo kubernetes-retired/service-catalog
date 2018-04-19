@@ -1112,7 +1112,7 @@ func autoConvert_v1beta1_ServiceBindingSpec_To_servicecatalog_ServiceBindingSpec
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersFrom = *(*[]servicecatalog.ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
 	out.SecretName = in.SecretName
-	out.SecretTransform = *(*[]servicecatalog.SecretTransform)(unsafe.Pointer(&in.SecretTransform))
+	out.SecretTransforms = *(*[]servicecatalog.SecretTransform)(unsafe.Pointer(&in.SecretTransforms))
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
 	return nil
@@ -1130,7 +1130,7 @@ func autoConvert_servicecatalog_ServiceBindingSpec_To_v1beta1_ServiceBindingSpec
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersFrom = *(*[]ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
 	out.SecretName = in.SecretName
-	out.SecretTransform = *(*[]SecretTransform)(unsafe.Pointer(&in.SecretTransform))
+	out.SecretTransforms = *(*[]SecretTransform)(unsafe.Pointer(&in.SecretTransforms))
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
 	return nil

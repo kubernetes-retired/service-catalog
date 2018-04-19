@@ -1057,7 +1057,7 @@ type ServiceBindingSpec struct {
 
 	// List of transformations that should be applied to the credentials
 	// associated with the ServiceBinding before they are inserted into the Secret.
-	SecretTransform []SecretTransform `json:"secretTransform,omitempty"`
+	SecretTransforms []SecretTransform `json:"secretTransforms,omitempty"`
 
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
