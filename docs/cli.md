@@ -1,4 +1,7 @@
-# Service Catalog CLI
+---
+title: CLI
+layout: docwithnav
+---
 
 This is a command-line interface (CLI) for interacting with Service Catalog
 resources. svcat is a domain-specific tool to make interacting with the Service Catalog easier.
@@ -30,7 +33,7 @@ when running in plugin mode, so instead of using `--flag` you must specify a val
 
 Run `svcat --help` to see the available commands.
 
-Below are some common tasks made easy with svcat. The example output assumes that the 
+Below are some common tasks made easy with svcat. The example output assumes that the
 [User Provided Service Broker](../charts/ups-broker) is installed on the cluster.
 
 * [Find brokers installed on the cluster](#find-brokers-installed-on-the-cluster)
@@ -142,7 +145,7 @@ $ svcat describe plan user-provided-service/default
     Status:        Active
     Free:          true
     Class:         user-provided-service
-  
+
   Instances:
         NAME       NAMESPACE   STATUS
   +--------------+-----------+--------+
@@ -187,7 +190,7 @@ $ svcat describe instance -n test-ns ups-instance
     Status:      Ready - The instance was provisioned successfully @ 2018-03-02 16:24:55 +0000 UTC
     Class:       user-provided-service
     Plan:        default
-  
+
   Bindings:
        NAME       STATUS
   +-------------+--------+

@@ -21,6 +21,8 @@ import (
 	"reflect"
 	"testing"
 
+	"bytes"
+	"encoding/base64"
 	"github.com/google/gofuzz"
 )
 
@@ -121,6 +123,27 @@ func TestSerializeSlice(t *testing.T) {
 		}
 		if !reflect.DeepEqual(sliceVal, sliceValPrime) {
 			t.Fatalf("Round trip failed; expected %v; got %v", sliceVal, sliceValPrime)
+		}
+	}
+}
+
+func TestSerializeByteSlice(t *testing.T) {
+	for i := 0; i < fuzzIters; i++ {
+		var byteSliceVal []byte
+		fuzzer.Fuzz(&byteSliceVal)
+		serializedBytes, err := serialize(byteSliceVal)
+		if err != nil {
+			t.Fatalf("Unexpected error: %s", err)
+		}
+		base64EncodedBytes := []byte(`"` + base64.StdEncoding.EncodeToString(serializedBytes) + `"`)
+
+		var byteSlicePrime []byte
+		err = json.Unmarshal(base64EncodedBytes, &byteSlicePrime)
+		if err != nil {
+			t.Fatalf("Unexpected error: %s", err)
+		}
+		if !bytes.Equal(byteSliceVal, byteSlicePrime) {
+			t.Fatalf("Round trip failed; expected %v; got %v", byteSliceVal, byteSlicePrime)
 		}
 	}
 }

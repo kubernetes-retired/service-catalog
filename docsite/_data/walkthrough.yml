@@ -1,0 +1,23 @@
+bigheader: "Walkthrough"
+abstract: "Walkthrough setting up Service Catalog on a cluster and using a sample broker."
+landing_page: /docs/walkthrough/
+toc:
+- docs/walkthrough.md
+- title: 1 - Install a Broker
+  path: /docs/walkthrough/#step-1---installing-the-ups-broker-server
+- title: 2 - Activate the Broker
+  path: /docs/walkthrough/#step-2---creating-a-clusterservicebroker-resource
+- title: 3 - View Classes and Plans
+  path: /docs/walkthrough/#step-3---viewing-clusterserviceclasses-and-clusterserviceplans
+- title: 4 - Create a Instance
+  path: /docs/walkthrough/#step-4---creating-a-new-serviceinstance
+- title: 5 - Create a Binding
+  path: /docs/walkthrough/#step-5---requesting-a-servicebinding-to-use-the-serviceinstance
+- title: 6 - Delete the Binding
+  path: /docs/walkthrough/#step-6---deleting-the-servicebinding
+- title: 7 - Delete the Instance
+  path: /docs/walkthrough/#step-7---deleting-the-serviceinstance
+- title: 8 - Delete the Broker
+  path: /docs/walkthrough/#step-8---deleting-the-clusterservicebroker
+- title: 9 - Final Cleanup
+  path: /docs/walkthrough/#step-9---final-cleanup

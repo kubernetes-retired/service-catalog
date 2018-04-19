@@ -69,7 +69,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 		},
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("nothere is a service class that cannot be referenced by the service instance as it does not exist.")
 	}
 
@@ -119,7 +119,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 		},
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("nothere is a service class that cannot be referenced by the service instance as it does not exist.")
 	}
 
@@ -153,7 +153,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("The broker referenced by the instance exists when it should not.")
 	}
 
@@ -202,7 +202,7 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 		return true, nil, errors.New("no secret defined")
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("There was no secret to be found, but does_not_exist/auth-name was found.")
 	}
 
@@ -263,7 +263,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 		},
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("The service plan nothere should not exist to be referenced.")
 	}
 
@@ -325,7 +325,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 		},
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("The service plan nothere should not exist to be referenced.")
 	}
 
@@ -599,7 +599,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 			//////////////////////////////////////
 			// Check 1st reconcilliation iteration (prepare/validate request & set status to in progress)
 
-			err := testController.reconcileServiceInstance(instance)
+			err := reconcileServiceInstance(t, testController, instance)
 			if tc.expectedError {
 				if err == nil {
 					t.Fatalf("Reconcile expected to fail")
@@ -663,7 +663,7 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 			fakeKubeClient.ClearActions()
 			instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
 
-			err = testController.reconcileServiceInstance(instance)
+			err = reconcileServiceInstance(t, testController, instance)
 			if err != nil {
 				t.Fatalf("Reconcile not expected to fail : %v", err)
 			}
@@ -735,7 +735,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -811,7 +811,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -863,7 +863,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -871,7 +871,7 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance")
 	}
 
@@ -934,7 +934,7 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 	//////////////////////////////////////
 	// Check 1st reconcilliation iteration (prepare/validate request & set status to in progress)
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("Reconcile not expected to fail : %v", err)
 	}
 
@@ -970,7 +970,7 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 	fakeKubeClient.ClearActions()
 	instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance")
 	}
 
@@ -1045,7 +1045,7 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1053,7 +1053,7 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1121,7 +1121,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1131,7 +1131,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 	assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1192,7 +1192,7 @@ func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("This should fail")
 	}
 
@@ -1242,7 +1242,7 @@ func TestReconcileServiceInstanceFailsWithDeletedClass(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("This should have failed")
 	}
 
@@ -1295,7 +1295,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 
 	instance := getTestServiceInstanceK8SNames()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1318,7 +1318,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1326,7 +1326,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1396,7 +1396,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithRefs()
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1410,7 +1410,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1466,7 +1466,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -1480,7 +1480,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1529,7 +1529,7 @@ func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("There should not be a namespace for the ServiceInstance to be created in")
 	}
 
@@ -1593,14 +1593,14 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 		return true, instance, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("This should not fail")
 	}
@@ -1668,7 +1668,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 		return true, instance, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("expected reconcileServiceInstance to return an error, but there was none")
 	}
 
@@ -1702,14 +1702,14 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	// credentials were removed, verify the next reconcilation removes
 	// the instance
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -1784,14 +1784,14 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
@@ -1862,14 +1862,14 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 		return true, instance, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
 	}
@@ -1972,7 +1972,7 @@ func TestReconsileServiceInstanceDeleteWithParameters(t *testing.T) {
 				return true, instance, nil
 			})
 
-			err := testController.reconcileServiceInstance(instance)
+			err := reconcileServiceInstance(t, testController, instance)
 			if err != nil {
 				t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
 			}
@@ -2022,7 +2022,7 @@ func TestReconcileServiceInstanceDeleteWhenAlreadyDeprovisionedUnsuccessfully(t 
 		return true, instance, nil
 	})
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
 	}
@@ -2073,14 +2073,14 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 		return true, instance, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
 	}
@@ -2138,7 +2138,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 		return true, instance, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -2177,14 +2177,14 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 
 	instance := getTestServiceInstanceWithFailedStatus()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -2875,7 +2875,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -2930,7 +2930,7 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 	instance.Status.OperationStartTime = &startTime
 	instance.Status.ObservedGeneration = instance.Generation
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("Should have returned no error because the retry duration has elapsed: %v", err)
 	}
 
@@ -3114,7 +3114,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 		return true, nil, errors.New("update error")
 	})
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err == nil {
 		t.Fatalf("expected error from but got none")
 	}
@@ -3471,7 +3471,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 				instance.Spec.UserInfo = testUserInfo
 			}
 
-			if err := testController.reconcileServiceInstance(instance); err != nil {
+			if err := reconcileServiceInstance(t, testController, instance); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
@@ -3481,7 +3481,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 
 			instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
 
-			if err := testController.reconcileServiceInstance(instance); err != nil {
+			if err := reconcileServiceInstance(t, testController, instance); err != nil {
 				t.Fatalf("This should not fail : %v", err)
 			}
 
@@ -3541,14 +3541,14 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 				return true, instance, nil
 			})
 
-			if err := testController.reconcileServiceInstance(instance); err != nil {
+			if err := reconcileServiceInstance(t, testController, instance); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
 			instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 			fakeCatalogClient.ClearActions()
 
-			err := testController.reconcileServiceInstance(instance)
+			err := reconcileServiceInstance(t, testController, instance)
 			if err != nil {
 				t.Fatalf("This should not fail")
 			}
@@ -3675,14 +3675,14 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 		instance := getTestServiceInstanceWithRefs()
-		if err := testController.reconcileServiceInstance(instance); err != nil {
+		if err := reconcileServiceInstance(t, testController, instance); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
 		instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 		fakeCatalogClient.ClearActions()
 
-		err := testController.reconcileServiceInstance(instance)
+		err := reconcileServiceInstance(t, testController, instance)
 
 		// The action should be:
 		// 0. Updating the status
@@ -3733,14 +3733,14 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithRefs()
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("Reconciler should return error for timeout so that instance is orphan mitigated")
 	}
 
@@ -3981,7 +3981,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				return true, instance, nil
 			})
 
-			err := testController.reconcileServiceInstance(instance)
+			err := reconcileServiceInstance(t, testController, instance)
 
 			// The action should be:
 			// 0. Updating the status
@@ -4070,7 +4070,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		},
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -4091,7 +4091,7 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err = testController.reconcileServiceInstance(instance); err != nil {
+	if err = reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -4279,7 +4279,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	}
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -4296,7 +4296,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err = testController.reconcileServiceInstance(instance); err != nil {
+	if err = reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -4392,14 +4392,14 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		ParametersChecksum:             generateChecksumOfParametersOrFail(t, oldParameters),
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err = testController.reconcileServiceInstance(instance); err != nil {
+	if err = reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -4724,7 +4724,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	}
 	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -4732,7 +4732,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err = testController.reconcileServiceInstance(instance); err != nil {
+	if err = reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -4797,14 +4797,14 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceUpdatingPlan()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance.")
 	}
 
@@ -4861,14 +4861,14 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceUpdatingPlan()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err == nil {
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("expected error to be returned")
 	}
 
@@ -5129,14 +5129,14 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -5452,7 +5452,7 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 
 	timeOfReconciliation := metav1.Now()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -5470,7 +5470,7 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("This should not fail")
 	}
@@ -5536,7 +5536,7 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 
 	timeOfReconciliation := metav1.Now()
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -5554,7 +5554,7 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("This should not fail")
 	}
@@ -5619,7 +5619,7 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 		return true, instance, nil
 	})
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -5627,7 +5627,7 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	err := testController.reconcileServiceInstance(instance)
+	err := reconcileServiceInstance(t, testController, instance)
 	if err != nil {
 		t.Fatalf("This should not fail")
 	}
@@ -5686,7 +5686,7 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -5700,7 +5700,7 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	if updatedServiceInstance.Status.ObservedGeneration == 0 || updatedServiceInstance.Status.ObservedGeneration != instance.Status.ReconciledGeneration {
 		t.Fatalf("Unexpected ObservedGeneration value: %d", updatedServiceInstance.Status.ObservedGeneration)
 	}
-	if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
+	if updatedServiceInstance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
 		t.Fatalf("The instance was expected to be marked as Provisioned")
 	}
 }
@@ -5734,7 +5734,7 @@ func TestReconcileServiceInstanceUpdateMissingOrphanMitigation(t *testing.T) {
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 	}
 
-	if err := testController.reconcileServiceInstance(instance); err != nil {
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
 
@@ -5781,4 +5781,13 @@ func assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClien
 	updateObject := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceOperationInProgressWithParameters(t, updateObject, operation, planName, planGUID, parameters, parametersChecksum, instance)
 	return updateObject.(*v1beta1.ServiceInstance)
+}
+
+func reconcileServiceInstance(t *testing.T, testController *controller, instance *v1beta1.ServiceInstance) error {
+	clone := instance.DeepCopy()
+	err := testController.reconcileServiceInstance(instance)
+	if !reflect.DeepEqual(instance, clone) {
+		t.Errorf("reconcileServiceInstance shouldn't mutate input, but it does: %s", expectedGot(clone, instance))
+	}
+	return err
 }

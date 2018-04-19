@@ -229,6 +229,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.bindingPollingQueue.ShutDown()
 
 	waitGroup.Wait()
+	glog.Info("Shutdown service-catalog controller")
 }
 
 // createWorker creates and runs a worker thread that just processes items in the

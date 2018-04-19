@@ -22,13 +22,18 @@ import (
 	"reflect"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	clientgotesting "k8s.io/client-go/testing"
 
 	// avoid error `servicecatalog/v1beta1 is not enabled`
+
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -223,6 +228,7 @@ func TestCreateServiceBindingInstanceNotReady(t *testing.T) {
 				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, tc.condition); err != nil {
 					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, tc.condition, cond)
 				}
+				time.Sleep(time.Second * 5) // TODO(n3wscott): fix this trash
 			})
 		})
 	}
@@ -422,7 +428,7 @@ func TestCreateServiceBindingWithParameters(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
+			// t.Parallel()
 			ct := &controllerTest{
 				t:        t,
 				broker:   getTestBroker(),
@@ -457,6 +463,131 @@ func TestCreateServiceBindingWithParameters(t *testing.T) {
 					if e, a := tc.expectedParams, brokerAction.Request.(*osb.BindRequest).Parameters; !reflect.DeepEqual(e, a) {
 						t.Fatalf("unexpected diff in provision parameters: expected %v, got %v", e, a)
 					}
+				}
+			})
+		})
+	}
+}
+
+// TestCreateServiceBindingWithSecretTransform tests creating a ServiceBinding
+// that includes a SecretTransform.
+func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
+	type secretDef struct {
+		name string
+		data map[string][]byte
+	}
+	cases := []struct {
+		name               string
+		secrets            []secretDef
+		secretTransforms   []v1beta1.SecretTransform
+		expectedSecretData map[string][]byte
+	}{
+		{
+			name:             "no transform",
+			secretTransforms: nil,
+			expectedSecretData: map[string][]byte{
+				"foo": []byte("bar"),
+				"baz": []byte("zap"),
+			},
+		},
+		{
+			name: "multiple transforms",
+			secrets: []secretDef{
+				{
+					name: "other-secret",
+					data: map[string][]byte{
+						"key-from-other-secret": []byte("qux"),
+					},
+				},
+			},
+			secretTransforms: []v1beta1.SecretTransform{
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:         "addedStringValue",
+						StringValue: strPtr("stringValue"),
+					},
+				},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:   "addedByteArray",
+						Value: []byte("byteArray"),
+					},
+				},
+				{
+					AddKey: &v1beta1.AddKeyTransform{
+						Key:                "valueFromJSONPath",
+						JSONPathExpression: strPtr("{.foo}"),
+					},
+				},
+				{
+					RenameKey: &v1beta1.RenameKeyTransform{
+						From: "foo",
+						To:   "bar",
+					},
+				},
+				{
+					AddKeysFrom: &v1beta1.AddKeysFromTransform{
+						SecretRef: &v1beta1.ObjectReference{
+							Name:      "other-secret",
+							Namespace: "some-namespace",
+						},
+					},
+				},
+				{
+					RemoveKey: &v1beta1.RemoveKeyTransform{
+						Key: "baz",
+					},
+				},
+			},
+			expectedSecretData: map[string][]byte{
+				"addedStringValue":  []byte("stringValue"),
+				"addedByteArray":    []byte("byteArray"),
+				"valueFromJSONPath": []byte("bar"),
+				"bar":               []byte("bar"),
+				"key-from-other-secret": []byte("qux"),
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+				binding: func() *v1beta1.ServiceBinding {
+					b := getTestBinding()
+					b.Spec.SecretTransform = tc.secretTransforms
+					return b
+				}(),
+				setup: func(ct *controllerTest) {
+					for _, secret := range tc.secrets {
+						prependGetSecretReaction(ct.kubeClient, secret.name, secret.data)
+					}
+				},
+			}
+			ct.run(func(ct *controllerTest) {
+				condition := v1beta1.ServiceBindingCondition{
+					Type:   v1beta1.ServiceBindingConditionReady,
+					Status: v1beta1.ConditionTrue,
+				}
+				if cond, err := util.WaitForBindingCondition(ct.client, testNamespace, testBindingName, condition); err != nil {
+					t.Fatalf("error waiting for binding condition: %v\n"+"expecting: %+v\n"+"last seen: %+v", err, condition, cond)
+				}
+
+				kubeActions := findKubeActions(ct.kubeClient, "create", "secrets")
+				if len(kubeActions) == 0 {
+					t.Fatalf("expected a Secret to be created, but it wasn't")
+				}
+
+				createSecretAction := kubeActions[0].(clientgotesting.CreateAction)
+
+				secret, ok := createSecretAction.GetObject().(*corev1.Secret)
+				if !ok {
+					t.Fatal("couldn't convert secret into a corev1.Secret")
+				}
+				if !reflect.DeepEqual(secret.Data, tc.expectedSecretData) {
+					t.Errorf("%v: unexpected transformed secret data; expected: %v; actual: %v", tc.name, tc.expectedSecretData, secret.Data)
 				}
 			})
 		})

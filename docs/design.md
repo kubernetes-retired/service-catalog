@@ -1,4 +1,7 @@
-# Design of the Service Catalog
+---
+title: Design of the Service Catalog
+layout: docwithnav
+---
 
 This document covers the architecture and design of Service Catalog.
 

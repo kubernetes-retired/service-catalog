@@ -1,4 +1,7 @@
-# Details on Service Catalog Resources
+---
+title: Resources
+layout: docwithnav
+---
 
 The Service Catalog resource model specifies all the behaviors that 
 Service Catalog supports. This document details each resource.

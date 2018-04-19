@@ -1,0 +1,5 @@
+bigheader: "CLI"
+abstract: "Service Catalog CLI (svcat) usage"
+landing_page: /docs/cli
+toc:
+- docs/cli.md

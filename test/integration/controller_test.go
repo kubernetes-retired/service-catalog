@@ -1290,11 +1290,11 @@ type controllerTest struct {
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingBrokerSuccess bool
-	// true if the verification that the broker was created and reconciled
+	// true if the verification that the instance was created and reconciled
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingInstanceSuccess bool
-	// true if the verification that the broker was created and reconciled
+	// true if the verification that the binding was created and reconciled
 	// successfully should be skipped. This is useful for tests where the
 	// reconciliation is expected to fail.
 	skipVerifyingBindingSuccess bool
@@ -1437,4 +1437,15 @@ func convertParametersIntoRawExtension(t *testing.T, parameters map[string]inter
 		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
 	}
 	return &runtime.RawExtension{Raw: marshalledParams}
+}
+
+func findKubeActions(kubeClient *fake.Clientset, verb, resource string) []clientgotesting.Action {
+	actions := kubeClient.Actions()
+	foundActions := make([]clientgotesting.Action, 0, len(actions))
+	for _, action := range actions {
+		if action.Matches(verb, resource) {
+			foundActions = append(foundActions, action)
+		}
+	}
+	return foundActions
 }

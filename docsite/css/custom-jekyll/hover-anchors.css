@@ -1,0 +1,61 @@
+@font-face {
+    font-family: 'octicons';
+    src: url('https://cdnjs.cloudflare.com/ajax/libs/octicons/4.4.0/font/octicons.eot?#iefix') format('embedded-opentype'),
+    url('https://cdnjs.cloudflare.com/ajax/libs/octicons/4.4.0/font/octicons.woff') format('woff'),
+    url('https://cdnjs.cloudflare.com/ajax/libs/octicons/4.4.0/font/octicons.ttf') format('truetype'),
+    url('https://cdnjs.cloudflare.com/ajax/libs/octicons/4.4.0/font/octicons.svg#octicons') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.octicon {
+    font: normal normal 16px octicons;
+    line-height: 1;
+    display: inline-block;
+    text-decoration: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.octicon-link:before { content: '\f05c'; }
+
+.docsContent .octicon-link {
+    display: none;
+    color: #000;
+    vertical-align: middle;
+}
+
+.header-link {
+    position: absolute;
+    padding-right: .5em;
+    margin-left: -1em;
+    color: inherit !important;
+    text-decoration: none !important;
+    opacity: 0;
+}
+
+.header-link .octicon {
+    vertical-align: .1em;
+}
+
+/* do not display in less than 768px screen */
+@media (max-width: 767px) {
+    .header-link {
+        display: none !important;
+    }
+}
+
+*:hover > .header-link {
+    opacity: .75;
+    /* to fade links as they appear, change transition-property from 'color' to 'all' */
+    -webkit-transition: color .16s linear;
+    transition: color .16s linear;
+}
+
+*:hover > .header-link:hover,
+*:hover > .header-link:focus {
+    opacity: 1;
+}

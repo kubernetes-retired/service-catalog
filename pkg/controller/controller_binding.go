@@ -24,6 +24,7 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	"bytes"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
@@ -33,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/jsonpath"
 )
 
 const (
@@ -430,11 +432,15 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 		binding.Namespace, binding.Spec.SecretName, len(credentials),
 	))
 
+	err := c.transformCredentials(binding.Spec.SecretTransform, credentials)
+	if err != nil {
+		return fmt.Errorf(`Unexpected error while transforming credentials for ServiceBinding "%s/%s": %v`, binding.Namespace, binding.Name, err)
+	}
+
 	secretData := make(map[string][]byte)
 	for k, v := range credentials {
 		var err error
-		secretKey := renameCredentialsKey(binding, k)
-		secretData[secretKey], err = serialize(v)
+		secretData[k], err = serialize(v)
 		if err != nil {
 			return fmt.Errorf("Unable to serialize value for credential key %q (value is intentionally not logged): %s", k, err)
 		}
@@ -491,15 +497,53 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 	return err
 }
 
-func renameCredentialsKey(binding *v1beta1.ServiceBinding, key string) string {
-	for _, t := range binding.Spec.SecretTransform {
-		if t.RenameKey != nil {
-			if key == t.RenameKey.From {
-				return t.RenameKey.To
+func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, credentials map[string]interface{}) error {
+	for _, t := range transforms {
+		switch {
+		case t.AddKey != nil:
+			var value interface{}
+			if t.AddKey.JSONPathExpression != nil {
+				result, err := evaluateJSONPath(*t.AddKey.JSONPathExpression, credentials)
+				if err != nil {
+					return err
+				}
+				value = result
+			} else if t.AddKey.StringValue != nil {
+				value = *t.AddKey.StringValue
+			} else {
+				value = t.AddKey.Value
 			}
+			credentials[t.AddKey.Key] = value
+		case t.RenameKey != nil:
+			credentials[t.RenameKey.To] = credentials[t.RenameKey.From]
+			delete(credentials, t.RenameKey.From)
+		case t.AddKeysFrom != nil:
+			secret, err := c.kubeClient.CoreV1().
+				Secrets(t.AddKeysFrom.SecretRef.Namespace).
+				Get(t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return err // TODO: if the Secret doesn't exist yet, can we perform the transform when it does?
+			}
+			for k, v := range secret.Data {
+				credentials[k] = v
+			}
+		case t.RemoveKey != nil:
+			delete(credentials, t.RemoveKey.Key)
 		}
 	}
-	return key
+	return nil
+}
+
+func evaluateJSONPath(jsonPath string, credentials map[string]interface{}) (string, error) {
+	j := jsonpath.New("expression")
+	buf := new(bytes.Buffer)
+	if err := j.Parse(jsonPath); err != nil {
+		return "", err
+	}
+	if err := j.Execute(buf, credentials); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {

@@ -1,4 +1,7 @@
-# Installing Service Catalog
+---
+title: Install
+layout: docwithnav
+---
 
 Kubernetes 1.7 or higher clusters run the
 [API Aggregator](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/),
