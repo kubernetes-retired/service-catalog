@@ -24,7 +24,12 @@ import (
 
 type getCmd struct {
 	*command.Namespaced
-	name string
+	name         string
+	outputFormat string
+}
+
+func (c *getCmd) SetFormat(format string) {
+	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get bindings" command
@@ -45,7 +50,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	}
 
 	command.AddNamespaceFlags(cmd.Flags(), true)
-
+	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -71,7 +76,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteBindingList(c.Output, bindings.Items...)
+	output.WriteBindingList(c.Output, c.outputFormat, bindings)
 	return nil
 }
 
@@ -81,6 +86,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteBindingList(c.Output, *binding)
+	output.WriteBinding(c.Output, c.outputFormat, *binding)
 	return nil
 }

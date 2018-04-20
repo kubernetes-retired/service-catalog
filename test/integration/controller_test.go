@@ -803,13 +803,19 @@ func newControllerTestTestController(ct *controllerTest) (
 	}
 
 	stopCh := make(chan struct{})
+
+	glog.V(4).Info("Waiting for caches to sync")
+	informerFactory.Start(stopCh)
+
+	glog.V(4).Info("Waiting for caches to sync")
+	informerFactory.WaitForCacheSync(stopCh)
+
 	controllerStopped := make(chan struct{})
+
 	go func() {
 		testController.Run(1, stopCh)
 		controllerStopped <- struct{}{}
 	}()
-	informerFactory.Start(stopCh)
-	t.Log("informers start")
 
 	shutdownController := func() {
 		close(stopCh)

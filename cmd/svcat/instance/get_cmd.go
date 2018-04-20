@@ -24,7 +24,12 @@ import (
 
 type getCmd struct {
 	*command.Namespaced
-	name string
+	name         string
+	outputFormat string
+}
+
+func (c *getCmd) SetFormat(format string) {
+	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get instances" command
@@ -44,6 +49,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), true)
+	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -69,7 +75,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteInstanceList(c.Output, instances.Items...)
+	output.WriteInstanceList(c.Output, c.outputFormat, instances)
 	return nil
 }
 
@@ -79,6 +85,7 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteInstanceList(c.Output, *instance)
+	output.WriteInstance(c.Output, c.outputFormat, *instance)
+
 	return nil
 }

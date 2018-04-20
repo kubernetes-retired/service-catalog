@@ -88,13 +88,26 @@ tree:
     - name: all-namespaces
       desc: If present, list the requested object(s) across all namespaces. Namespace
         in current context is ignored even if specified with --namespace
+    - name: output
+      shorthand: o
+      desc: The output format to use. Valid options are table, json or yaml. If not
+        present, defaults to table
   - name: brokers
     shortDesc: List brokers, optionally filtered by name
     command: ./svcat get brokers
+    flags:
+    - name: output
+      shorthand: o
+      desc: The output format to use. Valid options are table, json or yaml. If not
+        present, defaults to table
   - name: classes
     shortDesc: List classes, optionally filtered by name
     command: ./svcat get classes
     flags:
+    - name: output
+      shorthand: o
+      desc: The output format to use. Valid options are table, json or yaml. If not
+        present, defaults to table
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
@@ -105,6 +118,10 @@ tree:
     - name: all-namespaces
       desc: If present, list the requested object(s) across all namespaces. Namespace
         in current context is ignored even if specified with --namespace
+    - name: output
+      shorthand: o
+      desc: The output format to use. Valid options are table, json or yaml. If not
+        present, defaults to table
   - name: plans
     shortDesc: List plans, optionally filtered by name or class
     command: ./svcat get plans
@@ -113,6 +130,10 @@ tree:
       shorthand: c
       desc: Filter plans based on class. When --uuid is specified, the class name
         is interpreted as a uuid.
+    - name: output
+      shorthand: o
+      desc: The output format to use. Valid options are table, json or yaml. If not
+        present, defaults to table
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
