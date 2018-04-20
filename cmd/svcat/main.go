@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/kubectl/pkg/pluginutils"
+
 	_ "github.com/golang/glog" // Initialize glog flags
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
@@ -31,7 +33,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions"
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -82,7 +86,31 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 
 			// Initialize the context if not already configured (by tests)
 			if cxt.App == nil {
-				app, err := svcat.NewApp(opts.KubeConfig, opts.KubeContext)
+
+				var client *clientset.Clientset
+				var namespace string
+				var err error
+				if plugin.IsPlugin() {
+					restConfig, config, err := pluginutils.InitClientAndConfig()
+					if err != nil {
+						return err
+					}
+					client, err = clientset.NewForConfig(restConfig)
+					if err != nil {
+						return err
+					}
+					namespace, _, err = config.Namespace()
+					if err != nil {
+						return err
+					}
+				} else {
+					// Initialize a service catalog client
+					client, namespace, err = getServiceCatalogClient(opts.KubeConfig, opts.KubeContext)
+					if err != nil {
+						return err
+					}
+				}
+				app, err := svcat.NewApp(client, namespace)
 				if err != nil {
 					return err
 				}
@@ -192,4 +220,22 @@ func bindViperToCobra(vip *viper.Viper, cmd *cobra.Command) {
 			cmd.Flags().Set(f.Name, vip.GetString(f.Name))
 		}
 	})
+}
+
+// getServiceCatalogClient creates a Service Catalog config and client for a given kubeconfig context.
+func getServiceCatalogClient(kubeConfig, kubeContext string) (client *clientset.Clientset, namespaces string, err error) {
+	config := kube.GetConfig(kubeContext, kubeConfig)
+
+	currentNamespace, _, err := config.Namespace()
+	if err != nil {
+		return nil, "", fmt.Errorf("could not determine the namespace for the current context %q: %s", kubeContext, err)
+	}
+
+	restConfig, err := config.ClientConfig()
+	if err != nil {
+		return nil, "", fmt.Errorf("could not get Kubernetes config for context %q: %s", kubeContext, err)
+	}
+
+	client, err = clientset.NewForConfig(restConfig)
+	return client, currentNamespace, err
 }
