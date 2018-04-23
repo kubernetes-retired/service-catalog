@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM BASEIMAGE
+ARG BASEIMAGE
+FROM ${BASEIMAGE}
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install ca-certificates -y && \
     rm -rf /var/lib/apt/lists/*
 
-ADD service-catalog opt/services/
+ADD bin/service-catalog opt/services/
 
 ENTRYPOINT ["/opt/services/service-catalog"]

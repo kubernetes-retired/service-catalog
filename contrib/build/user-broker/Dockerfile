@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM BASEIMAGE
+ARG BASEIMAGE
+FROM ${BASEIMAGE}
 
-ADD user-broker /opt/services/user-broker
+ADD bin/user-broker /opt/services/user-broker
 
 ENTRYPOINT ["/opt/services/user-broker"]

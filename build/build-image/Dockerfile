@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:GO_VERSION
+ARG go_version
+FROM golang:${go_version}
 
 # Install dep as root
 ENV DEP_VERSION=v0.4.1

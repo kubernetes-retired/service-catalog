@@ -188,8 +188,11 @@ $(BINDIR)/e2e.test: $(scBuildImage) $(shell find test/e2e)
 ###################
 
 .scBuildImage-$(GO_VERSION): build/build-image/Dockerfile
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage --iidfile $@ -
+	docker build \
+		--build-arg go_version=$(GO_VERSION) \
+		-t scbuildimage \
+		--iidfile "$@" \
+		$(dir $<)
 
 # Util targets
 ##############
@@ -328,30 +331,20 @@ arch-image-%:
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* images
 
-define build-and-tag # (service, image, mutable_image, prefix)
-	$(eval build_path := "$(4)build/$(1)")
-	$(eval tmp_build_path := "$(build_path)/tmp")
-	mkdir -p $(tmp_build_path)
-	cp $(BINDIR)/$(1) $(tmp_build_path)
-	cp $(build_path)/Dockerfile $(tmp_build_path)
-	# -i.bak is required for cross-platform compat: https://stackoverflow.com/questions/5694228/sed-in-place-flag-that-works-both-on-mac-bsd-and-linux
-	sed -i.bak "s|BASEIMAGE|$(BASEIMAGE)|g" $(tmp_build_path)/Dockerfile
-	rm $(tmp_build_path)/Dockerfile.bak
+define build-and-tag # (service, image, mutable_image)
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
-	docker build -t $(2) $(tmp_build_path)
-	docker tag $(2) $(3)
-	rm -rf $(tmp_build_path)
+	docker build --build-arg BASEIMAGE=$(BASEIMAGE) -t $(2) -t $(3) -f $(1)/Dockerfile .
 endef
 
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
-	$(call build-and-tag,"user-broker",$(USER_BROKER_IMAGE),$(USER_BROKER_MUTABLE_IMAGE),"contrib/")
+	$(call build-and-tag,contrib/build/user-broker,$(USER_BROKER_IMAGE),$(USER_BROKER_MUTABLE_IMAGE))
 ifeq ($(ARCH),amd64)
 	docker tag $(USER_BROKER_IMAGE) $(REGISTRY)user-broker:$(VERSION)
 	docker tag $(USER_BROKER_MUTABLE_IMAGE) $(REGISTRY)user-broker:$(MUTABLE_TAG)
 endif
 
 service-catalog-image: build/service-catalog/Dockerfile $(BINDIR)/service-catalog
-	$(call build-and-tag,"service-catalog",$(SERVICE_CATALOG_IMAGE),$(SERVICE_CATALOG_MUTABLE_IMAGE))
+	$(call build-and-tag,build/service-catalog,$(SERVICE_CATALOG_IMAGE),$(SERVICE_CATALOG_MUTABLE_IMAGE))
 ifeq ($(ARCH),amd64)
 	docker tag $(SERVICE_CATALOG_IMAGE) $(REGISTRY)service-catalog:$(VERSION)
 	docker tag $(SERVICE_CATALOG_MUTABLE_IMAGE) $(REGISTRY)service-catalog:$(MUTABLE_TAG)
