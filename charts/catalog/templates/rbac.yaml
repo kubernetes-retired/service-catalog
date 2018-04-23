@@ -93,6 +93,10 @@ items:
   - apiGroups: [""]
     resources: ["namespaces"]
     verbs:     ["get","list","watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["cluster-info"]
+    verbs:     ["get","create","list","watch","update"]
   # access to our service-catalog types
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["clusterserviceclasses"]
