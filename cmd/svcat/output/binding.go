@@ -19,6 +19,7 @@ package output
 import (
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatsdk "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
@@ -134,8 +135,15 @@ func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error, showSecret
 		return
 	}
 
+	keys := make([]string, 0, len(secret.Data))
+	for key := range secret.Data {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
 	t := NewDetailsTable(w)
-	for key, value := range secret.Data {
+	for _, key := range keys {
+		value := secret.Data[key]
 		if showSecrets {
 			t.Append([]string{key, string(value)})
 		} else {
