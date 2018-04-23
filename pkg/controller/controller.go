@@ -45,7 +45,8 @@ import (
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	pretty "github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
+	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
 const (
@@ -571,18 +572,30 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 	}, nil
 }
 
-// convertCatalog converts a service broker catalog into an array of
-// ClusterServiceClasses and an array of ClusterServicePlans.  The ClusterServiceClasses and
+// convertAndFilterCatalog converts a service broker catalog into an array of
+// ClusterServiceClasses and an array of ClusterServicePlans and filters these
+// through the restrictions provided. The ClusterServiceClasses and
 // ClusterServicePlans returned by this method are named in K8S with the OSB ID.
-func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
-	serviceClasses := make([]*v1beta1.ClusterServiceClass, len(in.Services))
-	servicePlans := []*v1beta1.ClusterServicePlan{}
-	for i, svc := range in.Services {
-		serviceClasses[i] = &v1beta1.ClusterServiceClass{
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+	var predicate filter.Predicate
+	var err error
+	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
+		predicate, err = filter.CreatePredicate(restrictions.ServiceClass)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		predicate = filter.NewPredicate()
+	}
+
+	serviceClasses := []*v1beta1.ClusterServiceClass(nil)
+	servicePlans := []*v1beta1.ClusterServicePlan(nil)
+	for _, svc := range in.Services {
+		serviceClass := &v1beta1.ClusterServiceClass{
 			Spec: v1beta1.ClusterServiceClassSpec{
 				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
 					Bindable:      svc.Bindable,
-					PlanUpdatable: (svc.PlanUpdatable != nil && *svc.PlanUpdatable),
+					PlanUpdatable: svc.PlanUpdatable != nil && *svc.PlanUpdatable,
 					ExternalID:    svc.ID,
 					ExternalName:  svc.Name,
 					Tags:          svc.Tags,
@@ -593,7 +606,7 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
-			serviceClasses[i].Spec.BindingRetrievable = svc.BindingsRetrievable
+			serviceClass.Spec.BindingRetrievable = svc.BindingsRetrievable
 		}
 
 		if svc.Metadata != nil {
@@ -603,19 +616,62 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 				glog.Error(err)
 				return nil, nil, err
 			}
-			serviceClasses[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
+			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
+		serviceClass.SetName(svc.ID)
 
-		serviceClasses[i].SetName(svc.ID)
+		// If this service class passes the predicate, process the plans for the class.
+		if fields := v1beta1.ConvertClusterServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
+			// set up the plans using the ClusterServiceClass Name
+			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name)
+			if err != nil {
+				return nil, nil, err
+			}
 
-		// set up the plans using the ClusterServiceClass Name
-		plans, err := convertClusterServicePlans(svc.Plans, serviceClasses[i].Name)
+			acceptedPlans, _, err := filterServicePlans(restrictions, plans)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			// If there are accepted plans, then append the class and all of the accepted plans to the master list.
+			if len(acceptedPlans) > 0 {
+				serviceClasses = append(serviceClasses, serviceClass)
+				servicePlans = append(servicePlans, acceptedPlans...)
+			}
+		}
+	}
+	return serviceClasses, servicePlans, nil
+}
+
+func filterServicePlans(restrictions *v1beta1.CatalogRestrictions, servicePlans []*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, []*v1beta1.ClusterServicePlan, error) {
+	var predicate filter.Predicate
+	var err error
+	if restrictions != nil && len(restrictions.ServicePlan) > 0 {
+		predicate, err = filter.CreatePredicate(restrictions.ServicePlan)
 		if err != nil {
 			return nil, nil, err
 		}
-		servicePlans = append(servicePlans, plans...)
+	} else {
+		predicate = filter.NewPredicate()
 	}
-	return serviceClasses, servicePlans, nil
+
+	// If the predicate is empty, all plans will pass. No need to run through the list.
+	if predicate.Empty() {
+		return servicePlans, []*v1beta1.ClusterServicePlan(nil), nil
+	}
+
+	accepted := []*v1beta1.ClusterServicePlan(nil)
+	rejected := []*v1beta1.ClusterServicePlan(nil)
+	for _, sp := range servicePlans {
+		fields := v1beta1.ConvertClusterServicePlanToProperties(sp)
+		if predicate.Accepts(fields) {
+			accepted = append(accepted, sp)
+		} else {
+			rejected = append(rejected, sp)
+		}
+	}
+
+	return accepted, rejected, nil
 }
 
 func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {
@@ -696,7 +752,6 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 				}
 			}
 		}
-
 	}
 	return servicePlans, nil
 }

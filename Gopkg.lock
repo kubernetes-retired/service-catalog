@@ -511,7 +511,8 @@
   name = "github.com/pmorie/go-open-service-broker-client"
   packages = [
     "v2",
-    "v2/fake"
+    "v2/fake",
+    "v2/generator"
   ]
   revision = "dca737037ce636eb282e84e3a1c7479c9692e884"
   version = "0.0.10"
@@ -1179,6 +1180,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1215dfe2aa4e33692e0bbf46201bb1155df1ef6eef46232ca327f5b0d92429c6"
+  inputs-digest = "be199c6514b618cc80c427b1403a29c728d55e70f618c97d244c1e048d405316"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
 )
 
 // validateCommonServiceBrokerName is the validation function for common
@@ -215,6 +216,27 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 				commonErrs,
 				field.Required(fldPath.Child("relistDuration"), "relistDuration must be greater than zero"),
 			)
+		}
+	}
+
+	// TODO: could validate if the fields being selected are on the approve list, but this will require breaking
+	// apart the label selector.
+	if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServiceClass) > 0 {
+		// confirm that the restrictions can turn into a predicate.
+		_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServiceClass)
+		if err != nil {
+			commonErrs = append(commonErrs,
+				field.Invalid(fldPath.Child("catalogRestrictions", "serviceClass"),
+					spec.CatalogRestrictions.ServiceClass, err.Error()))
+		}
+	}
+	if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServicePlan) > 0 {
+		// confirm that the restrictions can turn into a predicate.
+		_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServicePlan)
+		if err != nil {
+			commonErrs = append(commonErrs,
+				field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
+					spec.CatalogRestrictions.ServiceClass, err.Error()))
 		}
 	}
 

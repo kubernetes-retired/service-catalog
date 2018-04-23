@@ -27,7 +27,8 @@ const (
 	// // alpha: v1.4
 	// MyFeature() bool
 
-	// OriginatingIdentity controls whether the controller should include originating identity in the header of requests
+	// OriginatingIdentity controls whether the controller should include
+	// originating identity in the header of requests
 	// sent to brokers
 	//
 	// owner: @pmorie

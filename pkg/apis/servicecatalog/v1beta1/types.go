@@ -121,6 +121,60 @@ type CommonServiceBrokerSpec struct {
 	// can be manually incremented by a user to manually trigger a relist.
 	// +optional
 	RelistRequests int64 `json:"relistRequests"`
+
+	// CatalogRestrictions is a set of restrictions on which of a broker's services
+	// and plans have resources created for them.
+	// +optional
+	CatalogRestrictions *CatalogRestrictions `json:"catalogRestrictions,omitempty"`
+}
+
+// CatalogRestrictions is a set of restrictions on which of a broker's services
+// and plans have resources created for them.
+//
+// Some examples of this object are as follows:
+//
+// This is an example of a whitelist on service externalName.
+// Goal: Only list Services with the externalName of FooService and BarService,
+// Solution: restrictions := ServiceCatalogRestrictions{
+// 		ServiceClass: ["externalName in (FooService, BarService)"]
+// }
+//
+// This is an example of a blacklist on service externalName.
+// Goal: Allow all services except the ones with the externalName of FooService and BarService,
+// Solution: restrictions := ServiceCatalogRestrictions{
+// 		ServiceClass: ["externalName notin (FooService, BarService)"]
+// }
+//
+// This whitelists plans called "Demo", and blacklists (but only a single element in
+// the list) a service and a plan.
+// Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name,
+// Solution: restrictions := ServiceCatalogRestrictions{
+// 		ServiceClass: ["name!=AABBB-CCDD-EEGG-HIJK"]
+// 		ServicePlan: ["externalName in (Demo)", "name!=AABBCC"]
+// }
+//
+// CatalogRestrictions strings have a special format similar to Label Selectors,
+// except the catalog supports only a very specific property set.
+//
+// The predicate format is expected to be `<property><conditional><requirement>`
+// Check the *Requirements type definition for which <property> strings will be allowed.
+// <conditional> is allowed to be one of the following: ==, !=, in, notin
+// <requirement> will be a string value if `==` or `!=` are used.
+// <requirement> will be a set of string values if `in` or `notin` are used.
+// Multiple predicates are allowed to be chained with a comma (,)
+//
+// ServiceClass allowed property names:
+//   name - the value set to [Cluster]ServiceClass.Name
+//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//
+// ServicePlan allowed property names:
+//   name - the value set to [Cluster]ServiceClass.Name
+//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+type CatalogRestrictions struct {
+	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
+	ServiceClass []string `json:"serviceClass,omitempty"`
+	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
+	ServicePlan []string `json:"servicePlan,omitempty"`
 }
 
 // ClusterServiceBrokerSpec represents a description of a Broker.
@@ -1249,6 +1303,18 @@ type ClusterObjectReference struct {
 	// Name of the referent.
 	Name string `json:"name,omitempty"`
 }
+
+// Filter path for Properties
+const (
+	// Name field.
+	FilterName = "name"
+	// SpecExternalName is the external name of the object.
+	FilterSpecExternalName = "spec.externalName"
+	// SpecExternalID is the external id of the object.
+	FilterSpecExternalID = "spec.externalID"
+	// SpecClusterServiceClassName is only used for plans, the parent service class name.
+	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+)
 
 // SecretTransform is a single transformation that is applied to the
 // credentials returned from the broker before they are inserted into

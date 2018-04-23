@@ -40,6 +40,7 @@ import (
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+	generator "github.com/pmorie/go-open-service-broker-client/v2/generator"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -1033,6 +1034,30 @@ func getTestCatalogResponse() *osb.CatalogResponse {
 	}
 }
 
+// getTestLargeCatalogResponse returns a sample large generated response to a get catalog request.
+func getTestLargeCatalogResponse() *osb.CatalogResponse {
+
+	g := generator.CreateGenerator(4, generator.Parameters{
+		Services: generator.ServiceRanges{
+			Plans:               5,
+			Tags:                6,
+			Metadata:            4,
+			Requires:            2,
+			Bindable:            10, // the odds of bindable are 9/10
+			BindingsRetrievable: 1,
+		},
+		Plans: generator.PlanRanges{
+			Metadata: 4,
+			Bindable: 10,
+			Free:     4,
+		},
+	})
+	generator.AssignPoolGoT(g)
+
+	catalog, _ := g.GetCatalog()
+	return catalog
+}
+
 // getTestBindCredentials returns binding credentials to include in the response
 // to a bind request.
 func getTestBindCredentials() map[string]interface{} {
@@ -1094,6 +1119,16 @@ func getTestBroker() *v1beta1.ClusterServiceBroker {
 			},
 		},
 	}
+}
+
+// getTestFilteredBroker returns a ClusterServiceBroker with restrictions to use for testing.
+func getTestFilteredBroker(serviceClassRestrictions, servicePlanRestrictions []string) *v1beta1.ClusterServiceBroker {
+	testBroker := getTestBroker()
+	testBroker.Spec.CatalogRestrictions = &v1beta1.CatalogRestrictions{
+		ServiceClass: serviceClassRestrictions,
+		ServicePlan:  servicePlanRestrictions,
+	}
+	return testBroker
 }
 
 // verifyBrokerCreated verifies that the specified broker has been created

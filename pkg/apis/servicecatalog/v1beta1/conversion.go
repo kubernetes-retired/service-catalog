@@ -16,7 +16,9 @@ limitations under the License.
 
 package v1beta1
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // These functions are used for field selectors. They are only needed if
 // field selection is made available for types, hence we only have them for

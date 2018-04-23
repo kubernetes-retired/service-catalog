@@ -121,6 +121,44 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
 		},
+		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.\n\nSome examples of this object are as follows:\n\nThis is an example of a whitelist on service externalName. Goal: Only list Services with the externalName of FooService and BarService, Solution: restrictions := ServiceCatalogRestrictions{\n\t\tServiceClass: [\"externalName in (FooService, BarService)\"]\n}\n\nThis is an example of a blacklist on service externalName. Goal: Allow all services except the ones with the externalName of FooService and BarService, Solution: restrictions := ServiceCatalogRestrictions{\n\t\tServiceClass: [\"externalName notin (FooService, BarService)\"]\n}\n\nThis whitelists plans called \"Demo\", and blacklists (but only a single element in the list) a service and a plan. Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name, Solution: restrictions := ServiceCatalogRestrictions{\n\t\tServiceClass: [\"name!=AABBB-CCDD-EEGG-HIJK\"]\n\t\tServicePlan: [\"externalName in (Demo)\", \"name!=AABBCC\"]\n}\n\nCatalogRestrictions strings have a special format similar to Label Selectors, except the catalog supports only a very specific property set.\n\nThe predicate format is expected to be `<property><conditional><requirement>` Check the *Requirements type definition for which <property> strings will be allowed. <conditional> is allowed to be one of the following: ==, !=, in, notin <requirement> will be a string value if `==` or `!=` are used. <requirement> will be a set of string values if `in` or `notin` are used. Multiple predicates are allowed to be chained with a comma (,)\n\nServiceClass allowed property names:\n  name - the value set to [Cluster]ServiceClass.Name\n  externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName\n\nServicePlan allowed property names:\n  name - the value set to [Cluster]ServiceClass.Name\n  externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName",
+					Properties: map[string]spec.Schema{
+						"serviceClass": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClass represents a selector for plans, used to filter catalog re-lists.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+						"servicePlan": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlan represents a selector for classes, used to filter catalog re-lists.",
+								Type:        []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Type:   []string{"string"},
+											Format: "",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -332,6 +370,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"catalogRestrictions": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
+							},
+						},
 						"authInfo": {
 							SchemaProps: spec.SchemaProps{
 								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the ClusterServiceBroker.",
@@ -343,7 +387,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus": {
 			Schema: spec.Schema{
@@ -837,12 +881,18 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"catalogRestrictions": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
+							},
+						},
 					},
 					Required: []string{"url"},
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerStatus": {
 			Schema: spec.Schema{
@@ -1828,6 +1878,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"catalogRestrictions": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
+							},
+						},
 						"authInfo": {
 							SchemaProps: spec.SchemaProps{
 								Description: "AuthInfo contains the data that the service catalog should use to authenticate with the ServiceBroker.",
@@ -1839,7 +1895,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus": {
 			Schema: spec.Schema{
