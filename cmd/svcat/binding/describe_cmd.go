@@ -26,8 +26,9 @@ import (
 
 type describeCmd struct {
 	*command.Namespaced
-	name     string
-	traverse bool
+	name        string
+	traverse    bool
+	showSecrets bool
 }
 
 // NewDescribeCmd builds a "svcat describe binding" command
@@ -50,6 +51,12 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		"t",
 		false,
 		"Whether or not to traverse from binding -> instance -> class/plan -> broker",
+	)
+	cmd.Flags().BoolVar(
+		&describeCmd.showSecrets,
+		"show-secrets",
+		false,
+		"Output the decoded secret values. By default only the length of the secret is displayed",
 	)
 	return cmd
 }
@@ -76,7 +83,7 @@ func (c *describeCmd) describe() error {
 	output.WriteBindingDetails(c.Output, binding)
 
 	secret, err := c.App.RetrieveSecretByBinding(binding)
-	output.WriteAssociatedSecret(c.Output, secret, err)
+	output.WriteAssociatedSecret(c.Output, secret, err, c.showSecrets)
 
 	if c.traverse {
 		instance, class, plan, broker, err := c.App.BindingParentHierarchy(binding)

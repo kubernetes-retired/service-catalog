@@ -145,6 +145,7 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get binding (json)", cmd: "get binding ups-binding -n test-ns -o json", golden: "output/get-binding.json"},
 		{name: "get binding (yaml)", cmd: "get binding ups-binding -n test-ns -o yaml", golden: "output/get-binding.yaml"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
+		{name: "describe binding and decode secret", cmd: "describe binding ups-binding -n test-ns --show-secrets", golden: "output/describe-binding-show-secrets.txt"},
 
 		{name: "completion bash", cmd: "completion bash", golden: "output/completion-bash.txt"},
 	}

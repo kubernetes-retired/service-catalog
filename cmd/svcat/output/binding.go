@@ -120,7 +120,7 @@ func WriteAssociatedBindings(w io.Writer, bindings []v1beta1.ServiceBinding) {
 }
 
 // WriteAssociatedSecret prints the secret data associated with a binding.
-func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error) {
+func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error, showSecrets bool) {
 	// Don't print anything the secret isn't ready yet
 	if secret == nil && err == nil {
 		return
@@ -136,7 +136,11 @@ func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error) {
 
 	t := NewDetailsTable(w)
 	for key, value := range secret.Data {
-		t.Append([]string{key, fmt.Sprintf("%d bytes", len(value))})
+		if showSecrets {
+			t.Append([]string{key, string(value)})
+		} else {
+			t.Append([]string{key, fmt.Sprintf("%d bytes", len(value))})
+		}
 	}
 	t.Render()
 }
