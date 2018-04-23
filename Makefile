@@ -106,26 +106,26 @@ endif
 
 ifdef NO_DOCKER
 	DOCKER_CMD =
-	scBuildImageTarget =
+	scBuildImage =
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --security-opt label:disable --rm -v $(PWD):/go/src/$(SC_PKG) \
 	  -v $(PWD)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
-	scBuildImageTarget = .scBuildImage
+	scBuildImage = .scBuildImage-$(GO_VERSION)
 endif
 
 # This section builds the output binaries.
 # Some will have dedicated targets to make it easier to type, for example
 # "service-catalog" instead of "bin/service-catalog".
 #########################################################################
-build: .init .generate_files \
+build: .generate_files \
 	$(BINDIR)/service-catalog \
 	$(BINDIR)/user-broker \
 	$(BINDIR)/healthcheck
 
 .PHONY: $(BINDIR)/user-broker
 user-broker: $(BINDIR)/user-broker
-$(BINDIR)/user-broker: .init contrib/cmd/user-broker \
+$(BINDIR)/user-broker: $(scBuildImage) contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f) \
 	  $(shell find contrib/pkg/broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
@@ -138,7 +138,7 @@ $(BINDIR)/healthcheck: .init cmd/healthcheck \
 
 .PHONY: $(BINDIR)/service-catalog
 service-catalog: $(BINDIR)/service-catalog
-$(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog
+$(BINDIR)/service-catalog: $(scBuildImage) .generate_files cmd/service-catalog
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/service-catalog
 
 # This section contains the code generation stuff
@@ -152,33 +152,32 @@ $(BINDIR)/service-catalog: .init .generate_files cmd/service-catalog
                 $(BINDIR)/openapi-gen
 	touch $@
 
-$(BINDIR)/defaulter-gen: .init
+$(BINDIR)/defaulter-gen: $(scBuildImage)
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/defaulter-gen
 
-$(BINDIR)/deepcopy-gen: .init
+$(BINDIR)/deepcopy-gen: $(scBuildImage)
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/deepcopy-gen
 
-$(BINDIR)/conversion-gen: .init
+$(BINDIR)/conversion-gen: $(scBuildImage)
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/conversion-gen
 
-$(BINDIR)/client-gen: .init
+$(BINDIR)/client-gen: $(scBuildImage)
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/client-gen
 
-$(BINDIR)/lister-gen: .init
+$(BINDIR)/lister-gen: $(scBuildImage)
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/lister-gen
 
-$(BINDIR)/informer-gen: .init
+$(BINDIR)/informer-gen: $(scBuildImage)
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/informer-gen
 
-$(BINDIR)/openapi-gen: vendor/k8s.io/code-generator/cmd/openapi-gen
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/$^
+$(BINDIR)/openapi-gen: $(scBuildImage)
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/openapi-gen
 
-.PHONY: $(BINDIR)/e2e.test
-$(BINDIR)/e2e.test: .init
+$(BINDIR)/e2e.test: $(scBuildImage) $(shell find test/e2e)
 	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
-.generate_files: .init .generate_exes $(TYPES_FILES)
+.generate_files: .generate_exes $(TYPES_FILES) $(scBuildImage)
 	# generate apiserver deps
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh
 	# generate all pkg/client contents
@@ -188,18 +187,14 @@ $(BINDIR)/e2e.test: .init
 # Some prereq stuff
 ###################
 
-.init: $(scBuildImageTarget)
-	touch $@
-
-.scBuildImage: build/build-image/Dockerfile
+.scBuildImage-$(GO_VERSION): build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage -
-	touch $@
+	  docker build -t scbuildimage --iidfile $@ -
 
 # Util targets
 ##############
 .PHONY: verify verify-generated verify-client-gen verify-docs
-verify: .init verify-generated verify-client-gen verify-docs verify-vendor
+verify: verify-generated verify-client-gen verify-docs verify-vendor $(scBuildImage)
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -231,25 +226,25 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
 
-verify-docs: .init docs
+verify-docs: docs $(scBuildImage)
 	@echo Running href checker$(SKIP_COMMENT):
 	@$(DOCKER_CMD) verify-links.sh -s .pkg -s .bundler -s _plugins -s _includes -t $(SKIP_HTTP) .
 
-verify-generated: .init .generate_exes
+verify-generated: .generate_exes $(scBuildImage)
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh --verify-only
 
-verify-client-gen: .init .generate_exes
+verify-client-gen: .generate_exes $(scBuildImage)
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-client-gen.sh
 
-format: .init
+format: $(scBuildImage)
 	$(DOCKER_CMD) gofmt -w -s $(TOP_SRC_DIRS)
 
-coverage: .init
+coverage: $(scBuildImage)
 	$(DOCKER_CMD) contrib/hack/coverage.sh --html "$(COVERAGE)" \
 	  $(addprefix ./,$(TEST_DIRS))
 
 .PHONY: test test-unit test-integration test-e2e
-test: .init build test-unit test-integration
+test: build test-unit test-integration
 
 # this target checks to see if the go binary is installed on the host
 .PHONY: check-go
@@ -264,22 +259,22 @@ check-go:
 test-unit-native: check-go
 	go test $(addprefix ${SC_PKG}/,${TEST_DIRS})
 
-test-unit: .init build
+test-unit: build $(scBuildImage)
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS)) $(UNIT_TEST_LOG_FLAGS)
 
-build-integration: .generate_files
+build-integration: .generate_files $(scBuildImage)
 	$(DOCKER_CMD) go test -race github.com/kubernetes-incubator/service-catalog/test/integration/... -c
 
-test-integration: .init $(scBuildImageTarget) build build-integration
+test-integration: $(scBuildImage) build build-integration
 	# test kubectl
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh $(INT_TEST_FLAGS)
 
-clean-e2e: .init $(scBuildImageTarget)
+clean-e2e: scBuildImage
 	$(DOCKER_CMD) rm -f $(BINDIR)/e2e.test
 
 build-e2e: .generate_files $(BINDIR)/e2e.test
@@ -289,11 +284,11 @@ test-e2e: build-e2e
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
 
-clean-bin: .init $(scBuildImageTarget)
+clean-bin: scBuildImage
 	$(DOCKER_CMD) rm -rf $(BINDIR)
 	rm -f .generate_exes
 
-clean-build-image: .init $(scBuildImageTarget)
+clean-build-image: $(scBuildImage)
 	$(DOCKER_CMD) rm -rf .pkg
 	rm -f .scBuildImage
 	docker rmi -f scbuildimage > /dev/null 2>&1 || true
@@ -313,7 +308,7 @@ clean-generated:
 	git checkout -- pkg/openapi/openapi_generated.go
 
 # purge-generated removes generated files from the filesystem.
-purge-generated: .init $(scBuildImageTarget)
+purge-generated: $(scBuildImage)
 	find $(TOP_SRC_DIRS) -name zz_generated* -exec $(DOCKER_CMD) rm {} \;
 	find $(TOP_SRC_DIRS) -depth -type d -name *_generated \
 	  -exec $(DOCKER_CMD) rm -rf {} \;
@@ -409,10 +404,10 @@ svcat-for-%:
 	$(MAKE) PLATFORM=$* VERSION=$(TAG_VERSION) svcat-xbuild
 
 svcat-xbuild: $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
-$(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
+$(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .generate_files $(scBuildImage)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
-svcat-publish: clean-bin svcat-all
+svcat-publish: clean-bin svcat-all $(scBuildImage)
 	# Download the latest client with https://download.svcat.sh/cli/latest/darwin/amd64/svcat
 	# Download an older client with  https://download.svcat.sh/cli/VERSION/darwin/amd64/svcat
 	$(DOCKER_CMD) cp -R $(BINDIR)/svcat/$(TAG_VERSION) $(BINDIR)/svcat/$(MUTABLE_TAG)
@@ -421,11 +416,11 @@ svcat-publish: clean-bin svcat-all
 
 # Dependency management via dep (https://golang.github.io/dep)
 .PHONY: verify-vendor test-dep
-verify-vendor: .init
+verify-vendor: $(scBuildImage)
 	# Verify that vendor/ is in sync with Gopkg.lock
 	$(DOCKER_CMD) $(BUILD_DIR)/verify-vendor.sh
 
-test-dep: .init
+test-dep: $(scBuildImage)
 	# Test that a downstream consumer of our client library can use dep
 	$(DOCKER_CMD) test/test-dep.sh
 
