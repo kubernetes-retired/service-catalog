@@ -10,7 +10,7 @@ bin/**
 coverage.html
 .idea/
 .DS_Store
-.scBuildImage
+.scBuildImage-*
 .init
 .generate*
 .envrc

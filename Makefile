@@ -112,6 +112,9 @@ else
 	DOCKER_CMD = docker run --security-opt label:disable --rm -v $(PWD):/go/src/$(SC_PKG) \
 	  -v $(PWD)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
 	scBuildImage = .scBuildImage-$(GO_VERSION)
+	DOCKER_CLEAN_E2E = docker-clean-e2e
+	DOCKER_CLEAN_BIN = docker-clean-bin
+	DOCKER_CLEAN_BUILD_IMAGE = docker-clean-build-image
 endif
 
 # This section builds the output binaries.
@@ -277,8 +280,9 @@ test-integration: $(scBuildImage) build build-integration
 	# golang integration tests
 	$(DOCKER_CMD) test/integration.sh $(INT_TEST_FLAGS)
 
-clean-e2e: scBuildImage
-	$(DOCKER_CMD) rm -f $(BINDIR)/e2e.test
+clean-e2e: $(DOCKER_CLEAN_E2E)
+docker-clean-e2e:
+	docker run -v $(realpath $(BINDIR)):/tmp/bin $(BASEIMAGE) rm -f /tmp/bin/e2e.test
 
 build-e2e: .generate_files $(BINDIR)/e2e.test
 
@@ -287,14 +291,20 @@ test-e2e: build-e2e
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
 
-clean-bin: scBuildImage
-	$(DOCKER_CMD) rm -rf $(BINDIR)
+docker-clean-bin:
+	docker run -v $(realpath $(BINDIR)):/tmp/bin $(BASEIMAGE) /bin/sh -c "rm -rf /tmp/bin/*"
+
+clean-bin: $(DOCKER_CLEAN_BIN)
+	rm -rf bin
 	rm -f .generate_exes
 
-clean-build-image: $(scBuildImage)
-	$(DOCKER_CMD) rm -rf .pkg
-	rm -f .scBuildImage
-	docker rmi -f scbuildimage > /dev/null 2>&1 || true
+docker-clean-build-image:
+	docker run -v $(PWD)/.pkg:/go/pkg $(BASEIMAGE) /bin/sh -c "rm -rf /go/pkg/*"
+
+clean-build-image: $(DOCKER_CLEAN_BUILD_IMAGE)
+	rm -rf .pkg
+	rm -f .scBuildImage-$(GO_VERSION)
+	-docker rmi -f scbuildimage > /dev/null 2>&1
 
 # clean-generated does a `git checkout --` on all generated files and
 # directories.  May not work correctly if you have staged some of these files
