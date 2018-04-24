@@ -135,7 +135,7 @@ items:
 - apiVersion: {{template "rbacApiVersion" . }}
   kind: RoleBinding
   metadata:
-    name: service-catalog-controller-manager
+    name: service-catalog-controller-manager-cluster-info
     namespace: "{{ .Release.Namespace }}"
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -164,7 +164,7 @@ items:
 - apiVersion: {{template "rbacApiVersion" . }}
   kind: RoleBinding
   metadata:
-    name: service-catalog-controller-manager
+    name: service-catalog-controller-manager-leader-election
     namespace: "{{ .Release.Namespace }}"
   roleRef:
     apiGroup: rbac.authorization.k8s.io
