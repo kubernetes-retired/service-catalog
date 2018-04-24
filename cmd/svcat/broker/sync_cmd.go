@@ -59,6 +59,6 @@ func (c *syncCmd) sync() error {
 		return err
 	}
 
-	fmt.Fprintf(c.Output, "Successfully fetched catalog entries from the %s broker\n", c.name)
+	fmt.Fprintf(c.Output, "Synchronization requested for broker: %s\n", c.name)
 	return nil
 }
