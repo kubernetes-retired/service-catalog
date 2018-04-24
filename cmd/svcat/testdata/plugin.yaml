@@ -42,6 +42,9 @@ tree:
     shortDesc: Show details of a specific binding
     command: ./svcat describe binding
     flags:
+    - name: show-secrets
+      desc: Output the decoded secret values. By default only the length of the secret
+        is displayed
     - name: traverse
       shorthand: t
       desc: Whether or not to traverse from binding -> instance -> class/plan -> broker

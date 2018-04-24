@@ -187,3 +187,12 @@ func (sdk *SDK) BindingParentHierarchy(binding *v1beta1.ServiceBinding,
 
 	return instance, class, plan, broker, nil
 }
+
+// GetBindingStatusCondition returns the last condition on a binding status.
+// When no conditions exist, an empty condition is returned.
+func GetBindingStatusCondition(status v1beta1.ServiceBindingStatus) v1beta1.ServiceBindingCondition {
+	if len(status.Conditions) > 0 {
+		return status.Conditions[len(status.Conditions)-1]
+	}
+	return v1beta1.ServiceBindingCondition{}
+}

@@ -33,6 +33,7 @@ func NewListTable(w io.Writer) *tablewriter.Table {
 // NewDetailsTable builds a table formatted to list details for a single result.
 func NewDetailsTable(w io.Writer) *tablewriter.Table {
 	t := tablewriter.NewWriter(w)
+	t.SetAlignment(tablewriter.ALIGN_LEFT)
 	t.SetBorder(false)
 	t.SetColumnSeparator(" ")
 

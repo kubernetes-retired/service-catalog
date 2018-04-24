@@ -19,24 +19,20 @@ package output
 import (
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	svcatsdk "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"k8s.io/api/core/v1"
 )
 
-func getBindingStatusCondition(status v1beta1.ServiceBindingStatus) v1beta1.ServiceBindingCondition {
-	if len(status.Conditions) > 0 {
-		return status.Conditions[len(status.Conditions)-1]
-	}
-	return v1beta1.ServiceBindingCondition{}
-}
-
 func getBindingStatusShort(status v1beta1.ServiceBindingStatus) string {
-	lastCond := getBindingStatusCondition(status)
+	lastCond := svcatsdk.GetBindingStatusCondition(status)
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
 }
 
 func getBindingStatusFull(status v1beta1.ServiceBindingStatus) string {
-	lastCond := getBindingStatusCondition(status)
+	lastCond := svcatsdk.GetBindingStatusCondition(status)
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
@@ -94,6 +90,7 @@ func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 		{"Name:", binding.Name},
 		{"Namespace:", binding.Namespace},
 		{"Status:", getBindingStatusFull(binding.Status)},
+		{"Secret:", binding.Spec.SecretName},
 		{"Instance:", binding.Spec.ServiceInstanceRef.Name},
 	})
 	t.Render()
@@ -119,6 +116,39 @@ func WriteAssociatedBindings(w io.Writer, bindings []v1beta1.ServiceBinding) {
 			binding.Name,
 			getBindingStatusShort(binding.Status),
 		})
+	}
+	t.Render()
+}
+
+// WriteAssociatedSecret prints the secret data associated with a binding.
+func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error, showSecrets bool) {
+	// Don't print anything the secret isn't ready yet
+	if secret == nil && err == nil {
+		return
+	}
+
+	fmt.Fprintln(w, "\nSecret Data:")
+	if err != nil {
+		// We should have been able to find a secret but couldn't for some reason,
+		// warn about it without blowing up the entire command.
+		fmt.Fprintf(w, "  %s", err.Error())
+		return
+	}
+
+	keys := make([]string, 0, len(secret.Data))
+	for key := range secret.Data {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	t := NewDetailsTable(w)
+	for _, key := range keys {
+		value := secret.Data[key]
+		if showSecrets {
+			t.Append([]string{key, string(value)})
+		} else {
+			t.Append([]string{key, fmt.Sprintf("%d bytes", len(value))})
+		}
 	}
 	t.Render()
 }

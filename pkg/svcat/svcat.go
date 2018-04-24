@@ -17,8 +17,9 @@ limitations under the License.
 package svcat
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	k8sclient "k8s.io/client-go/kubernetes"
 )
 
 // App is the underlying application behind the svcat cli.
@@ -30,10 +31,11 @@ type App struct {
 }
 
 // NewApp creates an svcat application.
-func NewApp(cl *clientset.Clientset, ns string) (*App, error) {
+func NewApp(k8sClient k8sclient.Interface, svcatClient svcatclient.Interface, ns string) (*App, error) {
 	app := &App{
 		SDK: &servicecatalog.SDK{
-			ServiceCatalogClient: cl,
+			K8sClient:            k8sClient,
+			ServiceCatalogClient: svcatClient,
 		},
 		CurrentNamespace: ns,
 	}
