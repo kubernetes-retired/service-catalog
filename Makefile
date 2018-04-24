@@ -217,11 +217,9 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	    | grep -v ^pkg/client/ \
 	    | grep -v v1beta1/defaults.go); \
 	  do \
-	   echo Running golint --set_exit_status $$i; \
 	   golint --set_exit_status $$i || exit 1; \
 	  done'
 	@#
-	@echo Running go vet $(SC_PKG)/...
 	$(DOCKER_CMD) go vet $(SC_PKG)/...
 	@echo Running repo-infra verify scripts
 	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -Fv -e generated -e .pkg -e docsite > .out 2>&1 || true

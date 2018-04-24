@@ -63,7 +63,7 @@ spec:
         - "--storage.tsdb.retention=24h"
         ports:
         - containerPort: 9090
-          hostPort: 9090
+          protocol: TCP
         volumeMounts:
         - mountPath: "/prometheus"
           name: data

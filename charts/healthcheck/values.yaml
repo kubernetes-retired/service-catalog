@@ -2,4 +2,4 @@
 # Image to use
 image: quay.io/kubernetes-service-catalog/healthcheck:v0.1.9
 # ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
-imagePullPolicy: Never
+imagePullPolicy: IfNotPresent

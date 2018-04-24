@@ -65,7 +65,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Start the HTTP server that enables us to serve /healtz and /metrics.   The  metrics can be pulled,
+		// Start the HTTP server that enables us to serve /healthz and /metrics.   The  metrics can be pulled,
 		// analyzed and alerted on.
 		err = ServeHTTP(options)
 		if err != nil {
@@ -96,7 +96,7 @@ type HealthCheck struct {
 	instanceName            string
 	bindingName             string
 	brokerendpointName      string
-	namespace               *corev1.Namespace
+	namespace               *corev1.Namespace // ns where we create instance and binding
 	frameworkError          error
 }
 
@@ -143,6 +143,7 @@ func NewHealthCheck(s *HealthCheckServer) (*HealthCheck, error) {
 // binding and does validation along the way and then tears it down.  Some basic
 // Prometheus metrics are maintained that can be alerted off from.
 func (h *HealthCheck) RunHealthCheck(s *HealthCheckServer) error {
+	defer h.cleanup()
 	ExecutionCount.Inc()
 	hcStartTime := time.Now()
 
@@ -158,7 +159,6 @@ func (h *HealthCheck) RunHealthCheck(s *HealthCheckServer) error {
 		glog.V(2).Infof("Successfully ran health check in %v", time.Since(hcStartTime))
 		glog.V(4).Info("") // for readabilty/separation of test runs
 	} else {
-		h.cleanup()
 		ErrorCount.WithLabelValues(h.frameworkError.Error()).Inc()
 	}
 	return h.frameworkError
@@ -231,7 +231,7 @@ func (h *HealthCheck) createInstance() error {
 	}
 
 	if instance == nil {
-		return h.setError("error creating instance - instance is null", "")
+		return h.setError("error creating instance - instance is null")
 	}
 
 	glog.V(4).Info("Waiting for ServiceInstance to be ready")
@@ -255,17 +255,17 @@ func (h *HealthCheck) createInstance() error {
 	}
 
 	if sc.Spec.ClusterServiceClassRef == nil {
-		return h.setError("ClusterServiceClassRef should not be null", "")
+		return h.setError("ClusterServiceClassRef should not be null")
 	}
 	if sc.Spec.ClusterServicePlanRef == nil {
-		return h.setError("ClusterServicePlanRef should not be null", "")
+		return h.setError("ClusterServicePlanRef should not be null")
 	}
 
 	if strings.Compare(sc.Spec.ClusterServiceClassRef.Name, h.serviceclassID) != 0 {
-		return h.setError("ClusterServiceClassRef.Name should not be null", "")
+		return h.setError("ClusterServiceClassRef.Name error: %v != %v", sc.Spec.ClusterServiceClassRef.Name, h.serviceclassID)
 	}
 	if strings.Compare(sc.Spec.ClusterServicePlanRef.Name, h.serviceplanID) != 0 {
-		return h.setError("ClusterServicePlanRef.Name should not be null", "")
+		return h.setError("sc.Spec.ClusterServicePlanRef.Name error: %v != %v", sc.Spec.ClusterServicePlanRef.Name, h.serviceplanID)
 	}
 	return nil
 }
@@ -295,7 +295,7 @@ func (h *HealthCheck) createBinding() error {
 		return h.setError("Error creating binding: %v", err.Error())
 	}
 	if binding == nil {
-		return h.setError("Binding should not be null", "")
+		return h.setError("Binding should not be null")
 	}
 
 	glog.V(4).Info("Waiting for ServiceBinding to be ready")
@@ -344,7 +344,7 @@ func (h *HealthCheck) deprovision() error {
 	glog.V(4).Info("Verifying that the secret was deleted after deleting the binding")
 	_, err = h.kubeClientSet.CoreV1().Secrets(h.namespace.Name).Get("my-secret", metav1.GetOptions{})
 	if err == nil {
-		return h.setError("secret not deleted", "")
+		return h.setError("secret not deleted")
 	}
 
 	// Deprovisioning the ServiceInstance
@@ -366,7 +366,7 @@ func (h *HealthCheck) deprovision() error {
 
 // cleanup is invoked when the healthcheck test fails.  It should delete any residue from the test.
 func (h *HealthCheck) cleanup() {
-	if h.namespace != nil {
+	if h.frameworkError != nil && h.namespace != nil {
 		glog.V(4).Infof("Cleaning up.  Deleting the binding, instance and test namespace %v", h.namespace.Name)
 		h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Delete(h.bindingName, nil)
 		h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Delete(h.instanceName, nil)
@@ -429,7 +429,7 @@ func (h *HealthCheck) initBrokerAttributes(s *HealthCheckServer) error {
 // The message is logged and the HealthCheck error state is set and returned.
 // This function attempts to log the location of the caller (file name & line
 // number) so as to maintain context of where the error occured
-func (h *HealthCheck) setError(msg, param string) error {
+func (h *HealthCheck) setError(msg string, v ...interface{}) error {
 	_, file, line, _ := runtime.Caller(1)
 
 	// only use the last 30 characters
@@ -439,7 +439,7 @@ func (h *HealthCheck) setError(msg, param string) error {
 	}
 	partialFileName := file[context:]
 	format := fmt.Sprintf("...%s:%d: %v", partialFileName, line, msg)
-	h.frameworkError = fmt.Errorf(format, param)
+	h.frameworkError = fmt.Errorf(format, v)
 	glog.Info(h.frameworkError.Error())
 	return h.frameworkError
 }
