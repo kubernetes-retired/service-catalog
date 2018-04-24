@@ -24,8 +24,8 @@
         "type": "Ready",
         "status": "True",
         "lastTransitionTime": "2018-01-11T20:53:31Z",
-        "reason": "FetchedClusterCatalog",
-        "message": "Successfully fetched cluster catalog entries from broker."
+        "reason": "FetchedCatalog",
+        "message": "Successfully fetched catalog entries from broker."
       }
     ],
     "reconciledGeneration": 2,

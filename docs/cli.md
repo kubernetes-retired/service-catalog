@@ -62,7 +62,7 @@ $ svcat get brokers
 
 ```console
 $ svcat sync broker ups-broker
-Successfully fetched cluster catalog entries from the ups-broker broker
+Successfully fetched catalog entries from the ups-broker broker
 ```
 
 ## List available service classes

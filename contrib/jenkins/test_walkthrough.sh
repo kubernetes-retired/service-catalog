@@ -131,7 +131,7 @@ USER_PROVIDED_SERVICE_ID="4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
 kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-broker.yaml" \
   || error_exit 'Error when creating ups-broker.'
 
-wait_for_expected_output -e 'FetchedClusterCatalog' \
+wait_for_expected_output -e 'FetchedCatalog' \
     kubectl get clusterservicebrokers ups-broker -o yaml \
   || {
     kubectl get clusterservicebrokers ups-broker -o yaml

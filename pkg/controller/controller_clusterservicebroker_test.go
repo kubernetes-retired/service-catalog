@@ -482,7 +482,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorSyncingClusterCatalogReason).msgf(
+	expectedEvent := warningEventBuilder(errorSyncingCatalogReason).msgf(
 		"Error reconciling ClusterServiceClass (K8S: %q ExternalName: %q) (broker %q):",
 		testClusterServiceClassGUID, testClusterServiceClassName, testClusterServiceBrokerName,
 	).msgf(
@@ -535,7 +535,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorSyncingClusterCatalogReason).msgf(
+	expectedEvent := warningEventBuilder(errorSyncingCatalogReason).msgf(
 		"Error reconciling ClusterServicePlan (K8S: %q ExternalName: %q):",
 		testClusterServicePlanGUID, testClusterServicePlanName,
 	).msgf(
@@ -658,7 +658,7 @@ func TestReconcileClusterServiceBrokerErrorFetchingCatalog(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorFetchingClusterCatalogReason).msg("Error getting broker catalog:").msg("ooops")
+	expectedEvent := warningEventBuilder(errorFetchingCatalogReason).msg("Error getting broker catalog:").msg("ooops")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -719,7 +719,7 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 	assertClusterServiceBrokerReadyTrue(t, updatedClusterServiceBroker)
 
 	events := getRecordedEvents(testController)
-	expectedEvent := corev1.EventTypeNormal + " " + successFetchedClusterCatalogReason + " " + successFetchedClusterCatalogMessage
+	expectedEvent := corev1.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
 	if e, a := expectedEvent, events[0]; !strings.HasPrefix(a, e) {
 		t.Fatalf("Received unexpected event, %s", expectedGot(e, a))
 	}
@@ -877,7 +877,7 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 
 	var expectedEvent string
 	if shouldSucceed {
-		expectedEvent = corev1.EventTypeNormal + " " + successFetchedClusterCatalogReason + " " + successFetchedClusterCatalogMessage
+		expectedEvent = corev1.EventTypeNormal + " " + successFetchedCatalogReason + " " + successFetchedCatalogMessage
 	} else {
 		expectedEvent = corev1.EventTypeWarning + " " + errorAuthCredentialsReason + " " + `Error getting broker auth credentials`
 	}
@@ -934,7 +934,7 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorSyncingClusterCatalogReason).msgf(
+	expectedEvent := warningEventBuilder(errorSyncingCatalogReason).msgf(
 		"Error reconciling ClusterServiceClass (K8S: %q ExternalName: %q) (broker %q):",
 		testClusterServiceClassGUID, testClusterServiceClassName, testClusterServiceBrokerName,
 	).msg("error creating serviceclass")
@@ -1025,7 +1025,7 @@ func TestReconcileClusterServiceBrokerFailureOnFinalRetry(t *testing.T) {
 	events := getRecordedEvents(testController)
 
 	expectedEventPrefixes := []string{
-		warningEventBuilder(errorFetchingClusterCatalogReason).String(),
+		warningEventBuilder(errorFetchingCatalogReason).String(),
 		warningEventBuilder(errorReconciliationRetryTimeoutReason).String(),
 	}
 
