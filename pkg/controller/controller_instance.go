@@ -1545,19 +1545,12 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 		return nil, err
 	}
 
-	// allow for nil ServicePlan which happens if user sets to non-existing plan
-	planID := ""
-	if servicePlan != nil {
-		planID = servicePlan.Spec.ExternalID
-	}
-
 	request := &osb.LastOperationRequest{
 		InstanceID:          instance.Spec.ExternalID,
 		ServiceID:           &serviceClass.Spec.ExternalID,
-		PlanID:              &planID,
+		PlanID:              &servicePlan.Spec.ExternalID,
 		OriginatingIdentity: rh.originatingIdentity,
 	}
-
 	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
 		key := osb.OperationKey(*instance.Status.LastOperation)
 		request.OperationKey = &key
