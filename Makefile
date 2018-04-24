@@ -66,6 +66,7 @@ PLATFORM ?= linux
 # This is the current platform, so that we can build a native client binary by default
 CLIENT_PLATFORM?=$(shell uname -s | tr A-Z a-z)
 ARCH     ?= amd64
+IS_AMD64 = $(findstring amd64,$(ARCH))
 
 ifeq ($(PLATFORM),windows)
 FILE_EXT=.exe
@@ -341,24 +342,18 @@ arch-image-%:
 	$(MAKE) ARCH=$* build
 	$(MAKE) ARCH=$* images
 
-define build-and-tag # (service, image, mutable_image)
+define build-and-tag # (service, tags)
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
-	docker build --build-arg BASEIMAGE=$(BASEIMAGE) -t $(2) -t $(3) -f $(1)/Dockerfile .
+	docker build --build-arg BASEIMAGE=$(BASEIMAGE) $(foreach t,$(2), -t $(t)) -f $(1)/Dockerfile .
 endef
 
+UB_IMAGE_TAGS=$(USER_BROKER_IMAGE) $(USER_BROKER_MUTABLE_IMAGE) $(if $(IS_AMD64),$(addprefix $(REGISTRY)user-broker:,$(VERSION) $(MUTABLE_TAG)))
 user-broker-image: contrib/build/user-broker/Dockerfile $(BINDIR)/user-broker
-	$(call build-and-tag,contrib/build/user-broker,$(USER_BROKER_IMAGE),$(USER_BROKER_MUTABLE_IMAGE))
-ifeq ($(ARCH),amd64)
-	docker tag $(USER_BROKER_IMAGE) $(REGISTRY)user-broker:$(VERSION)
-	docker tag $(USER_BROKER_MUTABLE_IMAGE) $(REGISTRY)user-broker:$(MUTABLE_TAG)
-endif
+	$(call build-and-tag,contrib/build/user-broker,$(UB_IMAGE_TAGS))
 
+SC_IMAGE_TAGS=$(SERVICE_CATALOG_IMAGE) $(SERVICE_CATALOG_MUTABLE_IMAGE) $(if $(IS_AMD64),$(addprefix $(REGISTRY)service-catalog:,$(VERSION) $(MUTABLE_TAG)))
 service-catalog-image: build/service-catalog/Dockerfile $(BINDIR)/service-catalog
-	$(call build-and-tag,build/service-catalog,$(SERVICE_CATALOG_IMAGE),$(SERVICE_CATALOG_MUTABLE_IMAGE))
-ifeq ($(ARCH),amd64)
-	docker tag $(SERVICE_CATALOG_IMAGE) $(REGISTRY)service-catalog:$(VERSION)
-	docker tag $(SERVICE_CATALOG_MUTABLE_IMAGE) $(REGISTRY)service-catalog:$(MUTABLE_TAG)
-endif
+	$(call build-and-tag,build/service-catalog,$(SC_IMAGE_TAGS))
 
 healthcheck-image: contrib/build/healthcheck/Dockerfile $(BINDIR)/healthcheck
 	$(call build-and-tag,"healthcheck",$(HEALTHCHECK_IMAGE),$(HEALTHCHECK_MUTABLE_IMAGE),"contrib/")
@@ -369,24 +364,18 @@ endif
 
 # Push our Docker Images to a registry
 ######################################
+define docker-push
+docker push $(1)
+
+endef
+
 push: user-broker-push service-catalog-push
 
 user-broker-push: user-broker-image
-	docker push $(USER_BROKER_IMAGE)
-	docker push $(USER_BROKER_MUTABLE_IMAGE)
-ifeq ($(ARCH),amd64)
-	docker push $(REGISTRY)user-broker:$(VERSION)
-	docker push $(REGISTRY)user-broker:$(MUTABLE_TAG)
-endif
+	$(foreach i,$(UB_IMAGE_TAGS),$(call docker-push,$(i)))
 
 service-catalog-push: service-catalog-image
-	docker push $(SERVICE_CATALOG_IMAGE)
-	docker push $(SERVICE_CATALOG_MUTABLE_IMAGE)
-ifeq ($(ARCH),amd64)
-	docker push $(REGISTRY)service-catalog:$(VERSION)
-	docker push $(REGISTRY)service-catalog:$(MUTABLE_TAG)
-endif
-
+	$(foreach i,$(SC_IMAGE_TAGS),$(call docker-push,$(i)))
 
 release-push: $(addprefix release-push-,$(ALL_ARCH))
 release-push-%:
