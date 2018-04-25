@@ -18,12 +18,16 @@ package servicecatalog
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // RetrieveBindings lists all bindings in a namespace.
@@ -196,4 +200,55 @@ func GetBindingStatusCondition(status v1beta1.ServiceBindingStatus) v1beta1.Serv
 		return status.Conditions[len(status.Conditions)-1]
 	}
 	return v1beta1.ServiceBindingCondition{}
+}
+
+// WaitForBinding waits for the instance to complete the current operation (or fail).
+func (sdk *SDK) WaitForBinding(ns, name string, interval time.Duration, timeout *time.Duration) (binding *v1beta1.ServiceBinding, err error) {
+	if timeout == nil {
+		notimeout := time.Duration(math.MaxInt64)
+		timeout = &notimeout
+	}
+
+	err = wait.PollImmediate(interval, *timeout,
+		func() (bool, error) {
+			binding, err = sdk.RetrieveBinding(ns, name)
+			if nil != err {
+				if apierrors.IsNotFound(err) {
+					return true, nil
+				}
+				return false, err
+			}
+
+			if len(binding.Status.Conditions) == 0 {
+				return false, nil
+			}
+
+			isDone := (sdk.IsBindingReady(binding) || sdk.IsBindingFailed(binding)) && !binding.Status.AsyncOpInProgress
+			return isDone, nil
+		},
+	)
+
+	return binding, err
+}
+
+// IsBindingReady returns if the instance is in the Ready status.
+func (sdk *SDK) IsBindingReady(binding *v1beta1.ServiceBinding) bool {
+	return sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionReady)
+}
+
+// IsBindingFailed returns if the instance is in the Failed status.
+func (sdk *SDK) IsBindingFailed(binding *v1beta1.ServiceBinding) bool {
+	return sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionFailed)
+}
+
+// BindingHasStatus returns if the instance is in the specified status.
+func (sdk *SDK) BindingHasStatus(binding *v1beta1.ServiceBinding, status v1beta1.ServiceBindingConditionType) bool {
+	for _, cond := range binding.Status.Conditions {
+		if cond.Type == status &&
+			cond.Status == v1beta1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
 }

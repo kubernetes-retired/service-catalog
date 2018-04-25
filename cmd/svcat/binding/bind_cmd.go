@@ -18,6 +18,7 @@ package binding
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
@@ -36,6 +37,9 @@ type bindCmd struct {
 	params       interface{}
 	rawSecrets   []string
 	secrets      map[string]string
+	wait         bool
+	rawTimeout   string
+	timeout      *time.Duration
 }
 
 // NewBindCmd builds a "svcat bind" command
@@ -86,6 +90,10 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"Additional parameter, whose value is stored in a secret, to use when binding the instance, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&bindCmd.jsonParams, "params-json", "",
 		"Additional parameters to use when binding the instance, provided as a JSON object. Cannot be combined with --param")
+	cmd.Flags().BoolVar(&bindCmd.wait, "wait", false,
+		"Wait until the operation completes.")
+	cmd.Flags().StringVar(&bindCmd.rawTimeout, "timeout", "5m",
+		"Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify -1 to wait indefinitely.")
 	return cmd
 }
 
@@ -118,6 +126,14 @@ func (c *bindCmd) Validate(args []string) error {
 		return fmt.Errorf("invalid --secret value (%s)", err)
 	}
 
+	if c.wait && c.rawTimeout != "-1" {
+		timeout, err := time.ParseDuration(c.rawTimeout)
+		if err != nil {
+			return fmt.Errorf("invalid --timeout value (%s)", err)
+		}
+		c.timeout = &timeout
+	}
+
 	return nil
 }
 
@@ -131,6 +147,11 @@ func (c *bindCmd) bind() error {
 		return err
 	}
 
+	if c.wait {
+		pollInterval := 1 * time.Second
+		binding, err = c.App.WaitForBinding(binding.Namespace, binding.Name, pollInterval, c.timeout)
+	}
+
 	output.WriteBindingDetails(c.Output, binding)
-	return nil
+	return err
 }
