@@ -39,12 +39,18 @@ service catalog resources as Custom Resources (via CRDs). This might come from a
 external package that allows API servers to do this generically. Service Catalog
 will operate exactly the same with no noticeable changes based on this implementation.
 
-rest.Storage is the interface that the API server uses to communicate with etcd. More 
+`rest.Storage` is the interface that the API server uses to communicate with etcd. More 
 research needs to happen to work out the exact details of the Implementation. There 
 was a previous effort to do this with TPRs and a few PRs to do it with an original version of 
 CRDs. Not sure why this was abandoned. 
 
-TODO(n3wscott): MORE DETAILS.
+This implementation will assume that all CRDs are being created by the Service Catalog,
+in the same namespace that Service Catalog is running. RBAC rules could be applied to the
+namespace to not allow access from anything except Service Catalog. 
+
+If Service Catalog is to move it's running namespace, it will be up to the cluster
+operator to migrate the CRs into the new namespace for Service Catalog.
+
 
 ## Issues and History
 
