@@ -29,14 +29,10 @@ import (
 // A nil secret is returned without error when the secret has not been created by Service Catalog yet.
 // An error is returned when the binding is Ready but the secret could not be retrieved.
 func (sdk *SDK) RetrieveSecretByBinding(binding *v1beta1.ServiceBinding) (*corev1.Secret, error) {
-	cond := GetBindingStatusCondition(binding.Status)
-	isReady := cond.Type == v1beta1.ServiceBindingConditionReady &&
-		cond.Status == v1beta1.ConditionTrue
-
 	secret, err := sdk.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err != nil {
 		// It's expected to not have the secret until the binding is ready
-		if !isReady && errors.IsNotFound(err) {
+		if !sdk.IsBindingReady(binding) && errors.IsNotFound(err) {
 			return nil, nil
 		}
 
