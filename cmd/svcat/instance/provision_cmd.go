@@ -70,7 +70,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 	}
 	command.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVar(&provisionCmd.externalID, "external-id", "",
-		"The external ID of the instance for use with the OSB SB API (Optional)")
+		"The ID of the instance for use with the OSB SB API (Optional)")
 	cmd.Flags().StringVar(&provisionCmd.className, "class", "",
 		"The class name (Required)")
 	cmd.MarkFlagRequired("class")

@@ -71,7 +71,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"The name of the binding. Defaults to the name of the instance.",
 	)
 	cmd.Flags().StringVar(&bindCmd.externalID, "external-id", "",
-		"The external ID for the binding for use with OSB API (Optional)",
+		"The ID of the binding for use with OSB API (Optional)",
 	)
 	cmd.Flags().StringVarP(
 		&bindCmd.secretName,
