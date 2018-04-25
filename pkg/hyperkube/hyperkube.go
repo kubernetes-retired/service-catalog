@@ -126,6 +126,7 @@ func (hk *HyperKube) Printf(format string, i ...interface{}) {
 func (hk *HyperKube) Run(args []string, stopCh <-chan struct{}) error {
 	// If we are called directly, parse all flags up to the first real
 	// argument.  That should be the server to run.
+RunAgain:
 	command := args[0]
 	serverName := path.Base(command)
 	args = args[1:]
@@ -164,6 +165,9 @@ func (hk *HyperKube) Run(args []string, stopCh <-chan struct{}) error {
 
 	s, err := hk.FindServer(serverName)
 	if err != nil {
+		if len(args) > 0 {
+			goto RunAgain // the first args was popped off at start of Run, try again with new args
+		}
 		hk.Printf("Error: %v\n\n", err)
 		hk.Usage()
 		return err
