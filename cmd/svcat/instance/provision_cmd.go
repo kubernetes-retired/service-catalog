@@ -18,6 +18,7 @@ package instance
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
@@ -36,6 +37,9 @@ type provisonCmd struct {
 	params       interface{}
 	rawSecrets   []string
 	secrets      map[string]string
+	wait         bool
+	rawTimeout   string
+	timeout      *time.Duration
 }
 
 // NewProvisionCmd builds a "svcat provision" command
@@ -83,6 +87,11 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params-json", "",
 		"Additional parameters to use when provisioning the service, provided as a JSON object. Cannot be combined with --param")
+	cmd.Flags().BoolVar(&provisionCmd.wait, "wait", false,
+		"Wait until the operation completes.")
+	cmd.Flags().StringVar(&provisionCmd.rawTimeout, "timeout", "5m",
+		"Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify -1 to wait indefinitely.")
+
 	return cmd
 }
 
@@ -115,6 +124,14 @@ func (c *provisonCmd) Validate(args []string) error {
 		return fmt.Errorf("invalid --secret value (%s)", err)
 	}
 
+	if c.wait && c.rawTimeout != "-1" {
+		timeout, err := time.ParseDuration(c.rawTimeout)
+		if err != nil {
+			return fmt.Errorf("invalid --timeout value (%s)", err)
+		}
+		c.timeout = &timeout
+	}
+
 	return nil
 }
 
@@ -128,7 +145,12 @@ func (c *provisonCmd) Provision() error {
 		return err
 	}
 
+	if c.wait {
+		pollInterval := 1 * time.Second
+		instance, err = c.App.WaitForInstance(instance.Namespace, instance.Name, pollInterval, c.timeout)
+	}
+
 	output.WriteInstanceDetails(c.Output, instance)
 
-	return nil
+	return err
 }
