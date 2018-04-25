@@ -166,7 +166,7 @@ RunAgain:
 	s, err := hk.FindServer(serverName)
 	if err != nil {
 		if len(args) > 0 {
-			goto RunAgain // let's keep trying.
+			goto RunAgain // the first args was popped off at start of Run, try again with new args
 		}
 		hk.Printf("Error: %v\n\n", err)
 		hk.Usage()
