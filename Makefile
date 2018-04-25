@@ -403,6 +403,10 @@ svcat:
 	$(MAKE) svcat-for-$(CLIENT_PLATFORM)
 	cp $(BINDIR)/svcat/$(TAG_VERSION)/$(CLIENT_PLATFORM)/$(ARCH)/svcat$(FILE_EXT) $(BINDIR)/svcat/
 
+svcat-install: svcat
+	cp $(BINDIR)/svcat/svcat /usr/local/bin/
+	$(BINDIR)/svcat/svcat install plugin
+
 svcat-all: $(addprefix svcat-for-,$(ALL_CLIENT_PLATFORM))
 
 svcat-for-%:
