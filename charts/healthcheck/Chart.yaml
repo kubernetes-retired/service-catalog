@@ -1,0 +1,3 @@
+name: healthcheck
+description: HealthCheck monitors the health of Service Catalog
+version: 0.0.1
