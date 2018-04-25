@@ -14,28 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package server
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app"
-	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
+	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/hyperkube"
 )
 
-// NewControllerManager creates a new hyperkube Server object that includes the
+// NewAPIServer creates a new hyperkube Server object that includes the
 // description and flags.
-func NewControllerManager() *hyperkube.Server {
-	s := options.NewControllerManagerServer()
+func NewAPIServer() *hyperkube.Server {
+	s := server.NewServiceCatalogServerOptions()
 
 	hks := hyperkube.Server{
-		PrimaryName:     "controller-manager",
-		AlternativeName: "service-catalog-controller-manager",
-		SimpleUsage:     "controller-manager",
-		Long:            `The service-catalog controller manager is a daemon that embeds the core control loops shipped with the service catalog.`,
+		PrimaryName:     "apiserver",
+		AlternativeName: "service-catalog-apiserver",
+		SimpleUsage:     "apiserver",
+		Long:            "The main API entrypoint and interface to the storage system.  The API server is also the focal point for all authorization decisions.",
 		Run: func(_ *hyperkube.Server, args []string, stopCh <-chan struct{}) error {
-			return app.Run(s)
+			return server.Run(s, stopCh)
 		},
-		RespectsStopCh: false,
+		RespectsStopCh: true,
 	}
 	s.AddFlags(hks.Flags())
 	return &hks
