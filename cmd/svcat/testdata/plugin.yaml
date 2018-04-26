@@ -23,6 +23,11 @@ tree:
       the instance, format: SECRET[KEY]'
   - name: secret-name
     desc: The name of the secret. Defaults to the name of the instance.
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: completion
   shortDesc: Output shell completion code for the specified shell (bash).
   longDesc: "\nOutput shell completion code for the specified shell (bash).\nThe shell
@@ -36,6 +41,12 @@ tree:
 - name: deprovision
   shortDesc: Deletes an instance of a service
   command: ./svcat deprovision
+  flags:
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: describe
   shortDesc: Show details of a specific resource
   command: ./svcat describe
@@ -174,6 +185,11 @@ tree:
   - name: secret
     desc: 'Additional parameter, whose value is stored in a secret, to use when provisioning
       the service, format: SECRET[KEY]'
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: sync
   shortDesc: Syncs service catalog for a service broker
   command: ./svcat sync
@@ -198,6 +214,11 @@ tree:
   flags:
   - name: name
     desc: The name of the binding to remove
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: version
   shortDesc: Provides the version for the Service Catalog client and server
   command: ./svcat version
