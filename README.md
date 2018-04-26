@@ -4,8 +4,21 @@
 [![Build Status](https://service-catalog-jenkins.appspot.com/buildStatus/icon?job=service-catalog-master-testing)](https://service-catalog-jenkins.appspot.com/job/service-catalog-master-testing/ "Jenkins")
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-incubator/service-catalog)](https://goreportcard.com/report/github.com/kubernetes-incubator/service-catalog)
 
+<p align="center">
+    <a href="https://svc-cat.io">
+        <img src="/docsite/images/homepage-logo.png">
+    </a>
+</p>
 
-<p style="text-align=center"><a href="https://svc-cat.io">svc-cat.io</a></p>
+### Documentation
+
+Our goal is to have extensive use-case and functional documentation.
+
+See the [Service Catalog documentation](https://kubernetes.io/docs/concepts/service-catalog/)
+on the main Kubernetes site, and [svc-cat.io](https://svc-cat.io/docs).
+
+For details on broker servers that are compatible with this software, see the
+Open Service Broker API project's [Getting Started guide](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md).
 
 #### Video links
 
@@ -28,16 +41,6 @@ contains information about our high-level goals for future milestones.
 We are currently making weekly releases; see the
 [release process](https://github.com/kubernetes-incubator/service-catalog/wiki/Release-Process)
 for more information.
-
-### Documentation
-
-Our goal is to have extensive use-case and functional documentation.
-
-See the [Service Catalog documentation](https://kubernetes.io/docs/concepts/service-catalog/)
-on the main Kubernetes site, and the [project website](https://svc-cat.io/docs).
-
-For details on broker servers that are compatible with this software, see the
-Open Service Broker API project's [Getting Started guide](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md).
 
 ### Terminology
 
