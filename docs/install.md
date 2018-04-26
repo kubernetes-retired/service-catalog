@@ -3,7 +3,7 @@ title: Install
 layout: docwithnav
 ---
 
-Kubernetes 1.7 or higher clusters run the
+Kubernetes 1.9 or higher clusters run the
 [API Aggregator](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/),
 which is a specialized proxy server that sits in front of the core API Server.
 
@@ -22,7 +22,7 @@ The rest of this document details how to:
 
 ## Kubernetes Version
 
-Service Catalog requires a Kubernetes cluster v1.7 or later. You'll also need a 
+Service Catalog requires a Kubernetes cluster v1.9 or later. You'll also need a 
 [Kubernetes configuration file](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) 
 installed on your host. You need this file so you can use `kubectl` and 
 [`helm`](https://helm.sh) to communicate with the cluster. Many Kubernetes installation 
@@ -33,7 +33,7 @@ check with your tool or provider for details.
 
 Most interaction with the service catalog system is achieved through the 
 `kubectl` command line interface. As with the cluster version, Service Catalog
-requires `kubectl` version 1.7 or newer.
+requires `kubectl` version 1.9 or newer.
 
 First, check your version of `kubectl`:
 
@@ -41,7 +41,7 @@ First, check your version of `kubectl`:
 kubectl version
 ```
 
-Ensure that the server version and client versions are both `1.7` or above.
+Ensure that the server version and client versions are both `1.9` or above.
 
 If you need to upgrade your client, follow the 
 [installation instructions](https://kubernetes.io/docs/tasks/kubectl/install/) 
