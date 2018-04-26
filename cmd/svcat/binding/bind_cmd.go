@@ -149,7 +149,7 @@ func (c *bindCmd) bind() error {
 	}
 
 	if c.wait {
-		glog.V(2).Info("Waiting for instance to be bound...")
+		glog.V(2).Info("Waiting for binding to be injected...")
 		pollInterval := 1 * time.Second
 		binding, err = c.App.WaitForBinding(binding.Namespace, binding.Name, pollInterval, c.timeout)
 	}
