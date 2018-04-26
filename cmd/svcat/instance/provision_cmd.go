@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
@@ -146,6 +147,7 @@ func (c *provisonCmd) Provision() error {
 	}
 
 	if c.wait {
+		glog.V(2).Info("Waiting for the instance to be provisioned...")
 		pollInterval := 1 * time.Second
 		instance, err = c.App.WaitForInstance(instance.Namespace, instance.Name, pollInterval, c.timeout)
 	}

@@ -85,7 +85,7 @@ func (c *deprovisonCmd) deprovision() error {
 	}
 
 	if c.wait {
-		glog.V(2).Infof("Waiting for the instance to be deprovisioned...")
+		glog.V(2).Infof("Waiting for the instance to be deleted...")
 		pollInterval := 1 * time.Second
 
 		var instance *v1beta1.ServiceInstance

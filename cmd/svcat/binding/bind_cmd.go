@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
@@ -148,6 +149,7 @@ func (c *bindCmd) bind() error {
 	}
 
 	if c.wait {
+		glog.V(2).Info("Waiting for instance to be bound...")
 		pollInterval := 1 * time.Second
 		binding, err = c.App.WaitForBinding(binding.Namespace, binding.Name, pollInterval, c.timeout)
 	}
