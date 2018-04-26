@@ -38,12 +38,14 @@ func writeClassListTable(w io.Writer, classes []v1beta1.ClusterServiceClass) {
 	t.SetHeader([]string{
 		"Name",
 		"Description",
+    "Broker"
 		"UUID",
 	})
 	for _, class := range classes {
 		t.Append([]string{
 			class.Spec.ExternalName,
 			class.Spec.Description,
+      class.Spec.ClusterServiceBrokerName
 			class.Name,
 		})
 	}
