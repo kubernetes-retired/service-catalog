@@ -162,6 +162,10 @@ Building outside the container is possible, but not officially supported.
 To build the service-catalog client, `svcat`:
 
     $ make svcat
+    
+To install `svcat` to your $GOPATH/bin directory:
+
+    $ make svcat-install
 
 Note, this will do the basic build of the service catalog. There are more
 more [advanced build steps](#advanced-build-steps) below as well.
