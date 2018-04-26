@@ -9,7 +9,7 @@ Service Catalog supports. This document details each resource.
 All of these resources are also defined in Go code at
 [`pkg/apis/servicecatalog/v1beta1/types.go`](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go).
 
-# `ClusterServiceBroker`
+# ClusterServiceBroker
 
 Before a Service can be used by an Application it must first be registered
 with the Kubernetes platform. Since Services are managed by Service Brokers
@@ -34,7 +34,7 @@ kind: ClusterServiceBroker
 **Note:** The `ClusterServiceBroker` resource is  cluster-scoped, and doesn't 
 have a namespace.
 
-# `ClusterServiceClass`
+# ClusterServiceClass
 
 After a `ClusterServiceBroker` resource is created, the Service Catalog 
 will query the Service Broker (at the `url` specified) for the list
@@ -58,7 +58,7 @@ spec:
 **Note:** The `ClusterServiceClass` resource is  cluster-scoped, and doesn't 
 have a namespace.
 
-# `ClusterServicePlan`
+# ClusterServicePlan
 
 Each `ClusterServiceClass` has one or more Plans associated with it. Each
 `{ClusterServiceClass, ClusterServicePlan}` pair is the broker's service that 
@@ -70,7 +70,7 @@ For each plan of each `ClusterServiceClass`, a `ClusterServicePlan` will be crea
 **Note:** The `ClusterServicePlan` resource is  cluster-scoped, and doesn't 
 have a namespace.
 
-# `ServiceInstance`
+# ServiceInstance
 
 Use a `ServiceInstance` to tell the broker to provision a new service. The 
 `ServiceInstance` indicates the `ClusterServiceClass` and `ClusterServicePlan`
@@ -95,7 +95,7 @@ spec:
   clusterServicePlanExternalName: free
  ```
 
-## Service Instance Parametere
+## Service Instance Parameters
 
 Each `ServiceInstance` has a `paramters` field that you can add 
 metadata to. Service Catalog passes this metadata directly through to the
@@ -123,7 +123,7 @@ you have to manually increment the `UpdateRequests` field in the
 
 For more information, see the documentation on [parameters](parameters.md).
 
-# `ServiceBinding`
+# ServiceBinding
 
 `ServiceBinding` is the final resource that will be created in most
 workflows. This resource indicates that an application wants to connect
@@ -164,7 +164,7 @@ service.
 After Service Catalog creates the secret, just bind your application
 pods to it and start using the service.
 
-## What's in the `Secret`s?
+## What's in the Secrets?
 
 The OSB API specification does not mandate what properties might appear
 in the Credentials, so make sure your application knows what to expect

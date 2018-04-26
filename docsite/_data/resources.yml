@@ -1,0 +1,17 @@
+bigheader: "Resources"
+abstract: "Service Catalog Resources"
+landing_page: /docs/resources
+toc:
+- docs/resources.md
+- title: Broker
+  path: "#clusterservicebroker"
+- title: Class
+  path: "#clusterserviceclass"
+- title: Instance
+  path: "#serviceinstance"
+- title: Instance Parameters
+  path: "#service-instance-parameters"
+- title: Binding
+  path: "#servicebinding"
+- title: Secret
+  path: "#whats-in-the-secrets"

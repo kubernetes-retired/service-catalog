@@ -54,4 +54,5 @@ tocs:
   - walkthrough
   - cli
   - concepts
+  - resources
   - docs-home # fallthrough, leave this last
