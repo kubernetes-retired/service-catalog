@@ -17,12 +17,10 @@ limitations under the License.
 package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -38,32 +36,14 @@ func writeClassListTable(w io.Writer, classes []v1beta1.ClusterServiceClass) {
 	t.SetHeader([]string{
 		"Name",
 		"Description",
-		"UUID",
 	})
 	for _, class := range classes {
 		t.Append([]string{
 			class.Spec.ExternalName,
 			class.Spec.Description,
-			class.Name,
 		})
 	}
 	t.Render()
-}
-
-func writeClassListJSON(w io.Writer, classes []v1beta1.ClusterServiceClass) {
-	classList := v1beta1.ClusterServiceClassList{
-		Items: classes,
-	}
-	j, _ := json.MarshalIndent(classList, "", "   ")
-	w.Write(j)
-}
-
-func writeClassListYAML(w io.Writer, classes []v1beta1.ClusterServiceClass) {
-	classList := v1beta1.ClusterServiceClassList{
-		Items: classes,
-	}
-	y, _ := yaml.Marshal(classList)
-	w.Write(y)
 }
 
 // WriteClassList prints a list of classes in the specified output format.
