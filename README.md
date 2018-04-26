@@ -5,10 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-incubator/service-catalog)](https://goreportcard.com/report/github.com/kubernetes-incubator/service-catalog)
 
 
-For more details, see the [Concepts](docs/concepts/index.md) doc.
-
-For background on the design and features of this project see the
-[Design](docs/design.md) doc.
+<p style="text-align=center"><a href="https://svc-cat.io">svc-cat.io</a></p>
 
 #### Video links
 
@@ -37,7 +34,7 @@ for more information.
 Our goal is to have extensive use-case and functional documentation.
 
 See the [Service Catalog documentation](https://kubernetes.io/docs/concepts/service-catalog/)
-on the main Kubernetes site, and the [project documentation](./docs/README.md) here on GitHub.
+on the main Kubernetes site, and the [project website](https://svc-cat.io/docs).
 
 For details on broker servers that are compatible with this software, see the
 Open Service Broker API project's [Getting Started guide](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md).
