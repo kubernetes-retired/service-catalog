@@ -10,6 +10,10 @@
     </a>
 </p>
 
+Service Catalog lets you provision cloud services directly from the comfort of native Kubernetes tooling.
+This project is in incubation to bring integration with service
+brokers to the Kubernetes ecosystem via the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
+
 ### Documentation
 
 Our goal is to have extensive use-case and functional documentation.
