@@ -52,8 +52,7 @@ Service Catalog installs into a Kubernetes cluster and runs behind the
 
 ## Kubernetes 1.9 and Above
 
-We _strongly_ recommend that you run Service Catalog on Kubernetes version 1.9
-or higher.
+Service catalog requires Kubernetes version 1.9 or higher.
 
 - [Installation instructions](./install.md)
 - [Demo instructions](./walkthrough.md)
