@@ -50,6 +50,7 @@ plugins:
 tocs:
   - install
   - devguide
+  - cli
   - walkthrough
   - cli
   - concepts
