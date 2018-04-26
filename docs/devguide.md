@@ -384,5 +384,5 @@ Gopkg.toml already, add a constraint for it and set the version.
 
 ## Demo walkthrough
 
-Check out the [introduction](./introduction.md) to get started with 
+Check out the [walkthrough](./walkthrough.md) to get started with 
 installation and a self-guided demo.
