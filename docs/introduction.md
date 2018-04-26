@@ -50,11 +50,10 @@ These concepts and resources are the building blocks of the service catalog.
 Service Catalog installs into a Kubernetes cluster and runs behind the
 [Kubernetes API Aggregator](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/).
 
-## Kubernetes 1.7 and Above
+## Kubernetes 1.9 and Above
 
-We _strongly_ recommend that you run Service Catalog on Kubernetes version 1.7
-or higher. Running on 1.6 works, but with so many compromises required that it
-is not officially supported.
+We _strongly_ recommend that you run Service Catalog on Kubernetes version 1.9
+or higher.
 
 - [Installation instructions](./install.md)
 - [Demo instructions](./walkthrough.md)
