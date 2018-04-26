@@ -137,9 +137,10 @@ var _ = Describe("Binding", func() {
 		It("Calls the generated v1beta1 method to create a binding", func() {
 			bindingNamespace := "banana_namespace"
 			bindingName := "banana_binding"
+			externalID := "banana_external_id"
 			instanceName := "banana_instance"
 			secret := "banana_secret"
-			binding, err := sdk.Bind(bindingNamespace, bindingName, instanceName, secret, map[string]string{}, map[string]string{})
+			binding, err := sdk.Bind(bindingNamespace, bindingName, externalID, instanceName, secret, map[string]string{}, map[string]string{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(binding).NotTo(BeNil())
@@ -147,6 +148,7 @@ var _ = Describe("Binding", func() {
 			Expect(binding.ObjectMeta.Name).To(Equal(bindingName))
 			Expect(binding.Spec.ServiceInstanceRef.Name).To(Equal(instanceName))
 			Expect(binding.Spec.SecretName).To(Equal(secret))
+			Expect(binding.Spec.ExternalID).To(Equal(externalID))
 			Expect(svcCatClient.Actions()[0].Matches("create", "servicebindings")).To(BeTrue())
 		})
 
@@ -161,7 +163,7 @@ var _ = Describe("Binding", func() {
 			bindingNamespace := "banana_namespace"
 			bindingName := "banana_binding"
 			instanceName := "banana_instance"
-			binding, err := sdk.Bind(bindingNamespace, bindingName, instanceName, "banana_secret", map[string]string{}, map[string]string{})
+			binding, err := sdk.Bind(bindingNamespace, bindingName, "", instanceName, "banana_secret", map[string]string{}, map[string]string{})
 
 			Expect(binding).To(BeNil())
 			Expect(err).To(HaveOccurred())

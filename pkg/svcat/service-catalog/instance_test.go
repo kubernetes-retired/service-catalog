@@ -207,7 +207,7 @@ var _ = Describe("Instances", func() {
 			secrets["password"] = "abc123"
 			retries := 3
 
-			provisionedInstance, err := sdk.Provision(namespace, instanceName, className, planName, params, secrets)
+			provisionedInstance, err := sdk.Provision(namespace, instanceName, "", className, planName, params, secrets)
 			Expect(err).To(BeNil())
 			// once for the provision request
 			actions := svcCatClient.Actions()
@@ -451,6 +451,7 @@ var _ = Describe("Instances", func() {
 		It("Calls the v1beta1 Create method with the passed in arguements", func() {
 			namespace := "cherry_namespace"
 			instanceName := "cherry"
+			externalID := "cherry-external-id"
 			className := "cherry_class"
 			planName := "cherry_plan"
 			params := make(map[string]string)
@@ -459,13 +460,14 @@ var _ = Describe("Instances", func() {
 			secrets["username"] = "admin"
 			secrets["password"] = "abc123"
 
-			service, err := sdk.Provision(namespace, instanceName, className, planName, params, secrets)
+			service, err := sdk.Provision(namespace, instanceName, externalID, className, planName, params, secrets)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(service.Namespace).To(Equal(namespace))
 			Expect(service.Name).To(Equal(instanceName))
 			Expect(service.Spec.PlanReference.ClusterServiceClassExternalName).To(Equal(className))
 			Expect(service.Spec.PlanReference.ClusterServicePlanExternalName).To(Equal(planName))
+			Expect(service.Spec.ExternalID).To(Equal(externalID))
 
 			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("create", "serviceinstances")).To(BeTrue())
@@ -488,6 +490,7 @@ var _ = Describe("Instances", func() {
 				},
 			}
 			Expect(objectFromRequest.Spec.ParametersFrom).Should(ConsistOf(param, param2))
+			Expect(objectFromRequest.Spec.ExternalID).To(Equal(externalID))
 		})
 		It("Bubbles up errors", func() {
 			errorMessage := "error retrieving list"
@@ -506,7 +509,7 @@ var _ = Describe("Instances", func() {
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			service, err := sdk.Provision(namespace, instanceName, className, planName, params, secrets)
+			service, err := sdk.Provision(namespace, instanceName, "", className, planName, params, secrets)
 			Expect(service).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))

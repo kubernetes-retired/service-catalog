@@ -28,6 +28,7 @@ import (
 type provisonCmd struct {
 	*command.Namespaced
 	instanceName string
+	externalID   string
 	className    string
 	planName     string
 	rawParams    []string
@@ -45,6 +46,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		Short: "Create a new instance of a service",
 		Example: `
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
+  svcat provision wordpress-mysql-instance --external-id a7c00676-4398-11e8-842f-0ed5f89f718b --class mysqldb --plan free
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
   svcat provision secure-instance --class mysqldb --plan secureDB --params-json '{
     "encrypt" : true,
@@ -67,6 +69,8 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(provisionCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), false)
+	cmd.Flags().StringVar(&provisionCmd.externalID, "external-id", "",
+		"The ID of the instance for use with the OSB SB API (Optional)")
 	cmd.Flags().StringVar(&provisionCmd.className, "class", "",
 		"The class name (Required)")
 	cmd.MarkFlagRequired("class")
@@ -119,7 +123,7 @@ func (c *provisonCmd) Run() error {
 }
 
 func (c *provisonCmd) Provision() error {
-	instance, err := c.App.Provision(c.Namespace, c.instanceName, c.className, c.planName, c.params, c.secrets)
+	instance, err := c.App.Provision(c.Namespace, c.instanceName, c.externalID, c.className, c.planName, c.params, c.secrets)
 	if err != nil {
 		return err
 	}
