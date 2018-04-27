@@ -81,6 +81,7 @@ GO_BUILD       = env CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) \
                   -ldflags '-s -w -X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)'
 
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
+ORIG_GOPATH   ?= $(shell go env GOPATH)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
 MUTABLE_TAG                      ?= canary
@@ -402,6 +403,10 @@ svcat:
 	# Compile a native binary for local dev/test
 	$(MAKE) svcat-for-$(CLIENT_PLATFORM)
 	cp $(BINDIR)/svcat/$(TAG_VERSION)/$(CLIENT_PLATFORM)/$(ARCH)/svcat$(FILE_EXT) $(BINDIR)/svcat/
+
+svcat-install: svcat
+	cp $(BINDIR)/svcat/svcat$(FILE_EXT) $(ORIG_GOPATH)/bin/
+	$(BINDIR)/svcat/svcat$(FILE_EXT) install plugin
 
 svcat-all: $(addprefix svcat-for-,$(ALL_CLIENT_PLATFORM))
 
