@@ -1,0 +1,25 @@
+bigheader: "Developer Guide"
+abstract: "How to contribute to and build the Service Catalog"
+landing_page: /docs/devguide/
+toc:
+- docs/devguide.md
+- title: Overview
+  path: /docs/devguide/#overview
+- title: Working on Issues
+  path: /docs/devguide/#working-on-issues
+- title: Prerequisites
+  path: /docs/devguide/#prerequisites
+- title: Workflow
+  path: /docs/devguide/#workflow
+- title: Building
+  path: /docs/devguide/#building
+- title: Testing
+  path: /docs/devguide/#testing
+- title: Advanced Build Steps
+  path: /docs/devguide/#advanced-build-steps
+- title: Dependency Management
+  path: /docs/devguide/#dependency-management
+- title: Deploying to Kubernetes
+  path: /docs/devguide/#deploying-to-kubernetes
+- title: Demo walkthrough
+  path: /docs/devguide/#demo-walkthrough

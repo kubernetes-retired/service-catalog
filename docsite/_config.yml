@@ -46,9 +46,13 @@ plugins:
   - jekyll-relative-links
 
 # Tables of contents, stored in the _data folder, that control the sidebar nav
+# In order for a page to have a TOC, it's data file name must be included in this list.
 tocs:
   - install
+  - devguide
+  - cli
   - walkthrough
   - cli
   - concepts
+  - resources
   - docs-home # fallthrough, leave this last

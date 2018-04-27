@@ -1,19 +1,7 @@
 ---
-title: Developer's Guide
+title: Developer Guide
 layout: docwithnav
 ---
-
-Table of Contents
-- [Overview](#overview)
-- [Working on Issues](#working-on-issues)
-- [Prerequisites](#prerequisites)
-- [Workflow](#workflow)
-- [Building](#building)
-- [Testing](#testing)
-- [Advanced Build Steps](#advanced-build-steps)
-- [Dependency Management](#dependency-management)
-- [Deploying to Kubernetes](#deploying-to-kubernetes)
-- [Demo walkthrough](#demo-walkthrough)
 
 ## Overview
 

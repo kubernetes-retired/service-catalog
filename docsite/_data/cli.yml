@@ -3,3 +3,29 @@ abstract: "Service Catalog CLI (svcat) usage"
 landing_page: /docs/cli
 toc:
 - docs/cli.md
+- title: Install
+  path: /docs/install/#installing-the-service-catalog-cli
+- title: Find brokers installed on the cluster
+  path: /docs/cli/#find-brokers-installed-on-the-cluster
+- title: Trigger a sync of a broker's catalog
+  path: /docs/cli/#trigger-a-sync-of-a-brokers-catalog
+- title: List available service classes
+  path: /docs/cli/#list-available-service-classes
+- title: View service plans associated with a class
+  path: /docs/cli/#view-service-plans-associated-with-a-class
+- title: Provision a service
+  path: /docs/cli/#provision-a-service
+- title: View all instances of a service plan on the cluster
+  path: /docs/cli/#view-all-instances-of-a-service-plan-on-the-cluster
+- title: List all service instances in a namespace
+  path: /docs/cli/#list-all-service-instances-in-a-namespace
+- title: Bind an instance
+  path: /docs/cli/#bind-an-instance
+- title: View the details of a service instance
+  path: /docs/cli/#view-the-details-of-a-service-instance
+- title: Unbind all applications from an instance
+  path: /docs/cli/#remove-all-bindings-from-an-instance
+- title: Unbind a single application from an instance
+  path: /docs/cli/#remove-a-single-binding-from-an-instance
+- title: Delete a service instance
+  path: /docs/cli/#remove-a-single-binding-from-an-instance
