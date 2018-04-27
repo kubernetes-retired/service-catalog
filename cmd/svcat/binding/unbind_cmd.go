@@ -116,14 +116,13 @@ func (c *unbindCmd) unbindInstance() error {
 
 	if c.Wait {
 		glog.V(2).Infof("Waiting for the bindings to be deleted...")
-		pollInterval := 1 * time.Second
 		var g sync.WaitGroup
 		for _, binding := range bindings {
 			g.Add(1)
 			go func(ns, name string) {
 				defer g.Done()
 
-				binding, err := c.App.WaitForBinding(ns, name, pollInterval, c.Timeout)
+				binding, err := c.App.WaitForBinding(ns, name, c.Interval, c.Timeout)
 
 				if err != nil {
 					fmt.Fprintf(c.Output, "Error: %s", err.Error())

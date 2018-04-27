@@ -76,10 +76,9 @@ func (c *deprovisonCmd) deprovision() error {
 
 	if c.Wait {
 		glog.V(2).Infof("Waiting for the instance to be deleted...")
-		pollInterval := 1 * time.Second
 
 		var instance *v1beta1.ServiceInstance
-		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, pollInterval, c.Timeout)
+		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, c.Interval, c.Timeout)
 
 		// The instance failed to deprovision cleanly, dump out more information on why
 		if c.App.IsInstanceFailed(instance) {

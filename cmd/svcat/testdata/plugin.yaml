@@ -9,6 +9,9 @@ tree:
   flags:
   - name: external-id
     desc: The ID of the binding for use with OSB API (Optional)
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: name
     desc: The name of the binding. Defaults to the name of the instance.
   - name: param
@@ -42,6 +45,9 @@ tree:
   shortDesc: Deletes an instance of a service
   command: ./svcat deprovision
   flags:
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: timeout
     desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
       -1 to wait indefinitely.'
@@ -173,6 +179,9 @@ tree:
     desc: The class name (Required)
   - name: external-id
     desc: The ID of the instance for use with the OSB SB API (Optional)
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: param
     shorthand: p
     desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE.
@@ -212,6 +221,9 @@ tree:
     are removed, otherwise use --name to remove a specific binding
   command: ./svcat unbind
   flags:
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: name
     desc: The name of the binding to remove
   - name: timeout
