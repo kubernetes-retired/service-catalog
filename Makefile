@@ -337,6 +337,8 @@ define build-and-tag # (service, image, mutable_image, prefix)
 	$(eval build_path := "$(4)build/$(1)")
 	$(eval tmp_build_path := "$(build_path)/tmp")
 	mkdir -p $(tmp_build_path)
+	# scratch image needs an empty directory to have as /tmp
+	mkdir -p $(tmp_build_path)/tmp
 	cp $(BINDIR)/$(1) $(tmp_build_path)
 	cp $(build_path)/Dockerfile $(tmp_build_path)
 	# -i.bak is required for cross-platform compat: https://stackoverflow.com/questions/5694228/sed-in-place-flag-that-works-both-on-mac-bsd-and-linux
