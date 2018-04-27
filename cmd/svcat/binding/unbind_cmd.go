@@ -30,16 +30,18 @@ import (
 
 type unbindCmd struct {
 	*command.Namespaced
+	*command.WaitableCommand
+
 	instanceName string
 	bindingName  string
-	wait         bool
-	rawTimeout   string
-	timeout      *time.Duration
 }
 
 // NewUnbindCmd builds a "svcat unbind" command
 func NewUnbindCmd(cxt *command.Context) *cobra.Command {
-	unbindCmd := &unbindCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	unbindCmd := &unbindCmd{
+		Namespaced:      command.NewNamespacedCommand(cxt),
+		WaitableCommand: command.NewWaitableCommand(),
+	}
 	cmd := &cobra.Command{
 		Use:   "unbind INSTANCE_NAME",
 		Short: "Unbinds an instance. When an instance name is specified, all of its bindings are removed, otherwise use --name to remove a specific binding",
@@ -57,10 +59,8 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		"",
 		"The name of the binding to remove",
 	)
-	cmd.Flags().BoolVar(&unbindCmd.wait, "wait", false,
-		"Wait until the operation completes.")
-	cmd.Flags().StringVar(&unbindCmd.rawTimeout, "timeout", "5m",
-		"Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify -1 to wait indefinitely.")
+	unbindCmd.AddWaitFlags(cmd)
+
 	return cmd
 }
 
@@ -71,14 +71,6 @@ func (c *unbindCmd) Validate(args []string) error {
 		}
 	} else {
 		c.instanceName = args[0]
-	}
-
-	if c.wait && c.rawTimeout != "-1" {
-		timeout, err := time.ParseDuration(c.rawTimeout)
-		if err != nil {
-			return fmt.Errorf("invalid --timeout value (%s)", err)
-		}
-		c.timeout = &timeout
 	}
 
 	return nil
@@ -97,12 +89,12 @@ func (c *unbindCmd) deleteBinding() error {
 		return err
 	}
 
-	if c.wait {
+	if c.Wait {
 		glog.V(2).Infof("Waiting for the binding to be deleted...")
 		pollInterval := 1 * time.Second
 
 		var binding *v1beta1.ServiceBinding
-		binding, err = c.App.WaitForBinding(c.Namespace, c.bindingName, pollInterval, c.timeout)
+		binding, err = c.App.WaitForBinding(c.Namespace, c.bindingName, pollInterval, c.Timeout)
 
 		// The binding failed to delete cleanly, dump out more information on why
 		if c.App.IsBindingFailed(binding) {
@@ -122,7 +114,7 @@ func (c *unbindCmd) unbindInstance() error {
 		return err
 	}
 
-	if c.wait {
+	if c.Wait {
 		glog.V(2).Infof("Waiting for the bindings to be deleted...")
 		pollInterval := 1 * time.Second
 		var g sync.WaitGroup
@@ -131,7 +123,7 @@ func (c *unbindCmd) unbindInstance() error {
 			go func(ns, name string) {
 				defer g.Done()
 
-				binding, err := c.App.WaitForBinding(ns, name, pollInterval, c.timeout)
+				binding, err := c.App.WaitForBinding(ns, name, pollInterval, c.Timeout)
 
 				if err != nil {
 					fmt.Fprintf(c.Output, "Error: %s", err.Error())

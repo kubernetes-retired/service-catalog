@@ -18,7 +18,6 @@ package instance
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
@@ -30,15 +29,17 @@ import (
 
 type deprovisonCmd struct {
 	*command.Namespaced
+	*command.WaitableCommand
+
 	instanceName string
-	wait         bool
-	rawTimeout   string
-	timeout      *time.Duration
 }
 
 // NewDeprovisionCmd builds a "svcat deprovision" command
 func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
-	deprovisonCmd := &deprovisonCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	deprovisonCmd := &deprovisonCmd{
+		Namespaced:      command.NewNamespacedCommand(cxt),
+		WaitableCommand: command.NewWaitableCommand(),
+	}
 	cmd := &cobra.Command{
 		Use:   "deprovision NAME",
 		Short: "Deletes an instance of a service",
@@ -49,10 +50,7 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(deprovisonCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), false)
-	cmd.Flags().BoolVar(&deprovisonCmd.wait, "wait", false,
-		"Wait until the operation completes.")
-	cmd.Flags().StringVar(&deprovisonCmd.rawTimeout, "timeout", "5m",
-		"Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify -1 to wait indefinitely.")
+	deprovisonCmd.AddWaitFlags(cmd)
 
 	return cmd
 }
@@ -62,14 +60,6 @@ func (c *deprovisonCmd) Validate(args []string) error {
 		return fmt.Errorf("name is required")
 	}
 	c.instanceName = args[0]
-
-	if c.wait && c.rawTimeout != "-1" {
-		timeout, err := time.ParseDuration(c.rawTimeout)
-		if err != nil {
-			return fmt.Errorf("invalid --timeout value (%s)", err)
-		}
-		c.timeout = &timeout
-	}
 
 	return nil
 }
@@ -84,12 +74,12 @@ func (c *deprovisonCmd) deprovision() error {
 		return err
 	}
 
-	if c.wait {
+	if c.Wait {
 		glog.V(2).Infof("Waiting for the instance to be deleted...")
 		pollInterval := 1 * time.Second
 
 		var instance *v1beta1.ServiceInstance
-		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, pollInterval, c.timeout)
+		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, pollInterval, c.Timeout)
 
 		// The instance failed to deprovision cleanly, dump out more information on why
 		if c.App.IsInstanceFailed(instance) {

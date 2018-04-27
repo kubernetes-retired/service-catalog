@@ -18,7 +18,6 @@ package instance
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
@@ -29,6 +28,8 @@ import (
 
 type provisonCmd struct {
 	*command.Namespaced
+	*command.WaitableCommand
+
 	instanceName string
 	externalID   string
 	className    string
@@ -38,14 +39,14 @@ type provisonCmd struct {
 	params       interface{}
 	rawSecrets   []string
 	secrets      map[string]string
-	wait         bool
-	rawTimeout   string
-	timeout      *time.Duration
 }
 
 // NewProvisionCmd builds a "svcat provision" command
 func NewProvisionCmd(cxt *command.Context) *cobra.Command {
-	provisionCmd := &provisonCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	provisionCmd := &provisonCmd{
+		Namespaced:      command.NewNamespacedCommand(cxt),
+		WaitableCommand: command.NewWaitableCommand(),
+	}
 	cmd := &cobra.Command{
 		Use:   "provision NAME --plan PLAN --class CLASS",
 		Short: "Create a new instance of a service",
@@ -88,10 +89,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params-json", "",
 		"Additional parameters to use when provisioning the service, provided as a JSON object. Cannot be combined with --param")
-	cmd.Flags().BoolVar(&provisionCmd.wait, "wait", false,
-		"Wait until the operation completes.")
-	cmd.Flags().StringVar(&provisionCmd.rawTimeout, "timeout", "5m",
-		"Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify -1 to wait indefinitely.")
+	provisionCmd.AddWaitFlags(cmd)
 
 	return cmd
 }
@@ -125,14 +123,6 @@ func (c *provisonCmd) Validate(args []string) error {
 		return fmt.Errorf("invalid --secret value (%s)", err)
 	}
 
-	if c.wait && c.rawTimeout != "-1" {
-		timeout, err := time.ParseDuration(c.rawTimeout)
-		if err != nil {
-			return fmt.Errorf("invalid --timeout value (%s)", err)
-		}
-		c.timeout = &timeout
-	}
-
 	return nil
 }
 
@@ -146,10 +136,10 @@ func (c *provisonCmd) Provision() error {
 		return err
 	}
 
-	if c.wait {
+	if c.Wait {
 		glog.V(2).Info("Waiting for the instance to be provisioned...")
 		pollInterval := 1 * time.Second
-		instance, err = c.App.WaitForInstance(instance.Namespace, instance.Name, pollInterval, c.timeout)
+		instance, err = c.App.WaitForInstance(instance.Namespace, instance.Name, pollInterval, c.Timeout)
 	}
 
 	output.WriteInstanceDetails(c.Output, instance)
