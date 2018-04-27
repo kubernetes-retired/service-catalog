@@ -53,8 +53,8 @@ spec:
     name: value
   parametersFrom:
     - secretKeyRef:
-        name: secretName
-        key: myKey
+        name: my-secret
+        key: secret-parameter
 ```
 or, in JSON format
 ```json
@@ -64,24 +64,24 @@ or, in JSON format
   },
   "parametersFrom": {
     "secretKeyRef": {
-      "name": "secretName",
-      "key": "myKey"
+      "name": "my-secret",
+      "key": "secret-parameter"
     }
   }
 }
 ```
-and the secret would need to have a key named myKey:
+and the secret would need to have a key named secret-parameter:
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: secretName
+  name: my-secret
 type: Opaque
 stringData:
-  myKey: >
-    {
+  secret-parameter:
+    '{
       "password": "letmein"
-    }
+    }'
 ```
 The final JSON payload to be sent to the broker would then look like:
 ```json
@@ -90,6 +90,17 @@ The final JSON payload to be sent to the broker would then look like:
   "password": "letmein"
 }
 ```
+
+Multiple parameters could be listed in the secret - simply separate key/value pairs with a comma as in this example:
+```yaml
+  secret-parameter:
+    '{
+      "password": "letmein",
+      "key2": "value2",
+      "key3": "value3"
+    }'
+```
+
 
 ### Basic example
 
@@ -186,7 +197,7 @@ be stored in a single `Secret` key, and passed using a `secretKeyRef` field:
   parametersFrom:
     - secretKeyRef:
         name: mysecret
-        key: mykey
+        key: secret-parameter
 ```
 
 The value stored in a secret key must be a valid JSON.
