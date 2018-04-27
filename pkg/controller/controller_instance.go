@@ -34,7 +34,9 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
+	"time"
 )
 
 const (
@@ -371,7 +373,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	if instance.Status.CurrentOperation == "" {
+	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationProvision, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
@@ -481,7 +483,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	if instance.Status.CurrentOperation == "" {
+	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
@@ -1204,10 +1206,34 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceIn
 //
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
-func (c *controller) updateServiceInstanceStatus(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
+func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	glog.V(4).Info(pcb.Message("Updating status"))
-	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateStatus(toUpdate)
+
+	const interval = 100 * time.Millisecond
+	const timeout = 10 * time.Second
+	var updatedInstance *v1beta1.ServiceInstance
+
+	instanceToUpdate := instance
+	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(instanceToUpdate)
+		if err != nil {
+			if !errors.IsConflict(err) {
+				return false, err
+			}
+			// Fetch a fresh instance to resolve the update conflict and retry
+			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+			instanceToUpdate.Status = instance.Status
+			return false, nil
+		}
+
+		updatedInstance = upd
+		return true, nil
+	})
+
 	if err != nil {
 		glog.Errorf(pcb.Messagef("Failed to update status: %v", err))
 	}
@@ -1246,6 +1272,37 @@ func (c *controller) prepareObservedGeneration(toUpdate *v1beta1.ServiceInstance
 	removeServiceInstanceCondition(
 		toUpdate,
 		v1beta1.ServiceInstanceConditionFailed)
+}
+
+// isServiceInstancePropertiesStateEqual checks whether two ServiceInstancePropertiesState objects are equal
+func isServiceInstancePropertiesStateEqual(s1 *v1beta1.ServiceInstancePropertiesState, s2 *v1beta1.ServiceInstancePropertiesState) bool {
+	if s1 == nil && s2 == nil {
+		return true
+	}
+	if (s1 == nil && s2 != nil) || (s1 != nil && s2 == nil) {
+		return false
+	}
+	if s1.ClusterServicePlanExternalID != s2.ClusterServicePlanExternalID {
+		return false
+	}
+	if s1.ClusterServicePlanExternalName != s2.ClusterServicePlanExternalName {
+		return false
+	}
+	if s1.ParametersChecksum != s2.ParametersChecksum {
+		return false
+	}
+	if s1.UserInfo != nil || s2.UserInfo != nil {
+		u1 := s1.UserInfo
+		u2 := s2.UserInfo
+		if (u1 == nil && u2 != nil) || (u1 != nil && u2 == nil) {
+			return false
+		}
+		if u1.UID != u2.UID {
+			return false
+		}
+	}
+
+	return true
 }
 
 // recordStartOfServiceInstanceOperation updates the instance to indicate that

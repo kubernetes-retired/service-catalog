@@ -2911,6 +2911,88 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry verifies that
+// InProgressProperties status field is updated if parameters changed upon retry
+func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		Parameters: &runtime.RawExtension{
+			Raw: []byte(`{ "staleParameter": "value" }`),
+		},
+		ParametersChecksum: "staleChecksum",
+	}
+	instance.Status.ObservedGeneration = instance.Generation
+	instance.Status.Conditions = []v1beta1.ServiceInstanceCondition{
+		{
+			Type:   v1beta1.ServiceInstanceConditionReady,
+			Status: v1beta1.ConditionFalse,
+			Reason: provisioningInFlightReason,
+		},
+	}
+
+	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
+	parameters.Args["first"] = "first-arg"
+	parameters.Args["second"] = "new-second-arg"
+
+	b, err := json.Marshal(parameters)
+	if err != nil {
+		t.Fatalf("Failed to marshal parameters %v : %v", parameters, err)
+	}
+	instance.Spec.Parameters = &runtime.RawExtension{Raw: b}
+
+	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	instance.Status.OperationStartTime = &startTime
+
+	if err := testController.reconcileServiceInstance(instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	// No OSB requests expected
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	// InProgressProperties fields should be updated
+	expectedParameters := map[string]interface{}{
+		"args": map[string]interface{}{
+			"first":  "first-arg",
+			"second": "new-second-arg",
+		},
+		"name": "test-param",
+	}
+	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, expectedParameters)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// No events expected
+	events := getRecordedEvents(testController)
+	checkEventCounts(events, []string{})
+}
+
 // TestReconcileServiceInstanceFailureOnFinalRetry verifies that reconciliation
 // completes in the event of an error after the retry duration elapses.
 func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
@@ -2926,6 +3008,10 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 
 	instance := getTestServiceInstanceWithRefs()
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
+	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+	}
 	startTime := metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
 	instance.Status.ObservedGeneration = instance.Generation
@@ -4228,7 +4314,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 }
 
 // TestReconcileServiceInstanceUpdateParameters tests updating a
-// ServiceInstance with new paramaters
+// ServiceInstance with new parameters
 func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
