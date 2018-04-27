@@ -4,7 +4,7 @@ layout: docwithnav
 ---
 
 This document assumes that you've installed Service Catalog onto your cluster.
-If you haven't, please see [install.md](./install.md). Optionally you may install
+If you haven't, please see the [installation instructions](./install.md). Optionally you may install
 the Service Catalog CLI, svcat. Examples for both svcat and kubectl are provided
 so that you may follow this walkthrough using svcat or using only kubectl.
 

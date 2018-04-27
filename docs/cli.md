@@ -14,7 +14,7 @@ Kubernetes cluster.
 [agg-api]: https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/
 
 This document assumes that you've installed Service Catalog and the Service Catalog CLI
-onto your cluster. If you haven't, please see [install.md](install.md).
+onto your cluster. If you haven't, please see the [installation instructions](install.md#installing-the-service-catalog-cli).
 
 ## Plugin
 To use svcat as a kubectl plugin, run the following command after downloading:
@@ -27,7 +27,6 @@ Plugin has been installed to ~/.kube/plugins/svcat. Run kubectl plugin svcat --h
 When operating as a plugin, the commands are the same with the addition of the global
 kubectl configuration flags. One exception is that boolean flags aren't supported
 when running in plugin mode, so instead of using `--flag` you must specify a value `--flag=true`.
-
 
 # Use
 
