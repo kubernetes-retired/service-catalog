@@ -138,10 +138,17 @@ func (c *provisonCmd) Provision() error {
 
 	if c.Wait {
 		glog.V(2).Info("Waiting for the instance to be provisioned...")
-		instance, err = c.App.WaitForInstance(instance.Namespace, instance.Name, c.Interval, c.Timeout)
+		finalInstance, err := c.App.WaitForInstance(instance.Namespace, instance.Name, c.Interval, c.Timeout)
+		if err == nil {
+			instance = finalInstance
+		}
+
+		// Always print the instance because the provision did succeed,
+		// and just print any errors that occurred while polling
+		output.WriteInstanceDetails(c.Output, instance)
+		return err
+	} else {
+		output.WriteInstanceDetails(c.Output, instance)
+		return nil
 	}
-
-	output.WriteInstanceDetails(c.Output, instance)
-
-	return err
 }

@@ -140,9 +140,17 @@ func (c *bindCmd) bind() error {
 
 	if c.Wait {
 		glog.V(2).Info("Waiting for binding to be injected...")
-		binding, err = c.App.WaitForBinding(binding.Namespace, binding.Name, c.Interval, c.Timeout)
-	}
+		finalBinding, err := c.App.WaitForBinding(binding.Namespace, binding.Name, c.Interval, c.Timeout)
+		if err == nil {
+			binding = finalBinding
+		}
 
-	output.WriteBindingDetails(c.Output, binding)
-	return err
+		// Always print the binding because the bind did succeed,
+		// and just print any errors that occurred while polling
+		output.WriteBindingDetails(c.Output, binding)
+		return err
+	} else {
+		output.WriteBindingDetails(c.Output, binding)
+		return nil
+	}
 }
