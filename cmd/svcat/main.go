@@ -112,7 +112,7 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVar(&opts.KubeContext, "kube-context", "", "name of the kube context to use")
+	cmd.PersistentFlags().StringVar(&opts.KubeContext, "context", "", "name of the kubeconfig context to use.")
 	cmd.PersistentFlags().StringVar(&opts.KubeConfig, "kubeconfig", "", "path to kubeconfig file. Overrides $KUBECONFIG")
 
 	cmd.AddCommand(newGetCmd(cxt))

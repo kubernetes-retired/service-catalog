@@ -3,4 +3,10 @@ abstract: "Detailed explanations of Service Catalog system concepts and abstract
 landing_page: /docs/concepts/
 toc:
 - docs/concepts/index.md
+- title: Introduction
+  path: /docs/concepts/#introduction
+- title: Overview
+  path: /docs/concepts/#overview
+- title: Serivce Resources
+  path: /docs/concepts/#service-resources
 

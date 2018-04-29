@@ -36,7 +36,6 @@ var reservedFlags = map[string]struct{}{
 	"help":                  {},
 	"insecure-skip-tls-verify": {},
 	"kubeconfig":               {},
-	"kube-context":             {},
 	"log-backtrace-at":         {},
 	"log-dir":                  {},
 	"log-flush-frequency":      {},

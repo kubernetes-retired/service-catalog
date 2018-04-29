@@ -3,3 +3,21 @@ abstract: "Instructions for installing Service Catalog on a Cluster."
 landing_page: /docs/install
 toc:
 - docs/install.md
+- title: Step 1 - Prerequisites
+  landing_page: "#step-1---prerequisites"
+  section:
+  - title: Kubernetes
+    path: "#kubernetes-version"
+  - title: In-Cluster DNS
+    path: "#in-cluster-dns"
+  - title: Helm
+    path: "#helm"
+  - title: RBAC
+    path: "#rbac"
+- title: Step 2 - Install Service Catalog
+  landing_page: "#step-2---install-service-catalog"
+  section:
+  - title: Service Catalog Server
+    path: "#step-2---install-service-catalog"
+  - title: Service Catalog Client
+    path: "#installing-the-service-catalog-cli"

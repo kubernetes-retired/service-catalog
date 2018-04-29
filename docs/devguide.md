@@ -1,19 +1,7 @@
 ---
-title: Developer's Guide
+title: Developer Guide
 layout: docwithnav
 ---
-
-Table of Contents
-- [Overview](#overview)
-- [Working on Issues](#working-on-issues)
-- [Prerequisites](#prerequisites)
-- [Workflow](#workflow)
-- [Building](#building)
-- [Testing](#testing)
-- [Advanced Build Steps](#advanced-build-steps)
-- [Dependency Management](#dependency-management)
-- [Deploying to Kubernetes](#deploying-to-kubernetes)
-- [Demo walkthrough](#demo-walkthrough)
 
 ## Overview
 
@@ -162,6 +150,10 @@ Building outside the container is possible, but not officially supported.
 To build the service-catalog client, `svcat`:
 
     $ make svcat
+    
+To install `svcat` to your $GOPATH/bin directory:
+
+    $ make svcat-install
 
 Note, this will do the basic build of the service catalog. There are more
 more [advanced build steps](#advanced-build-steps) below as well.
@@ -384,5 +376,5 @@ Gopkg.toml already, add a constraint for it and set the version.
 
 ## Demo walkthrough
 
-Check out the [introduction](./introduction.md) to get started with 
+Check out the [walkthrough](./walkthrough.md) to get started with 
 installation and a self-guided demo.

@@ -14,7 +14,7 @@ Kubernetes cluster.
 [agg-api]: https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/
 
 This document assumes that you've installed Service Catalog and the Service Catalog CLI
-onto your cluster. If you haven't, please see [install.md](install.md).
+onto your cluster. If you haven't, please see the [installation instructions](install.md#installing-the-service-catalog-cli).
 
 ## Plugin
 To use svcat as a kubectl plugin, run the following command after downloading:
@@ -28,26 +28,12 @@ When operating as a plugin, the commands are the same with the addition of the g
 kubectl configuration flags. One exception is that boolean flags aren't supported
 when running in plugin mode, so instead of using `--flag` you must specify a value `--flag=true`.
 
-
 # Use
 
 Run `svcat --help` to see the available commands.
 
 Below are some common tasks made easy with svcat. The example output assumes that the
 [User Provided Service Broker](../charts/ups-broker) is installed on the cluster.
-
-* [Find brokers installed on the cluster](#find-brokers-installed-on-the-cluster)
-* [Trigger a sync of a broker's catalog](#trigger-a-sync-of-a-brokers-catalog)
-* [List available service classes](#list-available-service-classes)
-* [View service plans associated with a class](#view-service-plans-associated-with-a-class)
-* [Provision a service](#provision-a-service)
-* [View all instances of a service plan on the cluster](#view-all-instances-of-a-service-plan-on-the-cluster)
-* [List all service instances in a namespace](#list-all-service-instances-in-a-namespace)
-* [Bind an instance](#bind-an-instance)
-* [View the details of a service instance](#view-the-details-of-a-service-instance)
-* [Unbind all applications from an instance](#remove-all-bindings-from-an-instance)
-* [Unbind a single application from an instance](#remove-a-single-binding-from-an-instance)
-* [Delete a service instance](#remove-a-single-binding-from-an-instance)
 
 ## Find brokers installed on the cluster
 

@@ -4,45 +4,25 @@
 [![Build Status](https://service-catalog-jenkins.appspot.com/buildStatus/icon?job=service-catalog-master-testing)](https://service-catalog-jenkins.appspot.com/job/service-catalog-master-testing/ "Jenkins")
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-incubator/service-catalog)](https://goreportcard.com/report/github.com/kubernetes-incubator/service-catalog)
 
-### Introduction
+<p align="center">
+    <a href="https://svc-cat.io">
+        <img src="/docsite/images/homepage-logo.png">
+    </a>
+</p>
 
-The service-catalog project is in incubation to bring integration with service
+Service Catalog lets you provision cloud services directly from the comfort of native Kubernetes tooling.
+This project is in incubation to bring integration with service
 brokers to the Kubernetes ecosystem via the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker).
 
-A _service broker_ is an endpoint that manages a set of software offerings
-called _services_. The end-goal of the service-catalog project is to provide
-a way for Kubernetes users to consume services from brokers and easily
-configure their applications to use those services, without needing detailed
-knowledge about how those services are created or managed.
+### Documentation
 
-As an example:
+Our goal is to have extensive use-case and functional documentation.
 
-Most applications need a datastore of some kind. The service-catalog allows
-Kubernetes applications to consume services like databases that exist
-_somewhere_ in a simple way:
+See the [Service Catalog documentation](https://kubernetes.io/docs/concepts/service-catalog/)
+on the main Kubernetes site, and [svc-cat.io](https://svc-cat.io/docs).
 
-1. A user wanting to consume a database in their application browses a list of
-    available services in the catalog
-2. The user asks for a new instance of that service to be _provisioned_
-
-    _Provisioning_ means that the broker somehow creates a new instance of a
-   service. This could mean basically anything that results in a new instance
-   of the service becoming available. Possibilities include: creating a new
-   set of Kubernetes resources in another namespace in the same Kubernetes
-   cluster as the consumer or a different cluster, or even creating a new
-   tenant in a multi-tenant SaaS system. The point is that the
-   consumer doesn't have to be aware of or care at all about the details.
-3. The user requests a _binding_ to use the service instance in their application
-
-    Credentials are delivered to users in normal Kubernetes secrets and
-    contain information necessary to connect to and authenticate to the
-    service instance.
-
-For more introduction, including installation and self-guided demo
-instructions, please see the [introduction](./docs/introduction.md) doc.
-
-For more details about the design and features of this project see the
-[design](docs/design.md) doc.
+For details on broker servers that are compatible with this software, see the
+Open Service Broker API project's [Getting Started guide](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md).
 
 #### Video links
 
@@ -55,7 +35,7 @@ For more details about the design and features of this project see the
 ### Project Status
 
 We are currently working toward a beta-quality release to be used in conjunction with
-Kubernetes 1.8. See the
+Kubernetes 1.9. See the
 [milestones list](https://github.com/kubernetes-incubator/service-catalog/milestones?direction=desc&sort=due_date&state=open)
 for information about the issues and PRs in current and future milestones.
 
@@ -65,16 +45,6 @@ contains information about our high-level goals for future milestones.
 We are currently making weekly releases; see the
 [release process](https://github.com/kubernetes-incubator/service-catalog/wiki/Release-Process)
 for more information.
-
-### Documentation
-
-Our goal is to have extensive use-case and functional documentation.
-
-See the [Service Catalog documentation](https://kubernetes.io/docs/concepts/service-catalog/)
-on the main Kubernetes site, and the [project documentation](./docs/README.md) here on GitHub.
-
-For details on broker servers that are compatible with this software, see the
-Open Service Broker API project's [Getting Started guide](https://github.com/openservicebrokerapi/servicebroker/blob/master/gettingStarted.md).
 
 ### Terminology
 
