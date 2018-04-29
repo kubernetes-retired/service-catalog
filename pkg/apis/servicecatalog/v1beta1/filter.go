@@ -32,10 +32,10 @@ func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) f
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:             serviceClass.Name,
-		FilterSpecExternalName: serviceClass.Spec.ExternalName,
-		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
-		FilterSpecBrokerName:   serviceClass.Spec.ClusterServiceBrokerName,
+		FilterName:                         serviceClass.Name,
+		FilterSpecExternalName:             serviceClass.Spec.ExternalName,
+		FilterSpecExternalID:               serviceClass.Spec.ExternalID,
+		FilterSpecClusterServiceBrokerName: serviceClass.Spec.ClusterServiceBrokerName,
 	}
 }
 
@@ -47,10 +47,10 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:                        servicePlan.Name,
-		FilterSpecExternalName:            servicePlan.Spec.ExternalName,
-		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
-		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
-		FilterSpecBrokerName:              servicePlan.Spec.ClusterServiceBrokerName,
+		FilterName:                         servicePlan.Name,
+		FilterSpecExternalName:             servicePlan.Spec.ExternalName,
+		FilterSpecExternalID:               servicePlan.Spec.ExternalID,
+		FilterSpecClusterServiceClassName:  servicePlan.Spec.ClusterServiceClassRef.Name,
+		FilterSpecClusterServiceBrokerName: servicePlan.Spec.ClusterServiceBrokerName,
 	}
 }
