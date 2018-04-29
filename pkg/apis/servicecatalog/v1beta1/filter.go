@@ -35,6 +35,7 @@ func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) f
 		FilterName:             serviceClass.Name,
 		FilterSpecExternalName: serviceClass.Spec.ExternalName,
 		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
+		FilterSpecBrokerName:   serviceClass.Spec.ClusterServiceBrokerName,
 	}
 }
 
@@ -50,5 +51,6 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 		FilterSpecExternalName:            servicePlan.Spec.ExternalName,
 		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
 		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
+		FilterSpecBrokerName:              servicePlan.Spec.ClusterServiceBrokerName,
 	}
 }
