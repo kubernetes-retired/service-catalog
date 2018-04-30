@@ -2,6 +2,7 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServicePlan
 metadata:
   name: b20ac1c6-f6d5-4dd0-b30c-c33242ad2083
+  namespace: test-ns
 spec:
   serviceBrokerName: test-ns-broker
   externalName: test-serviceplan

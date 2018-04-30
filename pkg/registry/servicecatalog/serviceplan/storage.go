@@ -129,7 +129,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		NewFunc:     EmptyObject,
 		NewListFunc: NewList,
 		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(false),
+		KeyFunc:     opts.KeyFunc(true),
 		// Retrieve the name field of the resource.
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return scmeta.GetAccessor().Name(obj)
