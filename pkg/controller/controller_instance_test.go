@@ -2407,9 +2407,8 @@ func TestPollServiceInstanceFailureProvisioningWithOperation(t *testing.T) {
 // in progress.
 func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *testing.T) {
 	cases := []struct {
-		name   string
-		setup  func(instance *v1beta1.ServiceInstance)
-		planID func() *string
+		name  string
+		setup func(instance *v1beta1.ServiceInstance)
 	}{
 		{
 			// simulates deprovision after user changed plan to non-existing plan
@@ -2418,16 +2417,10 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 				instance.Spec.ClusterServicePlanExternalName = "plan-that-does-not-exist"
 				instance.Spec.ClusterServicePlanRef = nil
 			},
-			planID: func() *string {
-				return strPtr("")
-			},
 		},
 		{
 			name:  "With plan",
 			setup: func(instance *v1beta1.ServiceInstance) {},
-			planID: func() *string {
-				return strPtr(testClusterServicePlanGUID)
-			},
 		},
 	}
 
@@ -2469,7 +2462,7 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizer(t *
 			assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
 				InstanceID:   testServiceInstanceGUID,
 				ServiceID:    strPtr(testClusterServiceClassGUID),
-				PlanID:       tc.planID(),
+				PlanID:       strPtr(testClusterServicePlanGUID),
 				OperationKey: &operationKey,
 			})
 
@@ -2607,8 +2600,8 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
 		errorDeprovisionCalledReason,
-		"", // plan name
-		"", // plan ID
+		testClusterServicePlanName,
+		testClusterServicePlanGUID,
 		instance,
 	)
 

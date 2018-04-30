@@ -2500,7 +2500,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"inProgressProperties": {
 							SchemaProps: spec.SchemaProps{
-								Description: "InProgressProperties is the properties state of the ServiceInstance when a Provision or Update is in progress. If the current operation is a Deprovision, this will be nil.",
+								Description: "InProgressProperties is the properties state of the ServiceInstance when a Provision, Update or Deprovision is in progress.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
 							},
 						},

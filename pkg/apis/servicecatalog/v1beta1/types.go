@@ -910,8 +910,7 @@ type ServiceInstanceStatus struct {
 	OperationStartTime *metav1.Time `json:"operationStartTime,omitempty"`
 
 	// InProgressProperties is the properties state of the ServiceInstance when
-	// a Provision or Update is in progress. If the current operation is a
-	// Deprovision, this will be nil.
+	// a Provision, Update or Deprovision is in progress.
 	InProgressProperties *ServiceInstancePropertiesState `json:"inProgressProperties,omitempty"`
 
 	// ExternalProperties is the properties state of the ServiceInstance which the

@@ -945,9 +945,14 @@ func getTestServiceInstanceAsyncDeprovisioning(operation string) *v1beta1.Servic
 			Message:            "Deprovisioning",
 			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
 		}},
-		AsyncOpInProgress:    true,
-		OperationStartTime:   &operationStartTime,
-		CurrentOperation:     v1beta1.ServiceInstanceOperationDeprovision,
+		AsyncOpInProgress:  true,
+		OperationStartTime: &operationStartTime,
+		CurrentOperation:   v1beta1.ServiceInstanceOperationDeprovision,
+		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
+			ClusterServicePlanExternalName: testClusterServicePlanName,
+			ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		},
+
 		ReconciledGeneration: 1,
 		ObservedGeneration:   2,
 		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
@@ -2697,10 +2702,9 @@ func assertServiceInstanceRequestRetriableErrorWithParameters(t *testing.T, obj 
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, inProgressParameters, inProgressParametersChecksum)
-	case v1beta1.ServiceInstanceOperationDeprovision:
-		assertServiceInstanceInProgressPropertiesNil(t, obj)
 	}
 	assertServiceInstanceExternalPropertiesUnchanged(t, obj, originalInstance)
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
@@ -2748,10 +2752,9 @@ func assertServiceInstanceAsyncStillInProgress(t *testing.T, obj runtime.Object,
 	assertServiceInstanceProvisioned(t, obj, originalInstance.Status.ProvisionStatus)
 	switch operation {
 	case v1beta1.ServiceInstanceOperationProvision, v1beta1.ServiceInstanceOperationUpdate:
+	case v1beta1.ServiceInstanceOperationDeprovision:
 		assertServiceInstanceInProgressPropertiesPlan(t, obj, planName, planID)
 		assertServiceInstanceInProgressPropertiesParameters(t, obj, nil, "")
-	case v1beta1.ServiceInstanceOperationDeprovision:
-		assertServiceInstanceInProgressPropertiesNil(t, obj)
 	}
 	assertAsyncOpInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
