@@ -38,9 +38,9 @@ import (
 // be easily combined with a follow on specific message.
 const (
 	errorFetchingCatalogReason  string = "ErrorFetchingCatalog"
-	errorFetchingCatalogMessage string = "Error fetching catalog."
+	errorFetchingCatalogMessage string = "Error fetching catalog. "
 	errorSyncingCatalogReason   string = "ErrorSyncingCatalog"
-	errorSyncingCatalogMessage  string = "Error syncing catalog from ServiceBroker."
+	errorSyncingCatalogMessage  string = "Error syncing catalog from ServiceBroker. "
 
 	errorListingClusterServiceClassesReason  string = "ErrorListingServiceClasses"
 	errorListingClusterServiceClassesMessage string = "Error listing service classes."
