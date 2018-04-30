@@ -58,12 +58,11 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		value := strings.TrimSpace(parts[1])
 
 		if val, present := variables[variable]; present {
-			valType = reflect.TypeOf(val)
-			var arr []valType
-			append(arr, val)
-			append(arr, value)
+			var arr []string
+			arr = append(arr, val.(string))
+			arr = append(arr, value)
 			type i interface{}
-			var i I = arr
+			var I i = arr
 			variables[variable] = I
 		} else {
 			variables[variable] = value
