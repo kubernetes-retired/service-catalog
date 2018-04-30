@@ -94,7 +94,7 @@ func NewController(
 		OSBAPIPreferredVersion:      osbAPIPreferredVersion,
 		recorder:                    recorder,
 		reconciliationRetryDuration: reconciliationRetryDuration,
-		brokerQueue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-broker"),
+		clusterServiceBrokerQueue:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-service-broker"),
 		clusterServiceClassQueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-service-class"),
 		clusterServicePlanQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster-service-plan"),
 		instanceQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance"),
@@ -105,11 +105,11 @@ func NewController(
 		clusterIDConfigMapNamespace: clusterIDConfigMapNamespace,
 	}
 
-	controller.brokerLister = brokerInformer.Lister()
+	controller.clusterServiceBrokerLister = brokerInformer.Lister()
 	brokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    controller.brokerAdd,
-		UpdateFunc: controller.brokerUpdate,
-		DeleteFunc: controller.brokerDelete,
+		AddFunc:    controller.clusterServiceBrokerAdd,
+		UpdateFunc: controller.clusterServiceBrokerUpdate,
+		DeleteFunc: controller.clusterServiceBrokerDelete,
 	})
 
 	controller.clusterServiceClassLister = clusterServiceClassInformer.Lister()
@@ -157,7 +157,7 @@ type controller struct {
 	kubeClient                  kubernetes.Interface
 	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1beta1Interface
 	brokerClientCreateFunc      osb.CreateFunc
-	brokerLister                listers.ClusterServiceBrokerLister
+	clusterServiceBrokerLister  listers.ClusterServiceBrokerLister
 	clusterServiceClassLister   listers.ClusterServiceClassLister
 	instanceLister              listers.ServiceInstanceLister
 	bindingLister               listers.ServiceBindingLister
@@ -166,7 +166,7 @@ type controller struct {
 	OSBAPIPreferredVersion      string
 	recorder                    record.EventRecorder
 	reconciliationRetryDuration time.Duration
-	brokerQueue                 workqueue.RateLimitingInterface
+	clusterServiceBrokerQueue   workqueue.RateLimitingInterface
 	clusterServiceClassQueue    workqueue.RateLimitingInterface
 	clusterServicePlanQueue     workqueue.RateLimitingInterface
 	instanceQueue               workqueue.RateLimitingInterface
@@ -199,7 +199,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	var waitGroup sync.WaitGroup
 
 	for i := 0; i < workers; i++ {
-		createWorker(c.brokerQueue, "ClusterServiceBroker", maxRetries, true, c.reconcileClusterServiceBrokerKey, stopCh, &waitGroup)
+		createWorker(c.clusterServiceBrokerQueue, "ClusterServiceBroker", maxRetries, true, c.reconcileClusterServiceBrokerKey, stopCh, &waitGroup)
 		createWorker(c.clusterServiceClassQueue, "ClusterServiceClass", maxRetries, true, c.reconcileClusterServiceClassKey, stopCh, &waitGroup)
 		createWorker(c.clusterServicePlanQueue, "ClusterServicePlan", maxRetries, true, c.reconcileClusterServicePlanKey, stopCh, &waitGroup)
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
@@ -220,7 +220,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
 
-	c.brokerQueue.ShutDown()
+	c.clusterServiceBrokerQueue.ShutDown()
 	c.clusterServiceClassQueue.ShutDown()
 	c.clusterServicePlanQueue.ShutDown()
 	c.instanceQueue.ShutDown()
@@ -388,7 +388,7 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 		}
 	}
 
-	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
+	broker, err := c.clusterServiceBrokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
 		return nil, "", nil, &operationError{
 			reason: errorNonexistentClusterServiceBrokerReason,
@@ -463,7 +463,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 		return nil, nil, "", nil, fmt.Errorf(s)
 	}
 
-	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
+	broker, err := c.clusterServiceBrokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent ClusterServiceBroker %q", serviceClass.Spec.ClusterServiceBrokerName)
 		glog.Warning(pcb.Message(s))

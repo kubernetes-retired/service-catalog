@@ -75,7 +75,7 @@ into the expression filter you should see metrics from Service Catlog.
 really simple to add additional metrics, or drop me (jboyd01) a note if you have
 ideas but not the time to implement.  If you want to add metrics, briefly review
 [pkg/metrics/metrics.go](../../../pkg/metrics/metrics.go) and
-[pkg/controller/controller_broker.go](../../../pkg/controller/controller_broker.go)
+[pkg/controller/controller_clusterservicebroker.go](../../../pkg/controller/controller_clusterservicebroker.go)
 for reference.
 
 ## Useful metrics queries
