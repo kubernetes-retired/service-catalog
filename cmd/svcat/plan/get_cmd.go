@@ -116,12 +116,9 @@ func (c *getCmd) Validate(args []string) error {
 		}
 	}
 	if c.brokerFiler != "" {
-		if c.brokerFilter {
-			c.brokerName = c.brokerFilter
-			//TODO check validate broker filter, currently just a guess
-		}
+		c.brokerName = c.brokerFilter
+		//TODO check validate broker filter, currently just a guess
 	}
-
 	return nil
 }
 
