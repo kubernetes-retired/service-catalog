@@ -196,14 +196,16 @@ func enabledPluginNames(a *genericserveroptions.AdmissionOptions) []string {
 	enabledPlugins := sets.NewString(a.EnablePlugins...)
 	disabledPlugins = disabledPlugins.Difference(enabledPlugins)
 
+	/* this doesn't acheive what we desire - it doesn't include our Catalog plugins
 	orderedPlugins := []string{}
 	for _, plugin := range a.RecommendedPluginOrder {
 		if !disabledPlugins.Has(plugin) {
 			orderedPlugins = append(orderedPlugins, plugin)
 		}
 	}
+	*/
 
-	return orderedPlugins
+	return a.EnablePlugins
 }
 
 // addPostStartHooks adds the common post start hooks we invoke when using either server storage option.
