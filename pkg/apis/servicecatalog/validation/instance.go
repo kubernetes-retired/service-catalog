@@ -371,8 +371,10 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalID"), classSetErrMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassName"), classSetErrMsg))
 	}
-	// Must specify exactly one source of the plan: external id, external name, k8s name.
-	if (b2i(externalPlanNameSet) + b2i(externalPlanIDSet) + b2i(k8sPlanSet)) != 1 {
+	// Must specify zero or one source of the plan: external id, external name, k8s name.
+	// If Zero, assume there is a "default plan" and the defaultserviceplan admission controller
+	// will set it up or error out
+	if (b2i(externalPlanNameSet) + b2i(externalPlanIDSet) + b2i(k8sPlanSet)) > 1 {
 		planSetErrMsg := "exactly one of clusterServicePlanExternalName, clusterServicePlanExternalID, or clusterServicePlanName required"
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), planSetErrMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), planSetErrMsg))
@@ -384,38 +386,46 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassExternalName"), p.ClusterServiceClassExternalName, msg))
 		}
 
-		// If ClusterServiceClassExternalName given, must use ClusterServicePlanExternalName
+		// If ClusterServiceClassExternalName given, must use ClusterServicePlanExternalName or not specify the plan
 		if !externalPlanNameSet {
-			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), "must specify clusterServicePlanExternalName with clusterServiceClassExternalName"))
+			if externalPlanIDSet || k8sPlanSet {
+				allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), "must specify clusterServicePlanExternalName with clusterServiceClassExternalName"))
+			}
+		} else {
+			for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanExternalName, false /* prefix */) {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), p.ClusterServicePlanExternalName, msg))
+			}
 		}
 
-		for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanExternalName, false /* prefix */) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), p.ClusterServicePlanExternalName, msg))
-		}
 	} else if externalClassIDSet {
 		for _, msg := range validateExternalID(p.ClusterServiceClassExternalID) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassExternalID"), p.ClusterServiceClassExternalID, msg))
 		}
 
-		// If ClusterServiceClassExternalID given, must use ClusterServicePlanExternalID
+		// If ClusterServiceClassExternalID given, must use ClusterServicePlanExternalID or not specify the plan
 		if !externalPlanIDSet {
-			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), "must specify clusterServicePlanExternalID with clusterServiceClassExternalID"))
-		}
-
-		for _, msg := range validateExternalID(p.ClusterServicePlanExternalID) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalID"), p.ClusterServicePlanExternalID, msg))
+			if externalPlanNameSet || k8sPlanSet {
+				allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), "must specify clusterServicePlanExternalID with clusterServiceClassExternalID"))
+			}
+		} else {
+			for _, msg := range validateExternalID(p.ClusterServicePlanExternalID) {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalID"), p.ClusterServicePlanExternalID, msg))
+			}
 		}
 	} else if k8sClassSet {
 		for _, msg := range validateCommonServiceClassName(p.ClusterServiceClassName, false /* prefix */) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassName"), p.ClusterServiceClassName, msg))
 		}
 
-		// If ClusterServiceClassName given, must use ClusterServicePlanName
+		// If ClusterServiceClassName given, must use ClusterServicePlanName or not specify the plan
 		if !k8sPlanSet {
-			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "must specify clusterServicePlanName with clusterServiceClassName"))
-		}
-		for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanName, false /* prefix */) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanName"), p.ClusterServicePlanName, msg))
+			if externalPlanNameSet || externalPlanIDSet {
+				allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanName"), "must specify clusterServicePlanName with clusterServiceClassName"))
+			}
+		} else {
+			for _, msg := range validateCommonServicePlanName(p.ClusterServicePlanName, false /* prefix */) {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanName"), p.ClusterServicePlanName, msg))
+			}
 		}
 	}
 	return allErrs
