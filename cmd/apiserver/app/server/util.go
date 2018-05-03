@@ -196,16 +196,25 @@ func enabledPluginNames(a *genericserveroptions.AdmissionOptions) []string {
 	enabledPlugins := sets.NewString(a.EnablePlugins...)
 	disabledPlugins = disabledPlugins.Difference(enabledPlugins)
 
-	/* this doesn't acheive what we desire - it doesn't include our Catalog plugins
+	resultPlugins := sets.NewString()
+	// First, add core plugins in a recommended order
 	orderedPlugins := []string{}
 	for _, plugin := range a.RecommendedPluginOrder {
 		if !disabledPlugins.Has(plugin) {
 			orderedPlugins = append(orderedPlugins, plugin)
+			resultPlugins.Insert(plugin)
 		}
 	}
-	*/
+	// Second, add all missing Service Catalog plugins
+	// Note that those plugins are added in no specific order
+	for plugin := range enabledPlugins {
+		if !resultPlugins.Has(plugin) {
+			orderedPlugins = append(orderedPlugins, plugin)
+			resultPlugins.Insert(plugin)
+		}
+	}
 
-	return a.EnablePlugins
+	return orderedPlugins
 }
 
 // addPostStartHooks adds the common post start hooks we invoke when using either server storage option.
