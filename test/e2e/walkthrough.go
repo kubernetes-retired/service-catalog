@@ -240,7 +240,6 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			Spec: v1beta1.ServiceInstanceSpec{
 				PlanReference: v1beta1.PlanReference{
 					ClusterServiceClassExternalName: serviceclassNameWithSinglePlan,
-					ClusterServicePlanExternalName:  "default",
 				},
 			},
 		}
@@ -314,7 +313,6 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			Spec: v1beta1.ServiceInstanceSpec{
 				PlanReference: v1beta1.PlanReference{
 					ClusterServiceClassName: serviceclassIDWithSinglePlan,
-					ClusterServicePlanName:  serviceplanID,
 				},
 			},
 		}
