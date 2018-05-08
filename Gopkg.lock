@@ -564,7 +564,8 @@
 [[projects]]
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "f62e98d28ab7ad31d707ba837a966378465c7b57"
+  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
+  version = "0.0.1"
 
 [[projects]]
   branch = "master"
