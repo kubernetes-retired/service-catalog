@@ -21,25 +21,41 @@ import (
 	"strings"
 )
 
-// ClassSpecified checks that at least one class field is set.
-func (pr PlanReference) ClassSpecified() bool {
+// ClusterServiceClassSpecified checks that at least one clusterserviceclass
+// field is set.
+func (pr PlanReference) ClusterServiceClassSpecified() bool {
 	return pr.ClusterServiceClassExternalName != "" ||
 		pr.ClusterServiceClassExternalID != "" ||
 		pr.ClusterServiceClassName != ""
 }
 
-// PlanSpecified checks that at least one plan field is set.
-func (pr PlanReference) PlanSpecified() bool {
+// ClusterServicePlanSpecified checks that at least one clusterserviceplan
+// field is set.
+func (pr PlanReference) ClusterServicePlanSpecified() bool {
 	return pr.ClusterServicePlanExternalName != "" ||
 		pr.ClusterServicePlanExternalID != "" ||
 		pr.ClusterServicePlanName != ""
 }
 
-// GetSpecifiedClass returns the user-specified class value from either:
+// ServiceClassSpecified checks that at least one serviceclass field is set.
+func (pr PlanReference) ServiceClassSpecified() bool {
+	return pr.ServiceClassExternalName != "" ||
+		pr.ServiceClassExternalID != "" ||
+		pr.ServiceClassName != ""
+}
+
+// ServicePlanSpecified checks that at least one serviceplan field is set.
+func (pr PlanReference) ServicePlanSpecified() bool {
+	return pr.ServicePlanExternalName != "" ||
+		pr.ServicePlanExternalID != "" ||
+		pr.ServicePlanName != ""
+}
+
+// GetSpecifiedClusterServiceClass returns the user-specified class value from either:
 // * ClusterServiceClassExternalName
 // * ClusterServiceClassExternalID
 // * ClusterServiceClassName
-func (pr PlanReference) GetSpecifiedClass() string {
+func (pr PlanReference) GetSpecifiedClusterServiceClass() string {
 	if pr.ClusterServiceClassExternalName != "" {
 		return pr.ClusterServiceClassExternalName
 	}
@@ -55,11 +71,31 @@ func (pr PlanReference) GetSpecifiedClass() string {
 	return ""
 }
 
-// GetSpecifiedPlan returns the user-specified plan value from either:
+// GetSpecifiedServiceClass returns the user-specified class value from either:
+// * ServiceClassExternalName
+// * ServiceClassExternalID
+// * ServiceClassName
+func (pr PlanReference) GetSpecifiedServiceClass() string {
+	if pr.ServiceClassExternalName != "" {
+		return pr.ServiceClassExternalName
+	}
+
+	if pr.ServiceClassExternalID != "" {
+		return pr.ServiceClassExternalID
+	}
+
+	if pr.ServiceClassName != "" {
+		return pr.ServiceClassName
+	}
+
+	return ""
+}
+
+// GetSpecifiedClusterServicePlan returns the user-specified plan value from either:
 // * ClusterServicePlanExternalName
 // * ClusterServicePlanExternalID
 // * ClusterServicePlanName
-func (pr PlanReference) GetSpecifiedPlan() string {
+func (pr PlanReference) GetSpecifiedClusterServicePlan() string {
 	if pr.ClusterServicePlanExternalName != "" {
 		return pr.ClusterServicePlanExternalName
 	}
@@ -106,7 +142,7 @@ func (pr PlanReference) GetPlanFilterFieldName() string {
 // String representation of a PlanReference
 // Example: class_name/plan_name, class_id/plan_id
 func (pr PlanReference) String() string {
-	return fmt.Sprintf("%s/%s", pr.GetSpecifiedClass(), pr.GetSpecifiedPlan())
+	return fmt.Sprintf("%s/%s", pr.GetSpecifiedClusterServiceClass(), pr.GetSpecifiedClusterServicePlan())
 }
 
 // Format the PlanReference

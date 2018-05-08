@@ -1199,32 +1199,32 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.PlanReference": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "PlanReference defines the user specification for the desired ServicePlan and ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent.\n\nCurrently supported ways:\n - ClusterServiceClassExternalName and ClusterServicePlanExternalName\n - ClusterServiceClassExternalID and ClusterServicePlanExternalID\n - ClusterServiceClassName and ClusterServicePlanName\n\nFor any of these ways, if a ClusterServiceClass only has one plan then the corresponding service plan field is optional.",
+					Description: "PlanReference defines the user specification for the desired (Cluster)ServicePlan and (Cluster)ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent. Note: a user may specify either cluster scoped OR namespace scoped identifiers, but NOT both, as they are mutually exclusive.\n\nCurrently supported ways:\n - ClusterServiceClassExternalName and ClusterServicePlanExternalName\n - ClusterServiceClassExternalID and ClusterServicePlanExternalID\n - ClusterServiceClassName and ClusterServicePlanName\n - ServiceClassExternalName and ServicePlanExternalName\n - ServiceClassExternalID and ServicePlanExternalID\n - ServiceClassName and ServicePlanName\n\nFor any of these ways, if a ClusterServiceClass only has one plan then the corresponding service plan field is optional.",
 					Properties: map[string]spec.Schema{
 						"clusterServiceClassExternalName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceClassExternalName is the human-readable name of the service as reported by the broker. Note that if the broker changes the name of the ClusterServiceClass, it will not be reflected here, and to see the current name of the ClusterServiceClass, you should follow the ClusterServiceClassRef below.\n\nImmutable.",
+								Description: "ClusterServiceClassExternalName is the human-readable name of the service as reported by the ClusterServiceBroker. Note that if the ClusterServiceBroker changes the name of the ClusterServiceClass, it will not be reflected here, and to see the current name of the ClusterServiceClass, you should follow the ClusterServiceClassRef below.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"clusterServicePlanExternalName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServicePlanExternalName is the human-readable name of the plan as reported by the broker. Note that if the broker changes the name of the ClusterServicePlan, it will not be reflected here, and to see the current name of the ClusterServicePlan, you should follow the ClusterServicePlanRef below.",
+								Description: "ClusterServicePlanExternalName is the human-readable name of the plan as reported by the ClusterServiceBroker. Note that if the ClusterServiceBroker changes the name of the ClusterServicePlan, it will not be reflected here, and to see the current name of the ClusterServicePlan, you should follow the ClusterServicePlanRef below.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"clusterServiceClassExternalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceClassExternalID is the broker's external id for the class.\n\nImmutable.",
+								Description: "ClusterServiceClassExternalID is the ClusterServiceBroker's external id for the class.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"clusterServicePlanExternalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServicePlanExternalID is the broker's external id for the plan.",
+								Description: "ClusterServicePlanExternalID is the ClusterServiceBroker's external id for the plan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -1239,6 +1239,48 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"clusterServicePlanName": {
 							SchemaProps: spec.SchemaProps{
 								Description: "ClusterServicePlanName is kubernetes name of the ClusterServicePlan.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"serviceClassExternalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassExternalName is the human-readable name of the service as reported by the ServiceBroker. Note that if the ServiceBroker changes the name of the ServiceClass, it will not be reflected here, and to see the current name of the ServiceClass, you should follow the ServiceClassRef below.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanExternalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanExternalName is the human-readable name of the plan as reported by the ServiceBroker. Note that if the ServiceBroker changes the name of the ServicePlan, it will not be reflected here, and to see the current name of the ServicePlan, you should follow the ServicePlanRef below.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"serviceClassExternalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassExternalID is the ServiceBroker's external id for the class.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanExternalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanExternalID is the ServiceBroker's external id for the plan.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"serviceClassName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassName is the kubernetes name of the ServiceClass.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanName is kubernetes name of the ServicePlan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -2295,6 +2337,20 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
+						"servicePlanExternalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanExternalName is the name of the plan that the broker knows this ServiceInstance to be on. This is the human readable plan name from the OSB API.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanExternalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanExternalID is the external ID of the plan that the broker knows this ServiceInstance to be on.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"parameters": {
 							SchemaProps: spec.SchemaProps{
 								Description: "Parameters is a blob of the parameters and their values that the broker knows about for this ServiceInstance.  If a parameter was sourced from a secret, its value will be \"<redacted>\" in this blob.",
@@ -2315,7 +2371,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"clusterServicePlanExternalName", "clusterServicePlanExternalID"},
+					Required: []string{"clusterServicePlanExternalName", "clusterServicePlanExternalID", "servicePlanExternalName", "servicePlanExternalID"},
 				},
 			},
 			Dependencies: []string{
@@ -2328,28 +2384,28 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 					Properties: map[string]spec.Schema{
 						"clusterServiceClassExternalName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceClassExternalName is the human-readable name of the service as reported by the broker. Note that if the broker changes the name of the ClusterServiceClass, it will not be reflected here, and to see the current name of the ClusterServiceClass, you should follow the ClusterServiceClassRef below.\n\nImmutable.",
+								Description: "ClusterServiceClassExternalName is the human-readable name of the service as reported by the ClusterServiceBroker. Note that if the ClusterServiceBroker changes the name of the ClusterServiceClass, it will not be reflected here, and to see the current name of the ClusterServiceClass, you should follow the ClusterServiceClassRef below.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"clusterServicePlanExternalName": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServicePlanExternalName is the human-readable name of the plan as reported by the broker. Note that if the broker changes the name of the ClusterServicePlan, it will not be reflected here, and to see the current name of the ClusterServicePlan, you should follow the ClusterServicePlanRef below.",
+								Description: "ClusterServicePlanExternalName is the human-readable name of the plan as reported by the ClusterServiceBroker. Note that if the ClusterServiceBroker changes the name of the ClusterServicePlan, it will not be reflected here, and to see the current name of the ClusterServicePlan, you should follow the ClusterServicePlanRef below.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"clusterServiceClassExternalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceClassExternalID is the broker's external id for the class.\n\nImmutable.",
+								Description: "ClusterServiceClassExternalID is the ClusterServiceBroker's external id for the class.\n\nImmutable.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
 						},
 						"clusterServicePlanExternalID": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServicePlanExternalID is the broker's external id for the plan.",
+								Description: "ClusterServicePlanExternalID is the ClusterServiceBroker's external id for the plan.",
 								Type:        []string{"string"},
 								Format:      "",
 							},
@@ -2368,16 +2424,70 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
+						"serviceClassExternalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassExternalName is the human-readable name of the service as reported by the ServiceBroker. Note that if the ServiceBroker changes the name of the ServiceClass, it will not be reflected here, and to see the current name of the ServiceClass, you should follow the ServiceClassRef below.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanExternalName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanExternalName is the human-readable name of the plan as reported by the ServiceBroker. Note that if the ServiceBroker changes the name of the ServicePlan, it will not be reflected here, and to see the current name of the ServicePlan, you should follow the ServicePlanRef below.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"serviceClassExternalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassExternalID is the ServiceBroker's external id for the class.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanExternalID": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanExternalID is the ServiceBroker's external id for the plan.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"serviceClassName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassName is the kubernetes name of the ServiceClass.\n\nImmutable.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
+						"servicePlanName": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanName is kubernetes name of the ServicePlan.",
+								Type:        []string{"string"},
+								Format:      "",
+							},
+						},
 						"clusterServiceClassRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on ClusterServiceClassExternalName",
+								Description: "ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on ClusterServiceClassExternalName.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 							},
 						},
 						"clusterServicePlanRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on ClusterServicePlanExternalName",
+								Description: "ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on ClusterServicePlanExternalName.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
+							},
+						},
+						"serviceClassRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on ServiceClassExternalName",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							},
+						},
+						"servicePlanRef": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on ServicePlanExternalName",
+								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 							},
 						},
 						"parameters": {
@@ -2423,7 +2533,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus": {
 			Schema: spec.Schema{
