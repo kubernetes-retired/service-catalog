@@ -189,8 +189,11 @@ $(BINDIR)/e2e.test: .init
 # Some prereq stuff
 ###################
 
-.init: $(scBuildImageTarget)
+.init: $(scBuildImageTarget) | $(BINDIR)
 	touch $@
+
+$(BINDIR):
+	mkdir -p $@
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
@@ -417,6 +420,7 @@ svcat-for-%:
 
 svcat-xbuild: $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
 $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
+	mkdir -p $(dir $@)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
 svcat-publish: clean-bin svcat-all
