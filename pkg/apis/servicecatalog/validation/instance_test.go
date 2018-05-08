@@ -167,7 +167,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				i.Spec.ClusterServicePlanExternalName = ""
 				return i
 			}(),
-			valid: false,
+			valid: true, // plan may be picked by defaultserviceplan admission controller
 		},
 		{
 			name: "invalid planName",
@@ -1215,7 +1215,7 @@ func TestValidatePlanReference(t *testing.T) {
 			name:          "invalid -- empty struct",
 			ref:           servicecatalog.PlanReference{},
 			valid:         false,
-			expectedError: "exactly one of clusterServicePlanExternalName",
+			expectedError: "exactly one of clusterServiceClassExternalName",
 		},
 		{
 			name:  "valid -- external names",
@@ -1267,6 +1267,13 @@ func TestValidatePlanReference(t *testing.T) {
 			},
 			valid:         false,
 			expectedError: "must specify clusterServicePlanName",
+		},
+		{
+			name: "valid -- k8s class, no plan",
+			ref: servicecatalog.PlanReference{
+				ClusterServiceClassName: clusterServiceClassName,
+			},
+			valid: true,
 		},
 		{
 			name: "invalid -- k8s class, external plan id",
