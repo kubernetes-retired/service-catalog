@@ -96,19 +96,18 @@ func (c *describeCmd) describe() error {
 
 	output.WriteClassDetails(c.Output, class)
 
-	plans, err := c.App.RetrievePlansByClass(class)
-	if err != nil {
-		return err
-	}
-	output.WriteAssociatedPlans(c.Output, plans)
-
 	if c.traverse {
+		plans, err := c.App.RetrievePlansByClass(class)
+		if err != nil {
+			return err
+		}
+		output.WriteAssociatedPlans(c.Output, plans)
+
 		broker, err := c.App.RetrieveBrokerByClass(class)
 		if err != nil {
 			return err
 		}
 		output.WriteParentBroker(c.Output, broker)
-		output.WriteAssociatedPlans(c.Output, plans)
 	}
 
 	return nil
