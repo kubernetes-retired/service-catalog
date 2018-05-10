@@ -1545,15 +1545,17 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 		return nil, err
 	}
 
-	planID := ""
-	if instance.Status.InProgressProperties != nil {
-		planID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
+	if instance.Status.InProgressProperties == nil {
+		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		err = stderrors.New("Instance.Status.InProgressProperties can not be nil")
+		glog.Errorf(pcb.Message(err.Error()))
+		return nil, err
 	}
 
 	request := &osb.LastOperationRequest{
 		InstanceID:          instance.Spec.ExternalID,
 		ServiceID:           &serviceClass.Spec.ExternalID,
-		PlanID:              &planID,
+		PlanID:              &instance.Status.InProgressProperties.ClusterServicePlanExternalID,
 		OriginatingIdentity: rh.originatingIdentity,
 	}
 	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
