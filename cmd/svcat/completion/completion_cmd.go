@@ -60,6 +60,7 @@ source $HOME/.bash_profile
 var (
 	completionShells = map[string]func(w io.Writer, cmd *cobra.Command) error{
 		"bash": runCompletionBash,
+		"zsh": runCompletionZsh,
 	}
 )
 
@@ -80,7 +81,7 @@ func NewCompletionCmd(cxt *command.Context) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:       "completion SHELL",
-		Short:     "Output shell completion code for the specified shell (bash).",
+		Short:     "Output shell completion code for the specified shell (bash or zsh).",
 		Long:      completionLong,
 		Example:   completionExample,
 		PreRunE:   command.PreRunE(completionCmd),
@@ -116,4 +117,8 @@ func (c *completionCmd) Run() error {
 
 func runCompletionBash(w io.Writer, cmd *cobra.Command) error {
 	return cmd.Root().GenBashCompletion(w)
+}
+
+func runCompletionZsh(w io.Writer, cmd *cobra.Command) error {
+	return cmd.Root().GenZshCompletion(w)
 }
