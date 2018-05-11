@@ -61,7 +61,7 @@ source $HOME/.bash_profile
 var (
 	completionShells = map[string]func(w io.Writer, cmd *cobra.Command) error{
 		"bash": runCompletionBash,
-		"zsh": runCompletionZsh,
+		"zsh":  runCompletionZsh,
 	}
 )
 
