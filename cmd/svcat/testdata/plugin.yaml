@@ -32,14 +32,14 @@ tree:
   - name: wait
     desc: Wait until the operation completes.
 - name: completion
-  shortDesc: Output shell completion code for the specified shell (bash).
-  longDesc: "\nOutput shell completion code for the specified shell (bash).\nThe shell
-    code must be evaluated to provide interactive\ncompletion of svcat commands. This
-    can be done by sourcing it from\nthe .bash_profile.\n\nNote: this requires the
-    bash-completion framework, which is not installed\nby default on Mac. This can
-    be installed by using homebrew:\n\n\t$ brew install bash-completion\n\nOnce installed,
-    bash_completion must be evaluated. This can be done by adding the\nfollowing line
-    to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n"
+  shortDesc: Output shell completion code for the specified shell (bash or zsh).
+  longDesc: "\nOutput shell completion code for the specified shell (bash or zsh).\nThe
+    shell code must be evaluated to provide interactive\ncompletion of svcat commands.
+    This can be done by sourcing it from\nthe .bash_profile.\n\nNote: this requires
+    the bash-completion framework, which is not installed\nby default on Mac. This
+    can be installed by using homebrew:\n\n\t$ brew install bash-completion\n\nOnce
+    installed, bash_completion must be evaluated. This can be done by adding the\nfollowing
+    line to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n"
   command: ./svcat completion
 - name: deprovision
   shortDesc: Deletes an instance of a service
