@@ -24,7 +24,8 @@ RUN curl -sSL https://github.com/coreos/etcd/releases/download/v3.1.10/etcd-v3.1
     | tar -vxz -C /usr/local/bin --strip=1 etcd-v3.1.10-linux-amd64/etcd
 
 # Install the golint, use this to check our source for niceness
-RUN go get -u github.com/golang/lint/golint
+COPY vendor/golang.org /go/src/golang.org
+RUN go install golang.org/x/lint/golint
 
 # Install the href checker for our md files, update PATH to include it
 RUN git clone https://github.com/duglin/vlinker.git /vlinker
