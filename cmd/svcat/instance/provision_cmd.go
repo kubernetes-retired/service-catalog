@@ -19,6 +19,7 @@ package instance
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
@@ -27,6 +28,8 @@ import (
 
 type provisonCmd struct {
 	*command.Namespaced
+	*command.WaitableCommand
+
 	instanceName string
 	externalID   string
 	className    string
@@ -40,7 +43,10 @@ type provisonCmd struct {
 
 // NewProvisionCmd builds a "svcat provision" command
 func NewProvisionCmd(cxt *command.Context) *cobra.Command {
-	provisionCmd := &provisonCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	provisionCmd := &provisonCmd{
+		Namespaced:      command.NewNamespacedCommand(cxt),
+		WaitableCommand: command.NewWaitableCommand(),
+	}
 	cmd := &cobra.Command{
 		Use:   "provision NAME --plan PLAN --class CLASS",
 		Short: "Create a new instance of a service",
@@ -83,6 +89,8 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params-json", "",
 		"Additional parameters to use when provisioning the service, provided as a JSON object. Cannot be combined with --param")
+	provisionCmd.AddWaitFlags(cmd)
+
 	return cmd
 }
 
@@ -128,7 +136,19 @@ func (c *provisonCmd) Provision() error {
 		return err
 	}
 
-	output.WriteInstanceDetails(c.Output, instance)
+	if c.Wait {
+		glog.V(2).Info("Waiting for the instance to be provisioned...")
+		finalInstance, err := c.App.WaitForInstance(instance.Namespace, instance.Name, c.Interval, c.Timeout)
+		if err == nil {
+			instance = finalInstance
+		}
 
+		// Always print the instance because the provision did succeed,
+		// and just print any errors that occurred while polling
+		output.WriteInstanceDetails(c.Output, instance)
+		return err
+	}
+
+	output.WriteInstanceDetails(c.Output, instance)
 	return nil
 }
