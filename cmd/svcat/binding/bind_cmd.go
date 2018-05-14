@@ -149,8 +149,8 @@ func (c *bindCmd) bind() error {
 		// and just print any errors that occurred while polling
 		output.WriteBindingDetails(c.Output, binding)
 		return err
-	} else {
-		output.WriteBindingDetails(c.Output, binding)
-		return nil
 	}
+
+	output.WriteBindingDetails(c.Output, binding)
+	return nil
 }

@@ -147,8 +147,8 @@ func (c *provisonCmd) Provision() error {
 		// and just print any errors that occurred while polling
 		output.WriteInstanceDetails(c.Output, instance)
 		return err
-	} else {
-		output.WriteInstanceDetails(c.Output, instance)
-		return nil
 	}
+
+	output.WriteInstanceDetails(c.Output, instance)
+	return nil
 }
