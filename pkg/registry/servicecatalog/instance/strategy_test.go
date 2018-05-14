@@ -254,3 +254,26 @@ func TestInstanceUpdateForUpdateRequests(t *testing.T) {
 		}
 	}
 }
+
+// TestExternalIDSet checks that we set the ExternalID if the user doesn't provide it.
+func TestExternalIDSet(t *testing.T) {
+	createdInstanceCredential := getTestInstance()
+	instanceRESTStrategies.PrepareForCreate(nil, createdInstanceCredential)
+
+	if createdInstanceCredential.Spec.ExternalID == "" {
+		t.Error("Expected an ExternalID to be set, but got none")
+	}
+}
+
+// TestExternalIDUserProvided makes sure we don't modify a user-specified ExternalID.
+func TestExternalIDUserProvided(t *testing.T) {
+	userExternalID := "my-id"
+	createdInstanceCredential := getTestInstance()
+	createdInstanceCredential.Spec.ExternalID = userExternalID
+	instanceRESTStrategies.PrepareForCreate(nil, createdInstanceCredential)
+
+	if createdInstanceCredential.Spec.ExternalID != userExternalID {
+		t.Errorf("Modified user provided ExternalID to %q", createdInstanceCredential.Spec.ExternalID)
+	}
+
+}
