@@ -156,7 +156,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
 		}
-		msg := fmt.Sprintf("ClusterServiceClass %c does not exist, can not figure out the default ClusterServicePlan.",
+		msg := fmt.Sprintf("ServiceClass %c does not exist, can not figure out the default ServicePlan.",
 			instance.Spec.PlanReference)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
@@ -172,7 +172,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 	// implementation of this controller.
 	plans, err := d.getServicePlansByServiceClassName(sc.Name)
 	if err != nil {
-		msg := fmt.Sprintf("Error listing ServicePlans for ServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ClusterServicePlan", sc.Name, sc.Spec.ExternalName)
+		msg := fmt.Sprintf("Error listing ServicePlans for ServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ServicePlan", sc.Name, sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
