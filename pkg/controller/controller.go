@@ -426,6 +426,38 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 // a brokerclient to use for a given ServiceInstance.
 // Sets ClusterServiceClassRef and/or ClusterServicePlanRef if they haven't been already set.
 func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, *v1beta1.ClusterServicePlan, string, osb.Client, error) {
+	serviceClass, serviceBrokerName, osbClient, err := c.getClusterServiceClassAndClusterServiceBrokerForServiceBinding(instance, binding)
+	if err != nil {
+		return nil, nil, "", nil, err
+	}
+	servicePlan, err := c.getClusterServicePlanForServiceBinding(instance, binding, serviceClass)
+	if err != nil {
+		return nil, nil, "", nil, err
+	}
+
+	return serviceClass, servicePlan, serviceBrokerName, osbClient, nil
+}
+
+func (c *controller) getClusterServiceClassAndClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, string, osb.Client, error) {
+	serviceClass, err := c.getClusterServiceClassForServiceBinding(instance, binding)
+	if err != nil {
+		return nil, "", nil, err
+	}
+
+	serviceBroker, err := c.getClusterServiceBrokerForServiceBinding(instance, binding, serviceClass)
+	if err != nil {
+		return nil, "", nil, err
+	}
+
+	osbClient, err := c.getBrokerClientForServiceBinding(instance, binding, serviceBroker)
+	if err != nil {
+		return nil, "", nil, err
+	}
+
+	return serviceClass, serviceBroker.Name, osbClient, nil
+}
+
+func (c *controller) getClusterServiceClassForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, error) {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
@@ -442,9 +474,13 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			"The binding references a ClusterServiceClass that does not exist. "+s,
 		)
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentClusterServiceClassMessage, s)
-		return nil, nil, "", nil, err
+		return nil, err
 	}
+	return serviceClass, nil
+}
 
+func (c *controller) getClusterServicePlanForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, serviceClass *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServicePlan, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	servicePlan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf(
@@ -460,8 +496,13 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			"The ServiceBinding references an ServiceInstance which references ClusterServicePlan that does not exist. "+s,
 		)
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-		return nil, nil, "", nil, fmt.Errorf(s)
+		return nil, fmt.Errorf(s)
 	}
+	return servicePlan, nil
+}
+
+func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, serviceClass *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceBroker, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 
 	broker, err := c.clusterServiceBrokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
@@ -475,9 +516,13 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			"The binding references a ClusterServiceBroker that does not exist. "+s,
 		)
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
-		return nil, nil, "", nil, err
+		return nil, err
 	}
+	return broker, nil
+}
 
+func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
@@ -490,7 +535,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 			"Error getting auth credentials. "+s,
 		)
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-		return nil, nil, "", nil, err
+		return nil, err
 	}
 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
@@ -498,10 +543,10 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBrokerForService
 	glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
-		return nil, nil, "", nil, err
+		return nil, err
 	}
 
-	return serviceClass, servicePlan, broker.Name, brokerClient, nil
+	return brokerClient, nil
 }
 
 // Broker utility methods - move?
