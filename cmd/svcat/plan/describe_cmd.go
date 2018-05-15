@@ -28,7 +28,6 @@ import (
 
 type describeCmd struct {
 	*command.Context
-	traverse     bool
 	lookupByUUID bool
 	showSchemas  bool
 	uuid         string
@@ -49,13 +48,6 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
-	cmd.Flags().BoolVarP(
-		&describeCmd.traverse,
-		"traverse",
-		"t",
-		false,
-		"Whether or not to traverse from plan -> class -> broker",
-	)
 	cmd.Flags().BoolVarP(
 		&describeCmd.lookupByUUID,
 		"uuid",
@@ -122,15 +114,6 @@ func (c *describeCmd) describe() error {
 		return err
 	}
 	output.WriteAssociatedInstances(c.Output, instances)
-
-	if c.traverse {
-		broker, err := c.App.RetrieveBrokerByClass(class)
-		if err != nil {
-			return err
-		}
-		output.WriteParentClass(c.Output, class)
-		output.WriteParentBroker(c.Output, broker)
-	}
 
 	if c.showSchemas {
 		output.WritePlanSchemas(c.Output, plan)
