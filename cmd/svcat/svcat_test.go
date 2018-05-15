@@ -78,6 +78,8 @@ func TestCommandValidation(t *testing.T) {
 		{"completion no shell specified", "completion", "Shell not specified"},
 		{"completion too many args", "completion arg0 arg1", "Too many arguments. Expected only the shell type"},
 		{"completion unsupported shell", "completion unsupportedShell", "Unsupported shell type \"unsupportedShell\""},
+		{"completion unsupported shell", "completion bash", ""},
+		{"completion unsupported shell", "completion zsh", ""},
 	}
 
 	for _, tc := range testcases {
@@ -150,6 +152,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "describe binding and decode secret", cmd: "describe binding ups-binding -n test-ns --show-secrets", golden: "output/describe-binding-show-secrets.txt"},
 
 		{name: "completion bash", cmd: "completion bash", golden: "output/completion-bash.txt"},
+		{name: "completion zsh", cmd: "completion zsh", golden: "output/completion-zsh.txt"},
+
 	}
 
 	for _, tc := range testcases {
