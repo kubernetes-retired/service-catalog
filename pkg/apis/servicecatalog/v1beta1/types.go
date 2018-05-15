@@ -165,11 +165,11 @@ type CommonServiceBrokerSpec struct {
 //
 // ServiceClass allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
-//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//   externalName - the value set to [Cluster]ServiceClass.Spec.externalName
 //
 // ServicePlan allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
-//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//   externalName - the value set to [Cluster]ServiceClass.Spec.externalName
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServiceClass []string `json:"serviceClass,omitempty"`
@@ -1315,7 +1315,7 @@ const (
 	// SpecClusterServiceClassName is only used for plans, the parent service class name.
 	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
 	// SpecClusterServiceBroker is used for plans to filter by broker
-	FilterSpecClusterServiceBrokerName = "spec.clusterServiceBroker.name"
+	FilterSpecClusterServiceBrokerName = "spec.clusterServiceBrokerName"
 )
 
 // SecretTransform is a single transformation that is applied to the
