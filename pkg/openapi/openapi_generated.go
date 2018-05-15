@@ -1581,8 +1581,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 							},
 						},
+						"DeletionRequested": {
+							SchemaProps: spec.SchemaProps{
+								Description: "DeletionRequested provides an imperative means to request deletion by doing an update.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 					},
-					Required: []string{"instanceRef"},
+					Required: []string{"instanceRef", "DeletionRequested"},
 				},
 			},
 			Dependencies: []string{
@@ -2419,7 +2426,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"DeletionRequested": {
+							SchemaProps: spec.SchemaProps{
+								Description: "DeletionRequested provides an imperative means to request deletion by doing an update.",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 					},
+					Required: []string{"DeletionRequested"},
 				},
 			},
 			Dependencies: []string{

@@ -1142,6 +1142,7 @@ func autoConvert_v1beta1_ServiceBindingSpec_To_servicecatalog_ServiceBindingSpec
 	out.SecretTransforms = *(*[]servicecatalog.SecretTransform)(unsafe.Pointer(&in.SecretTransforms))
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
+	out.DeletionRequested = in.DeletionRequested
 	return nil
 }
 
@@ -1160,6 +1161,7 @@ func autoConvert_servicecatalog_ServiceBindingSpec_To_v1beta1_ServiceBindingSpec
 	out.SecretTransforms = *(*[]SecretTransform)(unsafe.Pointer(&in.SecretTransforms))
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
+	out.DeletionRequested = in.DeletionRequested
 	return nil
 }
 
@@ -1585,6 +1587,7 @@ func autoConvert_v1beta1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSp
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
 	out.UpdateRequests = in.UpdateRequests
+	out.DeletionRequested = in.DeletionRequested
 	return nil
 }
 
@@ -1604,6 +1607,7 @@ func autoConvert_servicecatalog_ServiceInstanceSpec_To_v1beta1_ServiceInstanceSp
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
 	out.UpdateRequests = in.UpdateRequests
+	out.DeletionRequested = in.DeletionRequested
 	return nil
 }
 
