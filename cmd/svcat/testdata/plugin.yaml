@@ -39,7 +39,8 @@ tree:
     the bash-completion framework, which is not installed\nby default on Mac. This
     can be installed by using homebrew:\n\n\t$ brew install bash-completion\n\nOnce
     installed, bash_completion must be evaluated. This can be done by adding the\nfollowing
-    line to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n"
+    line to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n\nNote
+    for zsh users: zsh completions are only supported in versions of zsh >= 5.2\n"
   command: ./svcat completion
 - name: deprovision
   shortDesc: Deletes an instance of a service
