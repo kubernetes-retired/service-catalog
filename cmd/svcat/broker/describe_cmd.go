@@ -26,8 +26,7 @@ import (
 
 type describeCmd struct {
 	*command.Context
-	name     string
-	traverse bool
+	name string
 }
 
 // NewDescribeCmd builds a "svcat describe broker" command

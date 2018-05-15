@@ -337,8 +337,6 @@ func TestPluginFlags(t *testing.T) {
 			"KUBECTL_PLUGINS_CURRENT_NAMESPACE": "foo"}},
 		{"local flag", "get plan PLAN", "--class=foo", map[string]string{
 			"KUBECTL_PLUGINS_LOCAL_FLAG_CLASS": "foo"}},
-		{"bool flag", "describe plan PLAN", "--traverse", map[string]string{
-			"KUBECTL_PLUGINS_LOCAL_FLAG_TRAVERSE": "true"}},
 	}
 
 	norun := func(cmd *cobra.Command, args []string) error {

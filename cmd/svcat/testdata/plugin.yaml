@@ -64,9 +64,6 @@ tree:
     - name: show-secrets
       desc: Output the decoded secret values. By default only the length of the secret
         is displayed
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from binding -> instance -> class/plan -> broker
   - name: broker
     shortDesc: Show details of a specific broker
     command: ./svcat describe broker
@@ -74,28 +71,18 @@ tree:
     shortDesc: Show details of a specific class
     command: ./svcat describe class
     flags:
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from plan -> class -> broker
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
   - name: instance
     shortDesc: Show details of a specific instance
     command: ./svcat describe instance
-    flags:
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from binding -> instance -> class/plan -> broker
   - name: plan
     shortDesc: Show details of a specific plan
     command: ./svcat describe plan
     flags:
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from plan -> class -> broker
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)

@@ -26,8 +26,7 @@ import (
 
 type describeCmd struct {
 	*command.Namespaced
-	name     string
-	traverse bool
+	name string
 }
 
 // NewDescribeCmd builds a "svcat describe instance" command
@@ -44,13 +43,6 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(describeCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), false)
-	cmd.Flags().BoolVarP(
-		&describeCmd.traverse,
-		"traverse",
-		"t",
-		false,
-		"Whether or not to traverse from binding -> instance -> class/plan -> broker",
-	)
 	return cmd
 }
 
@@ -80,16 +72,6 @@ func (c *describeCmd) describe() error {
 		return err
 	}
 	output.WriteAssociatedBindings(c.Output, bindings)
-
-	if c.traverse {
-		class, plan, broker, err := c.App.InstanceParentHierarchy(instance)
-		if err != nil {
-			return fmt.Errorf("unable to traverse up the instance hierarchy (%s)", err)
-		}
-		output.WriteParentClass(c.Output, class)
-		output.WriteParentPlan(c.Output, plan)
-		output.WriteParentBroker(c.Output, broker)
-	}
 
 	return nil
 }
