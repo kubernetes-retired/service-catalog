@@ -153,7 +153,6 @@ func TestCommandOutput(t *testing.T) {
 
 		{name: "completion bash", cmd: "completion bash", golden: "output/completion-bash.txt"},
 		{name: "completion zsh", cmd: "completion zsh", golden: "output/completion-zsh.txt"},
-
 	}
 
 	for _, tc := range testcases {
