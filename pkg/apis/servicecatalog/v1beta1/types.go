@@ -865,6 +865,10 @@ type ServiceInstanceSpec struct {
 	// been made to the secrets from which the parameters are sourced.
 	// +optional
 	UpdateRequests int64 `json:"updateRequests"`
+
+	// DeletionRequested provides an imperative means to request
+	// deletion by doing an update.
+	DeletionRequested bool `json:"DeletionRequested"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -1127,6 +1131,10 @@ type ServiceBindingSpec struct {
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo `json:"userInfo,omitempty"`
+
+	// DeletionRequested provides an imperative means to request
+	// deletion by doing an update.
+	DeletionRequested bool
 }
 
 // ServiceBindingStatus represents the current status of a ServiceBinding.

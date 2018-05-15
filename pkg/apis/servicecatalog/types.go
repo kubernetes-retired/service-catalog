@@ -774,6 +774,10 @@ type ServiceInstanceSpec struct {
 	// allows for parameters to be updated with any out-of-band changes that have
 	// been made to the secrets from which the parameters are sourced.
 	UpdateRequests int64
+
+	// DeletionRequested provides an imperative means to request
+	// deletion by doing an update.
+	DeletionRequested bool
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -1025,6 +1029,10 @@ type ServiceBindingSpec struct {
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo
+
+	// DeletionRequested provides an imperative means to request
+	// deletion by doing an update.
+	DeletionRequested bool
 }
 
 // ServiceBindingStatus represents the current status of a ServiceBinding.
