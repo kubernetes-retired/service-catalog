@@ -868,7 +868,7 @@ type ServiceInstanceSpec struct {
 
 	// DeletionRequested provides an imperative means to request
 	// deletion by doing an update.
-	DeletionRequested bool `json:"DeletionRequested"`
+	DeletionRequested bool `json:"deletionRequested"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -1134,7 +1134,7 @@ type ServiceBindingSpec struct {
 
 	// DeletionRequested provides an imperative means to request
 	// deletion by doing an update.
-	DeletionRequested bool
+	DeletionRequested bool `json:"deletionRequested"`
 }
 
 // ServiceBindingStatus represents the current status of a ServiceBinding.
