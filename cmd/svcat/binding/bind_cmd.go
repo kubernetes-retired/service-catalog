@@ -98,7 +98,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 
 func (c *bindCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("instance is required")
+		return fmt.Errorf("an instance name is required")
 	}
 	c.instanceName = args[0]
 
