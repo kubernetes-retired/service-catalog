@@ -246,6 +246,10 @@ and the golden files are updated automatically with the results of the test run.
 
 For new tests, first you need to create the golden file before running the tests with `-update`.
 
+Keep in mind that Golden files help catch errors when the output unexpectedly changes.
+It's up to you to judge when you should run the tests with -update, 
+and to diff the changes in the golden file to ensure that the new output is correct.
+
 ## Making a Contribution
 
 Once you have compiled and tested your code locally, make a Pull
