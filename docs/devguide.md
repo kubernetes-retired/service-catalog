@@ -151,6 +151,8 @@ To build the service-catalog client, `svcat`:
 
     $ make svcat
     
+The svcat cli binary is located at `bin/svcat/svcat`.
+    
 To install `svcat` to your $GOPATH/bin directory:
 
     $ make svcat-install
@@ -261,7 +263,7 @@ Request.
 
 Pull requests are expected to have a few things:
 
-* You should have run `make build` (for server-side changes) or `make svcat` (for cli changes)
+* You should have [built the code](#building) with `make build` (for server-side changes) or `make svcat` (for cli changes)
 and also `make verify` before asking people to review the PR. This helps catch compilation errors
 and code formatting/linting problems.
 * A new or updated test to verify the changes. If this is a svcat related change,
