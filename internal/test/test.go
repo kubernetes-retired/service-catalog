@@ -73,7 +73,7 @@ func AssertEqualsGoldenFile(t *testing.T, goldenFile string, got string) {
 				t.Fatalf("%+v", errors.Wrapf(err, "unable to update golden file %s", path))
 			}
 		} else {
-			t.Fatalf("does not match golden file %s\n\nWANT:\n%q\n\nGOT:\n%q\n", path, want, gotB)
+			t.Fatalf("does not match golden file %s\n\nWANT:\n%q\n\nGOT:\n%q\n\nSee https://svc-cat.io/docs/devguide/#golden-files for how to work with golden files.", path, want, gotB)
 		}
 	}
 }
