@@ -251,13 +251,13 @@ directory specified in your test, e.g. `touch cmd/svcat/testdata/mygoldenfile.tx
 before running the tests with `-update`. This flag only manages the contents of the golden files, 
 but doesn't create or delete them.
 
-Keep in mind that Golden files help catch errors when the output unexpectedly changes.
+Keep in mind that golden files help catch errors when the output unexpectedly changes.
 It's up to you to judge when you should run the tests with -update, 
 and to diff the changes in the golden file to ensure that the new output is correct.
 
 ## Documentation
 
-Our documentation site is located at https://svc-cat.io. The content files are located
+Our documentation site is located at [svc-cat.io](https://svc-cat.io). The content files are located
 in the `docs/` directory, and the website framework in `docsite/`.
 
 To preview your changes, run `make docs-preview` and then open `http://localhost:4000` in
