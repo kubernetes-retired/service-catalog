@@ -15,6 +15,8 @@ toc:
   path: /docs/devguide/#building
 - title: Testing
   path: /docs/devguide/#testing
+- title: Making a Contribution
+  path: "#making-a-contribution"
 - title: Advanced Build Steps
   path: /docs/devguide/#advanced-build-steps
 - title: Dependency Management
