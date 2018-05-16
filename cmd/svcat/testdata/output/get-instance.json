@@ -29,7 +29,7 @@
       },
       "externalID": "7e2c42f3-6d94-4409-bb15-7610d60af544",
       "updateRequests": 0,
-      "DeletionRequested": false
+      "deletionRequested": false
    },
    "status": {
       "conditions": [
