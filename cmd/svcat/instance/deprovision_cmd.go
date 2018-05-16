@@ -57,7 +57,7 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 
 func (c *deprovisonCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("name is required")
+		return fmt.Errorf("an instance name is required")
 	}
 	c.instanceName = args[0]
 
