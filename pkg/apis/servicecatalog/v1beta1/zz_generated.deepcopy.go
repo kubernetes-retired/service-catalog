@@ -1116,6 +1116,7 @@ func (in *ServiceBindingSpec) DeepCopyInto(out *ServiceBindingSpec) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	in.DeletionRequested.DeepCopyInto(&out.DeletionRequested)
 	return
 }
 
@@ -1596,6 +1597,7 @@ func (in *ServiceInstanceSpec) DeepCopyInto(out *ServiceInstanceSpec) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	in.DeletionRequested.DeepCopyInto(&out.DeletionRequested)
 	return
 }
 

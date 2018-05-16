@@ -9,7 +9,7 @@ metadata:
   selfLink: /apis/servicecatalog.k8s.io/v1beta1/namespaces/test-ns/servicebindings/ups-binding
   uid: 7f2aefa0-f712-11e7-aa44-0242ac110005
 spec:
-  deletionRequested: false
+  deletionRequested: null
   externalID: 061e1d78-d27e-4958-97b8-e9f5aa2f99d7
   instanceRef:
     name: ups-instance
