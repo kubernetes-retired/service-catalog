@@ -127,23 +127,3 @@ func TestSetDefaultClusterServiceBroker(t *testing.T) {
 		}
 	}
 }
-
-func TestSetDefaultServiceInstance(t *testing.T) {
-	i := &versioned.ServiceInstance{}
-	obj2 := roundTrip(t, runtime.Object(i))
-	i2 := obj2.(*versioned.ServiceInstance)
-
-	if i2.Spec.ExternalID == "" {
-		t.Error("Expected a default ExternalID, but got none")
-	}
-}
-
-func TestSetDefaultServiceBinding(t *testing.T) {
-	b := &versioned.ServiceBinding{}
-	obj2 := roundTrip(t, runtime.Object(b))
-	b2 := obj2.(*versioned.ServiceBinding)
-
-	if b2.Spec.ExternalID == "" {
-		t.Error("Expected a default ExternalID, but got none")
-	}
-}

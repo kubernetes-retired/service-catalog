@@ -18,9 +18,10 @@ package command
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"strings"
 )
 
 // Command represents an svcat command.
@@ -63,6 +64,12 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 				return err
 			}
 			fmtCmd.SetFormat(fmtString)
+		}
+		if waitCmd, ok := cmd.(HasWaitFlags); ok {
+			err := waitCmd.ApplyWaitFlags()
+			if err != nil {
+				return err
+			}
 		}
 		return cmd.Validate(args)
 	}

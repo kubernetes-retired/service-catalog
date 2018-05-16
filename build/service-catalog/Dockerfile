@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM BASEIMAGE
+FROM scratch
 
-RUN export DEBIAN_FRONTEND=noninteractive && \
-    apt-get update && \
-    apt-get install ca-certificates -y && \
-    rm -rf /var/lib/apt/lists/*
+ADD tmp /tmp
 
 ADD service-catalog opt/services/
 

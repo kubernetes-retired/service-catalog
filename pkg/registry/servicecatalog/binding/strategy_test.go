@@ -138,3 +138,25 @@ func TestInstanceCredentialUserInfo(t *testing.T) {
 		t.Errorf("unexpected user info in deleted spec: expected %q, got %q", e, a)
 	}
 }
+
+// TestExternalIDSet checks that we set the ExternalID if the user doesn't provide it.
+func TestExternalIDSet(t *testing.T) {
+	createdInstanceCredential := getTestInstanceCredential()
+	bindingRESTStrategies.PrepareForCreate(nil, createdInstanceCredential)
+
+	if createdInstanceCredential.Spec.ExternalID == "" {
+		t.Error("Expected an ExternalID to be set, but got none")
+	}
+}
+
+// TestExternalIDUserProvided makes sure we don't modify a user-specified ExternalID.
+func TestExternalIDUserProvided(t *testing.T) {
+	userExternalID := "my-id"
+	createdInstanceCredential := getTestInstanceCredential()
+	createdInstanceCredential.Spec.ExternalID = userExternalID
+	bindingRESTStrategies.PrepareForCreate(nil, createdInstanceCredential)
+
+	if createdInstanceCredential.Spec.ExternalID != userExternalID {
+		t.Errorf("Modified user provided ExternalID to %q", createdInstanceCredential.Spec.ExternalID)
+	}
+}

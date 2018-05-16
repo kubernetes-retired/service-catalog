@@ -9,6 +9,9 @@ tree:
   flags:
   - name: external-id
     desc: The ID of the binding for use with OSB API (Optional)
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: name
     desc: The name of the binding. Defaults to the name of the instance.
   - name: param
@@ -23,6 +26,11 @@ tree:
       the instance, format: SECRET[KEY]'
   - name: secret-name
     desc: The name of the secret. Defaults to the name of the instance.
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: completion
   shortDesc: Output shell completion code for the specified shell (bash).
   longDesc: "\nOutput shell completion code for the specified shell (bash).\nThe shell
@@ -36,6 +44,15 @@ tree:
 - name: deprovision
   shortDesc: Deletes an instance of a service
   command: ./svcat deprovision
+  flags:
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: describe
   shortDesc: Show details of a specific resource
   command: ./svcat describe
@@ -47,9 +64,6 @@ tree:
     - name: show-secrets
       desc: Output the decoded secret values. By default only the length of the secret
         is displayed
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from binding -> instance -> class/plan -> broker
   - name: broker
     shortDesc: Show details of a specific broker
     command: ./svcat describe broker
@@ -57,28 +71,18 @@ tree:
     shortDesc: Show details of a specific class
     command: ./svcat describe class
     flags:
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from plan -> class -> broker
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
   - name: instance
     shortDesc: Show details of a specific instance
     command: ./svcat describe instance
-    flags:
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from binding -> instance -> class/plan -> broker
   - name: plan
     shortDesc: Show details of a specific plan
     command: ./svcat describe plan
     flags:
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
-    - name: traverse
-      shorthand: t
-      desc: Whether or not to traverse from plan -> class -> broker
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
@@ -162,6 +166,9 @@ tree:
     desc: The class name (Required)
   - name: external-id
     desc: The ID of the instance for use with the OSB SB API (Optional)
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: param
     shorthand: p
     desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE.
@@ -174,6 +181,11 @@ tree:
   - name: secret
     desc: 'Additional parameter, whose value is stored in a secret, to use when provisioning
       the service, format: SECRET[KEY]'
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: sync
   shortDesc: Syncs service catalog for a service broker
   command: ./svcat sync
@@ -196,8 +208,16 @@ tree:
     are removed, otherwise use --name to remove a specific binding
   command: ./svcat unbind
   flags:
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
   - name: name
     desc: The name of the binding to remove
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: version
   shortDesc: Provides the version for the Service Catalog client and server
   command: ./svcat version

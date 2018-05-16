@@ -27,7 +27,6 @@ import (
 type describeCmd struct {
 	*command.Namespaced
 	name        string
-	traverse    bool
 	showSecrets bool
 }
 
@@ -45,13 +44,6 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(describeCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), false)
-	cmd.Flags().BoolVarP(
-		&describeCmd.traverse,
-		"traverse",
-		"t",
-		false,
-		"Whether or not to traverse from binding -> instance -> class/plan -> broker",
-	)
 	cmd.Flags().BoolVar(
 		&describeCmd.showSecrets,
 		"show-secrets",
@@ -63,7 +55,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 
 func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("name is required")
+		return fmt.Errorf("a binding name is required")
 	}
 	c.name = args[0]
 
@@ -84,17 +76,6 @@ func (c *describeCmd) describe() error {
 
 	secret, err := c.App.RetrieveSecretByBinding(binding)
 	output.WriteAssociatedSecret(c.Output, secret, err, c.showSecrets)
-
-	if c.traverse {
-		instance, class, plan, broker, err := c.App.BindingParentHierarchy(binding)
-		if err != nil {
-			return fmt.Errorf("unable to traverse up the binding hierarchy (%s)", err)
-		}
-		output.WriteParentInstance(c.Output, instance)
-		output.WriteParentClass(c.Output, class)
-		output.WriteParentPlan(c.Output, plan)
-		output.WriteParentBroker(c.Output, broker)
-	}
 
 	return nil
 }

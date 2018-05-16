@@ -110,8 +110,8 @@ ifdef NO_DOCKER
 	scBuildImageTarget =
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
-	DOCKER_CMD = docker run --security-opt label:disable --rm -v $(PWD):/go/src/$(SC_PKG) \
-	  -v $(PWD)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
+	DOCKER_CMD = docker run --security-opt label:disable --rm -v $(CURDIR):/go/src/$(SC_PKG) \
+	  -v $(CURDIR)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
 	scBuildImageTarget = .scBuildImage
 endif
 
@@ -189,8 +189,11 @@ $(BINDIR)/e2e.test: .init
 # Some prereq stuff
 ###################
 
-.init: $(scBuildImageTarget)
+.init: $(scBuildImageTarget) | $(BINDIR)
 	touch $@
+
+$(BINDIR):
+	mkdir -p $@
 
 .scBuildImage: build/build-image/Dockerfile
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
@@ -338,6 +341,8 @@ define build-and-tag # (service, image, mutable_image, prefix)
 	$(eval build_path := "$(4)build/$(1)")
 	$(eval tmp_build_path := "$(build_path)/tmp")
 	mkdir -p $(tmp_build_path)
+	# scratch image needs an empty directory to have as /tmp
+	mkdir -p $(tmp_build_path)/tmp
 	cp $(BINDIR)/$(1) $(tmp_build_path)
 	cp $(build_path)/Dockerfile $(tmp_build_path)
 	# -i.bak is required for cross-platform compat: https://stackoverflow.com/questions/5694228/sed-in-place-flag-that-works-both-on-mac-bsd-and-linux
@@ -415,6 +420,7 @@ svcat-for-%:
 
 svcat-xbuild: $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
 $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
+	mkdir -p $(dir $@)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/svcat
 
 svcat-publish: clean-bin svcat-all

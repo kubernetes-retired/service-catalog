@@ -75,6 +75,7 @@ const (
 	testClusterServiceClassName             = "test-clusterserviceclass"
 	testClusterServicePlanName              = "test-clusterserviceplan"
 	testNonExistentClusterServiceClassName  = "nothere"
+	testNonExistentClusterServicePlanName   = "nothere"
 	testNonbindableClusterServiceClassName  = "test-unbindable-clusterserviceclass"
 	testNonbindableClusterServicePlanName   = "test-unbindable-clusterserviceplan"
 	testRemovedClusterServiceClassName      = "removed-test-clusterserviceclass"
@@ -723,6 +724,15 @@ func getTestServiceInstanceWithRefs() *v1beta1.ServiceInstance {
 	return sc
 }
 
+func getTestServiceInstanceWithRefsAndExternalProperties() *v1beta1.ServiceInstance {
+	sc := getTestServiceInstanceWithRefs()
+	sc.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		ClusterServicePlanExternalName: testClusterServicePlanName,
+	}
+	return sc
+}
+
 // instance referencing the result of getTestClusterServiceClass()
 // and getTestClusterServicePlan()
 // This version sets:
@@ -799,15 +809,12 @@ func getTestServiceInstanceBindableServiceNonbindablePlan() *v1beta1.ServiceInst
 }
 
 func getTestServiceInstanceWithStatus(status v1beta1.ConditionStatus) *v1beta1.ServiceInstance {
-	instance := getTestServiceInstanceWithRefs()
-	instance.Status = v1beta1.ServiceInstanceStatus{
-		Conditions: []v1beta1.ServiceInstanceCondition{{
-			Type:               v1beta1.ServiceInstanceConditionReady,
-			Status:             status,
-			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
-		}},
-	}
-
+	instance := getTestServiceInstanceWithRefsAndExternalProperties()
+	instance.Status.Conditions = []v1beta1.ServiceInstanceCondition{{
+		Type:               v1beta1.ServiceInstanceConditionReady,
+		Status:             status,
+		LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+	}}
 	return instance
 }
 
@@ -1903,10 +1910,13 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		fakeKubeClient,
 		fakeCatalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
+		serviceCatalogSharedInformers.ServiceBrokers(),
 		serviceCatalogSharedInformers.ClusterServiceClasses(),
+		serviceCatalogSharedInformers.ServiceClasses(),
 		serviceCatalogSharedInformers.ServiceInstances(),
 		serviceCatalogSharedInformers.ServiceBindings(),
 		serviceCatalogSharedInformers.ClusterServicePlans(),
+		serviceCatalogSharedInformers.ServicePlans(),
 		brokerClFunc,
 		24*time.Hour,
 		osb.LatestAPIVersion().HeaderValue(),
@@ -2059,6 +2069,12 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 		resource = "clusterserviceclasses"
 	case *v1beta1.ClusterServicePlan:
 		resource = "clusterserviceplans"
+	case *v1beta1.ServiceBroker:
+		resource = "servicebrokers"
+	case *v1beta1.ServiceClass:
+		resource = "serviceclasses"
+	case *v1beta1.ServicePlan:
+		resource = "serviceplans"
 	case *v1beta1.ServiceInstance:
 		resource = "serviceinstances"
 	case *v1beta1.ServiceBinding:

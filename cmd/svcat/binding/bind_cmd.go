@@ -19,6 +19,7 @@ package binding
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
@@ -27,6 +28,8 @@ import (
 
 type bindCmd struct {
 	*command.Namespaced
+	*command.WaitableCommand
+
 	instanceName string
 	bindingName  string
 	externalID   string
@@ -40,7 +43,10 @@ type bindCmd struct {
 
 // NewBindCmd builds a "svcat bind" command
 func NewBindCmd(cxt *command.Context) *cobra.Command {
-	bindCmd := &bindCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	bindCmd := &bindCmd{
+		Namespaced:      command.NewNamespacedCommand(cxt),
+		WaitableCommand: command.NewWaitableCommand(),
+	}
 	cmd := &cobra.Command{
 		Use:   "bind INSTANCE_NAME",
 		Short: "Binds an instance's metadata to a secret, which can then be used by an application to connect to the instance",
@@ -86,12 +92,13 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"Additional parameter, whose value is stored in a secret, to use when binding the instance, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&bindCmd.jsonParams, "params-json", "",
 		"Additional parameters to use when binding the instance, provided as a JSON object. Cannot be combined with --param")
+	bindCmd.AddWaitFlags(cmd)
 	return cmd
 }
 
 func (c *bindCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("instance is required")
+		return fmt.Errorf("an instance name is required")
 	}
 	c.instanceName = args[0]
 
@@ -128,6 +135,19 @@ func (c *bindCmd) Run() error {
 func (c *bindCmd) bind() error {
 	binding, err := c.App.Bind(c.Namespace, c.bindingName, c.externalID, c.instanceName, c.secretName, c.params, c.secrets)
 	if err != nil {
+		return err
+	}
+
+	if c.Wait {
+		glog.V(2).Info("Waiting for binding to be injected...")
+		finalBinding, err := c.App.WaitForBinding(binding.Namespace, binding.Name, c.Interval, c.Timeout)
+		if err == nil {
+			binding = finalBinding
+		}
+
+		// Always print the binding because the bind did succeed,
+		// and just print any errors that occurred while polling
+		output.WriteBindingDetails(c.Output, binding)
 		return err
 	}
 

@@ -23,6 +23,7 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -87,10 +88,15 @@ func (bindingRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives a the incoming ServiceBinding and clears it's
 // Status. Status is not a user settable field.
+// It also creates a UUID if the user hasn't specified one.
 func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 	binding, ok := obj.(*sc.ServiceBinding)
 	if !ok {
 		glog.Fatal("received a non-binding object to create")
+	}
+
+	if binding.Spec.ExternalID == "" {
+		binding.Spec.ExternalID = string(uuid.NewUUID())
 	}
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
