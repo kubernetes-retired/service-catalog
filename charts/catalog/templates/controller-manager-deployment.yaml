@@ -43,6 +43,7 @@ spec:
         - controller-manager
         - --secure-port
         - "8444"
+        - "--cluster-id-configmap-namespace={{ .Release.Namespace }}"
         {{ if .Values.controllerManager.leaderElection.activated -}}
         - "--leader-election-namespace={{ .Release.Namespace }}"
         - "--leader-elect-resource-lock=configmaps"
