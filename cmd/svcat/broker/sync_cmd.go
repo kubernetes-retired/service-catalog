@@ -42,7 +42,7 @@ func NewSyncCmd(cxt *command.Context) *cobra.Command {
 
 func (c *syncCmd) Validate(args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("name is required")
+		return fmt.Errorf("a broker name is required")
 	}
 	c.name = args[0]
 	return nil

@@ -58,7 +58,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 
 func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("name or uuid is required")
+		return fmt.Errorf("a class name or uuid is required")
 	}
 
 	if c.lookupByUUID {
