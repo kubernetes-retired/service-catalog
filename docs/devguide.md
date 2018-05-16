@@ -259,6 +259,15 @@ push it up to your remote fork on github. Come back to the code tab of
 the repository, and there should be a box suggesting to make a Pull
 Request.
 
+Pull requests are expected to have a few things:
+
+* You should have run `make build` (for server-side changes) or `make svcat` (for cli changes)
+and also `make verify` before asking people to review the PR. This helps catch compilation errors
+and code formatting/linting problems.
+* A new or updated test to verify the changes. If this is a svcat related change,
+you may need to [update the golden files](#golden-files).
+* Any associated documentation changes.
+
 Once the Pull Request has been created, it will automatically be built
 and the tests run. The unit and integration tests will run in travis,
 and Jenkins will run the e2e tests.
