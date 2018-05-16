@@ -247,6 +247,7 @@ files, run the tests with the `-update` flag, e.g. `go test ./cmd/svcat -update`
 and the golden files are updated automatically with the results of the test run.
 
 For new tests, first you need to create the golden file before running the tests with `-update`.
+This flag only manages the contents of the golden files, but doesn't create or delete them.
 
 Keep in mind that Golden files help catch errors when the output unexpectedly changes.
 It's up to you to judge when you should run the tests with -update, 
