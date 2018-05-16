@@ -866,9 +866,11 @@ type ServiceInstanceSpec struct {
 	// +optional
 	UpdateRequests int64 `json:"updateRequests"`
 
-	// DeletionRequested provides an imperative means to request
-	// deletion by doing an update.
-	DeletionRequested bool `json:"deletionRequested"`
+	// DeletionRequestedprovides a mechanism for requesting a delete without
+	// performing a direct delete (which cannot be undone in cases where the
+	// delete is rejected by the broker). This is the recommended way to
+	// delete, to avoid resources becoming stuck in the deletion phase.
+	DeletionRequested bool `json:"deletionRequested,omitempty"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -1132,9 +1134,11 @@ type ServiceBindingSpec struct {
 	// +optional
 	UserInfo *UserInfo `json:"userInfo,omitempty"`
 
-	// DeletionRequested provides an imperative means to request
-	// deletion by doing an update.
-	DeletionRequested bool `json:"deletionRequested"`
+	// DeletionRequestedprovides a mechanism for requesting a delete without
+	// performing a direct delete (which cannot be undone in cases where the
+	// delete is rejected by the broker). This is the recommended way to
+	// delete, to avoid resources becoming stuck in the deletion phase.
+	DeletionRequested bool `json:"deletionRequested,omitempty"`
 }
 
 // ServiceBindingStatus represents the current status of a ServiceBinding.

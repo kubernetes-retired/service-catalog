@@ -775,8 +775,10 @@ type ServiceInstanceSpec struct {
 	// been made to the secrets from which the parameters are sourced.
 	UpdateRequests int64
 
-	// DeletionRequested provides an imperative means to request
-	// deletion by doing an update.
+	// DeletionRequestedprovides a mechanism for requesting a delete without
+	// performing a direct delete (which cannot be undone in cases where the
+	// delete is rejected by the broker). This is the recommended way to
+	// delete, to avoid resources becoming stuck in the deletion phase.
 	DeletionRequested bool
 }
 
@@ -1030,8 +1032,10 @@ type ServiceBindingSpec struct {
 	// +optional
 	UserInfo *UserInfo
 
-	// DeletionRequested provides an imperative means to request
-	// deletion by doing an update.
+	// DeletionRequestedprovides a mechanism for requesting a delete without
+	// performing a direct delete (which cannot be undone in cases where the
+	// delete is rejected by the broker). This is the recommended way to
+	// delete, to avoid resources becoming stuck in the deletion phase.
 	DeletionRequested bool
 }
 
