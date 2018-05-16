@@ -233,6 +233,19 @@ These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
 `coverage.html` at the root of the repo.
 
+### Golden Files
+The svcat tests rely on "[golden files](https://medium.com/@povilasve/go-advanced-tips-tricks-a872503ac859#a196)",
+a pattern used in the Go standard library, for testing command output. The expected
+output is stored in a file in the testdata directory, `cmd/svcat/testdata`, and 
+and then the test's output is compared against the "golden output" stored
+in that file. It helps avoid putting hard coded strings in the tests themselves.
+ 
+You do not need to manage the golden files by hand. When you need to update the golden
+files, run the tests with the `-update` flag, e.g. `go test ./cmd/svcat -update`,
+and the golden files are updated automatically with the results of the test run.
+
+For new tests, first you need to create the golden file before running the tests with `-update`.
+
 ## Making a Contribution
 
 Once you have compiled and tested your code locally, make a Pull
