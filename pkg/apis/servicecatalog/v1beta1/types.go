@@ -166,10 +166,15 @@ type CommonServiceBrokerSpec struct {
 // ServiceClass allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
 //   externalName - the value set to [Cluster]ServiceClass.Spec.externalName
+//   externalID - the value set to [Cluster]ServiceClass.Spec.externalID
+//   serviceBrokerName - the value set to [Cluster]ServiceClass.Spec.serviceBrokerName
 //
 // ServicePlan allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
 //   externalName - the value set to [Cluster]ServiceClass.Spec.externalName
+//   externalID - the value set to [Cluster]ServiceClass.Spec.externalID
+//   serviceClassName - the value set to [Cluster]ServiceClass.Spec.serviceClass.name
+//
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServiceClass []string `json:"serviceClass,omitempty"`
