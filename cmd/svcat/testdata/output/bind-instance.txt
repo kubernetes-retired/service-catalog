@@ -1,0 +1,8 @@
+  Name:        ups-binding   
+  Namespace:   test-ns       
+  Status:                    
+  Secret:                    
+  Instance:    ups-instance  
+
+Parameters:
+  {}

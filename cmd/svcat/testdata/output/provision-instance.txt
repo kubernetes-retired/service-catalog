@@ -1,0 +1,8 @@
+  Name:        ups-instance           
+  Namespace:   test-ns                
+  Status:                             
+  Class:       user-provided-service  
+  Plan:        default                
+
+Parameters:
+  {}
