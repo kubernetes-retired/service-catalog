@@ -95,7 +95,7 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			p := ConvertClusterServicePlanToProperties(tc.sp)
+			p := ConvertServicePlanToProperties(tc.sp)
 			if p == nil {
 				t.Fatalf("Failed to create Properties object from %+v", tc.sp)
 			}
