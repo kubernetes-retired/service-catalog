@@ -273,6 +273,10 @@ test-unit: .init build
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS)) $(UNIT_TEST_LOG_FLAGS)
 
+test-update-goldenfiles: .init
+	@echo Updating golden files to match current test output
+	$(DOCKER_CMD) go test ./cmd/svcat/... -update
+
 build-integration: .generate_files
 	$(DOCKER_CMD) go test -race github.com/kubernetes-incubator/service-catalog/test/integration/... -c
 

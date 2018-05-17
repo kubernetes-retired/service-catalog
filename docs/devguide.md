@@ -242,13 +242,13 @@ output is stored in a file in the testdata directory, `cmd/svcat/testdata`, and
 and then the test's output is compared against the "golden output" stored
 in that file. It helps avoid putting hard coded strings in the tests themselves.
  
-You do not need to manage the golden files by hand. When you need to update the golden
-files, run the tests with the `-update` flag, e.g. `go test ./cmd/svcat/... -update`,
+You do not edit the golden files by hand. When you need to update the golden
+files, run `make test-update-goldenfiles` or `go test ./cmd/svcat/... -update`,
 and the golden files are updated automatically with the results of the test run.
 
 For new tests, first you need to manually create the empty golden file into the destination 
 directory specified in your test, e.g. `touch cmd/svcat/testdata/mygoldenfile.txt`
-before running the tests with `-update`. This flag only manages the contents of the golden files, 
+before updating the golden files. This only manages the contents of the golden files, 
 but doesn't create or delete them.
 
 Keep in mind that golden files help catch errors when the output unexpectedly changes.
