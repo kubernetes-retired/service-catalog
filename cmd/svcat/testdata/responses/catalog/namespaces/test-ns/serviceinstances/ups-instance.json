@@ -23,6 +23,9 @@
       "name": "86064792-7ea2-467b-af93-ac9694d96d52"
     },
     "parameters": {"param1": "value1", "paramset": {"ps1":1, "ps2": "two"}},
+    "parametersFrom": [
+      {"secretKeyRef": {"name": "instance-parameters", "key": "params"}}
+    ],
     "externalID": "7e2c42f3-6d94-4409-bb15-7610d60af544",
     "updateRequests": 0
   },
@@ -42,8 +45,13 @@
     "externalProperties": {
       "clusterServicePlanExternalName": "default",
       "clusterServicePlanExternalID": "86064792-7ea2-467b-af93-ac9694d96d52",
-      "parameters": {"param1": "value1", "paramset": {"ps1":1, "ps2": "two"}},
-      "parameterChecksum": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+      "parameters": {
+        "param1": "value1",
+        "paramset": {"ps1":1, "ps2": "two"},
+        "secretparam1": "\u003credacted\u003e",
+        "secretparam2": "\u003credacted\u003e"
+      },
+      "parameterChecksum": "23ca85e0f9fc05340ea0a13ef945602cd5cdc3f52d763e750cb0ab0cb172a94f"
     },
     "deprovisionStatus": "Required"
   }

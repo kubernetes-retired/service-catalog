@@ -22,6 +22,14 @@
             "ps2": "two"
          }
       },
+      "parametersFrom": [
+         {
+            "secretKeyRef": {
+               "name": "binding-parameters",
+               "key": "params"
+            }
+         }
+      ],
       "secretName": "ups-binding",
       "externalID": "061e1d78-d27e-4958-97b8-e9f5aa2f99d7"
    },
@@ -43,9 +51,11 @@
             "paramset": {
                "ps1": 1,
                "ps2": "two"
-            }
+            },
+            "secretparam1": "\u003credacted\u003e",
+            "secretparam2": "\u003credacted\u003e"
          },
-         "parameterChecksum": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+         "parameterChecksum": "23ca85e0f9fc05340ea0a13ef945602cd5cdc3f52d763e750cb0ab0cb172a94f"
       },
       "orphanMitigationInProgress": false,
       "unbindStatus": "Required"
