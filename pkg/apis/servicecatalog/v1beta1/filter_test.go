@@ -41,7 +41,7 @@ func TestConvertServiceClassToProperties(t *testing.T) {
 					ServiceBrokerName: "service-broker-name",
 					CommonServiceClassSpec: CommonServiceClassSpec{
 						ExternalName: "external-class-name",
-						ExternalID: "external-id",
+						ExternalID:   "external-id",
 					},
 				},
 			},
@@ -84,14 +84,14 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 					ServiceBrokerName: "service-broker-name",
 					CommonServicePlanSpec: CommonServicePlanSpec{
 						ExternalName: "external-plan-name",
-						ExternalID: "external-id",
+						ExternalID:   "external-id",
 					},
 					ServiceClassRef: LocalObjectReference{
 						Name: "service-class-name",
 					},
 				},
 			},
-      json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.serviceBrokerName":"service-broker-name","spec.serviceClass.name":"service-class-name"}`,
+			json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.serviceBrokerName":"service-broker-name","spec.serviceClass.name":"service-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -130,11 +130,11 @@ func TestConvertClusterServiceClassToProperties(t *testing.T) {
 					ClusterServiceBrokerName: "cluster-service-broker-name",
 					CommonServiceClassSpec: CommonServiceClassSpec{
 						ExternalName: "external-class-name",
-						ExternalID: "external-id",
+						ExternalID:   "external-id",
 					},
 				},
 			},
-      json: `{"name":"service-class","spec.clusterServiceBrokerName":"cluster-service-broker-name","spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
+			json: `{"name":"service-class","spec.clusterServiceBrokerName":"cluster-service-broker-name","spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -180,7 +180,7 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 					},
 				},
 			},
-      json: `{"name":"service-plan","spec.clusterServiceBrokerName":"cluster-service-broker-name","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name"}`,
+			json: `{"name":"service-plan","spec.clusterServiceBrokerName":"cluster-service-broker-name","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name"}`,
 		},
 	}
 	for _, tc := range cases {
