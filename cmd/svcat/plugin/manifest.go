@@ -119,6 +119,7 @@ func (m *Manifest) convertToPlugin(cmd *cobra.Command) Plugin {
 	}
 	p.LongDesc = cmd.Long
 	p.Command = "./" + cmd.CommandPath()
+	p.Example = cmd.Example
 
 	p.Flags = []Flag{}
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
