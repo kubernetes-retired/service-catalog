@@ -38,10 +38,10 @@ func TestConvertClusterServiceClassToProperties(t *testing.T) {
 			sc: &ClusterServiceClass{
 				ObjectMeta: metav1.ObjectMeta{Name: "service-class"},
 				Spec: ClusterServiceClassSpec{
+					ClusterServiceBrokerName: "cluster-service-broker-name",
 					CommonServiceClassSpec: CommonServiceClassSpec{
 						ExternalName:               "external-class-name",
 						ExternalID:                 "external-id",
-            ClusterServiceBrokerName:   "cluster-service-broker-name",
 					},
 				},
 			},
@@ -81,10 +81,10 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 			sp: &ClusterServicePlan{
 				ObjectMeta: metav1.ObjectMeta{Name: "service-plan"},
 				Spec: ClusterServicePlanSpec{
+					ClusterServiceBrokerName: "cluster-service-broker-name",
 					CommonServicePlanSpec: CommonServicePlanSpec{
 						ExternalName: "external-plan-name",
 						ExternalID:   "external-id",
-            ClusterServiceBrokerName: "cluster-service-broker-name",
 					},
 					ClusterServiceClassRef: ClusterObjectReference{
 						Name: "cluster-service-class-name",
