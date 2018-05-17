@@ -151,6 +151,8 @@ To build the service-catalog client, `svcat`:
 
     $ make svcat
     
+The svcat cli binary is located at `bin/svcat/svcat`.
+    
 To install `svcat` to your $GOPATH/bin directory:
 
     $ make svcat-install
@@ -233,6 +235,35 @@ These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
 `coverage.html` at the root of the repo.
 
+### Golden Files
+The svcat tests rely on "[golden files](https://medium.com/@povilasve/go-advanced-tips-tricks-a872503ac859#a196)",
+a pattern used in the Go standard library, for testing command output. The expected
+output is stored in a file in the testdata directory, `cmd/svcat/testdata`, and 
+and then the test's output is compared against the "golden output" stored
+in that file. It helps avoid putting hard coded strings in the tests themselves.
+ 
+You do not need to manage the golden files by hand. When you need to update the golden
+files, run the tests with the `-update` flag, e.g. `go test ./cmd/svcat/... -update`,
+and the golden files are updated automatically with the results of the test run.
+
+For new tests, first you need to manually create the empty golden file into the destination 
+directory specified in your test, e.g. `touch cmd/svcat/testdata/mygoldenfile.txt`
+before running the tests with `-update`. This flag only manages the contents of the golden files, 
+but doesn't create or delete them.
+
+Keep in mind that golden files help catch errors when the output unexpectedly changes.
+It's up to you to judge when you should run the tests with -update, 
+and to diff the changes in the golden file to ensure that the new output is correct.
+
+## Documentation
+
+Our documentation site is located at [svc-cat.io](https://svc-cat.io). The content files are located
+in the `docs/` directory, and the website framework in `docsite/`.
+
+To preview your changes, run `make docs-preview` and then open `http://localhost:4000` in
+your web browser. When you create a pull request, you can preview documentation changes by
+clicking on the `deploy/netlify` build check in your PR.
+
 ## Making a Contribution
 
 Once you have compiled and tested your code locally, make a Pull
@@ -241,6 +272,17 @@ name of the work you are doing. Make a commit with the work in it, and
 push it up to your remote fork on github. Come back to the code tab of
 the repository, and there should be a box suggesting to make a Pull
 Request.
+
+Pull requests are expected to have a few things before asking people to review the PR:
+
+* [Build the code](#building) with `make build` (for server-side changes) or `make svcat` (for cli changes).
+* [Run the tests](#testing) with `make test`.
+* Run the build checks with `make verify`. This helps catch compilation errors
+and code formatting/linting problems.
+* Added new tests or updated existing tests to verify your changes. If this is a svcat related change,
+you may need to [update the golden files](#golden-files).
+* Any associated documentation changes. You can preview documentation changes by
+clicking on the `deploy/netlify` build check on your pull request.
 
 Once the Pull Request has been created, it will automatically be built
 and the tests run. The unit and integration tests will run in travis,
