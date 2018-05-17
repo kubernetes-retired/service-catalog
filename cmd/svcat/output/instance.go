@@ -139,4 +139,5 @@ func WriteInstanceDetails(w io.Writer, instance *v1beta1.ServiceInstance) {
 	t.Render()
 
 	writeParameters(w, instance.Spec.Parameters)
+	writeParametersFrom(w, instance.Spec.ParametersFrom)
 }
