@@ -146,18 +146,6 @@ tree:
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
-- name: install
-  shortDesc: ' '
-  command: ./svcat install
-  tree:
-  - name: plugin
-    shortDesc: Install as a kubectl plugin
-    command: ./svcat install plugin
-    flags:
-    - name: plugins-path
-      shorthand: p
-      desc: The installation path. Defaults to KUBECTL_PLUGINS_PATH, if defined, otherwise
-        the plugins directory under the KUBECONFIG dir. In most cases, this is ~/.kube/plugins.
 - name: provision
   shortDesc: Create a new instance of a service
   command: ./svcat provision
