@@ -39,12 +39,13 @@ func TestConvertClusterServiceClassToProperties(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "service-class"},
 				Spec: ClusterServiceClassSpec{
 					CommonServiceClassSpec: CommonServiceClassSpec{
-						ExternalName: "external-class-name",
-						ExternalID:   "external-id",
+						ExternalName:               "external-class-name",
+						ExternalID:                 "external-id",
+            ClusterServiceBrokerName:   "cluster-service-broker-name",
 					},
 				},
 			},
-			json: `{"name":"service-class","spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
+      json: `{"name":"service-class","spec.externalID":"external-id","spec.externalName":"external-class-name","spec.ClusterServiceBrokerName":"cluster-service-broker-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -83,13 +84,14 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 					CommonServicePlanSpec: CommonServicePlanSpec{
 						ExternalName: "external-plan-name",
 						ExternalID:   "external-id",
+            ClusterServiceBrokerName: "cluster-service-broker-name",
 					},
 					ClusterServiceClassRef: ClusterObjectReference{
 						Name: "cluster-service-class-name",
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name"}`,
+      json: `{"name":"service-plan","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.clusterServiceBrokerName":"cluster-service-broker-name"}`,
 		},
 	}
 	for _, tc := range cases {
