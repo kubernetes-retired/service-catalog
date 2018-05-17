@@ -32,9 +32,10 @@ func ConvertServiceClassToProperties(serviceClass *ServiceClass) filter.Properti
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:             serviceClass.Name,
-		FilterSpecExternalName: serviceClass.Spec.ExternalName,
-		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
+		FilterName:                   serviceClass.Name,
+		FilterSpecExternalName:       serviceClass.Spec.ExternalName,
+		FilterSpecExternalID:         serviceClass.Spec.ExternalID,
+    FilterSpecServiceBrokerName:  serviceClass.Spec.ServiceBrokerName,
 	}
 }
 
@@ -46,10 +47,11 @@ func ConvertServicePlanToProperties(servicePlan *ServicePlan) filter.Properties 
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:                 servicePlan.Name,
-		FilterSpecExternalName:     servicePlan.Spec.ExternalName,
-		FilterSpecExternalID:       servicePlan.Spec.ExternalID,
-		FilterSpecServiceClassName: servicePlan.Spec.ServiceClassRef.Name,
+		FilterName:                   servicePlan.Name,
+		FilterSpecExternalName:       servicePlan.Spec.ExternalName,
+		FilterSpecExternalID:         servicePlan.Spec.ExternalID,
+		FilterSpecServiceClassName:   servicePlan.Spec.ServiceClassRef.Name,
+    FilterSpecServiceBrokerName:  servicePlan.Spec.ServiceBrokerName,
 	}
 }
 
