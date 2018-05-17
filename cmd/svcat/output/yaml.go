@@ -73,9 +73,7 @@ func writeParametersFrom(w io.Writer, parametersFrom []v1beta1.ParametersFromSou
 				fmt.Fprintln(w, "\nParameters From:")
 				headerPrinted = true
 			}
-			fmt.Fprintln(w, "  Secret Key Ref:")
-			fmt.Fprintf(w, "    Name: %s\n", p.SecretKeyRef.Name)
-			fmt.Fprintf(w, "    Key:  %s\n", p.SecretKeyRef.Key)
+			fmt.Fprintf(w, "  Secret: %s.%s\n", p.SecretKeyRef.Name, p.SecretKeyRef.Key)
 		}
 	}
 }

@@ -11,9 +11,7 @@ Parameters:
     ps2: two
 
 Parameters From:
-  Secret Key Ref:
-    Name: instance-parameters
-    Key:  params
+  Secret: instance-parameters.params
 
 Bindings:
      NAME       STATUS  

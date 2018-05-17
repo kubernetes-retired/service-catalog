@@ -11,9 +11,7 @@ Parameters:
     ps2: two
 
 Parameters From:
-  Secret Key Ref:
-    Name: binding-parameters
-    Key:  params
+  Secret: binding-parameters.params
 
 Secret Data:
   special-key-1   15 bytes  
