@@ -62,14 +62,20 @@ func writeParameters(w io.Writer, parameters *runtime.RawExtension) {
 }
 
 func writeParametersFrom(w io.Writer, parametersFrom []v1beta1.ParametersFromSource) {
-	if parametersFrom == nil || len(parametersFrom) == 0 {
+	if len(parametersFrom) == 0 {
 		return
 	}
 
-	fmt.Fprintln(w, "\nParameters From:")
+	headerPrinted := false
 	for _, p := range parametersFrom {
-		fmt.Fprintln(w, "  Secret Key Ref:")
-		fmt.Fprintf(w, "    Name: %s\n", p.SecretKeyRef.Name)
-		fmt.Fprintf(w, "    Key:  %s\n", p.SecretKeyRef.Key)
+		if p.SecretKeyRef != nil {
+			if !headerPrinted {
+				fmt.Fprintln(w, "\nParameters From:")
+				headerPrinted = true
+			}
+			fmt.Fprintln(w, "  Secret Key Ref:")
+			fmt.Fprintf(w, "    Name: %s\n", p.SecretKeyRef.Name)
+			fmt.Fprintf(w, "    Key:  %s\n", p.SecretKeyRef.Key)
+		}
 	}
 }
