@@ -171,7 +171,8 @@ func newDescribeCmd(cxt *command.Context) *cobra.Command {
 
 func newInstallCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "install",
+		Use:   "install",
+		Short: "Install svcat as ...",
 	}
 	cmd.AddCommand(plugin.NewInstallCmd(cxt))
 
