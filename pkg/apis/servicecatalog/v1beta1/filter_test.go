@@ -65,6 +65,7 @@ func TestConvertServiceClassToProperties(t *testing.T) {
 		})
 	}
 }
+
 func TestConvertServicePlanToProperties(t *testing.T) {
 	cases := []struct {
 		name string
@@ -110,6 +111,7 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 		})
 	}
 }
+
 func TestConvertClusterServiceClassToProperties(t *testing.T) {
 	cases := []struct {
 		name string
