@@ -122,7 +122,9 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(binding.NewBindCmd(cxt))
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
-	cmd.AddCommand(newInstallCmd(cxt))
+	if !plugin.IsPlugin() {
+		cmd.AddCommand(newInstallCmd(cxt))
+	}
 	cmd.AddCommand(newTouchCmd(cxt))
 	cmd.AddCommand(versions.NewVersionCmd(cxt))
 	cmd.AddCommand(newCompletionCmd(cxt))
