@@ -27,6 +27,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -103,7 +104,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 }
 
 // Unbind deletes all bindings associated to an instance.
-func (sdk *SDK) Unbind(ns, instanceName string) ([]v1beta1.ServiceBinding, error) {
+func (sdk *SDK) Unbind(ns, instanceName string) ([]types.NamespacedName, error) {
 	instance, err := sdk.RetrieveInstance(ns, instanceName)
 	if err != nil {
 		return nil, err
@@ -112,12 +113,22 @@ func (sdk *SDK) Unbind(ns, instanceName string) ([]v1beta1.ServiceBinding, error
 	if err != nil {
 		return nil, err
 	}
+
+	namespacedNames := []types.NamespacedName{}
+	for _, b := range bindings {
+		namespacedNames = append(namespacedNames, types.NamespacedName{b.Namespace, b.Name})
+	}
+	return sdk.DeleteBindings(namespacedNames)
+}
+
+// DeleteBindings deletes bindings by name.
+func (sdk *SDK) DeleteBindings(bindings []types.NamespacedName) ([]types.NamespacedName, error) {
 	var g sync.WaitGroup
 	errs := make(chan error, len(bindings))
-	deletedBindings := make(chan v1beta1.ServiceBinding, len(bindings))
+	deletedBindings := make(chan types.NamespacedName, len(bindings))
 	for _, binding := range bindings {
 		g.Add(1)
-		go func(binding v1beta1.ServiceBinding) {
+		go func(binding types.NamespacedName) {
 			defer g.Done()
 			err := sdk.DeleteBinding(binding.Namespace, binding.Name)
 			if err == nil {
@@ -142,7 +153,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) ([]v1beta1.ServiceBinding, error
 	}
 
 	//Range over the deleted bindings to build a slice to return
-	deleted := []v1beta1.ServiceBinding(nil)
+	deleted := []types.NamespacedName(nil)
 	for b := range deletedBindings {
 		deleted = append(deleted, b)
 	}
