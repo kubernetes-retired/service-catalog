@@ -96,16 +96,19 @@ func (c *unbindCmd) deleteBinding() error {
 		var binding *v1beta1.ServiceBinding
 		binding, err = c.App.WaitForBinding(c.Namespace, c.bindingName, pollInterval, c.Timeout)
 
-		// The binding failed to delete cleanly, dump out more information on why
-		if c.App.IsBindingFailed(binding) {
+		if err != nil {
+			fmt.Fprintf(c.Output, "Error: %s", err.Error())
+		} else if c.App.IsBindingFailed(binding) {
 			output.WriteBindingDetails(c.Output, binding)
+		} else {
+			output.WriteDeletedResourceName(c.Output, c.bindingName)
 		}
-	}
-
-	if err == nil {
+	} else {
 		output.WriteDeletedResourceName(c.Output, c.bindingName)
 	}
-	return err
+
+	// Don't return errors because we handle printing them as they occur above
+	return nil
 }
 
 func (c *unbindCmd) unbindInstance() error {
@@ -134,6 +137,10 @@ func (c *unbindCmd) unbindInstance() error {
 			}(binding.Namespace, binding.Name)
 		}
 		g.Wait()
+	} else {
+		for _, binding := range bindings {
+			output.WriteDeletedResourceName(c.Output, binding.Name)
+		}
 	}
 
 	// Don't return errors because we handle printing them as they occur above
