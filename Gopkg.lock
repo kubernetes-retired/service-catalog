@@ -1219,6 +1219,10 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
+<<<<<<< HEAD
   inputs-digest = "1cf27edf2c8dd4bad7c5aa80f4bd5c7bec2652e61bfee5f4bd0f5a8eb9aba030"
+=======
+  inputs-digest = "c6f2e281de36024871c5aeb2047fba819603cd19607f668296df75fcb41614cf"
+>>>>>>> 9af2f105... fetched upstream
   solver-name = "gps-cdcl"
   solver-version = 1

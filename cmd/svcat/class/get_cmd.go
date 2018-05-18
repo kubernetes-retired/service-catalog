@@ -20,6 +20,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"github.com/spf13/cobra"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +32,7 @@ type getCmd struct {
 	uuid         string
 	name         string
 	outputFormat string
+	broker       string
 }
 
 func (c *getCmd) SetFormat(format string) {
@@ -46,6 +50,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get classes
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
+  svcat get classes --broker
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -56,6 +61,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"u",
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.broker,
+		"broker",
+		"b",
+		"",
+		"Filters the class's by a broker name.",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -68,6 +80,10 @@ func (c *getCmd) Validate(args []string) error {
 		} else {
 			c.name = args[0]
 		}
+	}
+	// Just for now while I get PR reviewed
+	if c.uuid != "" && c.broker != "" {
+		return nil
 	}
 
 	return nil
@@ -82,7 +98,12 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses()
+
+	opts := &servicecatalog.FilterOptions{
+		Broker: c.broker,
+	}
+
+	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return err
 	}
