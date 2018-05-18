@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -90,7 +89,7 @@ func (c *unbindCmd) deleteBinding() error {
 	}
 
 	if c.Wait {
-		glog.V(2).Infof("Waiting for the binding to be deleted...")
+		fmt.Fprintln(c.Output, "Waiting for the binding to be deleted...")
 		pollInterval := 1 * time.Second
 
 		var binding *v1beta1.ServiceBinding
@@ -118,7 +117,7 @@ func (c *unbindCmd) unbindInstance() error {
 	}
 
 	if c.Wait {
-		glog.V(2).Infof("Waiting for the bindings to be deleted...")
+		fmt.Fprintln(c.Output, "Waiting for the bindings to be deleted...")
 		var g sync.WaitGroup
 		for _, binding := range bindings {
 			g.Add(1)
