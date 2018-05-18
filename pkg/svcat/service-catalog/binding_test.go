@@ -18,6 +18,8 @@ package servicecatalog_test
 
 import (
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
@@ -46,6 +48,220 @@ var _ = Describe("Binding", func() {
 		sdk = &SDK{
 			ServiceCatalogClient: svcCatClient,
 		}
+	})
+
+	Describe("BindingHasStatus", func() {
+		It("Returns false when conditions is empty", func() {
+			binding := &v1beta1.ServiceBinding{}
+			result := sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionReady)
+			Expect(result).Should(BeFalse())
+		})
+		It("Returns false when condition status is false", func() {
+			binding := &v1beta1.ServiceBinding{
+				Status: v1beta1.ServiceBindingStatus{
+					Conditions: []v1beta1.ServiceBindingCondition{
+						{
+							Type:   v1beta1.ServiceBindingConditionFailed,
+							Status: v1beta1.ConditionFalse,
+						},
+					},
+				},
+			}
+			result := sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionFailed)
+			Expect(result).Should(BeFalse())
+		})
+		It("Returns true when conditions contain ready", func() {
+			binding := &v1beta1.ServiceBinding{
+				Status: v1beta1.ServiceBindingStatus{
+					Conditions: []v1beta1.ServiceBindingCondition{
+						{
+							Type:   v1beta1.ServiceBindingConditionReady,
+							Status: v1beta1.ConditionTrue,
+						},
+					},
+				},
+			}
+			result := sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionReady)
+			Expect(result).Should(BeTrue())
+		})
+	})
+
+	Describe("IsBindingReady", func() {
+		It("Returns false when conditions is empty", func() {
+			binding := &v1beta1.ServiceBinding{}
+			result := sdk.IsBindingReady(binding)
+			Expect(result).Should(BeFalse())
+		})
+		It("Returns false when ready condition status is false", func() {
+			binding := &v1beta1.ServiceBinding{
+				Status: v1beta1.ServiceBindingStatus{
+					Conditions: []v1beta1.ServiceBindingCondition{
+						{
+							Type:   v1beta1.ServiceBindingConditionReady,
+							Status: v1beta1.ConditionFalse,
+						},
+					},
+				},
+			}
+			result := sdk.IsBindingReady(binding)
+			Expect(result).Should(BeFalse())
+		})
+		It("Returns true when ready condition status is true", func() {
+			binding := &v1beta1.ServiceBinding{
+				Status: v1beta1.ServiceBindingStatus{
+					Conditions: []v1beta1.ServiceBindingCondition{
+						{
+							Type:   v1beta1.ServiceBindingConditionReady,
+							Status: v1beta1.ConditionTrue,
+						},
+					},
+				},
+			}
+			result := sdk.IsBindingReady(binding)
+			Expect(result).Should(BeTrue())
+		})
+	})
+
+	Describe("IsBindingFailed", func() {
+		It("Returns false when conditions is empty", func() {
+			binding := &v1beta1.ServiceBinding{}
+			result := sdk.IsBindingFailed(binding)
+			Expect(result).Should(BeFalse())
+		})
+		It("Returns false when failed condition status is false", func() {
+			binding := &v1beta1.ServiceBinding{
+				Status: v1beta1.ServiceBindingStatus{
+					Conditions: []v1beta1.ServiceBindingCondition{
+						{
+							Type:   v1beta1.ServiceBindingConditionFailed,
+							Status: v1beta1.ConditionFalse,
+						},
+					},
+				},
+			}
+			result := sdk.IsBindingFailed(binding)
+			Expect(result).Should(BeFalse())
+		})
+		It("Returns true when failed condition status is true", func() {
+			binding := &v1beta1.ServiceBinding{
+				Status: v1beta1.ServiceBindingStatus{
+					Conditions: []v1beta1.ServiceBindingCondition{
+						{
+							Type:   v1beta1.ServiceBindingConditionFailed,
+							Status: v1beta1.ConditionTrue,
+						},
+					},
+				},
+			}
+			result := sdk.IsBindingFailed(binding)
+			Expect(result).Should(BeTrue())
+		})
+	})
+
+	Describe("WaitForBinding", func() {
+		It("Polls until the binding is ready", func() {
+			timeout := 1 * time.Second
+
+			readyClient := &fake.Clientset{}
+			readyClient.AddReactor("get", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sb, nil
+			})
+			sdk.ServiceCatalogClient = readyClient
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+			var binding *v1beta1.ServiceBinding
+			var err error
+			go func() {
+				binding, err = sdk.WaitForBinding(sb.Namespace, sb.Name, time.Millisecond, &timeout)
+				wg.Done()
+			}()
+
+			time.Sleep(500 * time.Millisecond)
+			sb.Status = v1beta1.ServiceBindingStatus{
+				Conditions: []v1beta1.ServiceBindingCondition{
+					{
+						Type:   v1beta1.ServiceBindingConditionReady,
+						Status: v1beta1.ConditionTrue,
+					},
+				},
+			}
+
+			wg.Wait()
+
+			condition := binding.Status.Conditions[0]
+			Expect(condition.Type).To(Equal(v1beta1.ServiceBindingConditionReady))
+			Expect(condition.Status).To(Equal(v1beta1.ConditionTrue))
+		})
+		It("Polls until the binding is failed", func() {
+			timeout := 1 * time.Second
+
+			readyClient := &fake.Clientset{}
+			readyClient.AddReactor("get", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sb, nil
+			})
+			sdk.ServiceCatalogClient = readyClient
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+			var binding *v1beta1.ServiceBinding
+			var err error
+			go func() {
+				binding, err = sdk.WaitForBinding(sb.Namespace, sb.Name, time.Millisecond, &timeout)
+				wg.Done()
+			}()
+
+			time.Sleep(500 * time.Millisecond)
+			sb.Status = v1beta1.ServiceBindingStatus{
+				Conditions: []v1beta1.ServiceBindingCondition{
+					{
+						Type:   v1beta1.ServiceBindingConditionFailed,
+						Status: v1beta1.ConditionTrue,
+					},
+				},
+			}
+
+			wg.Wait()
+			Expect(err).To(BeNil())
+			condition := binding.Status.Conditions[0]
+			Expect(condition.Type).To(Equal(v1beta1.ServiceBindingConditionFailed))
+			Expect(condition.Status).To(Equal(v1beta1.ConditionTrue))
+		})
+		It("Polls until the async operation is complete", func() {
+			timeout := 1 * time.Second
+
+			sb.Status.AsyncOpInProgress = true
+			sb.Status = v1beta1.ServiceBindingStatus{
+				Conditions: []v1beta1.ServiceBindingCondition{
+					{
+						Type:   v1beta1.ServiceBindingConditionFailed,
+						Status: v1beta1.ConditionTrue,
+					},
+				},
+			}
+
+			readyClient := &fake.Clientset{}
+			readyClient.AddReactor("get", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sb, nil
+			})
+			sdk.ServiceCatalogClient = readyClient
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+			var binding *v1beta1.ServiceBinding
+			var err error
+			go func() {
+				binding, err = sdk.WaitForBinding(sb.Namespace, sb.Name, time.Millisecond, &timeout)
+				wg.Done()
+			}()
+
+			time.Sleep(500 * time.Millisecond)
+			sb.Status.AsyncOpInProgress = false
+
+			wg.Wait()
+
+			Expect(binding.Status.AsyncOpInProgress).To(BeFalse())
+		})
 	})
 
 	Describe("RetrieveBinding", func() {
