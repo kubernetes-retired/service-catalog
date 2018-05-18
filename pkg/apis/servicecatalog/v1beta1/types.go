@@ -167,7 +167,7 @@ type CommonServiceBrokerSpec struct {
 //   name - the value set to [Cluster]ServiceClass.Name
 //   spec.externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
 //   spec.externalID - the value set to [Cluster]ServiceClass.Spec.ExternalID
-//   spec.serviceBrokerName - the value set to Spec.[Cluster]ServiceBrokerName
+//   spec.serviceBrokerName - the value set to [Cluster]ServiceClass.Spec.[Cluster]ServiceBrokerName
 //
 // ServicePlan allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
