@@ -196,8 +196,8 @@ $(BINDIR):
 	mkdir -p $@
 
 .scBuildImage: build/build-image/Dockerfile
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage -f - .
+	sed -i "s/GO_VERSION/$(GO_VERSION)/g" build/build-image/Dockerfile
+	docker build -t scbuildimage -f build/build-image/Dockerfile .
 	touch $@
 
 # Util targets
