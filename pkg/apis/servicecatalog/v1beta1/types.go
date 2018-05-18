@@ -165,11 +165,16 @@ type CommonServiceBrokerSpec struct {
 //
 // ServiceClass allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
-//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//   spec.externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//   spec.externalID - the value set to [Cluster]ServiceClass.Spec.ExternalID
+//   spec.serviceBrokerName - the value set to [Cluster]ServiceClass.Spec.[Cluster]ServiceBrokerName
 //
 // ServicePlan allowed property names:
 //   name - the value set to [Cluster]ServiceClass.Name
-//   externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//   spec.externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
+//   spec.externalID - the value set to [Cluster]ServiceClass.Spec.ExternalID
+//   spec.serviceClassName - the value set to [Cluster]ServiceClass.Spec.ServiceClassRef.Name
+//
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServiceClass []string `json:"serviceClass,omitempty"`
@@ -1313,6 +1318,8 @@ const (
 	FilterSpecExternalID = "spec.externalID"
 	// SpecServiceBrokerName is used for ServiceClasses, the parent service broker name.
 	FilterSpecServiceBrokerName = "spec.serviceBrokerName"
+	// SpecClusterServiceBrokerName is only used for plans to filter by broker, the parent service broker name.
+	FilterSpecClusterServiceBrokerName = "spec.clusterServiceBrokerName"
 	// SpecClusterServiceClassName is only used for plans, the parent service class name.
 	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
 	// SpecServiceClassName is only used for plans, the parent service class name.
