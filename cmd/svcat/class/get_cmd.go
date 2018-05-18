@@ -28,6 +28,8 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
+	brokerName   string
+	brokerFilter string
 	outputFormat string
 }
 
@@ -46,6 +48,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get classes
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
+	svcat get class --broker
 `,
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -56,6 +59,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"u",
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.brokerFilter,
+		"brokerName",
+		"b",
+		"",
+		"Filter classes based on broker. When --broker is specified, the classes with the associated broker will be listed.",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -69,7 +79,9 @@ func (c *getCmd) Validate(args []string) error {
 			c.name = args[0]
 		}
 	}
-
+	if c.brokerFilter != "" {
+		c.brokerName = c.brokerFilter
+	}
 	return nil
 }
 

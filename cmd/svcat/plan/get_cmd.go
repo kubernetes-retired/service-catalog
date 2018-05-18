@@ -33,9 +33,13 @@ type getCmd struct {
 	uuid         string
 	name         string
 
-	classFilter  string
-	classUUID    string
-	className    string
+	brokerFilter string
+	brokerName   string
+
+	classFilter string
+	classUUID   string
+	className   string
+
 	outputFormat string
 }
 
@@ -59,6 +63,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan --class CLASS_NAME PLAN_NAME
   svcat get plans --uuid --class CLASS_UUID
   svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+	svcat get plan --broker BROKER_NAME
 `,
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -76,6 +81,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"c",
 		"",
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.brokerFilter,
+		"broker",
+		"b",
+		"",
+		"Filter plans based on broker.  When --broker is specified, the associated brokers are liste.",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -103,7 +115,10 @@ func (c *getCmd) Validate(args []string) error {
 			c.className = c.classFilter
 		}
 	}
-
+	if c.brokerFiler != "" {
+		c.brokerName = c.brokerFilter
+		//TODO check validate broker filter, currently just a guess
+	}
 	return nil
 }
 
