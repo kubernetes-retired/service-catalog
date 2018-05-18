@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -57,5 +58,22 @@ func writeParameters(w io.Writer, parameters *runtime.RawExtension) {
 		fmt.Fprintln(w, string(parameters.Raw))
 	} else {
 		writeYAML(w, params, 2)
+	}
+}
+
+func writeParametersFrom(w io.Writer, parametersFrom []v1beta1.ParametersFromSource) {
+	if len(parametersFrom) == 0 {
+		return
+	}
+
+	headerPrinted := false
+	for _, p := range parametersFrom {
+		if p.SecretKeyRef != nil {
+			if !headerPrinted {
+				fmt.Fprintln(w, "\nParameters From:")
+				headerPrinted = true
+			}
+			fmt.Fprintf(w, "  Secret: %s.%s\n", p.SecretKeyRef.Name, p.SecretKeyRef.Key)
+		}
 	}
 }

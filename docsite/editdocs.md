@@ -12,9 +12,9 @@ $( document ).ready(function() {
         $("#generalInstructions").hide();
         $("#continueEdit").show();
         $("#continueEditButton").text("Edit " + forwarding);
-        $("#continueEditButton").attr("href", "https://github.com/kubernetes-incubator/service-catalog/edit/{{ page.docsbranch }}/" + forwarding)
+        $("#continueEditButton").attr("href", "https://github.com/kubernetes-incubator/service-catalog/edit/master{{ page.docsbranch }}/" + forwarding)
         $("#viewOnGithubButton").text("View " + forwarding + " on GitHub");
-        $("#viewOnGithubButton").attr("href", "https://git.k8s.io/website/" + forwarding)
+        $("#viewOnGithubButton").attr("href", "https://github.com/kubernetes-incubator/service-catalog/blob/master{{ page.docsbranch }}/" + forwarding)
     } else {
         $("#generalInstructions").show();
         $("#continueEdit").hide();

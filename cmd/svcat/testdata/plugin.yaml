@@ -32,14 +32,15 @@ tree:
   - name: wait
     desc: Wait until the operation completes.
 - name: completion
-  shortDesc: Output shell completion code for the specified shell (bash).
-  longDesc: "\nOutput shell completion code for the specified shell (bash).\nThe shell
-    code must be evaluated to provide interactive\ncompletion of svcat commands. This
-    can be done by sourcing it from\nthe .bash_profile.\n\nNote: this requires the
-    bash-completion framework, which is not installed\nby default on Mac. This can
-    be installed by using homebrew:\n\n\t$ brew install bash-completion\n\nOnce installed,
-    bash_completion must be evaluated. This can be done by adding the\nfollowing line
-    to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n"
+  shortDesc: Output shell completion code for the specified shell (bash or zsh).
+  longDesc: "\nOutput shell completion code for the specified shell (bash or zsh).\nThe
+    shell code must be evaluated to provide interactive\ncompletion of svcat commands.
+    This can be done by sourcing it from\nthe .bash_profile.\n\nNote: this requires
+    the bash-completion framework, which is not installed\nby default on Mac. This
+    can be installed by using homebrew:\n\n\t$ brew install bash-completion\n\nOnce
+    installed, bash_completion must be evaluated. This can be done by adding the\nfollowing
+    line to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n\nNote
+    for zsh users: zsh completions are only supported in versions of zsh >= 5.2\n"
   command: ./svcat completion
 - name: deprovision
   shortDesc: Deletes an instance of a service
@@ -146,18 +147,6 @@ tree:
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
-- name: install
-  shortDesc: ' '
-  command: ./svcat install
-  tree:
-  - name: plugin
-    shortDesc: Install as a kubectl plugin
-    command: ./svcat install plugin
-    flags:
-    - name: plugins-path
-      shorthand: p
-      desc: The installation path. Defaults to KUBECTL_PLUGINS_PATH, if defined, otherwise
-        the plugins directory under the KUBECONFIG dir. In most cases, this is ~/.kube/plugins.
 - name: provision
   shortDesc: Create a new instance of a service
   command: ./svcat provision

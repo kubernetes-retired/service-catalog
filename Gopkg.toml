@@ -23,6 +23,7 @@ required = [
   "k8s.io/code-generator/cmd/openapi-gen",
   "k8s.io/gengo/args",
   "github.com/kubernetes/repo-infra/kazel",
+  "golang.org/x/lint/golint",
 ]
 
 # in sync with Kubernetes master (k8s 1.10 future release), but different from Kubernetes etcd version (3.1.10),
@@ -44,6 +45,10 @@ required = [
 [[constraint]]
   name = "github.com/Azure/go-autorest"
   version = "^9.1.0"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  version = "0.0.2"
 
 [[constraint]]
   name = "github.com/spf13/viper"
@@ -84,5 +89,3 @@ required = [
   non-go = false
   go-tests = false
   unused-packages = false
-
-

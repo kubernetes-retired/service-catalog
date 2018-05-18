@@ -17,6 +17,10 @@ spec:
     paramset:
       ps1: 1
       ps2: two
+  parametersFrom:
+  - secretKeyRef:
+      key: params
+      name: binding-parameters
   secretName: ups-binding
 status:
   asyncOpInProgress: false
@@ -27,12 +31,14 @@ status:
     status: "True"
     type: Ready
   externalProperties:
-    parameterChecksum: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+    parameterChecksum: 23ca85e0f9fc05340ea0a13ef945602cd5cdc3f52d763e750cb0ab0cb172a94f
     parameters:
       param1: value1
       paramset:
         ps1: 1
         ps2: two
+      secretparam1: <redacted>
+      secretparam2: <redacted>
   orphanMitigationInProgress: false
   reconciledGeneration: 1
   unbindStatus: Required

@@ -96,6 +96,7 @@ func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 	t.Render()
 
 	writeParameters(w, binding.Spec.Parameters)
+	writeParametersFrom(w, binding.Spec.ParametersFrom)
 }
 
 // WriteAssociatedBindings prints a list of bindings associated with an instance.

@@ -24,17 +24,17 @@ RUN curl -sSL https://github.com/coreos/etcd/releases/download/v3.1.10/etcd-v3.1
     | tar -vxz -C /usr/local/bin --strip=1 etcd-v3.1.10-linux-amd64/etcd
 
 # Install the golint, use this to check our source for niceness
-RUN go get -u github.com/golang/lint/golint
+COPY vendor/golang.org /go/src/golang.org
+RUN go install golang.org/x/lint/golint
 
 # Install the href checker for our md files, update PATH to include it
 RUN git clone https://github.com/duglin/vlinker.git /vlinker
 ENV PATH=$PATH:/vlinker/bin
 
 # Install the azure client, used to publish svcat binaries
-ENV AZCLI_VERSION=2.0.25
-RUN apt-get update && apt-get install -y python-pip && \
-    rm -rf /var/lib/apt/lists/*
-RUN pip install --disable-pip-version-check --no-cache-dir --upgrade cryptography azure-cli==${AZCLI_VERSION}
+ENV AZCLI_VERSION=v0.1.2
+RUN curl -sLo /usr/local/bin/az https://github.com/carolynvs/az-cli/releases/download/$AZCLI_VERSION/az-linux-amd64 && \
+    chmod +x /usr/local/bin/az
 
 # Create the full dir tree that we'll mount our src into when we run the image
 RUN mkdir -p /go/src/github.com/kubernetes-incubator/service-catalog
