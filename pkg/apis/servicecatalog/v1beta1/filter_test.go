@@ -56,7 +56,7 @@ func TestConvertServiceClassToProperties(t *testing.T) {
 			}
 			b, err := json.Marshal(p)
 			if err != nil {
-				t.Fatalf("Unexpected error with json marchal, %v", err)
+				t.Fatalf("Unexpected error with json marshall, %v", err)
 			}
 			js := string(b)
 			if js != tc.json {
@@ -102,7 +102,7 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 			}
 			b, err := json.Marshal(p)
 			if err != nil {
-				t.Fatalf("Unexpected error with json marchal, %v", err)
+				t.Fatalf("Unexpected error with json marshall, %v", err)
 			}
 			js := string(b)
 			if js != tc.json {
@@ -145,7 +145,7 @@ func TestConvertClusterServiceClassToProperties(t *testing.T) {
 			}
 			b, err := json.Marshal(p)
 			if err != nil {
-				t.Fatalf("Unexpected error with json marchal, %v", err)
+				t.Fatalf("Unexpected error with json marshall, %v", err)
 			}
 			js := string(b)
 			if js != tc.json {
@@ -191,7 +191,7 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 			}
 			b, err := json.Marshal(p)
 			if err != nil {
-				t.Fatalf("Unexpected error with json marchal, %v", err)
+				t.Fatalf("Unexpected error with json marshall, %v", err)
 			}
 			js := string(b)
 			if js != tc.json {
