@@ -79,7 +79,7 @@ func validPlanReferenceServiceExternalID() servicecatalog.PlanReference {
 	}
 }
 
-func validPlanReferenceK8S() servicecatalog.PlanReference {
+func validPlanReferenceServiceK8S() servicecatalog.PlanReference {
 	return servicecatalog.PlanReference{
 		ServiceClassName: serviceClassName,
 		ServicePlanName:  servicePlanName,
@@ -1168,7 +1168,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 		},
 		{
 			name:       "valid namespaced plan change via k8s name",
-			oldPlan:    validPlanReferenceK8S(),
+			oldPlan:    validPlanReferenceServiceK8S(),
 			newPlan:    newPlanK8sName,
 			newPlanRef: nil,
 			valid:      true,
@@ -1189,7 +1189,7 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 		},
 		{
 			name:       "plan ref not cleared for change via k8s name",
-			oldPlan:    validPlanReferenceK8S(),
+			oldPlan:    validPlanReferenceServiceK8S(),
 			newPlan:    newPlanK8sName,
 			newPlanRef: &servicecatalog.LocalObjectReference{},
 			valid:      false,
@@ -1694,7 +1694,7 @@ func TestValidatePlanReference(t *testing.T) {
 		},
 		{
 			name:  "valid -- k8s",
-			ref:   validPlanReferenceK8S(),
+			ref:   validPlanReferenceServiceK8S(),
 			valid: true,
 		},
 		{

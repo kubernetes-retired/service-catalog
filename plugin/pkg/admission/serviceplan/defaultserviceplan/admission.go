@@ -124,7 +124,7 @@ func (d *defaultServicePlan) handleDefaultClusterServicePlan(a admission.Attribu
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
-	// check if more than one service plan was specified and error
+	// check if more than one service plan was found and error
 	if len(plans) > 1 {
 		msg := fmt.Sprintf("ClusterServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", sc.Name, sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
@@ -185,7 +185,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
-	// check if more than one service plan was specified and error
+	// check if more than one service plan was found and error
 	if len(plans) > 1 {
 		msg := fmt.Sprintf("ServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", sc.Name, sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
@@ -260,7 +260,7 @@ func (d *defaultServicePlan) getServiceClassByK8SName(a admission.Attributes, sc
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
-	filterField := ref.GetClassFilterFieldName()
+	filterField := ref.GetClusterServiceClassFilterFieldName()
 	filterValue := ref.GetSpecifiedClusterServiceClass()
 
 	glog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", filterField, filterValue)
@@ -284,7 +284,7 @@ func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attribute
 }
 
 func (d *defaultServicePlan) getServiceClassByField(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ServiceClass, error) {
-	filterField := ref.GetClassFilterFieldName()
+	filterField := ref.GetServiceClassFilterFieldName()
 	filterValue := ref.GetSpecifiedServiceClass()
 
 	glog.V(4).Infof("Fetching ServiceClass filtered by %q = %q", filterField, filterValue)

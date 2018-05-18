@@ -492,14 +492,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		return allErrs
 	}
 
-	classRefMissing := p.ClusterServiceClassExternalName == "" &&
-		p.ClusterServiceClassExternalID == "" &&
-		p.ClusterServiceClassName == "" &&
-		p.ServiceClassExternalName == "" &&
-		p.ServiceClassExternalID == "" &&
-		p.ServiceClassName == ""
-
-	if classRefMissing {
+	if clusterCount == 0 && nsCount == 0 {
 		errMsg = "plan references must have a class reference set"
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalName"), errMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassExternalID"), errMsg))
@@ -507,6 +500,7 @@ func validatePlanReference(p *sc.PlanReference, fldPath *field.Path) field.Error
 		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassExternalName"), errMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassExternalID"), errMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassName"), errMsg))
+		return allErrs
 	}
 
 	// Clue in if we're cluster or ns typed

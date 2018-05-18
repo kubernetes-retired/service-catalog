@@ -948,7 +948,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			return nil, nil, fmt.Errorf(s)
 		}
 	} else {
-		filterField := instance.Spec.GetClassFilterFieldName()
+		filterField := instance.Spec.GetClusterServiceClassFilterFieldName()
 		filterValue := instance.Spec.GetSpecifiedClusterServiceClass()
 
 		glog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterField, filterValue))
@@ -1026,9 +1026,9 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		}
 	} else {
 		fieldSet := fields.Set{
-			instance.Spec.GetPlanFilterFieldName(): instance.Spec.GetSpecifiedClusterServicePlan(),
-			"spec.clusterServiceClassRef.name":     instance.Spec.ClusterServiceClassRef.Name,
-			"spec.clusterServiceBrokerName":        brokerName,
+			instance.Spec.GetClusterServicePlanFilterFieldName(): instance.Spec.GetSpecifiedClusterServicePlan(),
+			"spec.clusterServiceClassRef.name":                   instance.Spec.ClusterServiceClassRef.Name,
+			"spec.clusterServiceBrokerName":                      brokerName,
 		}
 		fieldSelector := fields.SelectorFromSet(fieldSet).String()
 		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
