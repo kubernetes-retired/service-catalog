@@ -55,12 +55,14 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 		"Name",
 		"Class",
 		"Description",
+		"Broker",
 	})
 	for _, plan := range plans {
 		t.Append([]string{
 			plan.Spec.ExternalName,
 			classNames[plan.Spec.ClusterServiceClassRef.Name],
 			plan.Spec.Description,
+			plan.Spec.ClusterServiceBrokerName,
 		})
 	}
 	t.Render()
@@ -145,6 +147,7 @@ func WritePlanDetails(w io.Writer, plan *v1beta1.ClusterServicePlan, class *v1be
 		{"Status:", getPlanStatusShort(plan.Status)},
 		{"Free:", strconv.FormatBool(plan.Spec.Free)},
 		{"Class:", class.Spec.ExternalName},
+		{"Broker:", class.Spec.ClusterServiceBrokerName},
 	})
 
 	t.Render()
