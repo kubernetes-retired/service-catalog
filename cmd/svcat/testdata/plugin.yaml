@@ -5,11 +5,12 @@ tree:
 - name: bind
   shortDesc: Binds an instance's metadata to a secret, which can then be used by an
     application to connect to the instance
-  example: "\n  svcat bind wordpress\n  svcat bind wordpress-mysql-instance --name
-    wordpress-mysql-binding --secret-name wordpress-mysql-secret\n  svcat bind wordpress-mysql-instance
-    --name wordpress-mysql-binding --external-id c8ca2fcc-4398-11e8-842f-0ed5f89f718b\n
-    \ svcat bind wordpress-instance --params type=admin\n  svcat bind wordpress-instance
-    --params-json '{\n\t\"type\": \"admin\",\n\t\"teams\": [\n\t\t\"news\",\n\t\t\"weather\",\n\t\t\"sports\"\n\t]\n}\n'\n"
+  example: "  svcat bind wordpress\n  svcat bind wordpress-mysql-instance --name wordpress-mysql-binding
+    --secret-name wordpress-mysql-secret\n  svcat bind wordpress-mysql-instance --name
+    wordpress-mysql-binding --external-id c8ca2fcc-4398-11e8-842f-0ed5f89f718b\n  svcat
+    bind wordpress-instance --params type=admin\n  svcat bind wordpress-instance --params-json
+    '{\n  \t\"type\": \"admin\",\n  \t\"teams\": [\n  \t\t\"news\",\n  \t\t\"weather\",\n
+    \ \t\t\"sports\"\n  \t]\n  }'"
   command: ./svcat bind
   flags:
   - name: external-id
@@ -46,26 +47,18 @@ tree:
     installed, bash_completion must be evaluated. This can be done by adding the\nfollowing
     line to the .bash_profile\n\n\t$ source $(brew --prefix)/etc/bash_completion\n\nNote
     for zsh users: zsh completions are only supported in versions of zsh >= 5.2\n"
-  example: |2
-
-    # Install bash completion on a Mac using homebrew
-    brew install bash-completion
-    printf "\n# Bash completion support\nsource $(brew --prefix)/etc/bash_completion\n" >> $HOME/.bash_profile
-    source $HOME/.bash_profile
-
-    # Load the svcat completion code for the specified shell (bash or zsh)
-    source <(svcat completion bash)
-
-    # Write bash completion code to a file and source if from .bash_profile
-    svcat completion bash > ~/.svcat/svcat_completion.bash.inc
-    printf "\n# Svcat shell completion\nsource '$HOME/.svcat/svcat_completion.bash.inc'\n" >> $HOME/.bash_profile
-    source $HOME/.bash_profile
+  example: "  # Install bash completion on a Mac using homebrew\n  brew install bash-completion\n
+    \ printf \"\\n# Bash completion support\\nsource $(brew --prefix)/etc/bash_completion\\n\"
+    >> $HOME/.bash_profile\n  source $HOME/.bash_profile\n  \n  # Load the svcat completion
+    code for the specified shell (bash or zsh)\n  source <(svcat completion bash)\n
+    \ \n  # Write bash completion code to a file and source if from .bash_profile\n
+    \ svcat completion bash > ~/.svcat/svcat_completion.bash.inc\n  printf \"\\n#
+    Svcat shell completion\\nsource '$HOME/.svcat/svcat_completion.bash.inc'\\n\"
+    >> $HOME/.bash_profile\n  source $HOME/.bash_profile"
   command: ./svcat completion
 - name: deprovision
   shortDesc: Deletes an instance of a service
-  example: |2
-
-      svcat deprovision wordpress-mysql-instance
+  example: '  svcat deprovision wordpress-mysql-instance'
   command: ./svcat deprovision
   flags:
   - name: interval
@@ -82,9 +75,7 @@ tree:
   tree:
   - name: binding
     shortDesc: Show details of a specific binding
-    example: |2
-
-        svcat describe binding wordpress-mysql-binding
+    example: '  svcat describe binding wordpress-mysql-binding'
     command: ./svcat describe binding
     flags:
     - name: show-secrets
@@ -92,14 +83,11 @@ tree:
         is displayed
   - name: broker
     shortDesc: Show details of a specific broker
-    example: |2
-
-        svcat describe broker asb
+    example: '  svcat describe broker asb'
     command: ./svcat describe broker
   - name: class
     shortDesc: Show details of a specific class
-    example: |2
-
+    example: |2-
         svcat describe class mysqldb
         svcat describe class -uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
     command: ./svcat describe class
@@ -109,14 +97,11 @@ tree:
       desc: Whether or not to get the class by UUID (the default is by name)
   - name: instance
     shortDesc: Show details of a specific instance
-    example: |2
-
-        svcat describe instance wordpress-mysql-instance
+    example: '  svcat describe instance wordpress-mysql-instance'
     command: ./svcat describe instance
   - name: plan
     shortDesc: Show details of a specific plan
-    example: |2
-
+    example: |2-
         svcat describe plan standard800
         svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
     command: ./svcat describe plan
@@ -132,8 +117,7 @@ tree:
   tree:
   - name: bindings
     shortDesc: List bindings, optionally filtered by name
-    example: |2
-
+    example: |2-
         svcat get bindings
         svcat get bindings --all-namespaces
         svcat get binding wordpress-mysql-binding
@@ -149,8 +133,7 @@ tree:
         present, defaults to table
   - name: brokers
     shortDesc: List brokers, optionally filtered by name
-    example: |2
-
+    example: |2-
         svcat get brokers
         svcat get broker asb
     command: ./svcat get brokers
@@ -161,8 +144,7 @@ tree:
         present, defaults to table
   - name: classes
     shortDesc: List classes, optionally filtered by name
-    example: |2
-
+    example: |2-
         svcat get classes
         svcat get class mysqldb
         svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
@@ -177,8 +159,7 @@ tree:
       desc: Whether or not to get the class by UUID (the default is by name)
   - name: instances
     shortDesc: List instances, optionally filtered by name
-    example: |2
-
+    example: |2-
         svcat get instances
         svcat get instances --all-namespaces
         svcat get instance wordpress-mysql-instance
@@ -194,8 +175,7 @@ tree:
         present, defaults to table
   - name: plans
     shortDesc: List plans, optionally filtered by name or class
-    example: |2
-
+    example: |2-
         svcat get plans
         svcat get plan PLAN_NAME
         svcat get plan CLASS_NAME/PLAN_NAME
@@ -219,8 +199,7 @@ tree:
       desc: Whether or not to get the plan by UUID (the default is by name)
 - name: provision
   shortDesc: Create a new instance of a service
-  example: |2
-
+  example: |2-
       svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
       svcat provision wordpress-mysql-instance --external-id a7c00676-4398-11e8-842f-0ed5f89f718b --class mysqldb --plan free
       svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
@@ -238,8 +217,7 @@ tree:
                 "endIPAddress" : "13.56.0.0"
             }
         ]
-    }
-    '
+      }'
   command: ./svcat provision
   flags:
   - name: class
@@ -272,6 +250,7 @@ tree:
   tree:
   - name: broker
     shortDesc: Syncs service catalog for a service broker
+    example: '  svcat sync broker asb'
     command: ./svcat sync broker
 - name: touch
   shortDesc: Force Service Catalog to reprocess a resource
@@ -282,13 +261,12 @@ tree:
     longDesc: "Touch instance will increment the updateRequests field on the instance.
       \nThen, service catalog will process the instance's spec again. It might do
       an update, a delete, or \nnothing."
-    example: svcat touch instance wordpress-mysql-instance --namespace mynamespace
+    example: '  svcat touch instance wordpress-mysql-instance --namespace mynamespace'
     command: ./svcat touch instance
 - name: unbind
   shortDesc: Unbinds an instance. When an instance name is specified, all of its bindings
     are removed, otherwise use --name to remove a specific binding
-  example: |2
-
+  example: |2-
       svcat unbind wordpress-mysql-instance
       svcat unbind --name wordpress-mysql-binding
   command: ./svcat unbind
@@ -305,8 +283,7 @@ tree:
     desc: Wait until the operation completes.
 - name: version
   shortDesc: Provides the version for the Service Catalog client and server
-  example: |2
-
+  example: |2-
       svcat version
       svcat version --client
   command: ./svcat version

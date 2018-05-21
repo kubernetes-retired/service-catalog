@@ -39,10 +39,10 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Use:     "brokers [name]",
 		Aliases: []string{"broker", "brk"},
 		Short:   "List brokers, optionally filtered by name",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat get brokers
   svcat get broker asb
-`,
+`),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}

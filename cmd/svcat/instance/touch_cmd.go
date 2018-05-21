@@ -37,7 +37,7 @@ func NewTouchCommand(cxt *command.Context) *cobra.Command {
 		Long: `Touch instance will increment the updateRequests field on the instance. 
 Then, service catalog will process the instance's spec again. It might do an update, a delete, or 
 nothing.`,
-		Example: `svcat touch instance wordpress-mysql-instance --namespace mynamespace`,
+		Example: command.NormalizeExamples(`svcat touch instance wordpress-mysql-instance --namespace mynamespace`),
 		PreRunE: command.PreRunE(touchInstanceCmd),
 		RunE:    command.RunE(touchInstanceCmd),
 	}

@@ -39,12 +39,12 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Use:     "bindings [name]",
 		Aliases: []string{"binding", "bnd"},
 		Short:   "List bindings, optionally filtered by name",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat get bindings
   svcat get bindings --all-namespaces
   svcat get binding wordpress-mysql-binding
   svcat get binding -n ci concourse-postgres-binding
-`,
+`),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}

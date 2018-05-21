@@ -50,7 +50,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Use:     "plans [name]",
 		Aliases: []string{"plan", "pl"},
 		Short:   "List plans, optionally filtered by name or class",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat get plans
   svcat get plan PLAN_NAME
   svcat get plan CLASS_NAME/PLAN_NAME
@@ -59,7 +59,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan --class CLASS_NAME PLAN_NAME
   svcat get plans --uuid --class CLASS_UUID
   svcat get plan --uuid --class CLASS_UUID PLAN_UUID
-`,
+`),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}

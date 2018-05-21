@@ -36,9 +36,9 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Use:     "broker NAME",
 		Aliases: []string{"brokers", "brk"},
 		Short:   "Show details of a specific broker",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat describe broker asb
-`,
+`),
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}

@@ -44,7 +44,7 @@ following line to the .bash_profile
 Note for zsh users: zsh completions are only supported in versions of zsh >= 5.2
 `
 
-	completionExample = `
+	completionExample = command.NormalizeExamples(`
 # Install bash completion on a Mac using homebrew
 brew install bash-completion
 printf "\n# Bash completion support\nsource $(brew --prefix)/etc/bash_completion\n" >> $HOME/.bash_profile
@@ -57,7 +57,7 @@ source <(svcat completion bash)
 svcat completion bash > ~/.svcat/svcat_completion.bash.inc
 printf "\n# Svcat shell completion\nsource '$HOME/.svcat/svcat_completion.bash.inc'\n" >> $HOME/.bash_profile
 source $HOME/.bash_profile
-`
+`)
 )
 
 var (

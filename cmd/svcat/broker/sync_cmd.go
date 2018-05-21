@@ -34,6 +34,7 @@ func NewSyncCmd(cxt *command.Context) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "broker [name]",
 		Short:   "Syncs service catalog for a service broker",
+		Example: command.NormalizeExamples(`svcat sync broker asb`),
 		PreRunE: command.PreRunE(syncCmd),
 		RunE:    command.RunE(syncCmd),
 	}
