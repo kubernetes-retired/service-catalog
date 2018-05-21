@@ -61,11 +61,6 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
             "name": "AllowSome",
             "startIPAddress": "75.70.113.50",
             "endIPAddress" : "75.70.113.131"
-        },
-        {
-            "name": "AllowMore",
-            "startIPAddress": "13.54.0.0",
-            "endIPAddress" : "13.56.0.0"
         }
     ]
   }'
