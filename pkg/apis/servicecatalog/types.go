@@ -150,7 +150,8 @@ type CommonServiceBrokerSpec struct {
 //   name - the value set to [Cluster]ServicePlan.Name
 //   spec.externalName - the value set to [Cluster]ServicePlan.Spec.ExternalName
 //   spec.externalID - the value set to [Cluster]ServicePlan.Spec.ExternalID
-//   spec.serviceClassName - the value set to [Cluster]ServicePlan.Spec.ServiceClassRef.Name
+//   spec.serviceClassName - the value set to ServicePlan.Spec.ServiceClassRef.Name
+//   spec.clusterServiceClass.name - the value set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServicePlan []string

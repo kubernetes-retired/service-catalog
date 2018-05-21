@@ -89,7 +89,7 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.serviceClassName":"service-class-name"}`,
+			json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.serviceClass.name":"service-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -176,7 +176,7 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.clusterServiceClassName":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name"}`,
+			json: `{"name":"service-plan","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name"}`,
 		},
 	}
 	for _, tc := range cases {
