@@ -32,7 +32,7 @@ type syncCmd struct {
 func NewSyncCmd(cxt *command.Context) *cobra.Command {
 	syncCmd := &syncCmd{Context: cxt}
 	rootCmd := &cobra.Command{
-		Use:     "broker [name]",
+		Use:     "broker NAME",
 		Short:   "Syncs service catalog for a service broker",
 		Example: command.NormalizeExamples(`svcat sync broker asb`),
 		PreRunE: command.PreRunE(syncCmd),
