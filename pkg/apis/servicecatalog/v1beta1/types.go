@@ -1317,7 +1317,7 @@ const (
 	// SpecServiceBrokerName is used for ServiceClasses, the parent service broker name.
 	FilterSpecServiceBrokerName = "spec.serviceBrokerName"
 	// SpecClusterServiceClassName is only used for plans, the parent service class name.
-  FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
 	// SpecServiceClassName is only used for plans, the parent service class name.
 	FilterSpecServiceClassName = "spec.serviceClass.name"
 )
