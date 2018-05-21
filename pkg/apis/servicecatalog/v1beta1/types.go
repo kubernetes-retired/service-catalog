@@ -1316,9 +1316,9 @@ const (
 	// SpecServiceBrokerName is used for ServiceClasses, the parent service broker name.
 	FilterSpecServiceBrokerName = "spec.serviceBrokerName"
 	// SpecClusterServiceClassName is only used for plans, the parent service class name.
-	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	FilterSpecClusterServiceClassName = "spec.clusterServiceClassName"
 	// SpecServiceClassName is only used for plans, the parent service class name.
-	FilterSpecServiceClassName = "spec.serviceClass.name"
+	FilterSpecServiceClassName = "spec.serviceClassName"
 )
 
 // SecretTransform is a single transformation that is applied to the
