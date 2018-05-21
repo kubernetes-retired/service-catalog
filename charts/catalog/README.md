@@ -50,7 +50,7 @@ chart and their default values.
 | `apiserver.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30443` |
 | `apiserver.storage.type` | The storage backend to use; the only valid value is `etcd`, left for other storages support in future, e.g. `crd` | `etcd` |
 | `apiserver.storage.etcd.useEmbedded` | If storage type is `etcd`: Whether to embed an etcd container in the apiserver pod; THIS IS INADEQUATE FOR PRODUCTION USE! | `true` |
-| `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd | `http://localhost:2379` |
+| `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd. Only etcd v3 is supported. | `http://localhost:2379` |
 | `apiserver.storage.etcd.persistence.enabled` | Enable persistence using PVC | `false` |
 | `apiserver.storage.etcd.persistence.storageClass` | PVC Storage Class | `nil` (uses alpha storage class annotation) |
 | `apiserver.storage.etcd.persistence.accessMode` | PVC Access Mode | `ReadWriteOnce` |
