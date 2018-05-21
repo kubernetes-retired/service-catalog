@@ -40,7 +40,7 @@ func NewInstallCmd(cxt *command.Context) *cobra.Command {
 	installCmd := &installCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:   "plugin",
-		Short: "Install as a kubectl plugin",
+		Short: "Install svcat as a kubectl plugin",
 		Example: command.NormalizeExamples(`
   svcat install plugin
   svcat install plugin --plugins-path /tmp/kube/plugins
