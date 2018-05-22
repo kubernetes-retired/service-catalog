@@ -36,7 +36,7 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
-		Use:     "bindings NAME",
+		Use:     "bindings [NAME]",
 		Aliases: []string{"binding", "bnd"},
 		Short:   "List bindings, optionally filtered by name",
 		Example: command.NormalizeExamples(`

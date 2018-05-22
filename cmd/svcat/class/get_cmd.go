@@ -39,7 +39,7 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{Context: cxt}
 	cmd := &cobra.Command{
-		Use:     "classes NAME",
+		Use:     "classes [NAME]",
 		Aliases: []string{"class", "cl"},
 		Short:   "List classes, optionally filtered by name",
 		Example: command.NormalizeExamples(`

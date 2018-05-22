@@ -127,7 +127,7 @@ tree:
   command: ./svcat get
   tree:
   - name: bindings
-    use: bindings NAME
+    use: bindings [NAME]
     shortDesc: List bindings, optionally filtered by name
     example: |2-
         svcat get bindings
@@ -144,7 +144,7 @@ tree:
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
   - name: brokers
-    use: brokers NAME
+    use: brokers [NAME]
     shortDesc: List brokers, optionally filtered by name
     example: |2-
         svcat get brokers
@@ -156,7 +156,7 @@ tree:
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
   - name: classes
-    use: classes NAME
+    use: classes [NAME]
     shortDesc: List classes, optionally filtered by name
     example: |2-
         svcat get classes
@@ -172,7 +172,7 @@ tree:
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
   - name: instances
-    use: instances NAME
+    use: instances [NAME]
     shortDesc: List instances, optionally filtered by name
     example: |2-
         svcat get instances
@@ -189,7 +189,7 @@ tree:
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
   - name: plans
-    use: plans NAME
+    use: plans [NAME]
     shortDesc: List plans, optionally filtered by name or class
     example: |2-
         svcat get plans
