@@ -64,6 +64,10 @@ installation methods will automatically configure in-cluster DNS for you:
 (in the Kubernetes repository)
 - Most cloud providers
 
+## Storage
+
+Apiserver requires etcd v3 to work. In future CRD support may be added.
+
 ## Helm
 
 You'll install Service Catalog with [Helm](http://helm.sh/), and you'll need
