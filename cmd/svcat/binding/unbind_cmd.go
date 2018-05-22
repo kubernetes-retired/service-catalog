@@ -19,12 +19,15 @@ package binding
 import (
 	"fmt"
 	"sync"
-	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type unbindCmd struct {
@@ -89,18 +92,11 @@ func (c *unbindCmd) deleteBinding() error {
 	}
 
 	if c.Wait {
-		fmt.Fprintln(c.Output, "Waiting for the binding to be deleted...")
-		pollInterval := 1 * time.Second
-
-		var binding *v1beta1.ServiceBinding
-		binding, err = c.App.WaitForBinding(c.Namespace, c.bindingName, pollInterval, c.Timeout)
-
-		if err != nil {
-			fmt.Fprintf(c.Output, "Error: %s", err.Error())
-		} else if c.App.IsBindingFailed(binding) {
-			output.WriteBindingDetails(c.Output, binding)
-		} else {
-			output.WriteDeletedResourceName(c.Output, c.bindingName)
+		binding := v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Namespace: c.Namespace, Name: c.bindingName}}
+		hasErr := c.waitForBindingDeletes("Waiting for the binding to be deleted...", binding)
+		if hasErr {
+			// Ensure a non-zero exit code is returned if the wait has trouble
+			return errors.New("could not remove the binding")
 		}
 	} else {
 		output.WriteDeletedResourceName(c.Output, c.bindingName)
@@ -111,37 +107,62 @@ func (c *unbindCmd) deleteBinding() error {
 }
 
 func (c *unbindCmd) unbindInstance() error {
+	// Indicates an error occurred and that a non-zero exit code should be used
+	var hasErrors bool
+
 	bindings, err := c.App.Unbind(c.Namespace, c.instanceName)
 	if err != nil {
-		return err
+		// Do not return immediately as we still need to potentially wait or print the deleted bindings
+		hasErrors = true
+		fmt.Fprintf(c.Output, "Error: %s", err.Error())
 	}
 
 	if c.Wait {
-		fmt.Fprintln(c.Output, "Waiting for the bindings to be deleted...")
-		var g sync.WaitGroup
-		for _, binding := range bindings {
-			g.Add(1)
-			go func(ns, name string) {
-				defer g.Done()
-
-				binding, err := c.App.WaitForBinding(ns, name, c.Interval, c.Timeout)
-
-				if err != nil {
-					fmt.Fprintf(c.Output, "Error: %s", err.Error())
-				} else if c.App.IsBindingFailed(binding) {
-					fmt.Fprintf(c.Output, "could not delete binding %s/%s", ns, name)
-				} else {
-					output.WriteDeletedResourceName(c.Output, name)
-				}
-			}(binding.Namespace, binding.Name)
-		}
-		g.Wait()
+		hasErrors = c.waitForBindingDeletes("waiting for the bindings to be deleted...", bindings...) || hasErrors
 	} else {
 		for _, binding := range bindings {
 			output.WriteDeletedResourceName(c.Output, binding.Name)
 		}
 	}
 
-	// Don't return errors because we handle printing them as they occur above
+	if hasErrors {
+		return errors.New("could not remove all bindings")
+	}
 	return nil
+}
+
+// waitForBindingDeletes waits for the bindings to be deleted and prints either
+// and error message or the name of the deleted binding.
+func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...v1beta1.ServiceBinding) bool {
+	if len(bindings) == 0 {
+		return false
+	}
+
+	// Indicates an error occurred and that a non-zero exit code should be used
+	var hasErrors bool
+
+	fmt.Fprintln(c.Output, waitMessage)
+
+	var g sync.WaitGroup
+	for _, binding := range bindings {
+		g.Add(1)
+		go func(ns, name string) {
+			defer g.Done()
+
+			binding, err := c.App.WaitForBinding(ns, name, c.Interval, c.Timeout)
+
+			if err != nil && !apierrors.IsNotFound(errors.Cause(err)) {
+				hasErrors = true
+				fmt.Fprintf(c.Output, "Error: %s\n", err.Error())
+			} else if c.App.IsBindingFailed(binding) {
+				hasErrors = true
+				fmt.Fprintf(c.Output, "Error: could not delete binding %s/%s\n", ns, name)
+			} else {
+				output.WriteDeletedResourceName(c.Output, name)
+			}
+		}(binding.Namespace, binding.Name)
+	}
+	g.Wait()
+
+	return hasErrors
 }

@@ -25,7 +25,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -213,11 +212,8 @@ func (sdk *SDK) WaitForBinding(ns, name string, interval time.Duration, timeout 
 	err = wait.PollImmediate(interval, *timeout,
 		func() (bool, error) {
 			binding, err = sdk.RetrieveBinding(ns, name)
-			if nil != err {
-				if apierrors.IsNotFound(err) {
-					return true, nil
-				}
-				return false, err
+			if err != nil {
+				return true, err
 			}
 
 			if len(binding.Status.Conditions) == 0 {
@@ -244,6 +240,10 @@ func (sdk *SDK) IsBindingFailed(binding *v1beta1.ServiceBinding) bool {
 
 // BindingHasStatus returns if the instance is in the specified status.
 func (sdk *SDK) BindingHasStatus(binding *v1beta1.ServiceBinding, status v1beta1.ServiceBindingConditionType) bool {
+	if binding == nil {
+		return false
+	}
+
 	for _, cond := range binding.Status.Conditions {
 		if cond.Type == status &&
 			cond.Status == v1beta1.ConditionTrue {
