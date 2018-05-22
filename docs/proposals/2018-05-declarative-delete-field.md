@@ -37,7 +37,7 @@ Helm chart changes to enable the flag and the rbac rules.
 
 Add a condition for ServiceInstanceConditionType, ServiceBindingConditionType.
 ```go
-  ServiceInstanceConditionDeleted ServiceBindingConditionType = "Deleted"
+  ServiceInstanceConditionDeleted ServiceInstanceConditionType = "Deleted"
   ServiceBindingConditionDeleted ServiceBindingConditionType = "Deleted"
 ```
 
@@ -50,13 +50,16 @@ This field is set to true by default. The user indicates that it wants
 to delete the backing resource by setting this field to false. The
 controller will see this update and attempt to delete the backing
 broker resource. If the broker delete succeeds, it sets the deleted
-status condition.
+status condition. Once the Deleted status has been achieved, no
+further updates are possible. The resource has entered a terminal
+state and the only remaining successfull action possible should be for
+DELETE to be called on the resource.
 
-If the field is set to false, no updates are allowed besides
-setting the field back to true. 
+If the field is set to false, no updates are allowed besides setting
+the field back to true.
 
 Once the status is changed to deleted the controller should issue the
-DELETE to the apiserver removing the resource.
+DELETE to the apiserver removing the resource. 
 
 ### API Server Changes
 
