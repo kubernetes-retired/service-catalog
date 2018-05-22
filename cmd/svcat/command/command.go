@@ -148,7 +148,7 @@ func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
 // from the command's Example string and normalizes the indentation
 // so that all examples across all commands are indented consistently.
 func NormalizeExamples(examples string) string {
-	// TODO: this code copied from a pending PR to k8s.io/kubernetes/pkg/kubectl/cmd/templates/normalizers.go; replace this with a call to that method when PR is merged
+	// TODO: this code copied from a pending PR: https://github.com/kubernetes/kubernetes/pull/64017; replace this with a call to that method when PR is merged
 	indentedLines := []string{}
 	var baseIndentation *string
 	for _, line := range strings.Split(examples, "\n") {
