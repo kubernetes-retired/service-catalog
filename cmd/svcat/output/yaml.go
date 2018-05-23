@@ -51,14 +51,14 @@ func writeParameters(w io.Writer, parameters *runtime.RawExtension) {
 	}
 
 	fmt.Fprintln(w, "\nParameters:")
+	if string(parameters.Raw) == "" || string(parameters.Raw) == "{}" {
+		fmt.Fprintln(w, "  No parameters defined")
+		return
+	}
 	var params map[string]interface{}
 	err := json.Unmarshal(parameters.Raw, &params)
 	if err != nil {
-		if string(parameters.Raw) == "" {
-			fmt.Fprint(w, "  No parameters defined")
-		}
-
-		// If it isn't formatted in json and not empty, just show the string representation of what is present
+		// If it isn't formatted in json, just show the string representation of what is present
 		fmt.Fprintln(w, string(parameters.Raw))
 	} else {
 		writeYAML(w, params, 2)
