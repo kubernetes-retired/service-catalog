@@ -46,11 +46,11 @@ func writeYAML(w io.Writer, obj interface{}, n int) {
 }
 
 func writeParameters(w io.Writer, parameters *runtime.RawExtension) {
-	if parameters == nil {
+	fmt.Fprintln(w, "\nParameters:")
+	if parameters == nil || string(parameters.Raw) == "" || string(parameters.Raw) == "{}" {
+		fmt.Fprintln(w, "  No parameters defined")
 		return
 	}
-
-	fmt.Fprintln(w, "\nParameters:")
 	var params map[string]interface{}
 	err := json.Unmarshal(parameters.Raw, &params)
 	if err != nil {
