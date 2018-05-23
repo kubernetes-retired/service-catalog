@@ -41,10 +41,10 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Use:     "plan NAME",
 		Aliases: []string{"plans", "pl"},
 		Short:   "Show details of a specific plan",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat describe plan standard800
   svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
-`,
+`),
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}

@@ -70,6 +70,9 @@ type Plugin struct {
 	// Name of the command for the help text. Required.
 	Name string `yaml:"name"`
 
+	// Use is the one-line description of how the command is used.
+	Use string `yaml:"use"`
+
 	// ShortDesc is a one-line description of the command. Required.
 	ShortDesc string `yaml:"shortDesc"`
 
@@ -113,6 +116,7 @@ func (m *Manifest) convertToPlugin(cmd *cobra.Command) Plugin {
 	p := Plugin{}
 
 	p.Name = strings.Split(cmd.Use, " ")[0]
+	p.Use = cmd.Use
 	p.ShortDesc = cmd.Short
 	if p.ShortDesc == "" {
 		p.ShortDesc = " " // The plugin won't validate if empty

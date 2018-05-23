@@ -19,6 +19,7 @@ package command
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -141,4 +142,27 @@ func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
 	default:
 		return "", fmt.Errorf("invalid --output format %q, allowed values are table, json and yaml", format)
 	}
+}
+
+// NormalizeExamples removes leading and trailing empty lines
+// from the command's Example string and normalizes the indentation
+// so that all examples across all commands are indented consistently.
+func NormalizeExamples(examples string) string {
+	// TODO: this code copied from a pending PR: https://github.com/kubernetes/kubernetes/pull/64017; replace this with a call to that method when PR is merged
+	indentedLines := []string{}
+	var baseIndentation *string
+	for _, line := range strings.Split(examples, "\n") {
+		if baseIndentation == nil {
+			if len(strings.TrimSpace(line)) == 0 {
+				continue // skip initial lines that only contain whitespace
+			}
+			whitespaceAtFront := line[:strings.Index(line, strings.TrimSpace(line))]
+			baseIndentation = &whitespaceAtFront
+		}
+		trimmed := strings.TrimPrefix(line, *baseIndentation)
+		indented := "  " + trimmed
+		indentedLines = append(indentedLines, indented)
+	}
+	indentedString := strings.Join(indentedLines, "\n")
+	return strings.TrimRightFunc(indentedString, unicode.IsSpace)
 }

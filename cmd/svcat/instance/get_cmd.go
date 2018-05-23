@@ -36,15 +36,15 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
-		Use:     "instances [name]",
+		Use:     "instances [NAME]",
 		Aliases: []string{"instance", "inst"},
 		Short:   "List instances, optionally filtered by name",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat get instances
   svcat get instances --all-namespaces
   svcat get instance wordpress-mysql-instance
   svcat get instance -n ci concourse-postgres-instance
-`,
+`),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}

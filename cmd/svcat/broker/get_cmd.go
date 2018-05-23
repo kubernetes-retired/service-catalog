@@ -36,13 +36,13 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{Context: cxt}
 	cmd := &cobra.Command{
-		Use:     "brokers [name]",
+		Use:     "brokers [NAME]",
 		Aliases: []string{"broker", "brk"},
 		Short:   "List brokers, optionally filtered by name",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat get brokers
   svcat get broker asb
-`,
+`),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}

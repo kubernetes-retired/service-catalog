@@ -37,9 +37,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Use:     "binding NAME",
 		Aliases: []string{"bindings", "bnd"},
 		Short:   "Show details of a specific binding",
-		Example: `
-  svcat describe binding wordpress-mysql-binding
-`,
+		Example: command.NormalizeExamples(`svcat describe binding wordpress-mysql-binding`),
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}

@@ -39,10 +39,10 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Use:     "class NAME",
 		Aliases: []string{"classes", "cl"},
 		Short:   "Show details of a specific class",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat describe class mysqldb
   svcat describe class -uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
-`,
+`),
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}

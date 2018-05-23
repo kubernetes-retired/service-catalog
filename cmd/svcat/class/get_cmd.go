@@ -39,14 +39,14 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{Context: cxt}
 	cmd := &cobra.Command{
-		Use:     "classes [name]",
+		Use:     "classes [NAME]",
 		Aliases: []string{"class", "cl"},
 		Short:   "List classes, optionally filtered by name",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat get classes
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
-`,
+`),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}

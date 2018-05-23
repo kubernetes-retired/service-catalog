@@ -36,9 +36,9 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Use:     "instance NAME",
 		Aliases: []string{"instances", "inst"},
 		Short:   "Show details of a specific instance",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat describe instance wordpress-mysql-instance
-`,
+`),
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
