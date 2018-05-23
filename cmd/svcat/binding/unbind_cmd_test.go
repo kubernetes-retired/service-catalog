@@ -77,9 +77,9 @@ func TestUnbindCommand(t *testing.T) {
 		{
 			name:         "unbind instance",
 			fakeInstance: "myinstance",
-			fakeBindings: []string{"binding1", "binding2"},
+			fakeBindings: []string{"binding"},
 			instanceName: "myinstance",
-			wantOutput:   "deleted binding2\ndeleted binding1\n",
+			wantOutput:   "deleted binding\n",
 		},
 		{
 			name:         "unbind instance - partial fail",
@@ -101,18 +101,18 @@ func TestUnbindCommand(t *testing.T) {
 		{
 			name:         "unbind instance - fail",
 			fakeInstance: "myinstance",
-			fakeBindings: []string{"badbinding1", "badbinding2"},
+			fakeBindings: []string{"badbinding"},
 			instanceName: "myinstance",
-			wantOutput:   "error:\n  remove binding default/badbinding2 failed: sabotaged\n  remove binding default/badbinding1 failed: sabotaged\ncould not remove all bindings",
+			wantOutput:   "error:\n  remove binding default/badbinding failed: sabotaged\ncould not remove all bindings",
 			wantError:    true,
 		},
 		{
 			name:         "unbind instance and wait - fail",
 			fakeInstance: "myinstance",
-			fakeBindings: []string{"badbinding1", "badbinding2"},
+			fakeBindings: []string{"badbinding"},
 			instanceName: "myinstance",
 			wait:         true,
-			wantOutput:   "error:\n  remove binding default/badbinding2 failed: sabotaged\n  remove binding default/badbinding1 failed: sabotaged\ncould not remove all bindings",
+			wantOutput:   "error:\n  remove binding default/badbinding failed: sabotaged\ncould not remove all bindings",
 			wantError:    true,
 		},
 	}
