@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -34,7 +35,7 @@ import (
 func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error) {
 	bindings, err := sdk.ServiceCatalog().ServiceBindings(ns).List(v1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to list bindings in %s (%s)", ns, err)
+		return nil, errors.Wrapf(err, "unable to list bindings in %s", ns)
 	}
 
 	return bindings, nil
@@ -44,7 +45,7 @@ func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error)
 func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error) {
 	binding, err := sdk.ServiceCatalog().ServiceBindings(ns).Get(name, v1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to get binding '%s.%s' (%+v)", ns, name, err)
+		return nil, errors.Wrapf(err, "unable to get binding '%s.%s'", ns, name)
 	}
 	return binding, nil
 }
@@ -55,7 +56,7 @@ func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 	// Not using a filtered list operation because it's not supported yet.
 	results, err := sdk.ServiceCatalog().ServiceBindings(instance.Namespace).List(v1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to search bindings (%s)", err)
+		return nil, errors.Wrap(err, "unable to search bindings")
 	}
 
 	var bindings []v1beta1.ServiceBinding
@@ -96,7 +97,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 
 	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(request)
 	if err != nil {
-		return nil, fmt.Errorf("bind request failed (%s)", err)
+		return nil, errors.Wrap(err, "bind request failed")
 	}
 
 	return result, nil
@@ -153,7 +154,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) ([]v1beta1.ServiceBinding, error
 func (sdk *SDK) DeleteBinding(ns, bindingName string) error {
 	err := sdk.ServiceCatalog().ServiceBindings(ns).Delete(bindingName, &v1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf("remove binding %s/%s failed (%s)", ns, bindingName, err)
+		return errors.Wrapf(err, "remove binding %s/%s failed", ns, bindingName)
 	}
 	return nil
 }
