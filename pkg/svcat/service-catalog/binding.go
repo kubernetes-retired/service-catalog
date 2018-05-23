@@ -134,7 +134,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) ([]v1beta1.ServiceBinding, error
 	// Collect any errors that occurred into a single formatted error
 	bindErr := &multierror.Error{
 		ErrorFormat: func(errors []error) string {
-			return joinErrors("could not remove some bindings:", errors, "\n  ")
+			return joinErrors("error:", errors, "\n  ")
 		},
 	}
 	for err := range errs {

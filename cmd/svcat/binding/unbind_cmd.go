@@ -93,7 +93,7 @@ func (c *unbindCmd) deleteBinding() error {
 
 	if c.Wait {
 		binding := v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Namespace: c.Namespace, Name: c.bindingName}}
-		hasErr := c.waitForBindingDeletes("Waiting for the binding to be deleted...", binding)
+		hasErr := c.waitForBindingDeletes("waiting for the binding to be deleted...", binding)
 		if hasErr {
 			// Ensure a non-zero exit code is returned if the wait has trouble
 			return errors.New("could not remove the binding")
@@ -114,7 +114,7 @@ func (c *unbindCmd) unbindInstance() error {
 	if err != nil {
 		// Do not return immediately as we still need to potentially wait or print the deleted bindings
 		hasErrors = true
-		fmt.Fprintf(c.Output, "Error: %s", err.Error())
+		fmt.Fprintln(c.Output, err)
 	}
 
 	if c.Wait {
@@ -153,10 +153,10 @@ func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...v1beta
 
 			if err != nil && !apierrors.IsNotFound(errors.Cause(err)) {
 				hasErrors = true
-				fmt.Fprintf(c.Output, "Error: %s\n", err.Error())
+				fmt.Fprintln(c.Output, err)
 			} else if c.App.IsBindingFailed(binding) {
 				hasErrors = true
-				fmt.Fprintf(c.Output, "Error: could not delete binding %s/%s\n", ns, name)
+				fmt.Fprintf(c.Output, "could not delete binding %s/%s\n", ns, name)
 			} else {
 				output.WriteDeletedResourceName(c.Output, name)
 			}
