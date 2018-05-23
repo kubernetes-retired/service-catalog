@@ -29,7 +29,7 @@ func TestWriteParameters(t *testing.T) {
 		parameters *runtime.RawExtension // Parameters tested
 		output     string                // Expected output
 	}{
-		{"Nil parameter", nil, ""},
+		{"Nil parameter", nil, "\nParameters:\n  No parameters defined\n"},
 		{"JSON w/data parameter", &runtime.RawExtension{Raw: []byte(`{"foo":"bar"}`)}, "\nParameters:\n  foo: bar\n"},
 		{"JSON empty parameter", &runtime.RawExtension{Raw: []byte(`{}`)}, "\nParameters:\n  No parameters defined\n"},
 		{"String parameter", &runtime.RawExtension{Raw: []byte("param")}, "\nParameters:\nparam\n"},
