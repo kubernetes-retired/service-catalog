@@ -5,4 +5,4 @@
   Instance:    ups-instance  
 
 Parameters:
-  {}
+  No parameters defined

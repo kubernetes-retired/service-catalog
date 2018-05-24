@@ -5,4 +5,4 @@
   Plan:        default                
 
 Parameters:
-  {}
+  No parameters defined
