@@ -3248,7 +3248,9 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 // - status with existing Ready=False condition accepts new condition of
 //   Ready=False with no timestamp change
 // - status with existing Ready=False condition accepts new condition of
-//   Ready=False  with reason & msg change and results with no timestamp change
+//   Ready=False  with reason & msg change and reflects new timestamp
+// - status with existing Ready=False condition accepts new condition of
+//   Ready=False  with msg change and results with no timestamp change
 // - status with existing Ready=False condition accepts new condition of
 //   Ready=True  and reflects new timestamp
 // - status with existing Ready=True condition accepts new condition of
@@ -3351,10 +3353,16 @@ func TestSetServiceInstanceCondition(t *testing.T) {
 			result:    instanceWithCondition(readyFalse()),
 		},
 		{
-			name:      "not ready -> not ready, reason and message change; no ts update",
+			name:      "not ready -> not ready, reason and message change; ts update",
 			input:     instanceWithCondition(readyFalse()),
 			condition: readyFalsef("DifferentReason", "DifferentMessage"),
-			result:    instanceWithCondition(readyFalsef("DifferentReason", "DifferentMessage")),
+			result:    instanceWithCondition(withNewTs(readyFalsef("DifferentReason", "DifferentMessage"))),
+		},
+		{
+			name:      "not ready -> not ready, message change; no ts update",
+			input:     instanceWithCondition(readyFalse()),
+			condition: readyFalsef("Reason", "DifferentMessage"),
+			result:    instanceWithCondition(readyFalsef("Reason", "DifferentMessage")),
 		},
 		{
 			name:      "not ready -> ready",
@@ -3453,6 +3461,13 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
 			status:                v1beta1.ConditionFalse,
 			reason:                "foo",
+			message:               "bar",
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "not ready -> not ready, message change",
+			input:                 getTestServiceInstanceWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionFalse,
 			message:               "bar",
 			transitionTimeChanged: false,
 		},

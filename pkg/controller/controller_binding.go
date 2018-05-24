@@ -17,22 +17,21 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
 	"github.com/golang/glog"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
-	"bytes"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -564,7 +563,7 @@ func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error 
 // status: if the condition already exists in the status, it is mutated; if the
 // condition does not already exist in the status, it is added. Other
 // conditions in the // status are not altered. If the condition exists and its
-// status changes, the LastTransitionTime field is updated.
+// status or reason changes, the LastTransitionTime field is updated.
 
 //
 // Note: objects coming from informers should never be mutated; always pass a
@@ -610,14 +609,22 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 	}
 	for i, cond := range toUpdate.Status.Conditions {
 		if cond.Type == conditionType {
-			if cond.Status != newCondition.Status {
+			switch {
+			case cond.Status != newCondition.Status:
 				glog.V(3).Info(pcb.Messagef(
 					"Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v",
 					conditionType, cond.Status, status, t,
 				))
 				newCondition.LastTransitionTime = t
-			} else {
+			case cond.Reason != newCondition.Reason:
+				glog.V(3).Info(pcb.Messagef(
+					"Found reason change for condition %q: %q -> %q; setting lastTransitionTime to %v",
+					conditionType, cond.Reason, reason, t,
+				))
+				newCondition.LastTransitionTime = t
+			default:
 				newCondition.LastTransitionTime = cond.LastTransitionTime
+
 			}
 
 			toUpdate.Status.Conditions[i] = newCondition

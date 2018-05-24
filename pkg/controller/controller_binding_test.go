@@ -1279,10 +1279,16 @@ func TestSetServiceBindingCondition(t *testing.T) {
 			result:    bindingWithCondition(readyFalse()),
 		},
 		{
-			name:      "not ready -> not ready, reason and message change; no ts update",
+			name:      "not ready -> not ready, reason and message change; ts update",
 			input:     bindingWithCondition(readyFalse()),
 			condition: readyFalsef("DifferentReason", "DifferentMessage"),
-			result:    bindingWithCondition(readyFalsef("DifferentReason", "DifferentMessage")),
+			result:    bindingWithCondition(withNewTs(readyFalsef("DifferentReason", "DifferentMessage"))),
+		},
+		{
+			name:      "not ready -> not ready, message change; no ts update",
+			input:     bindingWithCondition(readyFalse()),
+			condition: readyFalsef("Reason", "DifferentMessage"),
+			result:    bindingWithCondition(readyFalsef("Reason", "DifferentMessage")),
 		},
 		{
 			name:      "not ready -> ready",

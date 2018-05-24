@@ -1090,7 +1090,8 @@ func TestReconcileClusterServiceBrokerWithStatusUpdateError(t *testing.T) {
 // The test cases are proving:
 // - broker transitions from unset status to not ready results in status change and new time
 // - broker transitions from not ready to not ready results in no changes
-// - broker transitions from not ready to not ready and with reason & msg updates results in no time change, but reflects new reason & msg
+// - broker transitions from not ready to not ready and with reason and msg updates results in new time and reflects new reason & msg
+// - broker transitions from not ready to not ready and with msg updates results in no time change, but reflects new msg
 // - broker transitions from not ready to ready results in status change & new time
 // - broker transitions from ready to ready results in no status change
 // - broker transitions from ready to not ready results in status change & new time
@@ -1129,6 +1130,13 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionFalse),
 			status:                v1beta1.ConditionFalse,
 			reason:                "foo",
+			message:               "bar",
+			transitionTimeChanged: true,
+		},
+		{
+			name:                  "not ready -> not ready with message change",
+			input:                 getTestClusterServiceBrokerWithStatus(v1beta1.ConditionFalse),
+			status:                v1beta1.ConditionFalse,
 			message:               "bar",
 			transitionTimeChanged: false,
 		},

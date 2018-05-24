@@ -662,13 +662,20 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1beta1.Cluster
 	} else {
 		for i, cond := range broker.Status.Conditions {
 			if cond.Type == conditionType {
-				if cond.Status != newCondition.Status {
+				switch {
+				case cond.Status != newCondition.Status:
 					glog.Info(pcb.Messagef(
 						"Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v",
 						conditionType, cond.Status, status, t,
 					))
 					newCondition.LastTransitionTime = metav1.NewTime(t)
-				} else {
+				case cond.Reason != newCondition.Reason:
+					glog.Info(pcb.Messagef(
+						"Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v",
+						conditionType, cond.Reason, reason, t,
+					))
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+				default:
 					newCondition.LastTransitionTime = cond.LastTransitionTime
 				}
 

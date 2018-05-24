@@ -20,14 +20,13 @@ import (
 	stderrors "errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/golang/glog"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,8 +34,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
-	"time"
 )
 
 const (
@@ -1117,7 +1116,7 @@ func removeServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
 // setServiceInstanceCondition sets a single condition on an Instance's status: if
 // the condition already exists in the status, it is mutated; if the condition
 // does not already exist in the status, it is added.  Other conditions in the
-// status are not altered.  If the condition exists and its status changes,
+// status are not altered.  If the condition exists and its status or reason changes,
 // the LastTransitionTime field is updated.
 //
 // Note: objects coming from informers should never be mutated; always pass a
@@ -1165,12 +1164,18 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 
 	for i, cond := range toUpdate.Status.Conditions {
 		if cond.Type == conditionType {
-			if cond.Status != newCondition.Status {
+			switch {
+			case cond.Status != newCondition.Status:
 				glog.V(3).Info(pcb.Messagef("Found status change, condition %q: %q -> %q; setting lastTransitionTime to %v",
 					conditionType, cond.Status, status, t,
 				))
 				newCondition.LastTransitionTime = t
-			} else {
+			case cond.Reason != newCondition.Reason:
+				glog.V(3).Info(pcb.Messagef("Found reason change, condition %q: %q -> %q; setting lastTransitionTime to %v",
+					conditionType, cond.Reason, reason, t,
+				))
+				newCondition.LastTransitionTime = t
+			default:
 				newCondition.LastTransitionTime = cond.LastTransitionTime
 			}
 

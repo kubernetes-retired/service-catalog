@@ -657,13 +657,18 @@ func updateCommonStatusCondition(meta metav1.ObjectMeta, commonStatus *v1beta1.C
 	} else {
 		for i, cond := range commonStatus.Conditions {
 			if cond.Type == conditionType {
-				if cond.Status != newCondition.Status {
-					glog.Info(pcb.Messagef(
-						"Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v",
+				switch {
+				case cond.Status != newCondition.Status:
+					glog.V(3).Info(pcb.Messagef("Found status change, condition %q: %q -> %q; setting lastTransitionTime to %v",
 						conditionType, cond.Status, status, t,
 					))
 					newCondition.LastTransitionTime = metav1.NewTime(t)
-				} else {
+				case cond.Reason != newCondition.Reason:
+					glog.V(3).Info(pcb.Messagef("Found reason change, condition %q: %q -> %q; setting lastTransitionTime to %v",
+						conditionType, cond.Reason, reason, t,
+					))
+					newCondition.LastTransitionTime = metav1.NewTime(t)
+				default:
 					newCondition.LastTransitionTime = cond.LastTransitionTime
 				}
 
