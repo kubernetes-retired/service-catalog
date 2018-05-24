@@ -2004,6 +2004,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		7*24*time.Hour,
 		DefaultClusterIDConfigMapName,
 		DefaultClusterIDConfigMapNamespace,
+		5*time.Minute,
 	)
 
 	if c, ok := testController.(*controller); ok {

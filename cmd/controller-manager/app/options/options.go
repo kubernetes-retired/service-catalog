@@ -60,6 +60,7 @@ const (
 	defaultLeaderElectionNamespace                = "kube-system"
 	defaultReconciliationRetryDuration            = 7 * 24 * time.Hour
 	defaultOperationPollingMaximumBackoffDuration = 20 * time.Minute
+	defaultProvisioningRetryInterval              = 5 * time.Minute
 )
 
 var defaultOSBAPIPreferredVersion = osb.LatestAPIVersion().HeaderValue()
@@ -86,6 +87,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			ReconciliationRetryDuration:            defaultReconciliationRetryDuration,
 			OperationPollingMaximumBackoffDuration: defaultOperationPollingMaximumBackoffDuration,
 			SecureServingOptions:                   genericoptions.NewSecureServingOptions(),
+			ProvisionRetryInterval:                 defaultProvisioningRetryInterval,
 		},
 	}
 	// set defaults, these will be overriden by user specified flags
@@ -122,4 +124,5 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	utilfeature.DefaultFeatureGate.AddFlag(fs)
 	fs.StringVar(&s.ClusterIDConfigMapName, "cluster-id-configmap-name", controller.DefaultClusterIDConfigMapName, "k8s name for clusterid configmap")
 	fs.StringVar(&s.ClusterIDConfigMapNamespace, "cluster-id-configmap-namespace", controller.DefaultClusterIDConfigMapNamespace, "k8s namespace for clusterid configmap")
+	fs.DurationVar(&s.ProvisionRetryInterval, "provision-retry-interval", s.ProvisionRetryInterval, "The minimum amount of time that must elapse before automatically retrying a non-terminal provision failure with the Service Broker.")
 }

@@ -20,6 +20,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -101,6 +102,17 @@ const (
 	clusterIdentifierKey string = "clusterid"
 )
 
+type retryQueue struct {
+	mutex sync.RWMutex // lock to be used with provisionRetryTime
+
+	// If instance has an entry in map, this is the earliest time at which a
+	// provision reattempt shoud be made to ensure we don't overwhelm broker
+	// with repeated requests.
+	retryTime        map[string]time.Time
+	retryInterval    time.Duration
+	queueLastCleaned time.Time
+}
+
 // ServiceInstance handlers and control-loop
 
 func (c *controller) instanceAdd(obj interface{}) {
@@ -109,8 +121,16 @@ func (c *controller) instanceAdd(obj interface{}) {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
+	c.instanceQueue.AddRateLimited(key)
+}
 
-	c.instanceQueue.Add(key)
+func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		return
+	}
+	c.instanceQueue.AddAfter(key, d)
 }
 
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
@@ -341,6 +361,68 @@ func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInst
 	return false, nil
 }
 
+// setNextProvisionRetryTime adds the instance name to the map recording the next earliest time to
+// retry provisioning
+func (c *controller) setNextProvisionRetryTime(instance *v1beta1.ServiceInstance) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
+		return
+	}
+	c.provisionRetryQueue.mutex.Lock()
+	c.provisionRetryQueue.retryTime[key] = time.Now().Add(c.provisionRetryQueue.retryInterval)
+	c.provisionRetryQueue.mutex.Unlock()
+	glog.V(6).Infof("added %v for retry after %v", c.provisionRetryQueue.retryInterval)
+}
+
+//  delayProvisionRetry returns a duration which should be observed before attempting to provision
+func (c *controller) getDelayForProvisionRetry(instance *v1beta1.ServiceInstance) time.Duration {
+	c.purgeExpiredRetryEntries()
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
+		return 0
+	}
+	c.provisionRetryQueue.mutex.RLock()
+	defer c.provisionRetryQueue.mutex.RUnlock()
+	now := time.Now()
+	if t := c.provisionRetryQueue.retryTime[key]; t.After(now) {
+		return t.Sub(now)
+	}
+	return 0
+}
+
+// purgeExpiredRetryEntries periodically clears entries from the map that have an expired
+// retry time.
+func (c *controller) purgeExpiredRetryEntries() {
+	now := time.Now()
+	if now.Before(c.provisionRetryQueue.queueLastCleaned.Add(time.Minute * 10)) {
+		return
+	}
+	c.provisionRetryQueue.mutex.Lock()
+	defer c.provisionRetryQueue.mutex.Unlock()
+	for k := range c.provisionRetryQueue.retryTime {
+		if c.provisionRetryQueue.retryTime[k].Before(now) {
+			glog.V(7).Infof("removed %s from provisionRetry map", k)
+			delete(c.provisionRetryQueue.retryTime, k)
+		}
+	}
+	glog.V(7).Infof("purged expired entries, provisionRetry queue length is %v", len(c.provisionRetryQueue.retryTime))
+	c.provisionRetryQueue.queueLastCleaned = now
+}
+
+// removeInstanceFromRetryMap removes the instance name & next retry time from map
+func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstance) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
+		return
+	}
+	c.provisionRetryQueue.mutex.Lock()
+	delete(c.provisionRetryQueue.retryTime, key)
+	c.provisionRetryQueue.mutex.Unlock()
+}
+
 // reconcileServiceInstanceAdd is responsible for handling the provisioning
 // of new service instances.
 func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstance) error {
@@ -348,6 +430,18 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
+		return nil
+	}
+
+	// don't DOS the broker.  If we already did a provision attemp that ended with a non-terminal
+	// error then we set a next retry time.  Observe that.
+	if delay := c.getDelayForProvisionRetry(instance); delay > 0 {
+		glog.V(4).Info(pcb.Message("Not processing event because Orphan Migitation was too recent"))
+		msg := fmt.Sprintf("Delaying provision retry, next attempt will be after %s", time.Now().Add(delay))
+		c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
+
+		// add back to queue to retry at the specified time
+		c.instanceAddAfter(instance, delay)
 		return nil
 	}
 
@@ -693,6 +787,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
+
+	// assume a provision retry will happen after orphan mitigation, set a not-before time
+	// so we don't pound the Broker in a constant try to provision/fail/orphan mitigation/repeat
+	// loop.
+	c.setNextProvisionRetryTime(instance)
 
 	if instance.DeletionTimestamp == nil {
 		// Orphan mitigation
@@ -2392,6 +2491,10 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 			return err
 		}
 	} else {
+		// this was not part of Orphan Mitigation, clear out retry time if it exists
+		// so there is no delay if user manually creates a new instance by the same name.
+		c.removeInstanceFromRetryMap(instance)
+
 		// If part of a resource deletion request, follow-through to the
 		// graceful deletion handler in order to clear the finalizer.
 		if err := c.processServiceInstanceGracefulDeletionSuccess(instance); err != nil {
