@@ -43,9 +43,9 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deprovision NAME",
 		Short: "Deletes an instance of a service",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat deprovision wordpress-mysql-instance
-`,
+`),
 		PreRunE: command.PreRunE(deprovisonCmd),
 		RunE:    command.RunE(deprovisonCmd),
 	}

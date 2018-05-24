@@ -50,7 +50,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "provision NAME --plan PLAN --class CLASS",
 		Short: "Create a new instance of a service",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -p location=eastus -p sslEnforcement=disabled
   svcat provision wordpress-mysql-instance --external-id a7c00676-4398-11e8-842f-0ed5f89f718b --class mysqldb --plan free
   svcat provision wordpress-mysql-instance --class mysqldb --plan free -s mysecret[dbparams]
@@ -61,16 +61,10 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
             "name": "AllowSome",
             "startIPAddress": "75.70.113.50",
             "endIPAddress" : "75.70.113.131"
-        },
-        {
-            "name": "AllowMore",
-            "startIPAddress": "13.54.0.0",
-            "endIPAddress" : "13.56.0.0"
         }
     ]
-}
-'
-`,
+  }'
+`),
 		PreRunE: command.PreRunE(provisionCmd),
 		RunE:    command.RunE(provisionCmd),
 	}

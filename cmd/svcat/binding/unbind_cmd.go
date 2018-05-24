@@ -45,10 +45,10 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "unbind INSTANCE_NAME",
 		Short: "Unbinds an instance. When an instance name is specified, all of its bindings are removed, otherwise use --name to remove a specific binding",
-		Example: `
+		Example: command.NormalizeExamples(`
   svcat unbind wordpress-mysql-instance
   svcat unbind --name wordpress-mysql-binding
-`,
+`),
 		PreRunE: command.PreRunE(unbindCmd),
 		RunE:    command.RunE(unbindCmd),
 	}
