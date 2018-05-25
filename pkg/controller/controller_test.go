@@ -527,7 +527,8 @@ func getTestClusterServiceBrokerWithAuth(authInfo *v1beta1.ClusterServiceBrokerA
 
 // a bindable service class wired to the result of getTestClusterServiceBroker()
 func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
-	return &v1beta1.ClusterServiceClass{
+	broker := getTestClusterServiceBroker()
+	class := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
@@ -539,10 +540,13 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 			},
 		},
 	}
+	markAsServiceCatalogManagedResource(class, broker)
+	return class
 }
 
 func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
-	return &v1beta1.ClusterServiceClass{
+	broker := getTestClusterServiceBroker()
+	class := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
@@ -559,10 +563,13 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 			},
 		},
 	}
+	markAsServiceCatalogManagedResource(class, broker)
+	return class
 }
 
 func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
-	return &v1beta1.ClusterServiceClass{
+	broker := getTestClusterServiceBroker()
+	class := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
@@ -574,6 +581,8 @@ func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 			},
 		},
 	}
+	markAsServiceCatalogManagedResource(class, broker)
+	return class
 }
 
 func getTestBindingRetrievableClusterServiceClass() *v1beta1.ClusterServiceClass {
@@ -593,7 +602,8 @@ func getTestBindingRetrievableClusterServiceClass() *v1beta1.ClusterServiceClass
 }
 
 func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
-	return &v1beta1.ClusterServicePlan{
+	broker := getTestClusterServiceBroker()
+	plan := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
@@ -608,10 +618,13 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 		},
 		Status: v1beta1.ClusterServicePlanStatus{},
 	}
+	markAsServiceCatalogManagedResource(plan, broker)
+	return plan
 }
 
 func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
-	return &v1beta1.ClusterServicePlan{
+	broker := getTestClusterServiceBroker()
+	plan := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
@@ -630,10 +643,13 @@ func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 			},
 		},
 	}
+	markAsServiceCatalogManagedResource(plan, broker)
+	return plan
 }
 
 func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
-	return &v1beta1.ClusterServicePlan{
+	broker := getTestClusterServiceBroker()
+	plan := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
@@ -647,10 +663,13 @@ func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 			},
 		},
 	}
+	markAsServiceCatalogManagedResource(plan, broker)
+	return plan
 }
 
 func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
-	return &v1beta1.ClusterServicePlan{
+	broker := getTestClusterServiceBroker()
+	plan := &v1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableClusterServicePlanGUID},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
@@ -663,6 +682,8 @@ func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 			},
 		},
 	}
+	markAsServiceCatalogManagedResource(plan, broker)
+	return plan
 }
 
 // an unbindable service class wired to the result of getTestClusterServiceBroker()
