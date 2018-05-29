@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podpreset-webhook-deployment
+  labels:
+    app: podpreset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podpreset
+  template:
+    metadata:
+      labels:
+        app: podpreset
+    spec:
+      containers:
+      - name: podpreset-webhook
+        imagePullPolicy: IfNotPresent
+        image: docker.io/service-catalog/admission-webhook:latest
+        args:
+        - -tls-cert-file=/keys/tls.crt
+        - -tls-private-key-file=/keys/tls.key
+        - -alsologtostderr
+        - -v=6
+        ports:
+        - containerPort: 443
+        volumeMounts:
+        - name: tls-keys
+          mountPath: /keys
+      volumes:
+      - name: tls-keys
+        secret:
+          secretName: podpreset-service-tls
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: podpreset-service
+spec:
+  selector:
+    app: podpreset
+  ports:
+  - protocol: TCP
+    port: 443
+    targetPort: 443
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: podpreset-webook-configuration
+webhooks:
+  - name: podpresets.settings.servicecatalog.k8s.io
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+        resources:
+          - pods
+    failurePolicy: Ignore
+    clientConfig:
+      # base64 -w 0 ca.pem
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR6RENDQXJTZ0F3SUJBZ0lVVU92M2dDV0krVVdyVXdYeEtudVNiWHZPdXVzd0RRWUpLb1pJaHZjTkFRRUwKQlFBd2ZqRUxNQWtHQTFVRUJoTUNWVk14RnpBVkJnTlZCQWdURGxOdmRYUm9JRU5oY205c2FXNWhNUkV3RHdZRApWUVFIRXdoRGIyeDFiV0pwWVRFYU1CZ0dBMVVFQ2hNUmNHOWtjSEpsYzJWMExYTmxjblpwWTJVeEN6QUpCZ05WCkJBc1RBa05CTVJvd0dBWURWUVFERXhGd2IyUndjbVZ6WlhRdGMyVnlkbWxqWlRBZUZ3MHhPREExTVRVeU1EUTQKTURCYUZ3MHlNekExTVRReU1EUTRNREJhTUg0eEN6QUpCZ05WQkFZVEFsVlRNUmN3RlFZRFZRUUlFdzVUYjNWMAphQ0JEWVhKdmJHbHVZVEVSTUE4R0ExVUVCeE1JUTI5c2RXMWlhV0V4R2pBWUJnTlZCQW9URVhCdlpIQnlaWE5sCmRDMXpaWEoyYVdObE1Rc3dDUVlEVlFRTEV3SkRRVEVhTUJnR0ExVUVBeE1SY0c5a2NISmxjMlYwTFhObGNuWnAKWTJVd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUURMZnVYU0E0dWJxcXhRbU03WAo5SU1vN1Q4ci9ya3J6Nm1uWlhaK2NJL3J4ZCtqczdseGRiNnVZK3FwNzM1b2c1Yzh5VmVKQXFrOHhwOG9sWUhqClZONFE5SlR1N1lJQWxBdXBMa3BPQUQyY2cyZ1lzT3RtNmk2NjhoeDFtUDRRUG5qRS9BOEQ3c0Q0SnhXNTBtQnQKQzdFVHc4UDNUNEZQZk15OGFscHdHZEQyaHkxUjhHZFlWaVlpdml1KzZVNkE1UjZEV0ZTZTllQ2FoblpKZWFiNwpPb3VLZnNYOGRCNjFpV252VUZUWkg4TmpKSkhqUVBvZ1JmMFN4T2tnd0tCWFFpMGtlTVlocXJJL0s3bVl2K2Z2CkdFSG93UE5aMi8xZG44akNSWWFJQ1RSYzN1aTVQRkJFTkc3R0o3U0VnQVB5SndBZkdneW82L2F3Rm1KOWZGbTcKbytTcEFnTUJBQUdqUWpCQU1BNEdBMVVkRHdFQi93UUVBd0lCQmpBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUIwRwpBMVVkRGdRV0JCUW0xcHk0VGc1V0lyYW1uc0JXYThwbGJEVm5HREFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBClpVNUdoT054KzVRaFYxLzZOYy9LTndabEhZb1YzcWNZTUZaMmJ0ZzR0dWxGT09DVGdrb3o2QkpvM1FJTXZGMTMKWkhtRUFza2lFTGJtcEorZzlhS1hDL0Z0aThVbCtaMEJnR29YRVlOZ3JaYzhyYnArb3dTYzNqd1ZCVjVwWjFnSAp1Q2I2djEzd0g3Q2VCZEFIL1k0YTUrOVU4blRMOGhmc1d5WFJsUEZMNlVyS0tGSER3K1UxSWZpQUR6UktDTnVrCmFoVHhmS3lEQmhMM3lxN1liQi9EYTBDdjhjWktBMmZ5OUVIZEc5Rm5KanFJbEJrOExBWGllNWEvS3pRTHYxTGQKWFZEV0JnYjNlNkVQN05DYXRobzJJeG5yYXJRaHlFNG0rRUJCa1VVOWFvZHU3blZRVnpLT2EyU1BLSENEWjZXcQp5RHI3UXBmT3FDWmltb2ZMYkVuVG9nPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+      service:
+        name: podpreset-service
+        namespace: default
+        path: "/mutating-pods"
