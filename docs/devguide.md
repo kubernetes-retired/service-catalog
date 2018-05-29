@@ -54,8 +54,9 @@ please include a line in the initial comment that looks like:
 
 	Closes: #1234
 
-where `1234` is the issue number. This allows Github to automatically
-close the issue when the PR is merged.
+where `1234` is the issue number. This allows Github to [automatically
+close the issue](https://help.github.com/articles/closing-issues-using-keywords/)
+when the PR is merged.
 
 Also, before you start working on your issue, please read our [Code Standards](./code-standards.md)
 document.
