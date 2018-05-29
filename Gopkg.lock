@@ -396,6 +396,25 @@
   revision = "a0ff2567cfb70903282db057e799fd826784d41d"
 
 [[projects]]
+  name = "github.com/kubernetes-sigs/kubebuilder"
+  packages = [
+    "pkg/config",
+    "pkg/controller",
+    "pkg/controller/eventhandlers",
+    "pkg/controller/informers",
+    "pkg/controller/metrics",
+    "pkg/controller/predicates",
+    "pkg/controller/types",
+    "pkg/inject/args",
+    "pkg/inject/run",
+    "pkg/install",
+    "pkg/signals",
+    "pkg/test"
+  ]
+  revision = "019fa3c8c8550e817a065cb82058fe790903ed1e"
+  version = "v0.1.9"
+
+[[projects]]
   branch = "master"
   name = "github.com/kubernetes/repo-infra"
   packages = ["kazel"]
@@ -414,6 +433,12 @@
     "jwriter"
   ]
   revision = "2f5df55504ebc322e4d52d34df6a1f5b503bf26d"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mattbaird/jsonpatch"
+  packages = ["."]
+  revision = "81af80346b1a01caae0cbc27fd3c1ba5b11e189f"
 
 [[projects]]
   branch = "master"
@@ -478,6 +503,8 @@
   packages = [
     ".",
     "format",
+    "gbytes",
+    "gexec",
     "internal/assertion",
     "internal/asyncassertion",
     "internal/oraclematcher",
@@ -489,7 +516,8 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "dcabb60a477c2b6f456df65037cb6708210fbb02"
+  revision = "62bff4df71bdbc266561a0caee19f0594b17c240"
+  version = "v1.4.0"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -1215,6 +1243,15 @@
   name = "k8s.io/kubectl"
   packages = ["pkg/pluginutils"]
   revision = "b49f9314983687a9225e47627cc17191bf8df4b0"
+
+[[projects]]
+  branch = "master"
+  name = "sigs.k8s.io/testing_frameworks"
+  packages = [
+    "integration",
+    "integration/internal"
+  ]
+  revision = "f53464b8b84b4507805a0b033a8377b225163fea"
 
 [solve-meta]
   analyzer-name = "dep"
