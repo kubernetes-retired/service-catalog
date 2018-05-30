@@ -103,7 +103,7 @@ const (
 )
 
 type retryQueue struct {
-	mutex sync.RWMutex // lock to be used with provisionRetryTime
+	mutex sync.RWMutex // lock to be used with retryTime
 
 	// If instance has an entry in map, this is the earliest time at which a
 	// provision reattempt shoud be made to ensure we don't overwhelm broker
@@ -433,7 +433,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		return nil
 	}
 
-	// don't DOS the broker.  If we already did a provision attemp that ended with a non-terminal
+	// don't DOS the broker.  If we already did a provision attempt that ended with a non-terminal
 	// error then we set a next retry time.  Observe that.
 	if delay := c.getDelayForProvisionRetry(instance); delay > 0 {
 		glog.V(4).Info(pcb.Message("Not processing event because Orphan Migitation was too recent"))
