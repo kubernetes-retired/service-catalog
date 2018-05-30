@@ -12,7 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Build a Debian-based image to copy root CA certificates from it
+# to a scratch-based image using Docker multi-stage builds
+FROM BASEIMAGE as base
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install ca-certificates -y && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build actual scratch-based Service Catalog image with root CA certificates
 FROM scratch
+
+COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ADD tmp /tmp
 
