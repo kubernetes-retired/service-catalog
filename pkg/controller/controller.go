@@ -88,7 +88,6 @@ func NewController(
 	operationPollingMaximumBackoffDuration time.Duration,
 	clusterIDConfigMapName string,
 	clusterIDConfigMapNamespace string,
-	provisionRetryInterval time.Duration,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
@@ -167,9 +166,8 @@ func NewController(
 			DeleteFunc: controller.servicePlanDelete,
 		})
 	}
-	controller.provisionRetryQueue.retryInterval = provisionRetryInterval
 	controller.provisionRetryQueue.retryTime = make(map[string]time.Time)
-
+	controller.provisionRetryQueue.rateLimter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerProvisioningRetryDelay, maxBrokerProvisioningRetryDelay)
 	return controller, nil
 }
 
@@ -223,9 +221,8 @@ type controller struct {
 	// clusterIDLock protects access to clusterID between the
 	// monitor writing the value from the configmap, and any
 	// readers passing the clusterID to a broker.
-	clusterIDLock          sync.RWMutex
-	provisionRetryInterval time.Duration
-	provisionRetryQueue    retryQueue
+	clusterIDLock       sync.RWMutex
+	provisionRetryQueue retryQueue
 }
 
 // Run runs the controller until the given stop channel can be read from.

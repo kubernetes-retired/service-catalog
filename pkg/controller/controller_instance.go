@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -100,6 +101,9 @@ const (
 	startingInstanceOrphanMitigationMessage string = "The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource"
 
 	clusterIdentifierKey string = "clusterid"
+
+	minBrokerProvisioningRetryDelay time.Duration = time.Second * 5
+	maxBrokerProvisioningRetryDelay time.Duration = time.Minute * 20
 )
 
 type retryQueue struct {
@@ -109,8 +113,8 @@ type retryQueue struct {
 	// provision reattempt shoud be made to ensure we don't overwhelm broker
 	// with repeated requests.
 	retryTime        map[string]time.Time
-	retryInterval    time.Duration
 	queueLastCleaned time.Time
+	rateLimter       workqueue.RateLimiter
 }
 
 // ServiceInstance handlers and control-loop
@@ -369,10 +373,10 @@ func (c *controller) setNextProvisionRetryTime(instance *v1beta1.ServiceInstance
 		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
 		return
 	}
+	duration := c.provisionRetryQueue.rateLimter.When(key)
 	c.provisionRetryQueue.mutex.Lock()
-	c.provisionRetryQueue.retryTime[key] = time.Now().Add(c.provisionRetryQueue.retryInterval)
+	c.provisionRetryQueue.retryTime[key] = time.Now().Add(duration)
 	c.provisionRetryQueue.mutex.Unlock()
-	glog.V(6).Infof("added %v for retry after %v", c.provisionRetryQueue.retryInterval)
 }
 
 //  delayProvisionRetry returns a duration which should be observed before attempting to provision
@@ -396,15 +400,20 @@ func (c *controller) getDelayForProvisionRetry(instance *v1beta1.ServiceInstance
 // retry time.
 func (c *controller) purgeExpiredRetryEntries() {
 	now := time.Now()
-	if now.Before(c.provisionRetryQueue.queueLastCleaned.Add(time.Minute * 10)) {
+	if now.Before(c.provisionRetryQueue.queueLastCleaned.Add(maxBrokerProvisioningRetryDelay * 2)) {
 		return
 	}
 	c.provisionRetryQueue.mutex.Lock()
 	defer c.provisionRetryQueue.mutex.Unlock()
+
+	// Ensure we only purge items that aren't being acted on by retries, this shouldn't
+	// have any work to do but we want to be certain this queue doesn't get overly large.
+	overDue := now.Add(-maxBrokerProvisioningRetryDelay)
 	for k := range c.provisionRetryQueue.retryTime {
-		if c.provisionRetryQueue.retryTime[k].Before(now) {
-			glog.V(7).Infof("removed %s from provisionRetry map", k)
+		if c.provisionRetryQueue.retryTime[k].Before(overDue) {
+			glog.V(7).Infof("removed %s from provisionRetry map which had retry time of %v", k, c.provisionRetryQueue.retryTime[k])
 			delete(c.provisionRetryQueue.retryTime, k)
+			c.provisionRetryQueue.rateLimter.Forget(k)
 		}
 	}
 	glog.V(7).Infof("purged expired entries, provisionRetry queue length is %v", len(c.provisionRetryQueue.retryTime))
@@ -418,6 +427,8 @@ func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstanc
 		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
 		return
 	}
+	glog.V(7).Info("removed %v from provisionRetry map", key)
+	c.provisionRetryQueue.rateLimter.Forget(key)
 	c.provisionRetryQueue.mutex.Lock()
 	delete(c.provisionRetryQueue.retryTime, key)
 	c.provisionRetryQueue.mutex.Unlock()
@@ -2240,6 +2251,10 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 	pcb := pretty.NewInstanceContextBuilder(instance)
 	glog.Info(pcb.Message("Cleared finalizer"))
 
+	// Clear out retry time if it exists so there is no delay if a new instance by the same name
+	// is recreated.
+	c.removeInstanceFromRetryMap(instance)
+
 	return nil
 }
 
@@ -2491,10 +2506,6 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 			return err
 		}
 	} else {
-		// this was not part of Orphan Mitigation, clear out retry time if it exists
-		// so there is no delay if user manually creates a new instance by the same name.
-		c.removeInstanceFromRetryMap(instance)
-
 		// If part of a resource deletion request, follow-through to the
 		// graceful deletion handler in order to clear the finalizer.
 		if err := c.processServiceInstanceGracefulDeletionSuccess(instance); err != nil {

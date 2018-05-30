@@ -109,8 +109,4 @@ type ControllerManagerConfiguration struct {
 	ClusterIDConfigMapName string
 	// ClusterIDConfigMapNamespace is the k8s namespace that the clusterid configmap will be stored in.
 	ClusterIDConfigMapNamespace string
-
-	// ProvisionRetryInterval is the interval at which a failed provision will be automatically retried
-	// for non-terminal provisioning failures
-	ProvisionRetryInterval time.Duration
 }

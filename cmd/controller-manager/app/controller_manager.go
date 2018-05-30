@@ -386,7 +386,6 @@ func StartControllers(s *options.ControllerManagerServer,
 		s.OperationPollingMaximumBackoffDuration,
 		s.ClusterIDConfigMapName,
 		s.ClusterIDConfigMapNamespace,
-		s.ProvisionRetryInterval,
 	)
 	if err != nil {
 		return err
