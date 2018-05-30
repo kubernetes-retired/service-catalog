@@ -491,6 +491,21 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 			},
 		},
 		{
+			name: "rename non-existent key",
+			secretTransforms: []v1beta1.SecretTransform{
+				{
+					RenameKey: &v1beta1.RenameKeyTransform{
+						From: "non-existent-key",
+						To:   "bar",
+					},
+				},
+			},
+			expectedSecretData: map[string][]byte{
+				"foo": []byte("bar"),
+				"baz": []byte("zap"),
+			},
+		},
+		{
 			name: "multiple transforms",
 			secrets: []secretDef{
 				{

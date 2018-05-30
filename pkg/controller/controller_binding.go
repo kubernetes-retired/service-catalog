@@ -515,8 +515,11 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 			}
 			credentials[t.AddKey.Key] = value
 		case t.RenameKey != nil:
-			credentials[t.RenameKey.To] = credentials[t.RenameKey.From]
-			delete(credentials, t.RenameKey.From)
+			value := credentials[t.RenameKey.From]
+			if value != nil {
+				credentials[t.RenameKey.To] = value
+				delete(credentials, t.RenameKey.From)
+			}
 		case t.AddKeysFrom != nil:
 			secret, err := c.kubeClient.CoreV1().
 				Secrets(t.AddKeysFrom.SecretRef.Namespace).
