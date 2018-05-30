@@ -18,26 +18,59 @@ package pretty
 
 import (
 	"fmt"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ContextBuilder allows building up pretty message lines with context
 // that is important for debugging and tracing. This class helps create log
 // line formatting consistency. Pretty lines should be in the form:
-// <Kind> "<Namespace>/<Name>": <message>
+// <Kind> "<Namespace>/<Name>" v<ResourceVersion>: <message>
 type ContextBuilder struct {
-	Kind      Kind
-	Namespace string
-	Name      string
+	Kind            Kind
+	Namespace       string
+	Name            string
+	ResourceVersion string
+}
+
+// NewInstanceContextBuilder returns a new ContextBuilder that can be used to format messages in the
+// form `ServiceInstance "<Namespace>/<Name>" v<ResourceVersion>: <message>`.
+func NewInstanceContextBuilder(instance *v1beta1.ServiceInstance) *ContextBuilder {
+	return newResourceContextBuilder(ServiceInstance, &instance.ObjectMeta)
+}
+
+// NewBindingContextBuilder returns a new ContextBuilder that can be used to format messages in the
+// form `ServiceBinding "<Namespace>/<Name>" v<ResourceVersion>: <message>`.
+func NewBindingContextBuilder(binding *v1beta1.ServiceBinding) *ContextBuilder {
+	return newResourceContextBuilder(ServiceBinding, &binding.ObjectMeta)
+}
+
+// NewClusterServiceBrokerContextBuilder returns a new ContextBuilder that can be used to format messages in the
+// form `ClusterServiceBroker "<Name>" v<ResourceVersion>: <message>`.
+func NewClusterServiceBrokerContextBuilder(broker *v1beta1.ClusterServiceBroker) *ContextBuilder {
+	return newResourceContextBuilder(ClusterServiceBroker, &broker.ObjectMeta)
+}
+
+// NewServiceBrokerContextBuilder returns a new ContextBuilder that can be used to format messages in the
+// form `ServiceBroker "<Namespace>/<Name>" v<ResourceVersion>: <message>`.
+func NewServiceBrokerContextBuilder(broker *v1beta1.ServiceBroker) *ContextBuilder {
+	return newResourceContextBuilder(ServiceBroker, &broker.ObjectMeta)
+}
+
+func newResourceContextBuilder(kind Kind, resource *v1.ObjectMeta) *ContextBuilder {
+	return NewContextBuilder(kind, resource.Namespace, resource.Name, resource.ResourceVersion)
 }
 
 // NewContextBuilder returns a new ContextBuilder that can be used to format messages in the
-// form `<Kind> "<Namespace>/<Name>": <message>`.
-// kind,  namespace, name are all optional.
-func NewContextBuilder(kind Kind, namespace string, name string) *ContextBuilder {
+// form `<Kind> "<Namespace>/<Name>" v<ResourceVersion>: <message>`.
+// kind,  namespace, name, resourceVersion are all optional.
+func NewContextBuilder(kind Kind, namespace string, name string, resourceVersion string) *ContextBuilder {
 	lb := new(ContextBuilder)
 	lb.Kind = kind
 	lb.Namespace = namespace
 	lb.Name = name
+	lb.ResourceVersion = resourceVersion
 	return lb
 }
 
@@ -88,6 +121,9 @@ func (pcb ContextBuilder) String() string {
 		s += fmt.Sprintf(`%s"%s"`, space, pcb.Namespace)
 	} else if pcb.Name != "" {
 		s += fmt.Sprintf(`%s"%s"`, space, pcb.Name)
+	}
+	if pcb.ResourceVersion != "" {
+		s += fmt.Sprintf(" v%s", pcb.ResourceVersion)
 	}
 	return s
 }

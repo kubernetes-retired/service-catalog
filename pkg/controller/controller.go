@@ -362,8 +362,9 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 					return false
 				}
 
-				if queue.NumRequeues(key) < maxRetries {
-					glog.V(4).Infof("Error syncing %s %v: %v", resourceType, key, err)
+				numRequeues := queue.NumRequeues(key)
+				if numRequeues < maxRetries {
+					glog.V(4).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
 					queue.AddRateLimited(key)
 					return false
 				}
@@ -418,7 +419,7 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 // places so this method fetches the Service Class and creates
 // a brokerClient to use for that method given an ServiceInstance.
 func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, string, osb.Client, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	serviceClass, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		return nil, "", nil, &operationError{
@@ -500,7 +501,7 @@ func (c *controller) getClusterServiceClassAndClusterServiceBrokerForServiceBind
 }
 
 func (c *controller) getClusterServiceClassForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (*v1beta1.ClusterServiceClass, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	serviceClass, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		s := fmt.Sprintf(
@@ -522,7 +523,7 @@ func (c *controller) getClusterServiceClassForServiceBinding(instance *v1beta1.S
 }
 
 func (c *controller) getClusterServicePlanForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, serviceClass *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServicePlan, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	servicePlan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 	if nil != err {
 		s := fmt.Sprintf(
@@ -544,7 +545,7 @@ func (c *controller) getClusterServicePlanForServiceBinding(instance *v1beta1.Se
 }
 
 func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, serviceClass *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceBroker, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	broker, err := c.clusterServiceBrokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
@@ -564,7 +565,7 @@ func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.
 }
 
 func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
