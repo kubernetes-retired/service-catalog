@@ -157,7 +157,13 @@ func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.Serviceca
 // WaitForInstanceCondition waits for the status of the named instance to
 // contain a condition whose type and status matches the supplied one.
 func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceInstanceCondition) error {
-	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
+	return WaitForInstanceConditionWithCustomTimeout(client, namespace, name, condition, wait.ForeverTestTimeout)
+}
+
+// WaitForInstanceConditionWithCustomTimeout waits for the status of the named instance to
+// contain a condition whose type and status matches the supplied one.
+func WaitForInstanceConditionWithCustomTimeout(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceInstanceCondition, wd time.Duration) error {
+	return wait.PollImmediate(500*time.Millisecond, wd,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v condition %#v", namespace, name, condition)
 			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
@@ -182,6 +188,16 @@ func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1
 			return false, nil
 		},
 	)
+}
+
+// PrintInstance logs the instance details
+func PrintInstance(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) {
+	instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
+	if nil != err {
+		glog.Infof("Error getting Instance %v/%v: %v", namespace, name, err)
+		return
+	}
+	glog.Infof("Instance %v/%v: %+v", namespace, name, instance)
 }
 
 // WaitForInstanceToNotExist waits for the Instance with the given name to no

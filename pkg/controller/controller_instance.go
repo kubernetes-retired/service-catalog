@@ -376,6 +376,7 @@ func (c *controller) setNextProvisionRetryTime(instance *v1beta1.ServiceInstance
 	duration := c.provisionRetryQueue.rateLimter.When(key)
 	c.provisionRetryQueue.mutex.Lock()
 	c.provisionRetryQueue.retryTime[key] = time.Now().Add(duration)
+	glog.V(7).Infof("provisionRetry for %s after %v", key, duration)
 	c.provisionRetryQueue.mutex.Unlock()
 }
 

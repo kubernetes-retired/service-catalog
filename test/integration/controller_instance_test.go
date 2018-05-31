@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -1006,6 +1007,7 @@ func (e TimeoutError) Error() string {
 // TestCreateServiceInstanceWithProvisionFailure tests creating a ServiceInstance
 // with various failure results in response to the provision request.
 func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
+	const longerTimeoutForBrokerRetryBackoff = time.Second * 90
 	cases := []struct {
 		// name of the test
 		name string
@@ -1166,7 +1168,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				if tc.triggersOrphanMitigation {
 					condition.Reason = "StartingInstanceOrphanMitigation"
 				}
-				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, condition); err != nil {
+				if err := util.WaitForInstanceConditionWithCustomTimeout(ct.client, testNamespace, testInstanceName, condition, longerTimeoutForBrokerRetryBackoff); err != nil {
 					t.Fatalf("error waiting for provision to fail: %v", err)
 				}
 
