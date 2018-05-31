@@ -29,7 +29,7 @@ type getCmd struct {
 	uuid         string
 	name         string
 	outputFormat string
-	broker		 string
+	broker       string
 }
 
 func (c *getCmd) SetFormat(format string) {
