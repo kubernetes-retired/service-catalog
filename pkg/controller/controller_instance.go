@@ -102,7 +102,7 @@ const (
 
 	clusterIdentifierKey string = "clusterid"
 
-	minBrokerProvisioningRetryDelay time.Duration = time.Second * 5
+	minBrokerProvisioningRetryDelay time.Duration = time.Second * 1
 	maxBrokerProvisioningRetryDelay time.Duration = time.Minute * 20
 )
 
@@ -376,7 +376,7 @@ func (c *controller) setNextProvisionRetryTime(instance *v1beta1.ServiceInstance
 	duration := c.provisionRetryQueue.rateLimiter.When(key)
 	c.provisionRetryQueue.mutex.Lock()
 	c.provisionRetryQueue.retryTime[key] = time.Now().Add(duration)
-	glog.V(7).Infof("provisionRetry for %s after %v", key, duration)
+	glog.V(4).Infof("provisionRetry for %s after %v", key, duration)
 	c.provisionRetryQueue.mutex.Unlock()
 }
 
@@ -412,12 +412,12 @@ func (c *controller) purgeExpiredRetryEntries() {
 	overDue := now.Add(-maxBrokerProvisioningRetryDelay)
 	for k := range c.provisionRetryQueue.retryTime {
 		if c.provisionRetryQueue.retryTime[k].Before(overDue) {
-			glog.V(7).Infof("removed %s from provisionRetry map which had retry time of %v", k, c.provisionRetryQueue.retryTime[k])
+			glog.V(5).Infof("removed %s from provisionRetry map which had retry time of %v", k, c.provisionRetryQueue.retryTime[k])
 			delete(c.provisionRetryQueue.retryTime, k)
 			c.provisionRetryQueue.rateLimiter.Forget(k)
 		}
 	}
-	glog.V(7).Infof("purged expired entries, provisionRetry queue length is %v", len(c.provisionRetryQueue.retryTime))
+	glog.V(5).Infof("purged expired entries, provisionRetry queue length is %v", len(c.provisionRetryQueue.retryTime))
 	c.provisionRetryQueue.queueLastCleaned = now
 }
 
@@ -428,7 +428,7 @@ func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstanc
 		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
 		return
 	}
-	glog.V(7).Info("removed %v from provisionRetry map", key)
+	glog.V(4).Info("removed %v from provisionRetry map", key)
 	c.provisionRetryQueue.rateLimiter.Forget(key)
 	c.provisionRetryQueue.mutex.Lock()
 	delete(c.provisionRetryQueue.retryTime, key)
@@ -448,8 +448,8 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	// don't DOS the broker.  If we already did a provision attempt that ended with a non-terminal
 	// error then we set a next retry time.  Observe that.
 	if delay := c.getDelayForProvisionRetry(instance); delay > 0 {
-		glog.V(4).Info(pcb.Message("Not processing event because Orphan Migitation was too recent"))
 		msg := fmt.Sprintf("Delaying provision retry, next attempt will be after %s", time.Now().Add(delay))
+		glog.V(4).Info(pcb.Message(msg))
 		c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
 
 		// add back to queue to retry at the specified time
@@ -799,11 +799,6 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
-
-	// assume a provision retry will happen after orphan mitigation, set a not-before time
-	// so we don't pound the Broker in a constant try to provision/fail/orphan mitigation/repeat
-	// loop.
-	c.setNextProvisionRetryTime(instance)
 
 	if instance.DeletionTimestamp == nil {
 		// Orphan mitigation
@@ -2283,6 +2278,10 @@ func (c *controller) handleServiceInstanceReconciliationError(instance *v1beta1.
 // processServiceInstanceOperationError handles the logging and updating of
 // a ServiceInstance that hit a retryable error during reconciliation.
 func (c *controller) processServiceInstanceOperationError(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
+	// assume a provision retry will happen, set a not-before time so we don't pound the Broker
+	// in a constant try to provision/fail/orphan mitigation/repeat loop.
+	c.setNextProvisionRetryTime(instance)
+
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
@@ -2344,6 +2343,10 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 	} else {
 		errorMessage = fmt.Errorf(readyCond.Message)
 	}
+
+	// assume a provision retry will happen, set a not-before time so we don't pound the Broker
+	// in a constant try to provision/fail/orphan mitigation/repeat loop.
+	c.setNextProvisionRetryTime(instance)
 
 	if shouldMitigateOrphan {
 		// Copy original failure reason/message to a new OrphanMitigation condition
