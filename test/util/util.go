@@ -190,16 +190,6 @@ func WaitForInstanceConditionWithCustomTimeout(client v1beta1servicecatalog.Serv
 	)
 }
 
-// PrintInstance logs the instance details
-func PrintInstance(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) {
-	instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
-	if nil != err {
-		glog.Infof("Error getting Instance %v/%v: %v", namespace, name, err)
-		return
-	}
-	glog.Infof("Instance %v/%v: %+v", namespace, name, instance)
-}
-
 // WaitForInstanceToNotExist waits for the Instance with the given name to no
 // longer exist.
 func WaitForInstanceToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string) error {

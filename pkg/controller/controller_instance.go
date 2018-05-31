@@ -114,7 +114,7 @@ type retryQueue struct {
 	// with repeated requests.
 	retryTime        map[string]time.Time
 	queueLastCleaned time.Time
-	rateLimter       workqueue.RateLimiter
+	rateLimiter      workqueue.RateLimiter
 }
 
 // ServiceInstance handlers and control-loop
@@ -125,7 +125,7 @@ func (c *controller) instanceAdd(obj interface{}) {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-	c.instanceQueue.AddRateLimited(key)
+	c.instanceQueue.Add(key)
 }
 
 func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
@@ -373,7 +373,7 @@ func (c *controller) setNextProvisionRetryTime(instance *v1beta1.ServiceInstance
 		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
 		return
 	}
-	duration := c.provisionRetryQueue.rateLimter.When(key)
+	duration := c.provisionRetryQueue.rateLimiter.When(key)
 	c.provisionRetryQueue.mutex.Lock()
 	c.provisionRetryQueue.retryTime[key] = time.Now().Add(duration)
 	glog.V(7).Infof("provisionRetry for %s after %v", key, duration)
@@ -414,7 +414,7 @@ func (c *controller) purgeExpiredRetryEntries() {
 		if c.provisionRetryQueue.retryTime[k].Before(overDue) {
 			glog.V(7).Infof("removed %s from provisionRetry map which had retry time of %v", k, c.provisionRetryQueue.retryTime[k])
 			delete(c.provisionRetryQueue.retryTime, k)
-			c.provisionRetryQueue.rateLimter.Forget(k)
+			c.provisionRetryQueue.rateLimiter.Forget(k)
 		}
 	}
 	glog.V(7).Infof("purged expired entries, provisionRetry queue length is %v", len(c.provisionRetryQueue.retryTime))
@@ -429,7 +429,7 @@ func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstanc
 		return
 	}
 	glog.V(7).Info("removed %v from provisionRetry map", key)
-	c.provisionRetryQueue.rateLimter.Forget(key)
+	c.provisionRetryQueue.rateLimiter.Forget(key)
 	c.provisionRetryQueue.mutex.Lock()
 	delete(c.provisionRetryQueue.retryTime, key)
 	c.provisionRetryQueue.mutex.Unlock()

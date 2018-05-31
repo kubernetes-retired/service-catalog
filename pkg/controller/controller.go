@@ -167,7 +167,7 @@ func NewController(
 		})
 	}
 	controller.provisionRetryQueue.retryTime = make(map[string]time.Time)
-	controller.provisionRetryQueue.rateLimter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerProvisioningRetryDelay, maxBrokerProvisioningRetryDelay)
+	controller.provisionRetryQueue.rateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerProvisioningRetryDelay, maxBrokerProvisioningRetryDelay)
 	return controller, nil
 }
 
