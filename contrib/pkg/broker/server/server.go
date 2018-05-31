@@ -150,6 +150,13 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 		req.Parameters = make(map[string]interface{})
 	}
 
+	if req.Parameters["return500"] != nil {
+		glog.Info("Returning HTTP status 500, as requested in provision parameters")
+		err := fmt.Errorf("Error requested in provision parameters")
+		util.WriteErrorResponse(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	if result, err := s.controller.CreateServiceInstance(id, &req); err == nil {
 		util.WriteResponse(w, http.StatusCreated, result)
 	} else {
