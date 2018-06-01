@@ -157,13 +157,7 @@ func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.Serviceca
 // WaitForInstanceCondition waits for the status of the named instance to
 // contain a condition whose type and status matches the supplied one.
 func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceInstanceCondition) error {
-	return WaitForInstanceConditionWithCustomTimeout(client, namespace, name, condition, wait.ForeverTestTimeout)
-}
-
-// WaitForInstanceConditionWithCustomTimeout waits for the status of the named instance to
-// contain a condition whose type and status matches the supplied one.
-func WaitForInstanceConditionWithCustomTimeout(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, namespace, name string, condition v1beta1.ServiceInstanceCondition, wd time.Duration) error {
-	return wait.PollImmediate(500*time.Millisecond, wd,
+	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			glog.V(5).Infof("Waiting for instance %v/%v condition %#v", namespace, name, condition)
 			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
