@@ -19,13 +19,24 @@ package instance
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 )
 
 type getCmd struct {
 	*command.Namespaced
 	name         string
+	planFilter   string
+	classFilter  string
 	outputFormat string
+}
+
+func (c *getCmd) SetPlanFilter(plan string) {
+	c.planFilter = plan
+}
+
+func (c *getCmd) SetClassFilter(class string) {
+	c.classFilter = class
 }
 
 func (c *getCmd) SetFormat(format string) {
@@ -41,6 +52,8 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		Short:   "List instances, optionally filtered by name",
 		Example: command.NormalizeExamples(`
   svcat get instances
+  svcat get instances --class redis
+  svcat get instances --plan default
   svcat get instances --all-namespaces
   svcat get instance wordpress-mysql-instance
   svcat get instance -n ci concourse-postgres-instance
@@ -49,6 +62,8 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), true)
+	command.AddPlanFilterFlags(cmd.Flags())
+	command.AddClassFilterFlags(cmd.Flags())
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
@@ -75,6 +90,24 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
+	if c.planFilter != "" {
+		instances = c.filterListByPlan(instances)
+
+		if len(instances.Items) <= 0 {
+			// All instances found were filtered out by plan
+			return nil
+		}
+	}
+
+	if c.classFilter != "" {
+		instances = c.filterListByClass(instances)
+
+		if len(instances.Items) <= 0 {
+			// All instances found were filtered out by class
+			return nil
+		}
+	}
+
 	output.WriteInstanceList(c.Output, c.outputFormat, instances)
 	return nil
 }
@@ -85,7 +118,61 @@ func (c *getCmd) get() error {
 		return err
 	}
 
+	if c.planFilter != "" {
+		if !c.filterByPlan(instance) {
+			// Found instances was filtered out by plan
+			return nil
+		}
+	}
+
+	if c.classFilter != "" {
+		if !c.filterByClass(instance) {
+			// Found instances was filtered out by class
+			return nil
+		}
+	}
+
 	output.WriteInstance(c.Output, c.outputFormat, *instance)
 
 	return nil
+}
+
+func (c *getCmd) filterListByPlan(instanceList *v1beta1.ServiceInstanceList) *v1beta1.ServiceInstanceList {
+	p := v1beta1.ServiceInstanceList{
+		Items: []v1beta1.ServiceInstance{},
+	}
+
+	for _, instance := range instanceList.Items {
+		if !c.filterByPlan(&instance) {
+			continue
+		}
+
+		p.Items = append(p.Items, instance)
+	}
+
+	return &p
+}
+
+func (c *getCmd) filterByPlan(instance *v1beta1.ServiceInstance) bool {
+	return instance.Spec.GetSpecifiedPlan() == c.planFilter
+}
+
+func (c *getCmd) filterListByClass(instanceList *v1beta1.ServiceInstanceList) *v1beta1.ServiceInstanceList {
+	p := v1beta1.ServiceInstanceList{
+		Items: []v1beta1.ServiceInstance{},
+	}
+
+	for _, instance := range instanceList.Items {
+		if !c.filterByClass(&instance) {
+			continue
+		}
+
+		p.Items = append(p.Items, instance)
+	}
+
+	return &p
+}
+
+func (c *getCmd) filterByClass(instance *v1beta1.ServiceInstance) bool {
+	return instance.Spec.GetSpecifiedClass() == c.classFilter
 }
