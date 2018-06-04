@@ -401,23 +401,33 @@ func (c *controller) getDelayForProvisionRetry(instance *v1beta1.ServiceInstance
 // retry time.
 func (c *controller) purgeExpiredRetryEntries() {
 	now := time.Now()
-	if now.Before(c.provisionRetryQueue.queueLastCleaned.Add(maxBrokerProvisioningRetryDelay * 2)) {
+
+	// run periodically ensuring we don't prematurely purge any entries
+	timeToPurge := c.provisionRetryQueue.queueLastCleaned.Add(maxBrokerProvisioningRetryDelay * 2)
+	if now.Before(timeToPurge) {
 		return
 	}
 	c.provisionRetryQueue.mutex.Lock()
 	defer c.provisionRetryQueue.mutex.Unlock()
 
-	// Ensure we only purge items that aren't being acted on by retries, this shouldn't
-	// have any work to do but we want to be certain this queue doesn't get overly large.
+	// Ensure we only purge items that aren't being acted on by retries, this
+	// shouldn't have much work to do but we want to be certain this queue
+	// doesn't get overly large. Entries are removed one by one when deleted
+	// (not orphan mitigation)of successfully provisioned, this function ensures
+	// all others get purged eventually.  Due to queues and potential delays,
+	// only remove entries that are at least maxBrokerProvisioningRetryDelay
+	// past next retry time to ensure entries are not prematurely removed
 	overDue := now.Add(-maxBrokerProvisioningRetryDelay)
+	purgedEntries := 0
 	for k := range c.provisionRetryQueue.retryTime {
 		if c.provisionRetryQueue.retryTime[k].Before(overDue) {
 			glog.V(5).Infof("removed %s from provisionRetry map which had retry time of %v", k, c.provisionRetryQueue.retryTime[k])
 			delete(c.provisionRetryQueue.retryTime, k)
 			c.provisionRetryQueue.rateLimiter.Forget(k)
+			purgedEntries++
 		}
 	}
-	glog.V(5).Infof("purged expired entries, provisionRetry queue length is %v", len(c.provisionRetryQueue.retryTime))
+	glog.V(5).Infof("purged %v expired entries, provisionRetry queue length is %v", purgedEntries, len(c.provisionRetryQueue.retryTime))
 	c.provisionRetryQueue.queueLastCleaned = now
 }
 
@@ -446,7 +456,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	}
 
 	// don't DOS the broker.  If we already did a provision attempt that ended with a non-terminal
-	// error then we set a next retry time.  Observe that.
+	// error then we set a next retry time.
 	if delay := c.getDelayForProvisionRetry(instance); delay > 0 {
 		msg := fmt.Sprintf("Delaying provision retry, next attempt will be after %s", time.Now().Add(delay))
 		glog.V(4).Info(pcb.Message(msg))
@@ -2308,7 +2318,7 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 		return err
 	}
-
+	c.removeInstanceFromRetryMap(instance)
 	c.recorder.Eventf(instance, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
 	return nil
 }
