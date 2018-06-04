@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	servicecataloginstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	settingsinstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install"
 )
 
 var (
@@ -37,7 +36,6 @@ var (
 
 func init() {
 	servicecataloginstall.Install(Scheme)
-	settingsinstall.Install(Scheme)
 
 	// we need to add the options to empty v1
 	// TODO fix the server code to avoid this

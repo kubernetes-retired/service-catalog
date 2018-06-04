@@ -46,7 +46,6 @@ docker run -d --name apiserver \
 	scbuildimage \
 	bin/service-catalog apiserver -v 10 --logtostderr --etcd-servers http://localhost:2379 \
 		--storage-type=etcd --disable-auth \
-    --feature-gates "PodPreset=true" \
     --feature-gates "NamespacedServiceBroker=true"
 
 # Wait for apiserver to be up and running

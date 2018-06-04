@@ -26,7 +26,6 @@ import (
 	internalclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
 	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion/internalinterfaces"
 	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion/servicecatalog"
-	settings "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion/settings"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -174,13 +173,8 @@ type SharedInformerFactory interface {
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
 	Servicecatalog() servicecatalog.Interface
-	Settings() settings.Interface
 }
 
 func (f *sharedInformerFactory) Servicecatalog() servicecatalog.Interface {
 	return servicecatalog.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Settings() settings.Interface {
-	return settings.New(f, f.namespace, f.tweakListOptions)
 }
