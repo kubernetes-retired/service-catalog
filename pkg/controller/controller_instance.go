@@ -413,7 +413,7 @@ func (c *controller) purgeExpiredRetryEntries() {
 	// Ensure we only purge items that aren't being acted on by retries, this
 	// shouldn't have much work to do but we want to be certain this queue
 	// doesn't get overly large. Entries are removed one by one when deleted
-	// (not orphan mitigation)of successfully provisioned, this function ensures
+	// (not orphan mitigation) or successfully provisioned, this function ensures
 	// all others get purged eventually.  Due to queues and potential delays,
 	// only remove entries that are at least maxBrokerProvisioningRetryDelay
 	// past next retry time to ensure entries are not prematurely removed
@@ -438,7 +438,7 @@ func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstanc
 		glog.Errorf("Couldn't get key for object %+v: %v", instance, err)
 		return
 	}
-	glog.V(4).Info("removed %v from provisionRetry map", key)
+	glog.V(4).Infof("removed %v from provisionRetry map", key)
 	c.provisionRetryQueue.rateLimiter.Forget(key)
 	c.provisionRetryQueue.mutex.Lock()
 	delete(c.provisionRetryQueue.retryTime, key)
