@@ -24,7 +24,9 @@ import (
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/tableconvertor"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -142,6 +144,38 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) 
 		UpdateStrategy:          instanceRESTStrategies,
 		DeleteStrategy:          instanceRESTStrategies,
 		EnableGarbageCollection: true,
+
+		TableConvertor: tableconvertor.NewTableConvertor(
+			[]metav1beta1.TableColumnDefinition{
+				{Name: "Name", Type: "string", Format: "name"},
+				{Name: "Class", Type: "string"},
+				{Name: "Plan", Type: "string"},
+				{Name: "Status", Type: "string"},
+				{Name: "Age", Type: "string"},
+			},
+			func(obj runtime.Object, m metav1.Object, name, age string) ([]interface{}, error) {
+				getStatus := func(status servicecatalog.ServiceInstanceStatus) string {
+					if len(status.Conditions) > 0 {
+						condition := status.Conditions[len(status.Conditions)-1]
+						if condition.Status == servicecatalog.ConditionTrue {
+							return string(condition.Type)
+						}
+						return condition.Reason
+					}
+					return ""
+				}
+
+				instance := obj.(*servicecatalog.ServiceInstance)
+				cells := []interface{}{
+					name,
+					instance.Spec.ClusterServiceClassExternalName,
+					instance.Spec.ClusterServicePlanExternalName,
+					getStatus(instance.Status),
+					age,
+				}
+				return cells, nil
+			},
+		),
 
 		Storage:     storageInterface,
 		DestroyFunc: dFunc,
