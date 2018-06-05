@@ -1,4 +1,8 @@
 language: generic
+notifications:
+  email:
+    recipients:
+      - kubernetes-sig-service-catalog-alerts@googlegroups.com
 env:
   - GO_VERSION=1.9
   - GO_VERSION=rc
