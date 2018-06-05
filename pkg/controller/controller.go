@@ -166,8 +166,8 @@ func NewController(
 			DeleteFunc: controller.servicePlanDelete,
 		})
 	}
-	controller.provisionRetryQueue.retryTime = make(map[string]time.Time)
-	controller.provisionRetryQueue.rateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerProvisioningRetryDelay, maxBrokerProvisioningRetryDelay)
+	controller.instanceOperationRetryQueue.retryTime = make(map[string]time.Time)
+	controller.instanceOperationRetryQueue.rateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerOperationRetryDelay, maxBrokerOperationRetryDelay)
 	return controller, nil
 }
 
@@ -221,8 +221,8 @@ type controller struct {
 	// clusterIDLock protects access to clusterID between the
 	// monitor writing the value from the configmap, and any
 	// readers passing the clusterID to a broker.
-	clusterIDLock       sync.RWMutex
-	provisionRetryQueue retryQueue
+	clusterIDLock               sync.RWMutex
+	instanceOperationRetryQueue retryQueue
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -257,6 +257,10 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	// infrastructure set up for one configmap. Instead this is a
 	// simple polling based worker
 	c.createConfigMapMonitorWorker(stopCh, &waitGroup)
+
+	// create a task that runs periodically to purge expired
+	// instance operation retry entries
+	c.createPurgeExpiredRetryEntriesWorker(stopCh, &waitGroup)
 
 	<-stopCh
 	glog.Info("Shutting down service-catalog controller")
@@ -294,6 +298,16 @@ func (c *controller) createConfigMapMonitorWorker(stopCh <-chan struct{}, waitGr
 	waitGroup.Add(1)
 	go func() {
 		wait.Until(c.monitorConfigMap, 15*time.Second, stopCh)
+		waitGroup.Done()
+	}()
+}
+
+// createPurgeExpiredRetryEntriesWorker creates a task that runs periodically to
+// remove old entries from the instance retry queue
+func (c *controller) createPurgeExpiredRetryEntriesWorker(stopCh <-chan struct{}, waitGroup *sync.WaitGroup) {
+	waitGroup.Add(1)
+	go func() {
+		wait.Until(c.purgeExpiredRetryEntries, 2*maxBrokerOperationRetryDelay, stopCh)
 		waitGroup.Done()
 	}()
 }
