@@ -235,6 +235,23 @@ These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
 `coverage.html` at the root of the repo.
 
+As mentioned above, integration tests require a running Catalog API & ETCD image
+and a properly configured .kubeconfig.  When developing or drilling in on a
+specific test failure you may find it helpful to run Catalog in your "normal"
+environment and as long as you have properly configured your KUBECONFIG
+environment variable you can run integration tests much more quickly with a
+couple of commands:
+
+    $ make build-integration
+    $ ./integration.test -test.v -v 5 -logtostderr -test.run  TestPollServiceInstanceLastOperationSuccess/async_provisioning_with_error_on_second_poll
+
+The first command ensures the test integration executable is up-to-date.  The
+second command runs one specific test case with verbose logging and can be
+re-run over and over without having to wait for the start and stop of API and
+ETCD.  This example will execute the test case "async provisioning with error on
+second poll" within the integration test
+TestPollServiceInstanceLastOperationSuccess.
+
 ### Golden Files
 The svcat tests rely on "[golden files](https://medium.com/@povilasve/go-advanced-tips-tricks-a872503ac859#a196)",
 a pattern used in the Go standard library, for testing command output. The expected
