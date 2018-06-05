@@ -119,7 +119,7 @@ func (c *controller) instanceDelete(obj interface{}) {
 		return
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	glog.V(4).Info(pcb.Message("Received delete event; no further processing will occur"))
 }
 
@@ -158,7 +158,7 @@ func (c *controller) requeueServiceInstanceForPoll(key string) error {
 func (c *controller) beginPollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		pcb := pretty.NewInstanceContextBuilder(instance)
 		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
 		glog.Errorf(pcb.Message(s))
 		return fmt.Errorf(s)
@@ -180,7 +180,7 @@ func (c *controller) continuePollingServiceInstance(instance *v1beta1.ServiceIns
 func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInstance) error {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		pcb := pretty.NewInstanceContextBuilder(instance)
 		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
 		glog.Errorf(pcb.Message(s))
 		return fmt.Errorf(s)
@@ -196,7 +196,7 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 func (c *controller) resetPollingRateLimiterForServiceInstance(instance *v1beta1.ServiceInstance) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
 	if err != nil {
-		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		pcb := pretty.NewInstanceContextBuilder(instance)
 		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
 		glog.Errorf(pcb.Message(s))
 		return
@@ -227,7 +227,7 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	if err != nil {
 		return err
 	}
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, namespace, name)
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, namespace, name, "")
 	instance, err := c.instanceLister.ServiceInstances(namespace).Get(name)
 	if errors.IsNotFound(err) {
 		glog.Info(pcb.Messagef("Not doing work for %v because it has been deleted", key))
@@ -274,7 +274,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	case reconcilePoll:
 		return c.pollServiceInstance(instance)
 	default:
-		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		pcb := pretty.NewInstanceContextBuilder(instance)
 		return fmt.Errorf(pcb.Messagef("Unknown reconciliation action %v", reconciliationAction))
 	}
 }
@@ -332,7 +332,7 @@ func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInst
 // reconcileServiceInstanceAdd is responsible for handling the provisioning
 // of new service instances.
 func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstance) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
@@ -442,7 +442,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 // reconcileServiceInstanceUpdate is responsible for handling updating the plan
 // or parameters of a service instance.
 func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceInstance) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
@@ -559,7 +559,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	// If deprovisioning has already failed, do not do anything more
 	if instance.Status.DeprovisionStatus == v1beta1.ServiceInstanceDeprovisionStatusFailed {
@@ -567,7 +567,11 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	glog.V(4).Info(pcb.Message("Processing deleting event"))
+	if instance.Status.OrphanMitigationInProgress {
+		glog.V(4).Info(pcb.Message("Performing orphan mitigation"))
+	} else {
+		glog.V(4).Info(pcb.Message("Processing deleting event"))
+	}
 
 	instance = instance.DeepCopy()
 	// Any status updates from this point should have an updated observed generation
@@ -666,8 +670,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 }
 
 func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-	glog.V(4).Info(pcb.Message("Processing"))
+	pcb := pretty.NewInstanceContextBuilder(instance)
+	glog.V(4).Info(pcb.Message("Processing poll event"))
 
 	instance = instance.DeepCopy()
 
@@ -911,7 +915,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 		return nil, nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServiceClassExternalName, ClusterServiceClassExternalID, nor ClusterServiceClassName is set", instance.Namespace, instance.Name)
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	var sc *v1beta1.ClusterServiceClass
 
 	if instance.Spec.ClusterServiceClassName != "" {
@@ -992,7 +996,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServicePlanExternalName, ClusterServicePlanExternalID, nor ClusterServicePlanName is set", instance.Namespace, instance.Name)
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	if instance.Spec.ClusterServicePlanName != "" {
 		sp, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanName)
@@ -1096,7 +1100,7 @@ func newServiceInstanceOrphanMitigationCondition(status v1beta1.ConditionStatus,
 // instance's status if it exists.
 func removeServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
 	conditionType v1beta1.ServiceInstanceConditionType) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
+	pcb := pretty.NewInstanceContextBuilder(toUpdate)
 	glog.V(5).Info(pcb.Messagef(
 		"Removing condition %q", conditionType,
 	))
@@ -1139,7 +1143,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 	message string,
 	t metav1.Time) {
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
+	pcb := pretty.NewInstanceContextBuilder(toUpdate)
 	glog.Info(pcb.Message(message))
 	glog.V(5).Info(pcb.Messagef(
 		"Setting condition %q to %v",
@@ -1189,7 +1193,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 
 // updateServiceInstanceReferences updates the refs for the given instance.
 func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, toUpdate.Namespace, toUpdate.Name)
+	pcb := pretty.NewInstanceContextBuilder(toUpdate)
 	glog.V(4).Info(pcb.Message("Updating references"))
 	status := toUpdate.Status
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
@@ -1207,8 +1211,7 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceIn
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
 func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
-	glog.V(4).Info(pcb.Message("Updating status"))
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	const interval = 100 * time.Millisecond
 	const timeout = 10 * time.Second
@@ -1216,11 +1219,13 @@ func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstan
 
 	instanceToUpdate := instance
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		glog.V(4).Info(pcb.Message("Updating status"))
 		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(instanceToUpdate)
 		if err != nil {
 			if !errors.IsConflict(err) {
 				return false, err
 			}
+			glog.V(4).Info(pcb.Message("Couldn't update status because the resource was stale"))
 			// Fetch a fresh instance to resolve the update conflict and retry
 			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
 			if err != nil {
@@ -1249,7 +1254,7 @@ func (c *controller) updateServiceInstanceCondition(
 	status v1beta1.ConditionStatus,
 	reason,
 	message string) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	toUpdate := instance.DeepCopy()
 
 	setServiceInstanceCondition(toUpdate, conditionType, status, reason, message)
@@ -1603,7 +1608,7 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 	}
 
 	if instance.Status.InProgressProperties == nil {
-		pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+		pcb := pretty.NewInstanceContextBuilder(instance)
 		err = stderrors.New("Instance.Status.InProgressProperties can not be nil")
 		glog.Errorf(pcb.Message(err.Error()))
 		return nil, err
@@ -1635,7 +1640,7 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 		return err
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	glog.Info(pcb.Message("Cleared finalizer"))
 
 	return nil
@@ -1953,7 +1958,7 @@ func (c *controller) handleServiceInstancePollingError(instance *v1beta1.Service
 	//	2) attempt to requeue in the polling queue
 	//		- if successful, we can return nil to avoid regular queue
 	//		- if failure, return err to fall back to regular queue
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	glog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceInstance(instance)
 }
