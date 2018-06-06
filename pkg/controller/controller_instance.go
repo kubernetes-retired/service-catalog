@@ -2312,9 +2312,11 @@ func (c *controller) handleServiceInstanceReconciliationError(instance *v1beta1.
 // processServiceInstanceOperationError handles the logging and updating of
 // a ServiceInstance that hit a retryable error during reconciliation.
 func (c *controller) processServiceInstanceOperationError(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
-	// assume a provision retry will happen, set a not-before time so we don't pound the Broker
-	// in a constant try to provision/fail/orphan mitigation/repeat loop.
-	c.setNextOperationRetryTime(instance)
+	// If error is from an update, assume a retry will happen, set a not-before time so we
+	// don't pound the Broker in a constant update/fail/update repeat loop.
+	if strings.Contains(readyCond.Reason, "UpdateInstance") {
+		c.setNextOperationRetryTime(instance)
+	}
 
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
 	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
@@ -2379,10 +2381,6 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		errorMessage = fmt.Errorf(readyCond.Message)
 	}
 
-	// assume a provision retry will happen, set a not-before time so we don't pound the Broker
-	// in a constant try to provision/fail/orphan mitigation/repeat loop.
-	c.setNextOperationRetryTime(instance)
-
 	if shouldMitigateOrphan {
 		// Copy original failure reason/message to a new OrphanMitigation condition
 		c.recorder.Event(instance, corev1.EventTypeWarning, startingInstanceOrphanMitigationReason, startingInstanceOrphanMitigationMessage)
@@ -2406,6 +2404,9 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		// or requires an orphan mitigation.
 		// Only reset the OSB operation status
 		clearServiceInstanceAsyncOsbOperation(instance)
+
+		// when/if we retry, ensure there is a backoff
+		c.setNextOperationRetryTime(instance)
 	} else {
 		// Reset the current operation if there was a terminal error
 		clearServiceInstanceCurrentOperation(instance)
