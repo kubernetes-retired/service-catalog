@@ -515,8 +515,8 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 			}
 			credentials[t.AddKey.Key] = value
 		case t.RenameKey != nil:
-			value := credentials[t.RenameKey.From]
-			if value != nil {
+			value, ok := credentials[t.RenameKey.From]
+			if ok {
 				credentials[t.RenameKey.To] = value
 				delete(credentials, t.RenameKey.From)
 			}
