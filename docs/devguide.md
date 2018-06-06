@@ -343,6 +343,10 @@ Once the Pull Request has been created, it will automatically be built
 and the tests run. The unit and integration tests will run in travis,
 and Jenkins will run the e2e tests.
 
+You can use the [Prow /cc command](https://prow.k8s.io/command-help#cc)
+to request reviews from the maintainers of the project. This works even
+if you do not have status in the service-catalog project.
+
 On travis, a build is made up of two jobs, one builds our chosen
 golang version, and the other builds with future release candidates
 (rc). It is okay for the rc build to fail. The rc build will not fail
