@@ -3,8 +3,8 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/jpeeler/podpreset-crd/pkg/apis/settings/v1alpha1"
-	scheme "github.com/jpeeler/podpreset-crd/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

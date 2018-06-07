@@ -4,6 +4,7 @@ import (
 	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
 	rscheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned/scheme"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller/podpreset"
+	"github.com/kubernetes-incubator/service-catalog/pkg/controller/podpresetbinding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/inject/args"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	corev1 "k8s.io/api/core/v1"

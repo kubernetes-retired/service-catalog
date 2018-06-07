@@ -5,10 +5,10 @@ package v1alpha1
 import (
 	time "time"
 
-	settings_v1alpha1 "github.com/jpeeler/podpreset-crd/pkg/apis/settings/v1alpha1"
-	versioned "github.com/jpeeler/podpreset-crd/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/jpeeler/podpreset-crd/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/jpeeler/podpreset-crd/pkg/client/listers/settings/v1alpha1"
+	settings_v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	versioned "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/client/listers/settings/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

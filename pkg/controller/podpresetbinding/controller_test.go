@@ -10,8 +10,8 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-    . "github.com/jpeeler/podpreset-crd/pkg/apis/settings/v1alpha1"
-    . "github.com/jpeeler/podpreset-crd/pkg/client/clientset/versioned/typed/settings/v1alpha1"
+    . "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+    . "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned/typed/settings/v1alpha1"
 )
 
 // EDIT THIS FILE!

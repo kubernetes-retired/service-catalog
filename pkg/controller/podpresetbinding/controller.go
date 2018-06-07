@@ -9,11 +9,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 
-	settingsv1alpha1 "github.com/jpeeler/podpreset-crd/pkg/apis/settings/v1alpha1"
-	settingsv1alpha1client "github.com/jpeeler/podpreset-crd/pkg/client/clientset/versioned/typed/settings/v1alpha1"
-	settingsv1alpha1informer "github.com/jpeeler/podpreset-crd/pkg/client/informers/externalversions/settings/v1alpha1"
-	settingsv1alpha1lister "github.com/jpeeler/podpreset-crd/pkg/client/listers/settings/v1alpha1"
-	"github.com/jpeeler/podpreset-crd/pkg/inject/args"
+	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	settingsv1alpha1client "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned/typed/settings/v1alpha1"
+	settingsv1alpha1informer "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/externalversions/settings/v1alpha1"
+	settingsv1alpha1lister "github.com/kubernetes-incubator/service-catalog/pkg/client/listers/settings/v1alpha1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/inject/args"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 )
 

@@ -14,9 +14,9 @@ import (
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
 
-    "github.com/jpeeler/podpreset-crd/pkg/client/clientset/versioned"
-    "github.com/jpeeler/podpreset-crd/pkg/inject"
-    "github.com/jpeeler/podpreset-crd/pkg/inject/args"
+    "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned"
+    "github.com/kubernetes-incubator/service-catalog/pkg/inject"
+    "github.com/kubernetes-incubator/service-catalog/pkg/inject/args"
 )
 
 var (
