@@ -2371,7 +2371,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"clusterServicePlanExternalName", "clusterServicePlanExternalID", "servicePlanExternalName", "servicePlanExternalID"},
+					Required: []string{"clusterServicePlanExternalName", "clusterServicePlanExternalID"},
 				},
 			},
 			Dependencies: []string{

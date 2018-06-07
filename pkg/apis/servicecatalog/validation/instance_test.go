@@ -644,7 +644,7 @@ func TestValidateServiceInstance(t *testing.T) {
 		},
 		{
 			name:     "valid create with namespaced plan ref",
-			instance: validServiceInstanceForCreateClusterPlanRef(),
+			instance: validServiceInstanceForCreateNamespacedPlanRef(),
 			create:   true,
 			valid:    true,
 		},

@@ -46,8 +46,6 @@ status:
         ps2: two
       secretparam1: <redacted>
       secretparam2: <redacted>
-    servicePlanExternalID: ""
-    servicePlanExternalName: ""
   observedGeneration: 0
   orphanMitigationInProgress: false
   provisionStatus: ""

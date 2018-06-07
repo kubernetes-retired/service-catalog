@@ -1038,11 +1038,11 @@ type ServiceInstancePropertiesState struct {
 	// ServicePlanExternalName is the name of the plan that the broker knows this
 	// ServiceInstance to be on. This is the human readable plan name from the
 	// OSB API.
-	ServicePlanExternalName string `json:"servicePlanExternalName"`
+	ServicePlanExternalName string `json:"servicePlanExternalName,omitempty"`
 
 	// ServicePlanExternalID is the external ID of the plan that the
 	// broker knows this ServiceInstance to be on.
-	ServicePlanExternalID string `json:"servicePlanExternalID"`
+	ServicePlanExternalID string `json:"servicePlanExternalID,omitempty"`
 
 	// Parameters is a blob of the parameters and their values that the broker
 	// knows about for this ServiceInstance.  If a parameter was sourced from
