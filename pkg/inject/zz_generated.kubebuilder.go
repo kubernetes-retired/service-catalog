@@ -22,6 +22,9 @@ func init() {
 		if err := arguments.ControllerManager.AddInformerProvider(&settingsv1alpha1.PodPreset{}, arguments.Informers.Settings().V1alpha1().PodPresets()); err != nil {
 			return err
 		}
+		if err := arguments.ControllerManager.AddInformerProvider(&settingsv1alpha1.PodPresetBinding{}, arguments.Informers.Settings().V1alpha1().PodPresetBindings()); err != nil {
+			return err
+		}
 
 		// Add Kubernetes informers
 		if err := arguments.ControllerManager.AddInformerProvider(&corev1.Pod{}, arguments.KubernetesInformers.Core().V1().Pods()); err != nil {
@@ -33,11 +36,17 @@ func init() {
 		} else {
 			arguments.ControllerManager.AddController(c)
 		}
+		if c, err := podpresetbinding.ProvideController(arguments); err != nil {
+			return err
+		} else {
+			arguments.ControllerManager.AddController(c)
+		}
 		return nil
 	})
 
 	// Inject CRDs
 	Injector.CRDs = append(Injector.CRDs, &settingsv1alpha1.PodPresetCRD)
+	Injector.CRDs = append(Injector.CRDs, &settingsv1alpha1.PodPresetBindingCRD)
 	// Inject PolicyRules
 	Injector.PolicyRules = append(Injector.PolicyRules, rbacv1.PolicyRule{
 		APIGroups: []string{"settings.servicecatalog.k8s.io"},

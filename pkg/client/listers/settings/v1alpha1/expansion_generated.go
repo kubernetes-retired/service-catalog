@@ -9,3 +9,11 @@ type PodPresetListerExpansion interface{}
 // PodPresetNamespaceListerExpansion allows custom methods to be added to
 // PodPresetNamespaceLister.
 type PodPresetNamespaceListerExpansion interface{}
+
+// PodPresetBindingListerExpansion allows custom methods to be added to
+// PodPresetBindingLister.
+type PodPresetBindingListerExpansion interface{}
+
+// PodPresetBindingNamespaceListerExpansion allows custom methods to be added to
+// PodPresetBindingNamespaceLister.
+type PodPresetBindingNamespaceListerExpansion interface{}

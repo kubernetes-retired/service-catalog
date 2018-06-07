@@ -10,6 +10,8 @@ import (
 type Interface interface {
 	// PodPresets returns a PodPresetInformer.
 	PodPresets() PodPresetInformer
+	// PodPresetBindings returns a PodPresetBindingInformer.
+	PodPresetBindings() PodPresetBindingInformer
 }
 
 type version struct {
@@ -26,4 +28,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // PodPresets returns a PodPresetInformer.
 func (v *version) PodPresets() PodPresetInformer {
 	return &podPresetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PodPresetBindings returns a PodPresetBindingInformer.
+func (v *version) PodPresetBindings() PodPresetBindingInformer {
+	return &podPresetBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

@@ -16,6 +16,10 @@ func (c *FakeSettingsV1alpha1) PodPresets(namespace string) v1alpha1.PodPresetIn
 	return &FakePodPresets{c, namespace}
 }
 
+func (c *FakeSettingsV1alpha1) PodPresetBindings(namespace string) v1alpha1.PodPresetBindingInterface {
+	return &FakePodPresetBindings{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeSettingsV1alpha1) RESTClient() rest.Interface {

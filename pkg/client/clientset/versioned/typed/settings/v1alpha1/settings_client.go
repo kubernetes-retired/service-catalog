@@ -12,6 +12,7 @@ import (
 type SettingsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	PodPresetsGetter
+	PodPresetBindingsGetter
 }
 
 // SettingsV1alpha1Client is used to interact with features provided by the settings.servicecatalog.k8s.io group.
@@ -21,6 +22,10 @@ type SettingsV1alpha1Client struct {
 
 func (c *SettingsV1alpha1Client) PodPresets(namespace string) PodPresetInterface {
 	return newPodPresets(c, namespace)
+}
+
+func (c *SettingsV1alpha1Client) PodPresetBindings(namespace string) PodPresetBindingInterface {
+	return newPodPresetBindings(c, namespace)
 }
 
 // NewForConfig creates a new SettingsV1alpha1Client for the given config.

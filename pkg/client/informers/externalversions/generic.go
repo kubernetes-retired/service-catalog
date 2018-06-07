@@ -39,6 +39,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=settings.servicecatalog.k8s.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("podpresets"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Settings().V1alpha1().PodPresets().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("podpresetbindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Settings().V1alpha1().PodPresetBindings().Informer()}, nil
 
 	}
 

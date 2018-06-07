@@ -78,8 +78,10 @@ func filterPodPresets(list []settingsapi.PodPreset, pod *corev1.Pod) ([]*setting
 			glog.V(6).Infof("PodPreset '%s' does NOT match pod '%s' labels", pp.GetName(), pod.GetName())
 			continue
 		}
-		glog.V(4).Infof("PodPreset %s matches pod %s labels", pp.GetName(), pod.GetName())
-		matchingPPs = append(matchingPPs, &pp)
+		glog.V(4).Infof("PodPreset '%s' matches pod '%s' labels", pp.GetName(), pod.GetName())
+		// create pointer to a non-loop variable
+		newPP := pp
+		matchingPPs = append(matchingPPs, &newPP)
 	}
 	return matchingPPs, nil
 }
@@ -324,7 +326,7 @@ func applyPodPresetsOnContainer(ctr *corev1.Container, podPresets []*settingsapi
 }
 
 func mutatePods(ar v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
-	glog.V(2).Info("mutating pods")
+	glog.V(2).Info("Entering mutatePods in mutating webhook")
 	podResource := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 	if ar.Request.Resource != podResource {
 		glog.Errorf("expect resource to be %s", podResource)
@@ -341,6 +343,7 @@ func mutatePods(ar v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 	reviewResponse := v1beta1.AdmissionResponse{}
 	reviewResponse.Allowed = true
 	podCopy := pod.DeepCopy()
+	glog.V(6).Infof("Examining pod: %v\n", pod.GetName())
 
 	// Ignore if exclusion annotation is present
 	if podAnnotations := pod.GetAnnotations(); podAnnotations != nil {
@@ -360,7 +363,7 @@ func mutatePods(ar v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 		return toAdmissionResponse(err)
 	}
 
-	glog.Infof("fetched %d number of podpresets in namespace %s", len(list.Items), pod.Namespace)
+	glog.Infof("fetched %d podpreset(s) in namespace %s", len(list.Items), pod.Namespace)
 
 	matchingPPs, err := filterPodPresets(list.Items, &pod)
 	if err != nil {
@@ -378,7 +381,7 @@ func mutatePods(ar v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 		presetNames[i] = pp.GetName()
 	}
 
-	glog.V(5).Infof("Matching PP detected, patching spec")
+	glog.V(5).Infof("Matching PP detected of count %v, patching spec", len(matchingPPs))
 
 	// detect merge conflict
 	err = safeToApplyPodPresetsOnPod(&pod, matchingPPs)

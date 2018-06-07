@@ -30,6 +30,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&PodPreset{},
 		&PodPresetList{},
+		&PodPresetBinding{},
+		&PodPresetBindingList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
@@ -41,6 +43,14 @@ type PodPresetList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []PodPreset `json:"items"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type PodPresetBindingList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []PodPresetBinding `json:"items"`
 }
 
 // CRD Generation
@@ -115,6 +125,118 @@ var (
 										Schema: &v1beta1.JSONSchemaProps{
 											Type:       "object",
 											Properties: map[string]v1beta1.JSONSchemaProps{},
+										},
+									},
+								},
+							},
+						},
+						"status": v1beta1.JSONSchemaProps{
+							Type:       "object",
+							Properties: map[string]v1beta1.JSONSchemaProps{},
+						},
+					},
+				},
+			},
+		},
+	}
+	// Define CRDs for resources
+	PodPresetBindingCRD = v1beta1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "podpresetbindings.settings.servicecatalog.k8s.io",
+		},
+		Spec: v1beta1.CustomResourceDefinitionSpec{
+			Group:   "settings.servicecatalog.k8s.io",
+			Version: "v1alpha1",
+			Names: v1beta1.CustomResourceDefinitionNames{
+				Kind:   "PodPresetBinding",
+				Plural: "podpresetbindings",
+			},
+			Scope: "Namespaced",
+			Validation: &v1beta1.CustomResourceValidation{
+				OpenAPIV3Schema: &v1beta1.JSONSchemaProps{
+					Type: "object",
+					Properties: map[string]v1beta1.JSONSchemaProps{
+						"apiVersion": v1beta1.JSONSchemaProps{
+							Type: "string",
+						},
+						"kind": v1beta1.JSONSchemaProps{
+							Type: "string",
+						},
+						"metadata": v1beta1.JSONSchemaProps{
+							Type: "object",
+						},
+						"spec": v1beta1.JSONSchemaProps{
+							Type: "object",
+							Properties: map[string]v1beta1.JSONSchemaProps{
+								"apiVersion": v1beta1.JSONSchemaProps{
+									Type: "string",
+								},
+								"bindingRef": v1beta1.JSONSchemaProps{
+									Type:       "object",
+									Properties: map[string]v1beta1.JSONSchemaProps{},
+								},
+								"kind": v1beta1.JSONSchemaProps{
+									Type: "string",
+								},
+								"metadata": v1beta1.JSONSchemaProps{
+									Type: "object",
+								},
+								"podPresetTemplate": v1beta1.JSONSchemaProps{
+									Type: "object",
+									Properties: map[string]v1beta1.JSONSchemaProps{
+										"apiVersion": v1beta1.JSONSchemaProps{
+											Type: "string",
+										},
+										"kind": v1beta1.JSONSchemaProps{
+											Type: "string",
+										},
+										"metadata": v1beta1.JSONSchemaProps{
+											Type: "object",
+										},
+										"template": v1beta1.JSONSchemaProps{
+											Type: "object",
+											Properties: map[string]v1beta1.JSONSchemaProps{
+												"env": v1beta1.JSONSchemaProps{
+													Type: "array",
+													Items: &v1beta1.JSONSchemaPropsOrArray{
+														Schema: &v1beta1.JSONSchemaProps{
+															Type:       "object",
+															Properties: map[string]v1beta1.JSONSchemaProps{},
+														},
+													},
+												},
+												"envFrom": v1beta1.JSONSchemaProps{
+													Type: "array",
+													Items: &v1beta1.JSONSchemaPropsOrArray{
+														Schema: &v1beta1.JSONSchemaProps{
+															Type:       "object",
+															Properties: map[string]v1beta1.JSONSchemaProps{},
+														},
+													},
+												},
+												"selector": v1beta1.JSONSchemaProps{
+													Type:       "object",
+													Properties: map[string]v1beta1.JSONSchemaProps{},
+												},
+												"volumeMounts": v1beta1.JSONSchemaProps{
+													Type: "array",
+													Items: &v1beta1.JSONSchemaPropsOrArray{
+														Schema: &v1beta1.JSONSchemaProps{
+															Type:       "object",
+															Properties: map[string]v1beta1.JSONSchemaProps{},
+														},
+													},
+												},
+												"volumes": v1beta1.JSONSchemaProps{
+													Type: "array",
+													Items: &v1beta1.JSONSchemaPropsOrArray{
+														Schema: &v1beta1.JSONSchemaProps{
+															Type:       "object",
+															Properties: map[string]v1beta1.JSONSchemaProps{},
+														},
+													},
+												},
+											},
 										},
 									},
 								},
