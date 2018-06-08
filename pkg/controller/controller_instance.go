@@ -20,16 +20,11 @@ import (
 	stderrors "errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"time"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +32,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
 const (
@@ -1906,7 +1906,7 @@ func (c *controller) innerPrepareProvisionRequest(instance *v1beta1.ServiceInsta
 		ServiceID:           classCommon.ExternalID,
 		PlanID:              planCommon.ExternalID,
 		Parameters:          rh.parameters,
-		OrganizationGUID:    string(rh.ns.UID),
+		OrganizationGUID:    c.getClusterID(),
 		SpaceGUID:           string(rh.ns.UID),
 		Context:             rh.requestContext,
 		OriginatingIdentity: rh.originatingIdentity,
