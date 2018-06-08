@@ -40,11 +40,11 @@ func ParseVariableJSON(params string) (map[string]interface{}, error) {
 // ParseVariableAssignments converts a string array of variable assignments
 // into a map of keys and values
 // Example:
-// [a=b c=abc1232===] becomes map[a:b c:abc1232===]
-func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
-	variables := make(map[string]interface{})
-	for _, p := range params {
+// [a=b c=abc123 a=somethingelse] becomes map[a:[b,somethingelse] c=[abc123]]
+func ParseVariableAssignments(params []string) (map[string][]string, error) {
+	variables := make(map[string][]string)
 
+	for _, p := range params {
 		parts := strings.SplitN(p, "=", 2)
 		if len(parts) < 2 {
 			return nil, fmt.Errorf("invalid parameter (%s), must be in name=value format", p)
@@ -56,7 +56,12 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		}
 		value := strings.TrimSpace(parts[1])
 
-		variables[variable] = value
+		_, ok := variables[variable]
+		if !ok {
+			variables[variable] = make([]string, 0)
+		}
+
+		variables[variable] = append(variables[variable], value)
 	}
 
 	return variables, nil
