@@ -10,13 +10,6 @@ import (
 // as a go struct.
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type PodPresetTemplate struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Template PodPresetSpec `json:"template,omitempty"`
-}
-
 // PodPresetBindingSpec defines the desired state of PodPresetBinding
 type PodPresetBindingSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -24,7 +17,7 @@ type PodPresetBindingSpec struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	BindingRef        *v1.ObjectReference `json:"bindingRef,omitempty"`
-	PodPresetTemplate `json:"podPresetTemplate"`
+	PodPresetTemplate PodPreset           `json:"podPresetTemplate"`
 }
 
 // A new pod preset binding CRD is created which watches for service bindings to be ready. The pod preset bindings contains a reference to the formerly mentioned binding as well as a pod preset template. Once the service binding is ready, the pod preset is created which will contain an owner reference back to the pod preset binding.

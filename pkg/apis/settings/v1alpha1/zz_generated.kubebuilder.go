@@ -193,7 +193,7 @@ var (
 										"metadata": v1beta1.JSONSchemaProps{
 											Type: "object",
 										},
-										"template": v1beta1.JSONSchemaProps{
+										"spec": v1beta1.JSONSchemaProps{
 											Type: "object",
 											Properties: map[string]v1beta1.JSONSchemaProps{
 												"env": v1beta1.JSONSchemaProps{
@@ -237,6 +237,10 @@ var (
 													},
 												},
 											},
+										},
+										"status": v1beta1.JSONSchemaProps{
+											Type:       "object",
+											Properties: map[string]v1beta1.JSONSchemaProps{},
 										},
 									},
 								},

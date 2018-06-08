@@ -9,12 +9,15 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 
+	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	crdversioned "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned"
 	settingsv1alpha1client "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset/versioned/typed/settings/v1alpha1"
+	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	settingsv1alpha1informer "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/externalversions/settings/v1alpha1"
 	settingsv1alpha1lister "github.com/kubernetes-incubator/service-catalog/pkg/client/listers/settings/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/inject/args"
-	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE
@@ -34,11 +37,43 @@ func getCatalogClient() *servicecatalogclient.Clientset {
 	return clientset
 }
 
+func getCrdClient() *crdversioned.Clientset {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		glog.Fatal(err)
+	}
+	clientset, err := crdversioned.NewForConfig(config)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	return clientset
+}
+
 func (bc *PodPresetBindingController) Reconcile(k types.ReconcileKey) error {
 	// INSERT YOUR CODE HERE
 	log.Printf("Implement the Reconcile function on podpresetbinding.PodPresetBindingController to reconcile %s\n", k.Name)
 
+	ppb, err := bc.podpresetbindingclient.PodPresetBindings(k.Namespace).Get(k.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
 	clientset := getCatalogClient()
+	binding, err := clientset.Servicecatalog().ServiceBindings(k.Namespace).Get(ppb.Spec.BindingRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if binding.Status.Conditions[len(binding.Status.Conditions)-1].Type == v1beta1.ServiceBindingConditionReady {
+		// create pod preset
+		// TODO: handle updating of existing pod preset
+		crdClientset := getCrdClient()
+		_, err := crdClientset.SettingsV1alpha1().PodPresets(k.Namespace).Create(&ppb.Spec.PodPresetTemplate)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
