@@ -43,7 +43,7 @@ func TestParseVariableAssignments(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want:= make(map[string]interface{})
+			want := make(map[string]interface{})
 			want[tc.Variable] = tc.Value
 			if !reflect.DeepEqual(want, got) {
 				t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", tc.Raw, want, got)
