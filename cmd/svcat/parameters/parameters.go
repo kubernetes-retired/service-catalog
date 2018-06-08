@@ -41,8 +41,8 @@ func ParseVariableJSON(params string) (map[string]interface{}, error) {
 // into a map of keys and values
 // Example:
 // [a=b c=abc1232===] becomes map[a:b c:abc1232===]
-func ParseVariableAssignments(params []string) (map[string]string, error) {
-	variables := map[string]string{}
+func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
+	variables:= make(map[string]interface{})
 	for _, p := range params {
 
 		parts := strings.SplitN(p, "=", 2)
