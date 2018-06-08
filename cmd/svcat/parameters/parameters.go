@@ -56,11 +56,6 @@ func ParseVariableAssignments(params []string) (map[string][]string, error) {
 		}
 		value := strings.TrimSpace(parts[1])
 
-		_, ok := variables[variable]
-		if !ok {
-			variables[variable] = make([]string, 0)
-		}
-
 		variables[variable] = append(variables[variable], value)
 	}
 
