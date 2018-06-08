@@ -47,6 +47,10 @@ jobs:
           make images-all
         fi
       env: XBUILD=true
+    # Doc Site svc-cat.io
+    - stage: test
+      script: make docs
+      env: DOCS=true
     # Deploy
     - stage: deploy
       script: skip
