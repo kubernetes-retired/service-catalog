@@ -2161,6 +2161,70 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumEvents(t, events, 0)
 }
 
+// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verfies that the finalizer
+// is removed even when the status update gets back a 409 Conflict from the API server
+// because the controller is working with an old version of the ServiceInstance
+func TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceWithRefs()
+	instance.ResourceVersion = "1"
+	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+	instance.Generation = 1
+	instance.Status.ReconciledGeneration = 0
+	instance.Status.ObservedGeneration = 0
+	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
+	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
+
+	newerInstance := instance.DeepCopy()
+	newerInstance.ResourceVersion = "2"
+
+	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, newerInstance, nil
+	})
+	fakeCatalogClient.AddReactor("update", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		updateAction := action.(clientgotesting.UpdateAction)
+		object := updateAction.GetObject()
+		instance := object.(*v1beta1.ServiceInstance)
+
+		if instance.ResourceVersion == "1" {
+			return true, nil, apierrors.NewConflict(action.GetResource().GroupResource(), instance.Name, errors.New("object has changed"))
+		}
+		return false, nil, nil
+	})
+
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+
+	// Verify no core kube actions occurred
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	// The actions should be:
+	// 0. Update the instance status (with finalizer removed); the server responds with 409 Conflict
+	// 1. Fetch the fresh instance
+	// 2. Update the fresh instance. Finalizer should be removed again.
+	assertNumberOfActions(t, actions, 3)
+
+	assertUpdateStatus(t, actions[0], instance)
+	assertGet(t, actions[1], instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[2], instance)
+	assertEmptyFinalizers(t, updatedServiceInstance)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
+}
+
 // TestReconcileServiceInstanceWithFailedCondition tests reconciling an instance that
 // has a status condition set to Failed.
 // Instances with Failed condition are retriable after updating the spec.

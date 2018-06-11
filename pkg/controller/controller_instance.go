@@ -1211,6 +1211,22 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceIn
 // Note: objects coming from informers should never be mutated; the instance
 // passed to this method should always be a deep copy.
 func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
+	return c.updateServiceInstanceStatusWithRetries(instance, nil)
+}
+
+// updateServiceInstanceStatusWithRetries updates the status
+// and automatically retries if a 409 Conflict error is
+// returned by the API server.
+// If a conflict occurs, the function overrides the new
+// version's status with the status on the ServiceInstance passed
+// to it; it also runs the provided postConflictUpdateFunc,
+// allowing the caller to make additional changes to the
+// new version of the instance - to other parts of the object
+// (e.g. finalizers).
+func (c *controller) updateServiceInstanceStatusWithRetries(
+	instance *v1beta1.ServiceInstance,
+	postConflictUpdateFunc func(*v1beta1.ServiceInstance)) (*v1beta1.ServiceInstance, error) {
+
 	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	const interval = 100 * time.Millisecond
@@ -1232,6 +1248,9 @@ func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstan
 				return false, err
 			}
 			instanceToUpdate.Status = instance.Status
+			if postConflictUpdateFunc != nil {
+				postConflictUpdateFunc(instanceToUpdate)
+			}
 			return false, nil
 		}
 
@@ -1632,11 +1651,8 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 // updating of a ServiceInstance that has successfully finished graceful
 // deletion.
 func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1beta1.ServiceInstance) error {
-	finalizers := sets.NewString(instance.Finalizers...)
-	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
-	instance.Finalizers = finalizers.List()
-
-	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+	c.removeFinalizer(instance)
+	if _, err := c.updateServiceInstanceStatusWithRetries(instance, c.removeFinalizer); err != nil {
 		return err
 	}
 
@@ -1644,6 +1660,12 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 	glog.Info(pcb.Message("Cleared finalizer"))
 
 	return nil
+}
+
+func (c *controller) removeFinalizer(instance *v1beta1.ServiceInstance) {
+	finalizers := sets.NewString(instance.Finalizers...)
+	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	instance.Finalizers = finalizers.List()
 }
 
 // handleServiceInstanceReconciliationError is a helper function that handles
