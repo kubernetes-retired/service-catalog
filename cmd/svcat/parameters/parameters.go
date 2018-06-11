@@ -56,7 +56,18 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		}
 		value := strings.TrimSpace(parts[1])
 
-		variables[variable] = value
+		storedValue, ok := variables[variable]
+
+		if !ok{
+			variables[variable] = value	// if there is no key, add key&value as string
+		}else{
+			switch storedValType:= storedValue.(type){
+			case string:
+				variables[variable] =[]string{storedValType,value}
+			case []string:
+				variables[variable]=append(storedValType,value)
+			}
+		}
 	}
 
 	return variables, nil
