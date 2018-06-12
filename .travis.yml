@@ -13,6 +13,9 @@ stages:
   - test
   - name: deploy
     if: type != pull_request
+  - name: push-chart
+    # require the tag name to match a regular expression
+    if: tag =~ ^v
 before_install:
   - |
       if [[ -z "$TRAVIS_COMMIT_RANGE" ]]; then
@@ -30,6 +33,9 @@ jobs:
     - stage: test
       script:
       - |
+        # test to see if decryption works
+        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/glcoud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
+        # remove above
         if (( $DOCS_ONLY == 0 )); then
           echo "Running verify-docs"
           make verify-docs
@@ -60,3 +66,7 @@ jobs:
         on:
           repo: kubernetes-incubator/service-catalog
           all_branches: true
+    - stage: push-chart
+      script:
+      - |
+        test/repo-sync.sh
