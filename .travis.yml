@@ -23,6 +23,9 @@ stages:
     if: type != pull_request
   - name: deploy
     if: type != pull_request
+  - name: push-chart
+    # require the tag name to match a regular expression
+    if: tag =~ ^v
 before_install:
   - |
       if [[ -z "$TRAVIS_COMMIT_RANGE" ]]; then
@@ -59,3 +62,5 @@ jobs:
         on:
           repo: kubernetes-incubator/service-catalog
           all_branches: true
+    - stage: push-chart
+      script: test/repo-sync.sh
