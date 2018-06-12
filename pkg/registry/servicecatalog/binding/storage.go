@@ -143,8 +143,8 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 		TableConvertor: tableconvertor.NewTableConvertor(
 			[]metav1beta1.TableColumnDefinition{
 				{Name: "Name", Type: "string", Format: "name"},
-				{Name: "Instance", Type: "string"},
-				{Name: "Secret", Type: "string"},
+				{Name: "Service-Instance", Type: "string"},
+				{Name: "Secret-Name", Type: "string"},
 				{Name: "Status", Type: "string"},
 				{Name: "Age", Type: "string"},
 			},

@@ -150,10 +150,10 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		TableConvertor: tableconvertor.NewTableConvertor(
 			[]metav1beta1.TableColumnDefinition{
 				{Name: "Name", Type: "string", Format: "name"},
-				{Name: "External name", Type: "string"},
+				{Name: "External-Name", Type: "string"},
 				{Name: "Broker", Type: "string"},
 				{Name: "Bindable", Type: "bool"},
-				{Name: "Plan updatable", Type: "bool"},
+				{Name: "Plan-Updatable", Type: "bool"},
 				{Name: "Age", Type: "string"},
 			},
 			func(obj runtime.Object, m metav1.Object, name, age string) ([]interface{}, error) {

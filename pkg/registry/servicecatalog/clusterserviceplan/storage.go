@@ -148,7 +148,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		TableConvertor: tableconvertor.NewTableConvertor(
 			[]metav1beta1.TableColumnDefinition{
 				{Name: "Name", Type: "string", Format: "name"},
-				{Name: "External name", Type: "string"},
+				{Name: "External-Name", Type: "string"},
 				{Name: "Broker", Type: "string"},
 				{Name: "Class", Type: "string"},
 				{Name: "Age", Type: "string"},
