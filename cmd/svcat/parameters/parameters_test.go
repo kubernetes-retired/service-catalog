@@ -61,6 +61,23 @@ func TestParseVariableAssignments_MissingVariableName(t *testing.T) {
 	}
 }
 
+func TestParseVariableAssignments_OneVariableTwoValues(t *testing.T) {
+	params := []string{"a=banana", "a=pineapple"}
+
+	got, err := ParseVariableAssignments(params)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]interface{}{
+		"a": []string{"banana", "pineapple"},
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", "one var two values", want, got)
+	}
+}
+
 func TestParseKeyMaps(t *testing.T) {
 	testcases := []struct {
 		Name, Raw, MapName, Key string
