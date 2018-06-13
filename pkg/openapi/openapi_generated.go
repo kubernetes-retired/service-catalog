@@ -1581,12 +1581,18 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 							},
 						},
+						"deletionRequested": {
+							SchemaProps: spec.SchemaProps{
+								Description: "DeletionRequested provides a mechanism for requesting a delete without performing a direct delete (which cannot be undone in cases where the delete is rejected by the broker). This is the recommended way to delete, to avoid resources becoming stuck in the deletion phase.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
 					},
 					Required: []string{"instanceRef"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus": {
 			Schema: spec.Schema{
@@ -2419,11 +2425,17 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"deletionRequested": {
+							SchemaProps: spec.SchemaProps{
+								Description: "DeletionRequested provides a mechanism for requesting a delete without performing a direct delete (which cannot be undone in cases where the delete is rejected by the broker). This is the recommended way to delete, to avoid resources becoming stuck in the deletion phase.",
+								Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							},
+						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+				"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 		},
 		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus": {
 			Schema: spec.Schema{

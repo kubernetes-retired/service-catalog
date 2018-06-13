@@ -868,6 +868,12 @@ type ServiceInstanceSpec struct {
 	// been made to the secrets from which the parameters are sourced.
 	// +optional
 	UpdateRequests int64 `json:"updateRequests"`
+
+	// DeletionRequested provides a mechanism for requesting a delete without
+	// performing a direct delete (which cannot be undone in cases where the
+	// delete is rejected by the broker). This is the recommended way to
+	// delete, to avoid resources becoming stuck in the deletion phase.
+	DeletionRequested metav1.Time `json:"deletionRequested,omitempty"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -1129,6 +1135,12 @@ type ServiceBindingSpec struct {
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo `json:"userInfo,omitempty"`
+
+	// DeletionRequested provides a mechanism for requesting a delete without
+	// performing a direct delete (which cannot be undone in cases where the
+	// delete is rejected by the broker). This is the recommended way to
+	// delete, to avoid resources becoming stuck in the deletion phase.
+	DeletionRequested metav1.Time `json:"deletionRequested,omitempty"`
 }
 
 // ServiceBindingStatus represents the current status of a ServiceBinding.

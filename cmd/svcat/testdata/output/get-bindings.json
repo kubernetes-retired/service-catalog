@@ -23,7 +23,8 @@
             },
             "parameters": {},
             "secretName": "ups-binding",
-            "externalID": "061e1d78-d27e-4958-97b8-e9f5aa2f99d7"
+            "externalID": "061e1d78-d27e-4958-97b8-e9f5aa2f99d7",
+            "deletionRequested": null
          },
          "status": {
             "conditions": [
