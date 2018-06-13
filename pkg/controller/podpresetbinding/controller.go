@@ -1,6 +1,7 @@
 package podpresetbinding
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/golang/glog"
@@ -17,6 +18,7 @@ import (
 	settingsv1alpha1informer "github.com/kubernetes-incubator/service-catalog/pkg/client/informers/externalversions/settings/v1alpha1"
 	settingsv1alpha1lister "github.com/kubernetes-incubator/service-catalog/pkg/client/listers/settings/v1alpha1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/inject/args"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,16 +64,23 @@ func (bc *PodPresetBindingController) Reconcile(k types.ReconcileKey) error {
 	clientset := getCatalogClient()
 	binding, err := clientset.Servicecatalog().ServiceBindings(k.Namespace).Get(ppb.Spec.BindingRef.Name, metav1.GetOptions{})
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			glog.V(6).Info("Service binding not yet created")
+			return nil
+		}
 		return err
 	}
 
-	if binding.Status.Conditions[len(binding.Status.Conditions)-1].Type == v1beta1.ServiceBindingConditionReady {
-		// create pod preset
-		// TODO: handle updating of existing pod preset
+	if len(binding.Status.Conditions) > 0 && binding.Status.Conditions[len(binding.Status.Conditions)-1].Type == v1beta1.ServiceBindingConditionReady {
+		// create pod preset if binding status is ready
 		crdClientset := getCrdClient()
-		_, err := crdClientset.SettingsV1alpha1().PodPresets(k.Namespace).Create(&ppb.Spec.PodPresetTemplate)
-		if err != nil {
-			return err
+		if _, err := crdClientset.SettingsV1alpha1().PodPresets(k.Namespace).Create(&ppb.Spec.PodPresetTemplate); err != nil {
+			if !apierrors.IsAlreadyExists(err) {
+				return fmt.Errorf("Unable to create podpreset: %v", err)
+			}
+			if _, err := crdClientset.SettingsV1alpha1().PodPresets(k.Namespace).Update(&ppb.Spec.PodPresetTemplate); err != nil {
+				return fmt.Errorf("Unable to update podpreset: %v", err)
+			}
 		}
 	}
 
