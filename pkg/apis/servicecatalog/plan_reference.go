@@ -226,48 +226,44 @@ func (pr PlanReference) Format(s fmt.State, verb rune) {
 	var classFields []string
 	var planFields []string
 
-	if pr.ClusterServiceClassSpecified() && pr.ClusterServicePlanSpecified() {
-		if pr.ClusterServiceClassExternalName != "" {
-			classFields = append(classFields, fmt.Sprintf("ClassExternalName:%q", pr.ClusterServiceClassExternalName))
-		}
-		if pr.ClusterServiceClassExternalID != "" {
-			classFields = append(classFields, fmt.Sprintf("ClassExternalID:%q", pr.ClusterServiceClassExternalID))
-		}
-		if pr.ClusterServiceClassName != "" {
-			classFields = append(classFields, fmt.Sprintf("ClassName:%q", pr.ClusterServiceClassName))
-		}
+	if pr.ClusterServiceClassExternalName != "" {
+		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassExternalName:%q", pr.ClusterServiceClassExternalName))
+	}
+	if pr.ClusterServiceClassExternalID != "" {
+		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassExternalID:%q", pr.ClusterServiceClassExternalID))
+	}
+	if pr.ClusterServiceClassName != "" {
+		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassName:%q", pr.ClusterServiceClassName))
+	}
 
-		if pr.ClusterServicePlanExternalName != "" {
-			planFields = append(planFields, fmt.Sprintf("PlanExternalName:%q", pr.ClusterServicePlanExternalName))
-		}
-		if pr.ClusterServicePlanExternalID != "" {
-			planFields = append(planFields, fmt.Sprintf("PlanExternalID:%q", pr.ClusterServicePlanExternalID))
-		}
-		if pr.ClusterServicePlanName != "" {
-			planFields = append(planFields, fmt.Sprintf("PlanName:%q", pr.ClusterServicePlanName))
-		}
-	} else {
-		// Namespaced types
-		if pr.ServiceClassExternalName != "" {
-			classFields = append(classFields, fmt.Sprintf("ClassExternalName:%q", pr.ServiceClassExternalName))
-		}
-		if pr.ServiceClassExternalID != "" {
-			classFields = append(classFields, fmt.Sprintf("ClassExternalID:%q", pr.ServiceClassExternalID))
-		}
-		if pr.ServiceClassName != "" {
-			classFields = append(classFields, fmt.Sprintf("ClassName:%q", pr.ServiceClassName))
-		}
+	if pr.ClusterServicePlanExternalName != "" {
+		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanExternalName:%q", pr.ClusterServicePlanExternalName))
+	}
+	if pr.ClusterServicePlanExternalID != "" {
+		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanExternalID:%q", pr.ClusterServicePlanExternalID))
+	}
+	if pr.ClusterServicePlanName != "" {
+		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanName:%q", pr.ClusterServicePlanName))
+	}
 
-		var planFields []string
-		if pr.ServicePlanExternalName != "" {
-			planFields = append(planFields, fmt.Sprintf("PlanExternalName:%q", pr.ServicePlanExternalName))
-		}
-		if pr.ServicePlanExternalID != "" {
-			planFields = append(planFields, fmt.Sprintf("PlanExternalID:%q", pr.ServicePlanExternalID))
-		}
-		if pr.ServicePlanName != "" {
-			planFields = append(planFields, fmt.Sprintf("PlanName:%q", pr.ServicePlanName))
-		}
+	if pr.ServiceClassExternalName != "" {
+		classFields = append(classFields, fmt.Sprintf("ServiceClassExternalName:%q", pr.ServiceClassExternalName))
+	}
+	if pr.ServiceClassExternalID != "" {
+		classFields = append(classFields, fmt.Sprintf("ServiceClassExternalID:%q", pr.ServiceClassExternalID))
+	}
+	if pr.ServiceClassName != "" {
+		classFields = append(classFields, fmt.Sprintf("ServiceClassName:%q", pr.ServiceClassName))
+	}
+
+	if pr.ServicePlanExternalName != "" {
+		planFields = append(planFields, fmt.Sprintf("ServicePlanExternalName:%q", pr.ServicePlanExternalName))
+	}
+	if pr.ServicePlanExternalID != "" {
+		planFields = append(planFields, fmt.Sprintf("ServicePlanExternalID:%q", pr.ServicePlanExternalID))
+	}
+	if pr.ServicePlanName != "" {
+		planFields = append(planFields, fmt.Sprintf("ServicePlanName:%q", pr.ServicePlanName))
 	}
 
 	switch verb {
