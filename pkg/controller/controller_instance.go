@@ -910,7 +910,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool,
 // If ClusterServiceClass can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
 func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, *v1beta1.ClusterServiceClass, error) {
-	if !instance.Spec.ClassSpecified() {
+	if !instance.Spec.ClusterServiceClassSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
 		return nil, nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServiceClassExternalName, ClusterServiceClassExternalID, nor ClusterServiceClassName is set", instance.Namespace, instance.Name)
 	}
@@ -948,8 +948,8 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			return nil, nil, fmt.Errorf(s)
 		}
 	} else {
-		filterField := instance.Spec.GetClassFilterFieldName()
-		filterValue := instance.Spec.GetSpecifiedClass()
+		filterField := instance.Spec.GetClusterServiceClassFilterFieldName()
+		filterValue := instance.Spec.GetSpecifiedClusterServiceClass()
 
 		glog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterField, filterValue))
 		listOpts := metav1.ListOptions{
@@ -991,7 +991,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 // If ClusterServicePlan can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
 func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) (*v1beta1.ServiceInstance, error) {
-	if !instance.Spec.PlanSpecified() {
+	if !instance.Spec.ClusterServicePlanSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
 		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServicePlanExternalName, ClusterServicePlanExternalID, nor ClusterServicePlanName is set", instance.Namespace, instance.Name)
 	}
@@ -1026,9 +1026,9 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		}
 	} else {
 		fieldSet := fields.Set{
-			instance.Spec.GetPlanFilterFieldName(): instance.Spec.GetSpecifiedPlan(),
-			"spec.clusterServiceClassRef.name":     instance.Spec.ClusterServiceClassRef.Name,
-			"spec.clusterServiceBrokerName":        brokerName,
+			instance.Spec.GetClusterServicePlanFilterFieldName(): instance.Spec.GetSpecifiedClusterServicePlan(),
+			"spec.clusterServiceClassRef.name":                   instance.Spec.ClusterServiceClassRef.Name,
+			"spec.clusterServiceBrokerName":                      brokerName,
 		}
 		fieldSelector := fields.SelectorFromSet(fieldSet).String()
 		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
