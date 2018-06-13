@@ -165,6 +165,9 @@ tree:
         svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
     command: ./svcat get classes
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not

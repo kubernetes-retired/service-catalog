@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
 func getClassStatusText(status v1beta1.ClusterServiceClassStatus) string {
@@ -30,7 +31,7 @@ func getClassStatusText(status v1beta1.ClusterServiceClassStatus) string {
 	return statusActive
 }
 
-func writeClassListTable(w io.Writer, classes []v1beta1.ClusterServiceClass) {
+func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
@@ -38,23 +39,20 @@ func writeClassListTable(w io.Writer, classes []v1beta1.ClusterServiceClass) {
 	})
 	for _, class := range classes {
 		t.Append([]string{
-			class.Spec.ExternalName,
-			class.Spec.Description,
+			class.GetExternalName(),
+			class.GetDescription(),
 		})
 	}
 	t.Render()
 }
 
 // WriteClassList prints a list of classes in the specified output format.
-func WriteClassList(w io.Writer, outputFormat string, classes ...v1beta1.ClusterServiceClass) {
-	classList := v1beta1.ClusterServiceClassList{
-		Items: classes,
-	}
+func WriteClassList(w io.Writer, outputFormat string, classes ...servicecatalog.Class) {
 	switch outputFormat {
 	case formatJSON:
-		writeJSON(w, classList)
+		writeJSON(w, classes)
 	case formatYAML:
-		writeYAML(w, classList, 0)
+		writeYAML(w, classes, 0)
 	case formatTable:
 		writeClassListTable(w, classes)
 	}
@@ -68,7 +66,7 @@ func WriteClass(w io.Writer, outputFormat string, class v1beta1.ClusterServiceCl
 	case formatYAML:
 		writeYAML(w, class, 0)
 	case formatTable:
-		writeClassListTable(w, []v1beta1.ClusterServiceClass{class})
+		writeClassListTable(w, []servicecatalog.Class{&class})
 	}
 }
 

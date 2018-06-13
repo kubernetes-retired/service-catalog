@@ -120,7 +120,8 @@ func (c *getCmd) getAll() error {
 	var opts *servicecatalog.FilterOptions
 
 	// Retrieve the classes as well because plans don't have the external class name
-	classes, err := c.App.RetrieveClasses()
+	// TODO: When we implement ns-scoped support for get plans, we need to pass in the current namespace
+	classes, err := c.App.RetrieveClasses("")
 	if err != nil {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
@@ -129,8 +130,8 @@ func (c *getCmd) getAll() error {
 		if !c.lookupByUUID {
 			// Map the external class name to the class name.
 			for _, class := range classes {
-				if c.className == class.Spec.ExternalName {
-					c.classUUID = class.Name
+				if c.className == class.GetExternalName() {
+					c.classUUID = class.GetName()
 					break
 				}
 			}

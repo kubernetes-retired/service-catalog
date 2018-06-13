@@ -43,13 +43,28 @@ type Class interface {
 }
 
 // RetrieveClasses lists all classes defined in the cluster.
-func (sdk *SDK) RetrieveClasses() ([]v1beta1.ClusterServiceClass, error) {
-	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
+func (sdk *SDK) RetrieveClasses(ns string) ([]Class, error) {
+	csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to list classes (%s)", err)
+		return nil, fmt.Errorf("unable to list cluster-scoped classes (%s)", err)
 	}
 
-	return classes.Items, nil
+	sc, err := sdk.ServiceCatalog().ServiceClasses(ns).List(v1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to list classes in %q (%s)", ns, err)
+	}
+
+	classes := make([]Class, 0, len(csc.Items)+len(sc.Items))
+	for _, c := range csc.Items {
+		class := c
+		classes = append(classes, &class)
+	}
+	for _, c := range sc.Items {
+		class := c
+		classes = append(classes, &class)
+	}
+
+	return classes, nil
 }
 
 // RetrieveClassByName gets a class by its external name.

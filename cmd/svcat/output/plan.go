@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
 func getPlanStatusShort(status v1beta1.ClusterServicePlanStatus) string {
@@ -67,10 +68,10 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 }
 
 // WritePlanList prints a list of plans in the specified output format.
-func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []v1beta1.ClusterServiceClass) {
+func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []servicecatalog.Class) {
 	classNames := map[string]string{}
 	for _, class := range classes {
-		classNames[class.Name] = class.Spec.ExternalName
+		classNames[class.GetName()] = class.GetExternalName()
 	}
 	list := v1beta1.ClusterServicePlanList{
 		Items: plans,

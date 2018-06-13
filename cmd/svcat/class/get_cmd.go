@@ -85,7 +85,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses()
+	classes, err := c.App.RetrieveClasses(c.Namespace)
 	if err != nil {
 		return err
 	}
