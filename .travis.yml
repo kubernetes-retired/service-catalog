@@ -45,6 +45,8 @@ script:
     else
       echo "Running full build"
       make verify build build-integration build-e2e test images svcat-all
+      openssl aes-256-cbc -K $encrypted_fdc599a4660a_key -iv $encrypted_fdc599a4660a_iv \
+              -in contrib/travis/service-account.json.enc -out contrib/travis/service-account.json -d
     fi
 jobs:
   include:

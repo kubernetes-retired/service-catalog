@@ -25,10 +25,7 @@ PATH=`pwd`/linux-amd64/:$PATH
 helm init --client-only
 
 # Authenticate before uploading to Google Cloud Storage
-cat > sa.json <<EOF
-$SERVICE_ACCOUNT_JSON
-EOF
-gcloud auth activate-service-account --key-file sa.json
+gcloud auth activate-service-account --key-file contrib/travis/service-account.json
 
 # Create the repository
 SVC_CATALOG_REPO_DIR=svc-catalog-repo
