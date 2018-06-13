@@ -25,6 +25,8 @@ PATH=`pwd`/linux-amd64/:$PATH
 helm init --client-only
 
 # Authenticate before uploading to Google Cloud Storage
+curl https://sdk.cloud.google.com > install-gcloud.sh
+bash install-gcloud.sh --disable-prompts
 gcloud auth activate-service-account --key-file contrib/travis/service-account.json
 
 # Create the repository
