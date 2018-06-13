@@ -29,6 +29,19 @@ const (
 	FieldExternalClassName = "spec.externalName"
 )
 
+// Class provides a unifying layer of cluster and namespace scoped class resources.
+type Class interface {
+
+	// GetName returns the class's name.
+	GetName() string
+
+	// GetExternalName returns the class's external name.
+	GetExternalName() string
+
+	// GetDescription returns the class description.
+	GetDescription() string
+}
+
 // RetrieveClasses lists all classes defined in the cluster.
 func (sdk *SDK) RetrieveClasses() ([]v1beta1.ClusterServiceClass, error) {
 	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
