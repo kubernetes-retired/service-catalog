@@ -111,6 +111,26 @@ func (pr PlanReference) GetSpecifiedClusterServicePlan() string {
 	return ""
 }
 
+// GetSpecifiedServicePlan returns the user-specified class value from either:
+// * ServicePlanExternalName
+// * ServicePlanExternalID
+// * ServicePlanName
+func (pr PlanReference) GetSpecifiedServicePlan() string {
+	if pr.ServicePlanExternalName != "" {
+		return pr.ServicePlanExternalName
+	}
+
+	if pr.ServicePlanExternalID != "" {
+		return pr.ServicePlanExternalID
+	}
+
+	if pr.ServicePlanName != "" {
+		return pr.ServicePlanName
+	}
+
+	return ""
+}
+
 // GetClusterServiceClassFilterFieldName returns the appropriate field name for filtering
 // a list of service catalog classes by the PlanReference.
 func (pr PlanReference) GetClusterServiceClassFilterFieldName() string {
@@ -188,7 +208,6 @@ func (pr PlanReference) Format(s fmt.State, verb rune) {
 		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassName:%q", pr.ClusterServiceClassName))
 	}
 
-	var planFields []string
 	if pr.ClusterServicePlanExternalName != "" {
 		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanExternalName:%q", pr.ClusterServicePlanExternalName))
 	}

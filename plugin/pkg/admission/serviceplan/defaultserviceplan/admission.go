@@ -179,7 +179,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 
 	// check if there were any service plans
 	// TODO: in combination with not allowing classes with no plans, this should be impossible
-	if len(plans) <= 0 {
+	if len(plans) == 0 {
 		msg := fmt.Sprintf("no ServicePlans found at all for ServiceClass %q", sc.Spec.ExternalName)
 		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
