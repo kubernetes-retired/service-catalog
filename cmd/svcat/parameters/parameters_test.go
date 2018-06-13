@@ -43,7 +43,8 @@ func TestParseVariableAssignments(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := map[string]string{tc.Variable: tc.Value}
+			want := make(map[string]interface{})
+			want[tc.Variable] = tc.Value
 			if !reflect.DeepEqual(want, got) {
 				t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", tc.Raw, want, got)
 			}
@@ -57,6 +58,23 @@ func TestParseVariableAssignments_MissingVariableName(t *testing.T) {
 	_, err := ParseVariableAssignments(params)
 	if err == nil {
 		t.Fatal("should have failed due to a missing variable name")
+	}
+}
+
+func TestParseVariableAssignments_OneVariableTwoValues(t *testing.T) {
+	params := []string{"a=banana", "a=pineapple"}
+
+	got, err := ParseVariableAssignments(params)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]interface{}{
+		"a": []string{"banana", "pineapple"},
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", "one var two values", want, got)
 	}
 }
 
