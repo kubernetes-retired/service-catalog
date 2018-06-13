@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apod2-deployment
+  namespace: test-ns
+  labels:
+    app: apod2-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apod2-deployment
+  template:
+    metadata:
+      labels:
+        app: apod2-deployment
+        mutateWhenReady: "true"
+    spec:
+      containers:
+      - name: apod3
+        image: busybox
+        args:
+        - sleep
+        - "86400"
+      - name: apod4
+        image: busybox
+        args:
+        - sleep
+        - "86400"

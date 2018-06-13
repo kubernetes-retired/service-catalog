@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apod-deployment
+  labels:
+    app: apod-deployment
+    # the line doesn't apply to podpresets, but for the deployment bounce (old)
+    # mutateAll: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apod-deployment
+  template:
+    metadata:
+      labels:
+        app: apod-deployment
+        mutateAll: "true"
+    spec:
+      containers:
+      - name: apod1
+        image: busybox
+        args:
+        - sleep
+        - "86400"
+      - name: apod2
+        image: busybox
+        args:
+        - sleep
+        - "86400"
