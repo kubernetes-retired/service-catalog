@@ -41,7 +41,7 @@ nothing.`,
 		PreRunE: command.PreRunE(touchInstanceCmd),
 		RunE:    command.RunE(touchInstanceCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	touchInstanceCmd.AddNamespaceFlags(cmd.Flags(), false)
 
 	return cmd
 }

@@ -67,7 +67,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(provisionCmd),
 		RunE:    command.RunE(provisionCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	provisionCmd.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVar(&provisionCmd.externalID, "external-id", "",
 		"The ID of the instance for use with the OSB SB API (Optional)")
 	cmd.Flags().StringVar(&provisionCmd.className, "class", "",

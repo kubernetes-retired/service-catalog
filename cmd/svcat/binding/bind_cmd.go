@@ -66,7 +66,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(bindCmd),
 		RunE:    command.RunE(bindCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	bindCmd.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVarP(
 		&bindCmd.bindingName,
 		"name",

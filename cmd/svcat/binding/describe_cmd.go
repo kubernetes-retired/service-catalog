@@ -41,7 +41,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	describeCmd.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().BoolVar(
 		&describeCmd.showSecrets,
 		"show-secrets",

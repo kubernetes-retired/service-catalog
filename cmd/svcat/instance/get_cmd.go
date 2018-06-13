@@ -48,7 +48,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), true)
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }

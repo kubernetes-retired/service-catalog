@@ -71,25 +71,6 @@ func RunE(cmd Command) func(*cobra.Command, []string) error {
 	}
 }
 
-// AddNamespaceFlags applies the --namespace and --all-namespaces flags to a command.
-// This is intended to be used in conjunction with the NamespacedCommand interface.
-func AddNamespaceFlags(flags *pflag.FlagSet, allowAll bool) {
-	flags.StringP(
-		"namespace",
-		"n",
-		"",
-		"If present, the namespace scope for this request",
-	)
-
-	if allowAll {
-		flags.Bool(
-			"all-namespaces",
-			false,
-			"If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace",
-		)
-	}
-}
-
 // AddOutputFlags adds common output flags to a command that can have variable output formats.
 func AddOutputFlags(flags *pflag.FlagSet) {
 	flags.StringP(

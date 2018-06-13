@@ -48,7 +48,7 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(deprovisonCmd),
 		RunE:    command.RunE(deprovisonCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	deprovisonCmd.AddNamespaceFlags(cmd.Flags(), false)
 	deprovisonCmd.AddWaitFlags(cmd)
 
 	return cmd
