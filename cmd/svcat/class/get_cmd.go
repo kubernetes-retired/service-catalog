@@ -24,7 +24,7 @@ import (
 )
 
 type getCmd struct {
-	*command.Context
+	*command.Namespaced
 	lookupByUUID bool
 	uuid         string
 	name         string
@@ -37,7 +37,9 @@ func (c *getCmd) SetFormat(format string) {
 
 // NewGetCmd builds a "svcat get classes" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{
+		Namespaced: command.NewNamespaced(cxt),
+	}
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
 		Aliases: []string{"class", "cl"},
@@ -58,6 +60,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"Whether or not to get the class by UUID (the default is by name)",
 	)
 	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	return cmd
 }
 
