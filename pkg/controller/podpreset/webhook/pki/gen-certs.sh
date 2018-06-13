@@ -11,8 +11,11 @@ cfssl gencert \
   -profile=default \
   webhook-csr.json | cfssljson -bare $SERVICE
 
+kubectl delete secret $SERVICE-tls &> /dev/null
 kubectl create secret tls $SERVICE-tls \
   --cert=$SERVICE.pem \
   --key=$SERVICE-key.pem
 
 base64 -w 0 ca.pem > ca.pem.base64
+echo "Updating deployment caBundle"
+sed -i -E "s/(caBundle: )(.*)/\1$(cat ca.pem.base64)/" ../deployment.yaml

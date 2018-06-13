@@ -1,6 +1,6 @@
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: podpreset-access
   namespace: default
@@ -23,24 +23,41 @@ rules:
       - ""
     resources:
       - pods
+      - podtemplates
     verbs:
       - get
       - list
       - watch
-    
+  -
+    apiGroups:
+      - extensions
+      - apps
+    resources:
+      - replicasets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: podpreset-access-binding
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: podpreset-access
 subjects:
   -
     kind: ServiceAccount
     name: default
     namespace: default
+  -
+    kind: ServiceAccount
+    name: default
+    namespace: podpreset-crd-system
 ---

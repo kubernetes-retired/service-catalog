@@ -5,6 +5,7 @@ metadata:
   labels:
     mutate: "true"
 spec:
+  terminationGracePeriodSeconds: 1
   containers:
   - name: apod
     image: busybox
