@@ -765,19 +765,21 @@ type ServiceInstanceSpec struct {
 	PlanReference
 
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
-	// that the user selected. This is set by the controller based on
-	// ClusterServiceClassExternalName.
+	// that the user selected. This is set by the controller based on the
+	// cluster-scoped values specified in the PlanReference.
 	ClusterServiceClassRef *ClusterObjectReference
 	// ClusterServicePlanRef is a reference to the ClusterServicePlan
-	// that the user selected. This is set by the controller based on
-	// ClusterServicePlanExternalName.
+	// that the user selected. This is set by the controller based on the
+	// cluster-scoped values specified in the PlanReference.
 	ClusterServicePlanRef *ClusterObjectReference
 
 	// ServiceClassRef is a reference to the ServiceClass that the user selected.
-	// This is set by the controller based on ServiceClassExternalName
+	// This is set by the controller based on the namespace-scoped values
+	// specified in the PlanReference.
 	ServiceClassRef *LocalObjectReference
 	// ServicePlanRef is a reference to the ServicePlan that the user selected.
-	// This is set by the controller based on ServicePlanExternalName
+	// This is set by the controller based on the namespace-scoped values
+	// specified in the PlanReference.
 	ServicePlanRef *LocalObjectReference
 
 	// Parameters is a set of the parameters to be passed to the underlying

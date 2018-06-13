@@ -191,13 +191,13 @@ func validateServiceInstancePropertiesState(propertiesState *sc.ServiceInstanceP
 	}
 
 	if propertiesState.ClusterServicePlanExternalID == "" && propertiesState.ServicePlanExternalID == "" {
-		errMsg = "clusterServicePlanExternalName or servicePlanExternalName is required"
+		errMsg = "clusterServicePlanExternalID or servicePlanExternalID is required"
 		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), errMsg))
 		allErrs = append(allErrs, field.Required(fldPath.Child("servicePlanExternalID"), errMsg))
 	}
 
 	if propertiesState.ClusterServicePlanExternalID != "" && propertiesState.ServicePlanExternalID != "" {
-		errMsg = "clusterServicePlanExternalName and servicePlanExternalName cannot both be set"
+		errMsg = "clusterServicePlanExternalID and servicePlanExternalID cannot both be set"
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalID"), propertiesState.ClusterServicePlanExternalID, errMsg))
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("servicePlanExternalID"), propertiesState.ServicePlanExternalID, errMsg))
 	}
@@ -370,13 +370,13 @@ func internalValidateServiceInstanceReferencesUpdateAllowed(new *sc.ServiceInsta
 	}
 	if new.Spec.ClusterServiceClassRef != nil && new.Spec.ServiceClassRef != nil {
 		errMsg = "clusterServiceClassRef and serviceClassRef cannot both be set when updating references"
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServiceClassRef"), errMsg))
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("serviceClassRef"), errMsg))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("clusterServiceClassRef"), new.Spec.ClusterServiceClassRef, errMsg)
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("serviceClassRef"), new.Spec.ServiceClassRef, errMsg)
 	}
 	if new.Spec.ClusterServicePlanRef != nil && new.Spec.ServicePlanRef != nil {
 		errMsg = "clusterServicePlanRef and servicePlanRef cannot both be set when updating references"
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServicePlanRef"), errMsg))
-		allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("servicePlanRef"), errMsg))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("clusterServicePlanRef"), new.Spec.ClusterServicePlanRef, errMsg)
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("servicePlanRef"), new.Spec.ServicePlanRef, errMsg)
 	}
 
 	if old.Spec.ClusterServiceClassRef != nil {
@@ -418,14 +418,14 @@ func validateObjectReferences(spec *sc.ServiceInstanceSpec, fldPath *field.Path)
 
 	if spec.ClusterServiceClassRef != nil && spec.ServiceClassRef != nil {
 		errMsg = "ClusterServiceClassRef and ServiceClassRef should never be set simultaneously"
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("clusterServiceClassRef"), errMsg))
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("serviceClassRef"), errMsg))
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassRef"), spec.ClusterServiceClassRef, errMsg))
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassRef"), spec.ServiceClassRef, errMsg))
 	}
 
 	if spec.ClusterServicePlanRef != nil && spec.ServicePlanRef != nil {
 		errMsg = "ClusterServicePlanRef and ServicePlanRef should never be set simultaneously"
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("clusterServicePlanRef"), errMsg))
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("servicePlanRef"), errMsg))
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanRef"), spec.ClusterServicePlanRef, errMsg))
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassRef"), spec.ServicePlanRef, errMsg))
 	}
 
 	return allErrs

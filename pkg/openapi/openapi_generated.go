@@ -2468,25 +2468,25 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"clusterServiceClassRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on ClusterServiceClassExternalName.",
+								Description: "ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on the cluster-scoped values specified in the PlanReference.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 							},
 						},
 						"clusterServicePlanRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on ClusterServicePlanExternalName.",
+								Description: "ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on the cluster-scoped values specified in the PlanReference.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 							},
 						},
 						"serviceClassRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on ServiceClassExternalName",
+								Description: "ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on the namespace-scoped values specified in the PlanReference.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 							},
 						},
 						"servicePlanRef": {
 							SchemaProps: spec.SchemaProps{
-								Description: "ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on ServicePlanExternalName",
+								Description: "ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on the namespace-scoped values specified in the PlanReference.",
 								Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 							},
 						},
