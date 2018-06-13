@@ -16,6 +16,9 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "{{ .Values.controllerManager.enablePrometheusScrape }}"
+      {{ if .Values.controllerManager.annotations }}
+{{ toYaml .Values.controllerManager.annotations | indent 8 }}
+      {{- end }}
       labels:
         app: {{ template "fullname" . }}-controller-manager
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"

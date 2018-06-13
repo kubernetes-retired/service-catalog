@@ -10,6 +10,8 @@ useAggregator: true
 ##
 rbacEnable: true
 apiserver:
+  # annotations is a collection of annotations to add to the apiserver pods.
+  annotations: {}
   # PodPreset is an optional feature and can be enabled by uncommenting the line below
   # featureGates: "PodPreset=true"
   aggregator:
@@ -84,6 +86,8 @@ apiserver:
   # if true, makes the API server serve the OpenAPI schema (which is problematic with older versions of kubectl)
   serveOpenAPISpec: false
 controllerManager:
+  # annotations is a collection of annotations to add to the controllerManager pod.
+  annotations: {}
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
   # Resync interval; format is a duration (`20m`, `1h`, etc)
