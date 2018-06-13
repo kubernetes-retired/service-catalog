@@ -34,17 +34,6 @@ type Command interface {
 	Run() error
 }
 
-// HasNamespaceFlags represents a command that can be scoped to a namespace.
-type HasNamespaceFlags interface {
-	Command
-
-	// GetContext retrieves the command's context.
-	GetContext() *Context
-
-	// SetNamespace sets the effective namespace for the command.
-	SetNamespace(namespace string)
-}
-
 // FormattedCommand represents a command that can have it's output
 // formatted
 type FormattedCommand interface {
@@ -56,8 +45,7 @@ type FormattedCommand interface {
 func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 	return func(c *cobra.Command, args []string) error {
 		if nsCmd, ok := cmd.(HasNamespaceFlags); ok {
-			namespace := DetermineNamespace(c.Flags(), nsCmd.GetContext().App.CurrentNamespace)
-			nsCmd.SetNamespace(namespace)
+			nsCmd.ApplyNamespaceFlags(c.Flags())
 		}
 		if fmtCmd, ok := cmd.(FormattedCommand); ok {
 			fmtString, err := determineOutputFormat(c.Flags())
@@ -100,22 +88,6 @@ func AddNamespaceFlags(flags *pflag.FlagSet, allowAll bool) {
 			"If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace",
 		)
 	}
-}
-
-// DetermineNamespace using the current context's namespace, and the user-requested namespace.
-func DetermineNamespace(flags *pflag.FlagSet, currentNamespace string) string {
-	namespace, _ := flags.GetString("namespace")
-	allNamespaces, _ := flags.GetBool("all-namespaces")
-
-	if allNamespaces {
-		return ""
-	}
-
-	if namespace != "" {
-		return namespace
-	}
-
-	return currentNamespace
 }
 
 // AddOutputFlags adds common output flags to a command that can have variable output formats.
