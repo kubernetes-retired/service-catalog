@@ -66,21 +66,17 @@ func (c *versionCmd) Run() error {
 }
 
 func (c *versionCmd) version() error {
-	client := ""
 	if c.client {
-		client = pkg.VERSION
+		output.WriteClientVersion(c.Output, pkg.VERSION)
 	}
 
-	output.WriteVersion(c.Output, client, "")
-	server := ""
 	if c.server {
 		version, err := c.App.ServerVersion()
 		if err != nil {
 			return err
 		}
-		server = version.GitVersion
+		output.WriteServerVersion(c.Output, version.GitVersion)
 	}
 
-	output.WriteVersion(c.Output, "", server)
 	return nil
 }
