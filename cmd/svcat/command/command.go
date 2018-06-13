@@ -34,8 +34,8 @@ type Command interface {
 	Run() error
 }
 
-// NamespacedCommand represents a command that can be scoped to a namespace.
-type NamespacedCommand interface {
+// HasNamespaceFlags represents a command that can be scoped to a namespace.
+type HasNamespaceFlags interface {
 	Command
 
 	// GetContext retrieves the command's context.
@@ -55,7 +55,7 @@ type FormattedCommand interface {
 // PreRunE validates os args, and then saves them on the svcat command.
 func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 	return func(c *cobra.Command, args []string) error {
-		if nsCmd, ok := cmd.(NamespacedCommand); ok {
+		if nsCmd, ok := cmd.(HasNamespaceFlags); ok {
 			namespace := DetermineNamespace(c.Flags(), nsCmd.GetContext().App.CurrentNamespace)
 			nsCmd.SetNamespace(namespace)
 		}

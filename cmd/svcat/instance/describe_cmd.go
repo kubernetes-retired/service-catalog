@@ -25,13 +25,13 @@ import (
 )
 
 type describeCmd struct {
-	*command.Namespaced
+	*command.NamespacedCommand
 	name string
 }
 
 // NewDescribeCmd builds a "svcat describe instance" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	describeCmd := &describeCmd{NamespacedCommand: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "instance NAME",
 		Aliases: []string{"instances", "inst"},

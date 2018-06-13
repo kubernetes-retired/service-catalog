@@ -17,22 +17,22 @@ limitations under the License.
 package command
 
 // Namespaced is the base command of all svcat commands that are namespace scoped.
-type Namespaced struct {
+type NamespacedCommand struct {
 	*Context
 	Namespace string
 }
 
 // NewNamespacedCommand from context.
-func NewNamespacedCommand(cxt *Context) *Namespaced {
-	return &Namespaced{Context: cxt}
+func NewNamespacedCommand(cxt *Context) *NamespacedCommand {
+	return &NamespacedCommand{Context: cxt}
 }
 
 // GetContext retrieves the command's context.
-func (c *Namespaced) GetContext() *Context {
+func (c *NamespacedCommand) GetContext() *Context {
 	return c.Context
 }
 
 // SetNamespace sets the effective namespace for the command.
-func (c *Namespaced) SetNamespace(namespace string) {
+func (c *NamespacedCommand) SetNamespace(namespace string) {
 	c.Namespace = namespace
 }

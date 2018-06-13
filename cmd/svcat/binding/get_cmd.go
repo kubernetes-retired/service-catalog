@@ -23,7 +23,7 @@ import (
 )
 
 type getCmd struct {
-	*command.Namespaced
+	*command.NamespacedCommand
 	name         string
 	outputFormat string
 }
@@ -34,7 +34,7 @@ func (c *getCmd) SetFormat(format string) {
 
 // NewGetCmd builds a "svcat get bindings" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	getCmd := &getCmd{NamespacedCommand: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:     "bindings [NAME]",
 		Aliases: []string{"binding", "bnd"},

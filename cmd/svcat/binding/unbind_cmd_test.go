@@ -157,8 +157,8 @@ func TestUnbindCommand(t *testing.T) {
 
 			// Initialize the command arguments
 			cmd := &unbindCmd{
-				Namespaced:      command.NewNamespacedCommand(cxt),
-				WaitableCommand: command.NewWaitableCommand(),
+				NamespacedCommand: command.NewNamespacedCommand(cxt),
+				WaitableCommand:   command.NewWaitableCommand(),
 			}
 			cmd.Namespace = ns
 			cmd.bindingName = tc.bindingName

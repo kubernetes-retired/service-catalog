@@ -26,7 +26,7 @@ import (
 )
 
 type bindCmd struct {
-	*command.Namespaced
+	*command.NamespacedCommand
 	*command.WaitableCommand
 
 	instanceName string
@@ -43,8 +43,8 @@ type bindCmd struct {
 // NewBindCmd builds a "svcat bind" command
 func NewBindCmd(cxt *command.Context) *cobra.Command {
 	bindCmd := &bindCmd{
-		Namespaced:      command.NewNamespacedCommand(cxt),
-		WaitableCommand: command.NewWaitableCommand(),
+		NamespacedCommand: command.NewNamespacedCommand(cxt),
+		WaitableCommand:   command.NewWaitableCommand(),
 	}
 	cmd := &cobra.Command{
 		Use:   "bind INSTANCE_NAME",

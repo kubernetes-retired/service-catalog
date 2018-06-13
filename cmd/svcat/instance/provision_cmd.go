@@ -26,7 +26,7 @@ import (
 )
 
 type provisonCmd struct {
-	*command.Namespaced
+	*command.NamespacedCommand
 	*command.WaitableCommand
 
 	instanceName string
@@ -43,8 +43,8 @@ type provisonCmd struct {
 // NewProvisionCmd builds a "svcat provision" command
 func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 	provisionCmd := &provisonCmd{
-		Namespaced:      command.NewNamespacedCommand(cxt),
-		WaitableCommand: command.NewWaitableCommand(),
+		NamespacedCommand: command.NewNamespacedCommand(cxt),
+		WaitableCommand:   command.NewWaitableCommand(),
 	}
 	cmd := &cobra.Command{
 		Use:   "provision NAME --plan PLAN --class CLASS",

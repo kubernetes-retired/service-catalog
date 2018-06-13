@@ -24,13 +24,13 @@ import (
 )
 
 type touchInstanceCmd struct {
-	*command.Namespaced
+	*command.NamespacedCommand
 	name string
 }
 
 // NewTouchCommand builds a "svcat touch instance" command.
 func NewTouchCommand(cxt *command.Context) *cobra.Command {
-	touchInstanceCmd := &touchInstanceCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	touchInstanceCmd := &touchInstanceCmd{NamespacedCommand: command.NewNamespacedCommand(cxt)}
 	cmd := &cobra.Command{
 		Use:   "instance",
 		Short: "Touch an instance to make service-catalog try to process the spec again",
