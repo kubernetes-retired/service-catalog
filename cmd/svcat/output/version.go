@@ -24,9 +24,9 @@ import (
 // WriteVersion prints a list of bindings.
 func WriteVersion(w io.Writer, client, server string) {
 	if client != "" {
-		fmt.Fprintf(w, "client: %s\n", client)
+		fmt.Fprintf(w, "Client Version: %s\n", client)
 	}
 	if server != "" {
-		fmt.Fprintf(w, "server: %s\n", server)
+		fmt.Fprintf(w, "Server Version: %s\n", server)
 	}
 }

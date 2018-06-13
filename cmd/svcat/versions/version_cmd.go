@@ -71,6 +71,7 @@ func (c *versionCmd) version() error {
 		client = pkg.VERSION
 	}
 
+	output.WriteVersion(c.Output, client, "")
 	server := ""
 	if c.server {
 		version, err := c.App.ServerVersion()
@@ -80,6 +81,6 @@ func (c *versionCmd) version() error {
 		server = version.GitVersion
 	}
 
-	output.WriteVersion(c.Output, client, server)
+	output.WriteVersion(c.Output, "", server)
 	return nil
 }
