@@ -78,9 +78,10 @@ func (bc *PodPresetBindingController) Reconcile(k types.ReconcileKey) error {
 			if !apierrors.IsAlreadyExists(err) {
 				return fmt.Errorf("Unable to create podpreset: %v", err)
 			}
-			if _, err := crdClientset.SettingsV1alpha1().PodPresets(k.Namespace).Update(&ppb.Spec.PodPresetTemplate); err != nil {
-				return fmt.Errorf("Unable to update podpreset: %v", err)
-			}
+			// don't think this is needed
+			// if _, err := crdClientset.SettingsV1alpha1().PodPresets(k.Namespace).Update(&ppb.Spec.PodPresetTemplate); err != nil {
+			// 	return fmt.Errorf("Unable to update podpreset: %v", err)
+			// }
 		}
 	}
 
