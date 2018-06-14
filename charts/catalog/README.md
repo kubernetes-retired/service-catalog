@@ -60,9 +60,11 @@ chart and their default values.
 | `apiserver.auth.enabled` | Enable authentication and authorization | `true` |
 | `apiserver.audit.activated` | If true, enables the use of audit features via this chart. | `false` |
 | `apiserver.audit.logPath` | If specified, audit log goes to specified path. | `"/tmp/service-catalog-apiserver-audit.log"` |
+| `apiserver.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
 | `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
 | `controllerManager.annotations` | Annotations for controllerManager pods | `{}` |
+| `controllerManager.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
