@@ -1,4 +1,8 @@
 language: generic
+notifications:
+  email:
+    recipients:
+      - kubernetes-sig-service-catalog-alerts@googlegroups.com
 env:
   - GO_VERSION=1.9
   - GO_VERSION=rc
@@ -11,9 +15,12 @@ services:
 - docker
 cache:
   directories:
-    - $GOPATH/pkg/dep
+    # ${GOPATH}/pkg is mounted in DOCKER_CMD in Makefile
+    - .pkg
 stages:
   - test
+  - xbuild # Test all of our supported platform builds for master builds
+    if: type != pull_request
   - name: deploy
     if: type != pull_request
 before_install:
@@ -39,6 +46,9 @@ script:
 jobs:
   include:
     # Test is implicit from the build matrix
+    # Cross Build
+    - stage: xbuild
+      script: make images-all
     # Deploy
     - stage: deploy
       script: skip

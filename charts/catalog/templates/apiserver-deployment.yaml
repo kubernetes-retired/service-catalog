@@ -20,6 +20,10 @@ spec:
         release: "{{ .Release.Name }}"
         releaseRevision: "{{ .Release.Revision }}"
         heritage: "{{ .Release.Service }}"
+      {{ if .Values.apiserver.annotations }}
+      annotations:
+{{ toYaml .Values.apiserver.annotations | indent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: "{{ .Values.apiserver.serviceAccount }}"
       containers:
