@@ -30,6 +30,9 @@ apiserver:
     # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
     # for more information on proper values of this field
     versionPriority: 20
+  # healthcheck configures the readiness and liveliness probes for the apiserver pod.
+  healthcheck:
+    enabled: true
   tls:
     # Base64-encoded CA used to validate request-header authentication, when
     # receiving delegated authentication from an aggregator. If not set, the
@@ -88,6 +91,9 @@ apiserver:
 controllerManager:
   # annotations is a collection of annotations to add to the controllerManager pod.
   annotations: {}
+  # healthcheck configures the readiness and liveliness probes for the controllerManager pod.
+  healthcheck:
+    enabled: true
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
   # Resync interval; format is a duration (`20m`, `1h`, etc)
