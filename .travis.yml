@@ -19,7 +19,7 @@ cache:
     - .pkg
 stages:
   - test
-  - xbuild # Test all of our supported platform builds for master builds
+  - name: xbuild # Test all of our supported platform builds for master builds
     if: type != pull_request
   - name: deploy
     if: type != pull_request
