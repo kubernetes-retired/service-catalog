@@ -34,7 +34,7 @@ const (
 
 // RetrieveClasses lists all classes defined in the cluster.
 func (sdk *SDK) RetrieveClasses(name string) ([]v1beta1.ClusterServiceClass, error) {
-	if name == ""{
+	if name == "" {
 		classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to list classes (%s), err", err)
