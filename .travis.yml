@@ -47,15 +47,6 @@ jobs:
         fi
       env: XBUILD=true
       if: branch = master
-    # Go RC Check (allowed to fail)
-    - stage: test
-      script:
-      - |
-        if (( $DOCS_ONLY != 0 )); then
-          make verify build svcat test-unit
-        fi
-      env: GO_VERSION=rc
-      if: branch = master
     # Deploy
     - stage: deploy
       script: skip
