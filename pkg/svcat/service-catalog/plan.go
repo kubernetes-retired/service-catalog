@@ -32,7 +32,7 @@ const (
 	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
 )
 
-// RetrievePlans lists all plans defined in the cluster.
+// RetrievePlans lists all plans defined in the cluster.qqq
 func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan, error) {
 	plans, err := sdk.ServiceCatalog().ClusterServicePlans().List(v1.ListOptions{})
 	if err != nil {
