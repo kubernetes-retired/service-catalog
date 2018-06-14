@@ -32,7 +32,7 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
-
+    broker       string
 	classFilter  string
 	classUUID    string
 	className    string
@@ -59,6 +59,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan --class CLASS_NAME PLAN_NAME
   svcat get plans --uuid --class CLASS_UUID
   svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+  svcat get plans --broker CLASS_BROKER
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -76,6 +77,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"c",
 		"",
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.broker,
+		"broker",
+		"b",
+		"",
+		"Display the associated broker",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -120,7 +128,8 @@ func (c *getCmd) getAll() error {
 	var opts *servicecatalog.FilterOptions
 
 	// Retrieve the classes as well because plans don't have the external class name
-	classes, err := c.App.RetrieveClasses()
+	classes, err := c.App.RetrieveClasses(c.broker)
+
 	if err != nil {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}

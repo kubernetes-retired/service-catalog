@@ -74,8 +74,6 @@ func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		if c.lookupByUUID {
 			c.uuid = args[0]
-		} else if c.broker != "" {
-			c.broker = args[0]
 		} else {
 			c.name = args[0]
 		}
@@ -93,7 +91,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses()
+	classes, err := c.App.RetrieveClasses(c.broker)
 	if err != nil {
 		return err
 	}
