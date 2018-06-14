@@ -30,6 +30,7 @@ const (
 
 	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
 	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
+
 )
 
 // RetrievePlans lists all plans defined in the cluster.qqq

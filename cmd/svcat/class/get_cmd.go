@@ -74,6 +74,8 @@ func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		if c.lookupByUUID {
 			c.uuid = args[0]
+		} else if c.broker != "" {
+			c.broker = args[0]
 		} else {
 			c.name = args[0]
 		}
