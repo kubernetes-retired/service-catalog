@@ -49,7 +49,6 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
   svcat get classes --broker
 `),
->>>>>>> Added broker to plan/class output table, and class get_cmd
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
