@@ -19,7 +19,6 @@ package instance
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 
@@ -75,7 +74,7 @@ func (c *deprovisonCmd) deprovision() error {
 	}
 
 	if c.Wait {
-		glog.V(2).Infof("Waiting for the instance to be deleted...")
+		fmt.Fprintln(c.Output, "Waiting for the instance to be deleted...")
 
 		var instance *v1beta1.ServiceInstance
 		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, c.Interval, c.Timeout)
