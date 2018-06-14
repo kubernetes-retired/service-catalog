@@ -1245,7 +1245,6 @@
   revision = "b49f9314983687a9225e47627cc17191bf8df4b0"
 
 [[projects]]
-  branch = "master"
   name = "sigs.k8s.io/testing_frameworks"
   packages = [
     "integration",
