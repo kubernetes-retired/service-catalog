@@ -909,7 +909,7 @@ func TestReconcileServiceBindingServiceInstanceNotReady(t *testing.T) {
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithRefs())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithClusterRefs())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	binding := &v1beta1.ServiceBinding{
@@ -967,7 +967,7 @@ func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	instance := getTestServiceInstanceWithRefs()
+	instance := getTestServiceInstanceWithClusterRefs()
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionTrue, "", "")
 	sharedInformers.ServiceInstances().Informer().GetStore().Add(instance)
 
