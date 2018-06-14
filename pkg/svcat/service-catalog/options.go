@@ -20,5 +20,4 @@ package servicecatalog
 type FilterOptions struct {
 	ClassID string
 	Broker  string
-
 }
