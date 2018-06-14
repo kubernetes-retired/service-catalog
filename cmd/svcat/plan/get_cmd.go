@@ -32,7 +32,7 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
-    broker		 string
+    broker       string
 	classFilter  string
 	classUUID    string
 	className    string
