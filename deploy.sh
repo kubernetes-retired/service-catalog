@@ -6,7 +6,7 @@ echo "=== Building and deploying CRD"
 kubectl apply -f install.yaml
 
 echo "=== Generating certificates for webhook"
-pushd pkg/controller/podpreset/webhook/pki && ./gen-certs.sh && popd
+#pushd pkg/controller/podpreset/webhook/pki && ./gen-certs.sh && popd
 until [ $(kubectl get pods -n podpreset-crd-system -l api=podpreset-crd -o jsonpath="{.items[0].status.containerStatuses[0].ready}") = "true" ]; do
   sleep 2
 done
