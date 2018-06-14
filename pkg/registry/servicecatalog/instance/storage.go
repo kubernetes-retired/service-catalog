@@ -168,8 +168,8 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) 
 				instance := obj.(*servicecatalog.ServiceInstance)
 				cells := []interface{}{
 					name,
-					instance.Spec.ClusterServiceClassExternalName,
-					instance.Spec.ClusterServicePlanExternalName,
+					instance.Spec.GetSpecifiedServiceClass(),
+					instance.Spec.GetSpecifiedServicePlan(),
 					getStatus(instance.Status),
 					age,
 				}
