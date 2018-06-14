@@ -30,6 +30,7 @@ const (
 
 	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
 	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
+
 )
 
 // RetrievePlans lists all plans defined in the cluster.
@@ -38,10 +39,23 @@ func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan
 	if err != nil {
 		return nil, fmt.Errorf("unable to list plans (%s)", err)
 	}
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 49d75943cfbb9cdc69ec2acc9cc69ae428412107
 	if opts != nil && (opts.ClassID != "" || opts.Broker != "") {
 		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
 		for _, p := range plans.Items {
 			if p.Spec.ClusterServiceBrokerName == opts.Broker || p.Spec.ClusterServiceClassRef.Name == opts.ClassID {
+<<<<<<< HEAD
+=======
+=======
+	if opts != nil && (opts.ClassID != "" || opts.Broker != ""){
+		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
+		for _, p := range plans.Items {
+			if p.Spec.ClusterServiceBrokerName == opts.Broker || p.Spec.ClusterServiceClassRef.Name == opts.ClassID{
+>>>>>>> 8580a0eafa2032b75dcfcab9345c9d6bfefd05b8
+>>>>>>> 49d75943cfbb9cdc69ec2acc9cc69ae428412107
 				plansFiltered = append(plansFiltered, p)
 			}
 		}
