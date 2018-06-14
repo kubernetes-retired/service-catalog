@@ -28,7 +28,7 @@ type HasNamespaceFlags interface {
 	ApplyNamespaceFlags(flags *pflag.FlagSet)
 }
 
-// Namespaced is the base command of all svcat commands that are namespace scoped.
+// NamespacedCommand is the base command of all svcat commands that are namespace scoped.
 type NamespacedCommand struct {
 	*Context
 	Namespace string
