@@ -19,7 +19,6 @@ package instance
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
@@ -131,7 +130,7 @@ func (c *provisonCmd) Provision() error {
 	}
 
 	if c.Wait {
-		glog.V(2).Info("Waiting for the instance to be provisioned...")
+		fmt.Fprintln(c.Output, "Waiting for the instance to be provisioned...")
 		finalInstance, err := c.App.WaitForInstance(instance.Namespace, instance.Name, c.Interval, c.Timeout)
 		if err == nil {
 			instance = finalInstance

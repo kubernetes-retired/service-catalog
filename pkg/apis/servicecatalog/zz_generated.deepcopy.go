@@ -1571,6 +1571,24 @@ func (in *ServiceInstanceSpec) DeepCopyInto(out *ServiceInstanceSpec) {
 			**out = **in
 		}
 	}
+	if in.ServiceClassRef != nil {
+		in, out := &in.ServiceClassRef, &out.ServiceClassRef
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(LocalObjectReference)
+			**out = **in
+		}
+	}
+	if in.ServicePlanRef != nil {
+		in, out := &in.ServicePlanRef, &out.ServicePlanRef
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(LocalObjectReference)
+			**out = **in
+		}
+	}
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
 		if *in == nil {

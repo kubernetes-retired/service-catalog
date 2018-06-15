@@ -680,48 +680,84 @@ type ServiceInstance struct {
 }
 
 // PlanReference defines the user specification for the desired
-// ServicePlan and ServiceClass. Because there are multiple ways to
-// specify the desired Class/Plan, this structure specifies the
-// allowed ways to specify the intent.
+// (Cluster)ServicePlan and (Cluster)ServiceClass. Because there are
+// multiple ways to specify the desired Class/Plan, this structure specifies the
+// allowed ways to specify the intent. Note: a user may specify either cluster
+// scoped OR namespace scoped identifiers, but NOT both, as they are mutually
+// exclusive.
 //
 // Currently supported ways:
 //  - ClusterServiceClassExternalName and ClusterServicePlanExternalName
 //  - ClusterServiceClassExternalID and ClusterServicePlanExternalID
 //  - ClusterServiceClassName and ClusterServicePlanName
+//  - ServiceClassExternalName and ServicePlanExternalName
+//  - ServiceClassExternalID and ServicePlanExternalID
+//  - ServiceClassName and ServicePlanName
 //
 // For any of these ways, if a ClusterServiceClass only has one plan
 // then the corresponding service plan field is optional.
 type PlanReference struct {
 	// ClusterServiceClassExternalName is the human-readable name of the
-	// service as reported by the broker. Note that if the broker changes
-	// the name of the ClusterServiceClass, it will not be reflected here,
-	// and to see the current name of the ClusterServiceClass, you should
-	// follow the ClusterServiceClassRef below.
+	// service as reported by the ClusterServiceBroker. Note that if the
+	// ClusterServiceBroker changes the name of the ClusterServiceClass,
+	// it will not be reflected here, and to see the current name of the
+	// ClusterServiceClass, you should follow the ClusterServiceClassRef below.
 	//
 	// Immutable.
 	ClusterServiceClassExternalName string
 	// ClusterServicePlanExternalName is the human-readable name of the plan
-	// as reported by the broker. Note that if the broker changes the name
-	// of the ClusterServicePlan, it will not be reflected here, and to see
-	// the current name of the ClusterServicePlan, you should follow the
-	// ClusterServicePlanRef below.
+	// as reported by the ClusterServiceBroker. Note that if the
+	// ClusterServiceBroker changes the name of the ClusterServicePlan, it will
+	// not be reflected here, and to see the current name of the
+	// ClusterServicePlan, you should follow the ClusterServicePlanRef below.
 	ClusterServicePlanExternalName string
 
-	// ClusterServiceClassExternalID is the broker's external id for the class.
+	// ClusterServiceClassExternalID is the ClusterServiceBroker's external id
+	// for the class.
 	//
 	// Immutable.
 	ClusterServiceClassExternalID string
 
-	// ClusterServicePlanExternalID is the broker's external id for the plan.
+	// ClusterServicePlanExternalID is the ClusterServiceBroker's external id for
+	// the plan.
 	ClusterServicePlanExternalID string
 
-	// ClusterServiceClassName is the kubernetes name of the
-	// ClusterServiceClass.
+	// ClusterServiceClassName is the kubernetes name of the ClusterServiceClass.
 	//
 	// Immutable.
 	ClusterServiceClassName string
 	// ClusterServicePlanName is kubernetes name of the ClusterServicePlan.
 	ClusterServicePlanName string
+
+	// ServiceClassExternalName is the human-readable name of the
+	// service as reported by the ServiceBroker. Note that if the ServiceBroker
+	// changes the name of the ServiceClass, it will not be reflected here,
+	// and to see the current name of the ServiceClass, you should
+	// follow the ServiceClassRef below.
+	//
+	// Immutable.
+	ServiceClassExternalName string
+	// ServicePlanExternalName is the human-readable name of the plan
+	// as reported by the ServiceBroker. Note that if the ServiceBroker changes
+	// the name of the ServicePlan, it will not be reflected here, and to see
+	// the current name of the ServicePlan, you should follow the
+	// ServicePlanRef below.
+	ServicePlanExternalName string
+
+	// ServiceClassExternalID is the ServiceBroker's external id for the class.
+	//
+	// Immutable.
+	ServiceClassExternalID string
+
+	// ServicePlanExternalID is the ServiceBroker's external id for the plan.
+	ServicePlanExternalID string
+
+	// ServiceClassName is the kubernetes name of the ServiceClass.
+	//
+	// Immutable.
+	ServiceClassName string
+	// ServicePlanName is kubernetes name of the ServicePlan.
+	ServicePlanName string
 }
 
 // ServiceInstanceSpec represents the desired state of an Instance.
@@ -729,13 +765,22 @@ type ServiceInstanceSpec struct {
 	PlanReference
 
 	// ClusterServiceClassRef is a reference to the ClusterServiceClass
-	// that the user selected.
-	// This is set by the controller based on ClusterServiceClassExternalName
+	// that the user selected. This is set by the controller based on the
+	// cluster-scoped values specified in the PlanReference.
 	ClusterServiceClassRef *ClusterObjectReference
 	// ClusterServicePlanRef is a reference to the ClusterServicePlan
-	// that the user selected.
-	// This is set by the controller based on ClusterServicePlanExternalName
+	// that the user selected. This is set by the controller based on the
+	// cluster-scoped values specified in the PlanReference.
 	ClusterServicePlanRef *ClusterObjectReference
+
+	// ServiceClassRef is a reference to the ServiceClass that the user selected.
+	// This is set by the controller based on the namespace-scoped values
+	// specified in the PlanReference.
+	ServiceClassRef *LocalObjectReference
+	// ServicePlanRef is a reference to the ServicePlan that the user selected.
+	// This is set by the controller based on the namespace-scoped values
+	// specified in the PlanReference.
+	ServicePlanRef *LocalObjectReference
 
 	// Parameters is a set of the parameters to be passed to the underlying
 	// broker. The inline YAML/JSON payload to be translated into equivalent
@@ -902,6 +947,15 @@ type ServiceInstancePropertiesState struct {
 	// ClusterServicePlanExternalID is the external ID of the plan that the
 	// broker knows this ServiceInstance to be on.
 	ClusterServicePlanExternalID string
+
+	// ServicePlanExternalName is the name of the plan that the broker knows this
+	// ServiceInstance to be on. This is the human readable plan name from the
+	// OSB API.
+	ServicePlanExternalName string
+
+	// ServicePlanExternalID is the external ID of the plan that the
+	// broker knows this ServiceInstance to be on.
+	ServicePlanExternalID string
 
 	// Parameters is a blob of the parameters and their values that the broker
 	// knows about for this ServiceInstance.  If a parameter was sourced from

@@ -54,8 +54,8 @@ func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceLi
 		t.Append([]string{
 			instance.Name,
 			instance.Namespace,
-			instance.Spec.GetSpecifiedClass(),
-			instance.Spec.GetSpecifiedPlan(),
+			instance.Spec.GetSpecifiedClusterServiceClass(),
+			instance.Spec.GetSpecifiedClusterServicePlan(),
 			getInstanceStatusShort(instance.Status),
 		})
 	}
@@ -133,8 +133,8 @@ func WriteInstanceDetails(w io.Writer, instance *v1beta1.ServiceInstance) {
 		{"Name:", instance.Name},
 		{"Namespace:", instance.Namespace},
 		{"Status:", getInstanceStatusFull(instance.Status)},
-		{"Class:", instance.Spec.GetSpecifiedClass()},
-		{"Plan:", instance.Spec.GetSpecifiedPlan()},
+		{"Class:", instance.Spec.GetSpecifiedClusterServiceClass()},
+		{"Plan:", instance.Spec.GetSpecifiedClusterServicePlan()},
 	})
 	t.Render()
 

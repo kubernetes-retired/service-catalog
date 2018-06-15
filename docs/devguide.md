@@ -54,8 +54,9 @@ please include a line in the initial comment that looks like:
 
 	Closes: #1234
 
-where `1234` is the issue number. This allows Github to automatically
-close the issue when the PR is merged.
+where `1234` is the issue number. This allows Github to [automatically
+close the issue](https://help.github.com/articles/closing-issues-using-keywords/)
+when the PR is merged.
 
 Also, before you start working on your issue, please read our [Code Standards](./code-standards.md)
 document.
@@ -189,12 +190,18 @@ To deploy to Kubernetes, see the
 
 ## Testing
 
-There are two types of tests: unit and integration. The unit testcases
-can be run via the `test-unit` Makefile target, e.g.:
+There are three types of tests: unit, integration and e2e.
+
+### Unit Tests
+
+The unit testcases can be run via the `test-unit` Makefile target, e.g.:
 
     $ make test-unit
 
 These will execute any `*_test.go` files within the source tree.
+
+### Integration Tests
+
 The integration tests can be run via the `test-integration` Makefile target,
 e.g.:
 
@@ -204,6 +211,35 @@ The integration tests require the Kubernetes client (`kubectl`) so there is a
 script called `contrib/hack/kubectl` that will run it from within a
 Docker container. This avoids the need for you to download, or install it,
 youself. You may find it useful to add `contrib/hack` to your `PATH`.
+
+### e2e Tests
+
+The e2e tests require an existing kubernetes cluster with
+service-catalog deployed into it. The test runner needs the
+configuration to talk to the cluster and the service-catalog
+server. Since service-catalog can run aggregated, this is done by giving
+the same kubeconfig.
+
+    $ KUBECONFIG=~/.kube/config SERVICECATALOGCONFIG=~/.kube/config make test-e2e
+    
+Once built, the binary can also be run directly. Some example output is included below.
+
+```console
+$ e2e.test
+I0529 13:37:15.942348   21610 e2e.go:45] Starting e2e run "12ee92dc-6380-11e8-8a97-54e1ad543ebd" on Ginkgo node 1
+Running Suite: Service Catalog e2e suite
+========================================
+Random Seed: 1527626235 - Will randomize all specs
+Will run 3 of 3 specs
+
+< ... Test Output ... >
+
+•
+Ran 3 of 3 Specs in 47.271 seconds
+SUCCESS! -- 3 Passed | 0 Failed | 0 Pending | 0 Skipped PASS
+```
+
+### Test Running Tips
 
 The `test` Makefile target will run both the unit and integration tests, e.g.:
 
@@ -227,6 +263,8 @@ debugging using the `TEST_LOG_LEVEL` env variable. Log level 5 e.g.:
 
     $ TEST_LOG_LEVEL=5 make test-integration
 
+### Test Code Coverage
+
 To see how well these tests cover the source code, you can use:
 
     $ make coverage
@@ -234,6 +272,23 @@ To see how well these tests cover the source code, you can use:
 These will execute the tests and perform an analysis of how well they
 cover all code paths. The results are put into a file called:
 `coverage.html` at the root of the repo.
+
+As mentioned above, integration tests require a running Catalog API & ETCD image
+and a properly configured .kubeconfig.  When developing or drilling in on a
+specific test failure you may find it helpful to run Catalog in your "normal"
+environment and as long as you have properly configured your KUBECONFIG
+environment variable you can run integration tests much more quickly with a
+couple of commands:
+
+    $ make build-integration
+    $ ./integration.test -test.v -v 5 -logtostderr -test.run  TestPollServiceInstanceLastOperationSuccess/async_provisioning_with_error_on_second_poll
+
+The first command ensures the test integration executable is up-to-date.  The
+second command runs one specific test case with verbose logging and can be
+re-run over and over without having to wait for the start and stop of API and
+ETCD.  This example will execute the test case "async provisioning with error on
+second poll" within the integration test
+TestPollServiceInstanceLastOperationSuccess.
 
 ### Golden Files
 The svcat tests rely on "[golden files](https://medium.com/@povilasve/go-advanced-tips-tricks-a872503ac859#a196)",
@@ -287,6 +342,10 @@ clicking on the `deploy/netlify` build check on your pull request.
 Once the Pull Request has been created, it will automatically be built
 and the tests run. The unit and integration tests will run in travis,
 and Jenkins will run the e2e tests.
+
+You can use the [Prow /cc command](https://prow.k8s.io/command-help#cc)
+to request reviews from the maintainers of the project. This works even
+if you do not have status in the service-catalog project.
 
 On travis, a build is made up of two jobs, one builds our chosen
 golang version, and the other builds with future release candidates

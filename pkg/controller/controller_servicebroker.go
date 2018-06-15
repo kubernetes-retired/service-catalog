@@ -85,7 +85,7 @@ func (c *controller) serviceBrokerDelete(obj interface{}) {
 func shouldReconcileServiceBroker(broker *v1beta1.ServiceBroker, now time.Time) bool {
 	// ERIK TODO: This should get refactored out into a shared method because it
 	// only relies on Common components.
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, broker.Namespace, broker.Name)
+	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	if broker.Status.ReconciledGeneration != broker.Generation {
 		// If the spec has changed, we should reconcile the broker.
 		return true
@@ -146,7 +146,7 @@ func (c *controller) reconcileServiceBrokerKey(key string) error {
 	if err != nil {
 		return err
 	}
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, namespace, name)
+	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, namespace, name, "")
 	broker, err := c.serviceBrokerLister.ServiceBrokers(namespace).Get(name)
 	if errors.IsNotFound(err) {
 		glog.Info(pcb.Message("Not doing work because the ServiceBroker has been deleted"))
@@ -164,7 +164,7 @@ func (c *controller) reconcileServiceBrokerKey(key string) error {
 // error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, broker.Namespace, broker.Name)
+	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	glog.V(4).Infof(pcb.Message("Processing"))
 
 	// * If the broker's ready condition is true and the RelistBehavior has been
@@ -471,7 +471,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 // catalog payload. The existingServiceClass parameter is the serviceClass
 // that already exists for the given broker with this serviceClass' k8s name.
 func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1beta1.ServiceBroker, serviceClass, existingServiceClass *v1beta1.ServiceClass) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, broker.Namespace, broker.Name)
+	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	serviceClass.Spec.ServiceBrokerName = broker.Name
 
 	if existingServiceClass == nil {
@@ -554,7 +554,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 // reconcileServicePlanFromServiceBrokerCatalog reconciles a
 // ServicePlan after the ServiceClass's catalog has been re-listed.
 func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta1.ServiceBroker, servicePlan, existingServicePlan *v1beta1.ServicePlan) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, broker.Namespace, broker.Name)
+	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	servicePlan.Spec.ServiceBrokerName = broker.Name
 
 	if existingServicePlan == nil {
@@ -639,8 +639,7 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 
 // updateCommonStatusCondition updates the common ready condition for the given CommonServiceBrokerStatus
 // with the given status, reason, and message.
-func updateCommonStatusCondition(meta metav1.ObjectMeta, commonStatus *v1beta1.CommonServiceBrokerStatus, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus, reason, message string) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, meta.Namespace, meta.Name)
+func updateCommonStatusCondition(pcb *pretty.ContextBuilder, meta metav1.ObjectMeta, commonStatus *v1beta1.CommonServiceBrokerStatus, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus, reason, message string) {
 	newCondition := v1beta1.ServiceBrokerCondition{
 		Type:    conditionType,
 		Status:  status,
@@ -686,9 +685,9 @@ func updateCommonStatusCondition(meta metav1.ObjectMeta, commonStatus *v1beta1.C
 func (c *controller) updateServiceBrokerCondition(broker *v1beta1.ServiceBroker, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus, reason, message string) error {
 	toUpdate := broker.DeepCopy()
 
-	updateCommonStatusCondition(toUpdate.ObjectMeta, &toUpdate.Status.CommonServiceBrokerStatus, conditionType, status, reason, message)
+	pcb := pretty.NewServiceBrokerContextBuilder(toUpdate)
+	updateCommonStatusCondition(pcb, toUpdate.ObjectMeta, &toUpdate.Status.CommonServiceBrokerStatus, conditionType, status, reason, message)
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, toUpdate.Namespace, toUpdate.Name)
 	glog.V(4).Info(pcb.Messagef("Updating ready condition to %v", status))
 	_, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
@@ -704,7 +703,7 @@ func (c *controller) updateServiceBrokerCondition(broker *v1beta1.ServiceBroker,
 func (c *controller) updateServiceBrokerFinalizers(
 	broker *v1beta1.ServiceBroker,
 	finalizers []string) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBroker, broker.Namespace, broker.Name)
+	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 
 	// Get the latest version of the broker so that we can avoid conflicts
 	// (since we have probably just updated the status of the broker and are

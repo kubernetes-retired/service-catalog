@@ -93,7 +93,7 @@ func TestPrettyContextBuilderKindNamespaceName(t *testing.T) {
 }
 
 func TestPrettyContextBuilderKindNamespaceNameNew(t *testing.T) {
-	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name")
+	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "")
 
 	e := `ServiceInstance "Namespace/Name"`
 	g := pcb.String()
