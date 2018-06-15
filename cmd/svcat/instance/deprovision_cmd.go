@@ -28,7 +28,7 @@ import (
 
 type deprovisonCmd struct {
 	*command.NamespacedCommand
-	*command.WaitableCommand
+	*command.Waitable
 
 	instanceName string
 }
@@ -37,7 +37,7 @@ type deprovisonCmd struct {
 func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 	deprovisonCmd := &deprovisonCmd{
 		NamespacedCommand: command.NewNamespacedCommand(cxt),
-		WaitableCommand:   command.NewWaitableCommand(),
+		Waitable:          command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "deprovision NAME",

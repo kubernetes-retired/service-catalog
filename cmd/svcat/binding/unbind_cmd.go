@@ -32,7 +32,7 @@ import (
 
 type unbindCmd struct {
 	*command.NamespacedCommand
-	*command.WaitableCommand
+	*command.Waitable
 
 	instanceName string
 	bindingName  string
@@ -42,7 +42,7 @@ type unbindCmd struct {
 func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 	unbindCmd := &unbindCmd{
 		NamespacedCommand: command.NewNamespacedCommand(cxt),
-		WaitableCommand:   command.NewWaitableCommand(),
+		Waitable:          command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "unbind INSTANCE_NAME",
