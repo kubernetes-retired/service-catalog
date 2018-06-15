@@ -47,7 +47,6 @@ jobs:
           make images-all
         fi
       env: XBUILD=true
-      if: branch = master
     # Deploy
     - stage: deploy
       script: skip
