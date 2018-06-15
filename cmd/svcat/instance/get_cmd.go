@@ -92,20 +92,10 @@ func (c *getCmd) getAll() error {
 
 	if c.planFilter != "" {
 		instances = c.filterListByPlan(instances)
-
-		if len(instances.Items) <= 0 {
-			// All instances found were filtered out by plan
-			return nil
-		}
 	}
 
 	if c.classFilter != "" {
 		instances = c.filterListByClass(instances)
-
-		if len(instances.Items) <= 0 {
-			// All instances found were filtered out by class
-			return nil
-		}
 	}
 
 	output.WriteInstanceList(c.Output, c.outputFormat, instances)
@@ -119,14 +109,14 @@ func (c *getCmd) get() error {
 	}
 
 	if c.planFilter != "" {
-		if !c.filterByPlan(instance) {
+		if !c.acceptedByPlanFilter(instance) {
 			// Found instances was filtered out by plan
 			return nil
 		}
 	}
 
 	if c.classFilter != "" {
-		if !c.filterByClass(instance) {
+		if !c.acceptedByClassFilter(instance) {
 			// Found instances was filtered out by class
 			return nil
 		}
@@ -143,18 +133,16 @@ func (c *getCmd) filterListByPlan(instanceList *v1beta1.ServiceInstanceList) *v1
 	}
 
 	for _, instance := range instanceList.Items {
-		if !c.filterByPlan(&instance) {
-			continue
+		if c.acceptedByPlanFilter(&instance) {
+			p.Items = append(p.Items, instance)
 		}
-
-		p.Items = append(p.Items, instance)
 	}
 
 	return &p
 }
 
-func (c *getCmd) filterByPlan(instance *v1beta1.ServiceInstance) bool {
-	return instance.Spec.GetSpecifiedPlan() == c.planFilter
+func (c *getCmd) acceptedByPlanFilter(instance *v1beta1.ServiceInstance) bool {
+	return instance.Spec.GetSpecifiedClusterServicePlan() == c.planFilter
 }
 
 func (c *getCmd) filterListByClass(instanceList *v1beta1.ServiceInstanceList) *v1beta1.ServiceInstanceList {
@@ -163,16 +151,14 @@ func (c *getCmd) filterListByClass(instanceList *v1beta1.ServiceInstanceList) *v
 	}
 
 	for _, instance := range instanceList.Items {
-		if !c.filterByClass(&instance) {
-			continue
+		if c.acceptedByClassFilter(&instance) {
+			p.Items = append(p.Items, instance)
 		}
-
-		p.Items = append(p.Items, instance)
 	}
 
 	return &p
 }
 
-func (c *getCmd) filterByClass(instance *v1beta1.ServiceInstance) bool {
-	return instance.Spec.GetSpecifiedClass() == c.classFilter
+func (c *getCmd) acceptedByClassFilter(instance *v1beta1.ServiceInstance) bool {
+	return instance.Spec.GetSpecifiedClusterServiceClass() == c.classFilter
 }

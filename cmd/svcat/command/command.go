@@ -177,12 +177,7 @@ func AddPlanFilterFlags(flags *pflag.FlagSet) {
 
 func determinePlanFilter(flags *pflag.FlagSet) string {
 	plan, _ := flags.GetString("plan")
-
-	if plan != "" {
-		return plan
-	}
-
-	return ""
+	return plan
 }
 
 // AddClassFilterFlags applies the --class flag to a command.
@@ -198,12 +193,7 @@ func AddClassFilterFlags(flags *pflag.FlagSet) {
 
 func determineClassFilter(flags *pflag.FlagSet) string {
 	class, _ := flags.GetString("class")
-
-	if class != "" {
-		return class
-	}
-
-	return ""
+	return class
 }
 
 // NormalizeExamples removes leading and trailing empty lines
