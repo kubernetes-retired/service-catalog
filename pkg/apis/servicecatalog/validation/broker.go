@@ -188,20 +188,6 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		)
 	}
 
-	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
-		commonErrs = append(
-			commonErrs,
-			field.Required(fldPath.Child("relistDuration"), "relistDuration must be set if relistBehavior is set to Duration"),
-		)
-	}
-
-	if spec.RelistBehavior == sc.ServiceBrokerRelistBehaviorManual && spec.RelistDuration != nil {
-		commonErrs = append(
-			commonErrs,
-			field.Required(fldPath.Child("relistDuration"), "relistDuration must not be set if relistBehavior is set to Manual"),
-		)
-	}
-
 	if spec.RelistRequests < 0 {
 		commonErrs = append(
 			commonErrs,

@@ -92,7 +92,7 @@ func (c *controller) clusterServiceBrokerDelete(obj interface{}) {
 // returns true unless the broker has a ready condition with status true and
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true, or if the broker's RelistBehavior is set to Manual.
-func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, now time.Time) bool {
+func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, now time.Time, defaultRelistInterval time.Duration) bool {
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 	if broker.Status.ReconciledGeneration != broker.Generation {
 		// If the spec has changed, we should reconcile the broker.
@@ -121,14 +121,14 @@ func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, n
 					return false
 				}
 
-				if broker.Spec.RelistDuration == nil {
-					glog.Error(pcb.Message("Unable to process because RelistBehavior is set to Duration with a nil RelistDuration value"))
-					return false
-				}
-
 				// By default, the broker should relist if it has been longer than the
 				// RelistDuration since the last time we fetched the Catalog
-				duration := broker.Spec.RelistDuration.Duration
+				duration := defaultRelistInterval
+
+				if broker.Spec.RelistDuration != nil {
+					duration = broker.Spec.RelistDuration.Duration
+				}
+
 				intervalPassed := true
 				if broker.Status.LastCatalogRetrievalTime != nil {
 					intervalPassed = now.After(broker.Status.LastCatalogRetrievalTime.Time.Add(duration))
@@ -175,7 +175,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
 	// elapsed, do not reconcile it.
-	if !shouldReconcileClusterServiceBroker(broker, time.Now()) {
+	if !shouldReconcileClusterServiceBroker(broker, time.Now(), c.brokerRelistInterval) {
 		return nil
 	}
 
