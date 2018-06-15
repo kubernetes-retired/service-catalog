@@ -127,6 +127,9 @@ func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...types.
 	// Indicates an error occurred and that a non-zero exit code should be used
 	var hasErrors bool
 
+	// Used to prevent concurrent writes to c.Output
+	var mutex sync.Mutex
+
 	fmt.Fprintln(c.Output, waitMessage)
 
 	var g sync.WaitGroup
@@ -136,6 +139,9 @@ func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...types.
 			defer g.Done()
 
 			binding, err := c.App.WaitForBinding(ns, name, c.Interval, c.Timeout)
+
+			mutex.Lock()
+			defer mutex.Unlock()
 
 			if err != nil && !apierrors.IsNotFound(errors.Cause(err)) {
 				hasErrors = true
