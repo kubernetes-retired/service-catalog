@@ -1,3 +1,3 @@
-          NAME                  DESCRIPTION        
-+-----------------------+-------------------------+
-  user-provided-service   A user provided service  
+          NAME            NAMESPACE         DESCRIPTION        
++-----------------------+-----------+-------------------------+
+  user-provided-service               A user provided service  

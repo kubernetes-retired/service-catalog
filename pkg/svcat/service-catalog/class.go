@@ -35,6 +35,9 @@ type Class interface {
 	// GetName returns the class's name.
 	GetName() string
 
+	// GetNamespace returns the class's namespace, or "" if it's cluster-scoped.
+	GetNamespace() string
+
 	// GetExternalName returns the class's external name.
 	GetExternalName() string
 
