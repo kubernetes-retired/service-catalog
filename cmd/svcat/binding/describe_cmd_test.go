@@ -18,6 +18,7 @@ package binding
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
@@ -35,24 +36,23 @@ import (
 func TestDescribeCommand(t *testing.T) {
 	const namespace = "default"
 	testcases := []struct {
-		name         string
-		fakeBindings []string
-		bindingName  string
-		expected     string
-		wantError    bool
+		name          string
+		fakeBindings  []string
+		bindingName   string
+		expectedError string
+		wantError     bool
 	}{
 		{
-			name:         "describe non existing binding",
-			fakeBindings: []string{},
-			bindingName:  "mybinding",
-			expected:     "unable to get binding '" + namespace + ".mybinding': servicebindings.servicecatalog.k8s.io \"mybinding\" not found",
-			wantError:    true,
+			name:          "describe non existing binding",
+			fakeBindings:  []string{},
+			bindingName:   "mybinding",
+			expectedError: "unable to get binding '" + namespace + ".mybinding'",
+			wantError:     true,
 		},
 		{
 			name:         "describe existing binding",
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
-			expected:     "  Name:        mybinding  \n  Namespace:   " + namespace + "    \n  Status:                 \n  Secret:                 \n  Instance:               \n\nParameters:\n  No parameters defined\n",
 			wantError:    false,
 		},
 	}
@@ -87,19 +87,18 @@ func TestDescribeCommand(t *testing.T) {
 
 			err := cmd.Run()
 
-			if tc.wantError && err == nil {
-				t.Errorf("expected a non-zero exit code, but the command succeeded")
+			if tc.wantError {
+				if err == nil {
+					t.Errorf("expected a non-zero exit code, but the command succeeded")
+				}
+
+				errorOutput := err.Error()
+				if !strings.Contains(errorOutput, tc.expectedError) {
+					t.Errorf("Unexpected output:\n\nExpected:\n%q\n\nActual:\n%q\n", tc.expectedError, errorOutput)
+				}
 			}
 			if !tc.wantError && err != nil {
 				t.Errorf("expected the command to succeed but it failed with %q", err)
-			}
-
-			actual := output.String()
-			if err != nil {
-				actual += err.Error()
-			}
-			if actual != tc.expected {
-				t.Errorf("Unexpected output:\n\nExpected:\n%q\n\nActual:\n%q\n", tc.expected, actual)
 			}
 		})
 	}

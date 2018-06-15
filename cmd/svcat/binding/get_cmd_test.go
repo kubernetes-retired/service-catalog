@@ -18,6 +18,7 @@ package binding
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
@@ -35,26 +36,25 @@ import (
 func TestGetCommand(t *testing.T) {
 	const namespace = "default"
 	testcases := []struct {
-		name         string
-		fakeBindings []string
-		bindingName  string
-		outputFormat string
-		expected     string
-		wantError    bool
+		name          string
+		fakeBindings  []string
+		bindingName   string
+		outputFormat  string
+		expectedError string
+		wantError     bool
 	}{
 		{
-			name:         "get non existing binding",
-			fakeBindings: []string{},
-			bindingName:  "mybinding",
-			expected:     "unable to get binding '" + namespace + ".mybinding': servicebindings.servicecatalog.k8s.io \"mybinding\" not found",
-			wantError:    true,
+			name:          "get non existing binding",
+			fakeBindings:  []string{},
+			bindingName:   "mybinding",
+			expectedError: "unable to get binding '" + namespace + ".mybinding'",
+			wantError:     true,
 		},
 		{
 			name:         "get all existing bindings with unknown output format",
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
 			outputFormat: "unknown",
-			expected:     "",
 			wantError:    false,
 		},
 		{
@@ -62,7 +62,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
 			outputFormat: "json",
-			expected:     "{\n   \"metadata\": {},\n   \"items\": [\n      {\n         \"metadata\": {\n            \"name\": \"myfirstbinding\",\n            \"namespace\": \"" + namespace + "\",\n            \"creationTimestamp\": null\n         },\n         \"spec\": {\n            \"instanceRef\": {},\n            \"externalID\": \"\"\n         },\n         \"status\": {\n            \"conditions\": null,\n            \"asyncOpInProgress\": false,\n            \"reconciledGeneration\": 0,\n            \"orphanMitigationInProgress\": false,\n            \"unbindStatus\": \"\"\n         }\n      },\n      {\n         \"metadata\": {\n            \"name\": \"mysecondbinding\",\n            \"namespace\": \"" + namespace + "\",\n            \"creationTimestamp\": null\n         },\n         \"spec\": {\n            \"instanceRef\": {},\n            \"externalID\": \"\"\n         },\n         \"status\": {\n            \"conditions\": null,\n            \"asyncOpInProgress\": false,\n            \"reconciledGeneration\": 0,\n            \"orphanMitigationInProgress\": false,\n            \"unbindStatus\": \"\"\n         }\n      }\n   ]\n}",
 			wantError:    false,
 		},
 		{
@@ -70,7 +69,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
 			outputFormat: "yaml",
-			expected:     "items:\n- metadata:\n    creationTimestamp: null\n    name: myfirstbinding\n    namespace: " + namespace + "\n  spec:\n    externalID: \"\"\n    instanceRef: {}\n  status:\n    asyncOpInProgress: false\n    conditions: null\n    orphanMitigationInProgress: false\n    reconciledGeneration: 0\n    unbindStatus: \"\"\n- metadata:\n    creationTimestamp: null\n    name: mysecondbinding\n    namespace: " + namespace + "\n  spec:\n    externalID: \"\"\n    instanceRef: {}\n  status:\n    asyncOpInProgress: false\n    conditions: null\n    orphanMitigationInProgress: false\n    reconciledGeneration: 0\n    unbindStatus: \"\"\nmetadata: {}\n",
 			wantError:    false,
 		},
 		{
@@ -78,7 +76,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
 			outputFormat: "table",
-			expected:     "       NAME         NAMESPACE   INSTANCE   STATUS  \n+-----------------+-----------+----------+--------+\n  myfirstbinding    " + namespace + "                        \n  mysecondbinding   " + namespace + "                        \n",
 			wantError:    false,
 		},
 		{
@@ -86,7 +83,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
 			outputFormat: "unknown",
-			expected:     "",
 			wantError:    false,
 		},
 		{
@@ -94,7 +90,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
 			outputFormat: "json",
-			expected:     "{\n   \"metadata\": {\n      \"name\": \"mybinding\",\n      \"namespace\": \"" + namespace + "\",\n      \"creationTimestamp\": null\n   },\n   \"spec\": {\n      \"instanceRef\": {},\n      \"externalID\": \"\"\n   },\n   \"status\": {\n      \"conditions\": null,\n      \"asyncOpInProgress\": false,\n      \"reconciledGeneration\": 0,\n      \"orphanMitigationInProgress\": false,\n      \"unbindStatus\": \"\"\n   }\n}",
 			wantError:    false,
 		},
 		{
@@ -102,7 +97,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
 			outputFormat: "yaml",
-			expected:     "metadata:\n  creationTimestamp: null\n  name: mybinding\n  namespace: " + namespace + "\nspec:\n  externalID: \"\"\n  instanceRef: {}\nstatus:\n  asyncOpInProgress: false\n  conditions: null\n  orphanMitigationInProgress: false\n  reconciledGeneration: 0\n  unbindStatus: \"\"\n",
 			wantError:    false,
 		},
 		{
@@ -110,7 +104,6 @@ func TestGetCommand(t *testing.T) {
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
 			outputFormat: "table",
-			expected:     "    NAME      NAMESPACE   INSTANCE   STATUS  \n+-----------+-----------+----------+--------+\n  mybinding   " + namespace + "                        \n",
 			wantError:    false,
 		},
 	}
@@ -146,19 +139,18 @@ func TestGetCommand(t *testing.T) {
 
 			err := cmd.Run()
 
-			if tc.wantError && err == nil {
-				t.Errorf("expected a non-zero exit code, but the command succeeded")
+			if tc.wantError {
+				if err == nil {
+					t.Errorf("expected a non-zero exit code, but the command succeeded")
+				}
+
+				errorOutput := err.Error()
+				if !strings.Contains(errorOutput, tc.expectedError) {
+					t.Errorf("Unexpected output:\n\nExpected:\n%q\n\nActual:\n%q\n", tc.expectedError, errorOutput)
+				}
 			}
 			if !tc.wantError && err != nil {
 				t.Errorf("expected the command to succeed but it failed with %q", err)
-			}
-
-			actual := output.String()
-			if err != nil {
-				actual += err.Error()
-			}
-			if actual != tc.expected {
-				t.Errorf("Unexpected output:\n\nExpected:\n%q\n\nActual:\n%q\n", tc.expected, actual)
 			}
 		})
 	}
