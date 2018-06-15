@@ -28,21 +28,21 @@ type HasNamespaceFlags interface {
 	ApplyNamespaceFlags(flags *pflag.FlagSet)
 }
 
-// NamespacedCommand is the base command of all svcat commands that are namespace scoped.
-type NamespacedCommand struct {
+// Namespaced is the base command of all svcat commands that are namespace scoped.
+type Namespaced struct {
 	*Context
 	Namespace string
 }
 
-// NewNamespacedCommand from context.
-func NewNamespacedCommand(cxt *Context) *NamespacedCommand {
-	return &NamespacedCommand{Context: cxt}
+// NewNamespaced from context.
+func NewNamespaced(cxt *Context) *Namespaced {
+	return &Namespaced{Context: cxt}
 }
 
 // AddNamespaceFlags adds the namespace-related flags:
 // * --namespace
 // * --all-namespaces
-func (c *NamespacedCommand) AddNamespaceFlags(flags *pflag.FlagSet, allowAll bool) {
+func (c *Namespaced) AddNamespaceFlags(flags *pflag.FlagSet, allowAll bool) {
 	flags.StringP(
 		"namespace",
 		"n",
@@ -62,12 +62,12 @@ func (c *NamespacedCommand) AddNamespaceFlags(flags *pflag.FlagSet, allowAll boo
 // ApplyNamespaceFlags persists the namespace-related flags:
 // * --namespace
 // * --all-namespaces
-func (c *NamespacedCommand) ApplyNamespaceFlags(flags *pflag.FlagSet) {
+func (c *Namespaced) ApplyNamespaceFlags(flags *pflag.FlagSet) {
 	c.Namespace = c.determineNamespace(flags)
 }
 
 // determineNamespace using the current context's namespace, and the user-requested namespace.
-func (c *NamespacedCommand) determineNamespace(flags *pflag.FlagSet) string {
+func (c *Namespaced) determineNamespace(flags *pflag.FlagSet) string {
 	currentNamespace := c.Context.App.CurrentNamespace
 
 	namespace, _ := flags.GetString("namespace")
