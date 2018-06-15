@@ -54,7 +54,7 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(unbindCmd),
 	}
 	unbindCmd.AddNamespaceFlags(cmd.Flags(), false)
-	cmd.Flags().StringArrayVar(
+	cmd.Flags().StringSliceVar(
 		&unbindCmd.bindingNames,
 		"name",
 		[]string{},
