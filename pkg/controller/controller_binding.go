@@ -44,6 +44,7 @@ const (
 	errorEjectingBindReason                   string = "ErrorEjectingServiceBinding"
 	errorUnbindCallReason                     string = "UnbindCallFailed"
 	errorNonbindableClusterServiceClassReason string = "ErrorNonbindableServiceClass"
+	errorServiceInstanceRefsUnresolved        string = "ErrorInstanceRefsUnresolved"
 	errorServiceInstanceNotReadyReason        string = "ErrorInstanceNotReady"
 	errorServiceBindingOrphanMitigation       string = "ServiceBindingNeedsOrphanMitigation"
 	errorFetchingBindingFailedReason          string = "FetchingBindingFailed"
@@ -70,11 +71,11 @@ var bindingControllerKind = v1beta1.SchemeGroupVersion.WithKind("ServiceBinding"
 func (c *controller) bindingAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		pcb := pretty.NewContextBuilder(pretty.ServiceBinding, "", "")
+		pcb := pretty.NewContextBuilder(pretty.ServiceBinding, "", "", "")
 		glog.Errorf(pcb.Messagef("Couldn't get key for object %+v: %v", obj, err))
 		return
 	}
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, "", key)
+	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, "", key, "")
 
 	acc, err := meta.Accessor(obj)
 	if err != nil {
@@ -106,7 +107,7 @@ func (c *controller) bindingDelete(obj interface{}) {
 		return
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.V(4).Info(pcb.Messagef("Received DELETE event; no further processing will occur; resourceVersion %v", binding.ResourceVersion))
 }
 
@@ -115,7 +116,7 @@ func (c *controller) reconcileServiceBindingKey(key string) error {
 	if err != nil {
 		return err
 	}
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, namespace, name)
+	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, namespace, name, "")
 	binding, err := c.bindingLister.ServiceBindings(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		glog.Info(pcb.Message("Not doing work because the ServiceBinding has been deleted"))
@@ -155,7 +156,7 @@ func getReconciliationActionForServiceBinding(binding *v1beta1.ServiceBinding) R
 // An error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.V(6).Info(pcb.Messagef(`beginning to process resourceVersion: %v`, binding.ResourceVersion))
 
 	reconciliationAction := getReconciliationActionForServiceBinding(binding)
@@ -174,7 +175,7 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 // reconcileServiceBindingAdd is responsible for handling the creation of new
 // service bindings.
 func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 
 	if isServiceBindingFailed(binding) {
 		glog.V(4).Info(pcb.Message("not processing event; status showed that it has failed"))
@@ -199,7 +200,9 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
 		// retry later
-		return fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
+		msg := fmt.Sprintf(`Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for %s have not been resolved yet`, pretty.ServiceInstanceName(instance))
+		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceRefsUnresolved, msg)
+		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
@@ -299,7 +302,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBinding) error {
 	var err error
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 
 	if binding.DeletionTimestamp == nil && !binding.Status.OrphanMitigationInProgress {
 		// nothing to do...
@@ -427,7 +430,7 @@ func isPlanBindable(serviceClass *v1beta1.ClusterServiceClass, plan *v1beta1.Clu
 }
 
 func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, credentials map[string]interface{}) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.V(5).Info(pcb.Messagef(`Creating/updating Secret "%s/%s" with %d keys`,
 		binding.Namespace, binding.Spec.SecretName, len(credentials),
 	))
@@ -515,8 +518,11 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 			}
 			credentials[t.AddKey.Key] = value
 		case t.RenameKey != nil:
-			credentials[t.RenameKey.To] = credentials[t.RenameKey.From]
-			delete(credentials, t.RenameKey.From)
+			value, ok := credentials[t.RenameKey.From]
+			if ok {
+				credentials[t.RenameKey.To] = value
+				delete(credentials, t.RenameKey.From)
+			}
 		case t.AddKeysFrom != nil:
 			secret, err := c.kubeClient.CoreV1().
 				Secrets(t.AddKeysFrom.SecretRef.Namespace).
@@ -548,7 +554,7 @@ func evaluateJSONPath(jsonPath string, credentials map[string]interface{}) (stri
 
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {
 	var err error
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.V(5).Info(pcb.Messagef(`Deleting Secret "%s/%s"`,
 		binding.Namespace, binding.Spec.SecretName,
 	))
@@ -585,7 +591,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 	status v1beta1.ConditionStatus,
 	reason, message string,
 	t metav1.Time) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, toUpdate.Namespace, toUpdate.Name)
+	pcb := pretty.NewBindingContextBuilder(toUpdate)
 	glog.Info(pcb.Message(message))
 	glog.V(5).Info(pcb.Messagef(
 		"Setting condition %q to %v",
@@ -635,7 +641,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 }
 
 func (c *controller) updateServiceBindingStatus(toUpdate *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, toUpdate.Namespace, toUpdate.Name)
+	pcb := pretty.NewBindingContextBuilder(toUpdate)
 	glog.V(4).Info(pcb.Message("Updating status"))
 	updatedBinding, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
@@ -657,7 +663,7 @@ func (c *controller) updateServiceBindingCondition(
 	status v1beta1.ConditionStatus,
 	reason, message string) error {
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	toUpdate := binding.DeepCopy()
 
 	setServiceBindingCondition(toUpdate, conditionType, status, reason, message)
@@ -784,7 +790,7 @@ func (c *controller) finishPollingServiceBinding(binding *v1beta1.ServiceBinding
 }
 
 func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Name, binding.Namespace)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.V(4).Infof(pcb.Message("Processing"))
 
 	binding = binding.DeepCopy()
@@ -1284,7 +1290,7 @@ func (c *controller) processServiceBindingGracefulDeletionSuccess(binding *v1bet
 		return err
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.Info(pcb.Message("Cleared finalizer"))
 
 	return nil
@@ -1381,7 +1387,7 @@ func (c *controller) handleServiceBindingPollingError(binding *v1beta1.ServiceBi
 	//	2) attempt to requeue in the polling queue
 	//		- if successful, we can return nil to avoid regular queue
 	//		- if failure, return err to fall back to regular queue
-	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name)
+	pcb := pretty.NewBindingContextBuilder(binding)
 	glog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceBinding(binding)
 }

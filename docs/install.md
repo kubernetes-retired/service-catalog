@@ -179,6 +179,17 @@ helm install svc-cat/catalog \
 Follow the appropriate instructions for your operating system to install svcat. The binary
 can be used by itself, or as a kubectl plugin.
 
+The snippets below install the latest version of svcat. We also publish binaries for
+our canary (master) builds, and tags using the following prefixes:
+
+* Latest release: https://download.svcat.sh/cli/latest
+* Tagged releases: https://download.svcat.sh/cli/VERSION
+  where `VERSION` is the release, for example `v0.1.20`.
+* Canary builds: https://download.svcat.sh/cli/canary
+* Previous canary builds: https://download.svcat.sh/cli/VERSION-GITDESCRIBE 
+  where `GITDESCRIBE` is the result of calling `git describe --tags`, for example `v0.1.20-1-g203c8ad`.
+
+
 ## MacOS
 
 ```

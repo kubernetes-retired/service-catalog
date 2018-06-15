@@ -1,6 +1,6 @@
 # Default values for Service Catalog
 # service-catalog image to use
-image: quay.io/kubernetes-service-catalog/service-catalog:v0.1.20
+image: quay.io/kubernetes-service-catalog/service-catalog:v0.1.21
 # imagePullPolicy for the service-catalog; valid values are "IfNotPresent",
 # "Never", and "Always"
 imagePullPolicy: Always
@@ -10,6 +10,8 @@ useAggregator: true
 ##
 rbacEnable: true
 apiserver:
+  # annotations is a collection of annotations to add to the apiserver pods.
+  annotations: {}
   # PodPreset is an optional feature and can be enabled by uncommenting the line below
   # featureGates: "PodPreset=true"
   aggregator:
@@ -28,6 +30,9 @@ apiserver:
     # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
     # for more information on proper values of this field
     versionPriority: 20
+  # healthcheck configures the readiness and liveliness probes for the apiserver pod.
+  healthcheck:
+    enabled: true
   tls:
     # Base64-encoded CA used to validate request-header authentication, when
     # receiving delegated authentication from an aggregator. If not set, the
@@ -84,6 +89,11 @@ apiserver:
   # if true, makes the API server serve the OpenAPI schema (which is problematic with older versions of kubectl)
   serveOpenAPISpec: false
 controllerManager:
+  # annotations is a collection of annotations to add to the controllerManager pod.
+  annotations: {}
+  # healthcheck configures the readiness and liveliness probes for the controllerManager pod.
+  healthcheck:
+    enabled: true
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
   # Resync interval; format is a duration (`20m`, `1h`, etc)

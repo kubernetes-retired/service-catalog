@@ -9,6 +9,7 @@ PRs may only be merged after the following criteria are met:
 
 1. It has been 'LGTM'-ed by 2 different reviewers
 1. It has all appropriate corresponding documentation and testcases
+1. The master build is passing. Do not merge a PR unless it is fixing the broken build.
 
 ## LGTMs
 
@@ -28,3 +29,8 @@ is a fundamental problem with the PR. The reviewer should summarize that problem
 in the PR comments and a longer discussion may be required.
 
 We expect this label to be used infrequently.
+
+# Alerts
+
+You can join the [SIG Service Catalog Alerts](https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog-alerts)
+mailing list to receive notifications when there are problems with master or release builds.

@@ -51,3 +51,5 @@ end
 gem "kramdown", "~> 1.11"
 gem "rouge", "~> 2.0"
 gem "pry"
+
+gem "public_suffix", "~> 3.0"

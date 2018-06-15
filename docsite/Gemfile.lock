@@ -175,9 +175,10 @@ DEPENDENCIES
   kramdown (~> 1.11)
   minima (~> 2.0)
   pry
+  public_suffix (~> 3.0)
   rouge (~> 2.0)
   terminal-table (~> 1.4)
   unicode-display_width (~> 1.1)
 
 BUNDLED WITH
-   1.16.1
+   1.16.2

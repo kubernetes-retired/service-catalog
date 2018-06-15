@@ -27,7 +27,7 @@ if [[ "${TRAVIS_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[a-z]*(-(r|R)(c|C)[0-9]+)*$ ]];
     VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push svcat-publish
 elif [[ "${TRAVIS_BRANCH}" == "master" ]]; then
     echo "Pushing images with default tags (git sha and 'canary')."
-    make push
+    make push svcat-publish
 else
     echo "Nothing to deploy"
 fi

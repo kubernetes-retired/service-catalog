@@ -16,6 +16,9 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "{{ .Values.controllerManager.enablePrometheusScrape }}"
+      {{ if .Values.controllerManager.annotations }}
+{{ toYaml .Values.controllerManager.annotations | indent 8 }}
+      {{- end }}
       labels:
         app: {{ template "fullname" . }}-controller-manager
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -93,6 +96,7 @@ spec:
         - name: service-catalog-cert
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
+        {{- if .Values.controllerManager.healthcheck.enabled }}
         readinessProbe:
           httpGet:
             port: 8444
@@ -113,6 +117,7 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+        {{- end }}
       volumes:
       - name: service-catalog-cert
         secret:

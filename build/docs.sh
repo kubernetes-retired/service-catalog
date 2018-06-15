@@ -48,7 +48,7 @@ generate() {
     -v $DOCSITE:/srv/jekyll \
     -v $REPO_ROOT/docs:/srv/docs \
     -v $DOCSITE/.bundler:/usr/local/bundle \
-    jekyll/jekyll jekyll build
+    jekyll/jekyll /bin/bash -c "bundle install; jekyll build"
 }
 
 "$@"
