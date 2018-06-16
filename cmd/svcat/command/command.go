@@ -52,18 +52,6 @@ type FormattedCommand interface {
 	SetFormat(format string)
 }
 
-// PlanFilteredCommand represents a command that can be filtered by plan
-type PlanFilteredCommand interface {
-	// SetPlanFilter sets plan used as filter
-	SetPlanFilter(plan string)
-}
-
-// ClassFilteredCommand represents a command that can be filtered by class
-type ClassFilteredCommand interface {
-	// SetClassFilter sets class used as filter
-	SetClassFilter(class string)
-}
-
 // PreRunE validates os args, and then saves them on the svcat command.
 func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 	return func(c *cobra.Command, args []string) error {
@@ -78,13 +66,17 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 			}
 			fmtCmd.SetFormat(fmtString)
 		}
-		if planFilteredCmd, ok := cmd.(PlanFilteredCommand); ok {
-			planFilter := determinePlanFilter(c.Flags())
-			planFilteredCmd.SetPlanFilter(planFilter)
+		if planFilteredCmd, ok := cmd.(HasPlanFlag); ok {
+			err := planFilteredCmd.ApplyPlanFlag(c)
+			if err != nil {
+				return err
+			}
 		}
-		if classFilteredCmd, ok := cmd.(ClassFilteredCommand); ok {
-			classFilter := determineClassFilter(c.Flags())
-			classFilteredCmd.SetClassFilter(classFilter)
+		if classFilteredCmd, ok := cmd.(HasClassFlag); ok {
+			err := classFilteredCmd.ApplyClassFlag(c)
+			if err != nil {
+				return err
+			}
 		}
 		if waitCmd, ok := cmd.(HasWaitFlags); ok {
 			err := waitCmd.ApplyWaitFlags()
@@ -162,38 +154,6 @@ func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
 	default:
 		return "", fmt.Errorf("invalid --output format %q, allowed values are table, json and yaml", format)
 	}
-}
-
-// AddPlanFilterFlags applies the --plan flag to a command.
-// This is intended to be used as a filter to a command based on plan.
-func AddPlanFilterFlags(flags *pflag.FlagSet) {
-	flags.StringP(
-		"plan",
-		"p",
-		"",
-		"If present, specify the plan used as a filter for this request",
-	)
-}
-
-func determinePlanFilter(flags *pflag.FlagSet) string {
-	plan, _ := flags.GetString("plan")
-	return plan
-}
-
-// AddClassFilterFlags applies the --class flag to a command.
-// This is intended to be used as a filter to a command based on a class.
-func AddClassFilterFlags(flags *pflag.FlagSet) {
-	flags.StringP(
-		"class",
-		"c",
-		"",
-		"If present, specify the class used as a filter for this request",
-	)
-}
-
-func determineClassFilter(flags *pflag.FlagSet) string {
-	class, _ := flags.GetString("class")
-	return class
 }
 
 // NormalizeExamples removes leading and trailing empty lines

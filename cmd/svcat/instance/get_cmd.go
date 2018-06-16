@@ -25,18 +25,10 @@ import (
 
 type getCmd struct {
 	*command.Namespaced
+	*command.PlanFilteredCommand
+	*command.ClassFilteredCommand
 	name         string
-	planFilter   string
-	classFilter  string
 	outputFormat string
-}
-
-func (c *getCmd) SetPlanFilter(plan string) {
-	c.planFilter = plan
-}
-
-func (c *getCmd) SetClassFilter(class string) {
-	c.classFilter = class
 }
 
 func (c *getCmd) SetFormat(format string) {
@@ -45,7 +37,11 @@ func (c *getCmd) SetFormat(format string) {
 
 // NewGetCmd builds a "svcat get instances" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	getCmd := &getCmd{
+		Namespaced:           command.NewNamespacedCommand(cxt),
+		PlanFilteredCommand:  command.NewPlanFilteredCommand(),
+		ClassFilteredCommand: command.NewClassFilteredCommand(),
+	}
 	cmd := &cobra.Command{
 		Use:     "instances [NAME]",
 		Aliases: []string{"instance", "inst"},
@@ -62,9 +58,10 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 	command.AddNamespaceFlags(cmd.Flags(), true)
-	command.AddPlanFilterFlags(cmd.Flags())
-	command.AddClassFilterFlags(cmd.Flags())
 	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddPlanFlag(cmd)
+	getCmd.AddClassFlag(cmd)
+
 	return cmd
 }
 
@@ -90,11 +87,11 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	if c.planFilter != "" {
+	if c.PlanFilter != "" {
 		instances = c.filterListByPlan(instances)
 	}
 
-	if c.classFilter != "" {
+	if c.ClassFilter != "" {
 		instances = c.filterListByClass(instances)
 	}
 
@@ -108,14 +105,14 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	if c.planFilter != "" {
+	if c.PlanFilter != "" {
 		if !c.acceptedByPlanFilter(instance) {
 			// Found instances was filtered out by plan
 			return nil
 		}
 	}
 
-	if c.classFilter != "" {
+	if c.ClassFilter != "" {
 		if !c.acceptedByClassFilter(instance) {
 			// Found instances was filtered out by class
 			return nil
@@ -142,7 +139,7 @@ func (c *getCmd) filterListByPlan(instanceList *v1beta1.ServiceInstanceList) *v1
 }
 
 func (c *getCmd) acceptedByPlanFilter(instance *v1beta1.ServiceInstance) bool {
-	return instance.Spec.GetSpecifiedClusterServicePlan() == c.planFilter
+	return instance.Spec.GetSpecifiedClusterServicePlan() == c.PlanFilter
 }
 
 func (c *getCmd) filterListByClass(instanceList *v1beta1.ServiceInstanceList) *v1beta1.ServiceInstanceList {
@@ -160,5 +157,5 @@ func (c *getCmd) filterListByClass(instanceList *v1beta1.ServiceInstanceList) *v
 }
 
 func (c *getCmd) acceptedByClassFilter(instance *v1beta1.ServiceInstance) bool {
-	return instance.Spec.GetSpecifiedClusterServiceClass() == c.classFilter
+	return instance.Spec.GetSpecifiedClusterServiceClass() == c.ClassFilter
 }
