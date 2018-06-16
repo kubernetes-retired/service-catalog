@@ -3,13 +3,6 @@ notifications:
   email:
     recipients:
       - kubernetes-sig-service-catalog-alerts@googlegroups.com
-env:
-  - GO_VERSION=1.9
-  - GO_VERSION=rc
-matrix:
-  allow_failures:
-    - env: GO_VERSION=rc
-  fast_finish: true
 sudo: required
 services:
 - docker
@@ -19,8 +12,6 @@ cache:
     - .pkg
 stages:
   - test
-  - xbuild # Test all of our supported platform builds for master builds
-    if: type != pull_request
   - name: deploy
     if: type != pull_request
 before_install:
@@ -33,22 +24,29 @@ before_install:
           [[ -z "$(git diff --name-only $TRAVIS_COMMIT_RANGE | grep -vE $DOCS_REGEX)" ]]
           DOCS_ONLY=$?
       fi
-# Test
-script:
-  - |
-    if (( $DOCS_ONLY == 0 )); then
-      echo "Running verify-docs"
-      make verify-docs
-    else
-      echo "Running full build"
-      make verify build build-integration build-e2e test images svcat-all
-    fi
 jobs:
+  fast_finish: true
   include:
-    # Test is implicit from the build matrix
-    # Cross Build
-    - stage: xbuild
-      script: make images-all
+    # CI Build
+    - stage: test
+      script:
+      - |
+        if (( $DOCS_ONLY == 0 )); then
+          echo "Running verify-docs"
+          make verify-docs
+        else
+          echo "Running full build"
+          make verify build build-integration build-e2e test images svcat-all
+        fi
+      env: GO_VERSION=1.9
+    # Cross Build Check
+    - stage: test
+      script:
+      - |
+        if (( $DOCS_ONLY != 0 )); then
+          make images-all
+        fi
+      env: XBUILD=true
     # Deploy
     - stage: deploy
       script: skip

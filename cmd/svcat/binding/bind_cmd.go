@@ -19,7 +19,6 @@ package binding
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
@@ -138,7 +137,7 @@ func (c *bindCmd) bind() error {
 	}
 
 	if c.Wait {
-		glog.V(2).Info("Waiting for binding to be injected...")
+		fmt.Fprintln(c.Output, "Waiting for binding to be injected...")
 		finalBinding, err := c.App.WaitForBinding(binding.Namespace, binding.Name, c.Interval, c.Timeout)
 		if err == nil {
 			binding = finalBinding

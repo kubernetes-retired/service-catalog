@@ -44,6 +44,7 @@ const (
 	errorEjectingBindReason                   string = "ErrorEjectingServiceBinding"
 	errorUnbindCallReason                     string = "UnbindCallFailed"
 	errorNonbindableClusterServiceClassReason string = "ErrorNonbindableServiceClass"
+	errorServiceInstanceRefsUnresolved        string = "ErrorInstanceRefsUnresolved"
 	errorServiceInstanceNotReadyReason        string = "ErrorInstanceNotReady"
 	errorServiceBindingOrphanMitigation       string = "ServiceBindingNeedsOrphanMitigation"
 	errorFetchingBindingFailedReason          string = "FetchingBindingFailed"
@@ -199,7 +200,9 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
 		// retry later
-		return fmt.Errorf("ClusterServiceClass or ClusterServicePlan references for Instance have not been resolved yet")
+		msg := fmt.Sprintf(`Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for %s have not been resolved yet`, pretty.ServiceInstanceName(instance))
+		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceRefsUnresolved, msg)
+		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
 	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
