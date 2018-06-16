@@ -34,21 +34,50 @@ const (
 )
 
 // RetrieveInstances lists all instances in a namespace.
-func (sdk *SDK) RetrieveInstances(ns string) (*v1beta1.ServiceInstanceList, error) {
+func (sdk *SDK) RetrieveInstances(ns string, planFilter string, classFilter string) (*v1beta1.ServiceInstanceList, error) {
 	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(v1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to list instances in %s (%s)", ns, err)
 	}
 
-	return instances, nil
+	if planFilter == "" && classFilter == "" {
+		return instances, nil
+	}
+
+	filtered := v1beta1.ServiceInstanceList{
+		Items: []v1beta1.ServiceInstance{},
+	}
+
+	for _, instance := range instances.Items {
+		if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
+			continue
+		}
+
+		if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
+			continue
+		}
+
+		filtered.Items = append(filtered.Items, instance)
+	}
+
+	return &filtered, nil
 }
 
 // RetrieveInstance gets an instance by its name.
-func (sdk *SDK) RetrieveInstance(ns, name string) (*v1beta1.ServiceInstance, error) {
+func (sdk *SDK) RetrieveInstance(ns, name string, planFilter string, classFilter string) (*v1beta1.ServiceInstance, error) {
 	instance, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(name, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get instance '%s.%s' (%s)", ns, name, err)
 	}
+
+	if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
+		return nil, fmt.Errorf("unable to get instance '%s.%s' (Plan do not match provided filter: %s)", ns, name, planFilter)
+	}
+
+	if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
+		return nil, fmt.Errorf("unable to get instance '%s.%s' (Class do not match provided filter: %s)", ns, name, classFilter)
+	}
+
 	return instance, nil
 }
 
@@ -184,7 +213,7 @@ func (sdk *SDK) Deprovision(namespace, instanceName string) error {
 // service process it again (might be an update, delete, or noop)
 func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
 	for j := 0; j < retries; j++ {
-		inst, err := sdk.RetrieveInstance(ns, name)
+		inst, err := sdk.RetrieveInstance(ns, name, "", "")
 		if err != nil {
 			return err
 		}
@@ -214,7 +243,7 @@ func (sdk *SDK) WaitForInstance(ns, name string, interval time.Duration, timeout
 
 	err = wait.PollImmediate(interval, *timeout,
 		func() (bool, error) {
-			instance, err = sdk.RetrieveInstance(ns, name)
+			instance, err = sdk.RetrieveInstance(ns, name, "", "")
 			if nil != err {
 				if apierrors.IsNotFound(err) {
 					return true, nil

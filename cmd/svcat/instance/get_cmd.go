@@ -19,7 +19,6 @@ package instance
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 )
 
@@ -82,17 +81,9 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	instances, err := c.App.RetrieveInstances(c.Namespace)
+	instances, err := c.App.RetrieveInstances(c.Namespace, c.PlanFilter, c.ClassFilter)
 	if err != nil {
 		return err
-	}
-
-	if c.PlanFilter != "" {
-		instances = c.filterListByPlan(instances)
-	}
-
-	if c.ClassFilter != "" {
-		instances = c.filterListByClass(instances)
 	}
 
 	output.WriteInstanceList(c.Output, c.outputFormat, instances)
@@ -100,62 +91,12 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	instance, err := c.App.RetrieveInstance(c.Namespace, c.name)
+	instance, err := c.App.RetrieveInstance(c.Namespace, c.name, c.PlanFilter, c.ClassFilter)
 	if err != nil {
 		return err
-	}
-
-	if c.PlanFilter != "" {
-		if !c.acceptedByPlanFilter(instance) {
-			// Found instances was filtered out by plan
-			return nil
-		}
-	}
-
-	if c.ClassFilter != "" {
-		if !c.acceptedByClassFilter(instance) {
-			// Found instances was filtered out by class
-			return nil
-		}
 	}
 
 	output.WriteInstance(c.Output, c.outputFormat, *instance)
 
 	return nil
-}
-
-func (c *getCmd) filterListByPlan(instanceList *v1beta1.ServiceInstanceList) *v1beta1.ServiceInstanceList {
-	p := v1beta1.ServiceInstanceList{
-		Items: []v1beta1.ServiceInstance{},
-	}
-
-	for _, instance := range instanceList.Items {
-		if c.acceptedByPlanFilter(&instance) {
-			p.Items = append(p.Items, instance)
-		}
-	}
-
-	return &p
-}
-
-func (c *getCmd) acceptedByPlanFilter(instance *v1beta1.ServiceInstance) bool {
-	return instance.Spec.GetSpecifiedClusterServicePlan() == c.PlanFilter
-}
-
-func (c *getCmd) filterListByClass(instanceList *v1beta1.ServiceInstanceList) *v1beta1.ServiceInstanceList {
-	p := v1beta1.ServiceInstanceList{
-		Items: []v1beta1.ServiceInstance{},
-	}
-
-	for _, instance := range instanceList.Items {
-		if c.acceptedByClassFilter(&instance) {
-			p.Items = append(p.Items, instance)
-		}
-	}
-
-	return &p
-}
-
-func (c *getCmd) acceptedByClassFilter(instance *v1beta1.ServiceInstance) bool {
-	return instance.Spec.GetSpecifiedClusterServiceClass() == c.ClassFilter
 }

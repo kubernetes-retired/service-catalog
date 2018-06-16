@@ -54,7 +54,7 @@ var _ = Describe("Instances", func() {
 		It("Calls the generated v1beta1 List method with the specified namespace", func() {
 			namespace := si.Namespace
 
-			instances, err := sdk.RetrieveInstances(namespace)
+			instances, err := sdk.RetrieveInstances(namespace, "", "")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(instances.Items).Should(ConsistOf(*si, *si2))
@@ -71,7 +71,7 @@ var _ = Describe("Instances", func() {
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			_, err := sdk.RetrieveInstances(namespace)
+			_, err := sdk.RetrieveInstances(namespace, "", "")
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
@@ -83,7 +83,7 @@ var _ = Describe("Instances", func() {
 			instanceName := si.Name
 			namespace := si.Namespace
 
-			instance, err := sdk.RetrieveInstance(namespace, instanceName)
+			instance, err := sdk.RetrieveInstance(namespace, instanceName, "", "")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(instance).To(Equal(si))
 			actions := svcCatClient.Actions()
@@ -95,7 +95,7 @@ var _ = Describe("Instances", func() {
 			instanceName := "not_real"
 			namespace := "foobar_namespace"
 
-			_, err := sdk.RetrieveInstance(namespace, instanceName)
+			_, err := sdk.RetrieveInstance(namespace, instanceName, "", "")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("not found"))
 			actions := svcCatClient.Actions()

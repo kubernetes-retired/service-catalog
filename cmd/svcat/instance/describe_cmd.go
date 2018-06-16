@@ -60,7 +60,7 @@ func (c *describeCmd) Run() error {
 }
 
 func (c *describeCmd) describe() error {
-	instance, err := c.App.RetrieveInstance(c.Namespace, c.name)
+	instance, err := c.App.RetrieveInstance(c.Namespace, c.name, "", "")
 	if err != nil {
 		return err
 	}
