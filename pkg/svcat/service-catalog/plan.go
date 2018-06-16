@@ -34,21 +34,21 @@ const (
 
 // RetrievePlans lists all plans defined in the cluster.
 func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan, error) {
-	plans, err := sdk.ServiceCatalog().ClusterServicePlans().List(v1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to list plans (%s)", err)
-	}
-
-	if opts != nil && opts.ClassID != "" {
-		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
-		for _, p := range plans.Items {
-			if p.Spec.ClusterServiceClassRef.Name == opts.ClassID {
-				plansFiltered = append(plansFiltered, p)
-			}
+	selectors := v1.ListOptions{}
+	if opts.Broker != "" {
+		selectors = v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(FieldClusterServiceBrokerName, opts.Broker).String(),
 		}
-		return plansFiltered, nil
 	}
-
+	if opts.ClassID != "" {
+		selectors = v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(FieldServiceClassRef, opts.ClassID).String(),
+		}
+	}
+	plans, err := sdk.ServiceCatalog().ClusterServicePlans().List(selectors)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list plans by broker (%s)", err)
+	}
 	return plans.Items, nil
 }
 
