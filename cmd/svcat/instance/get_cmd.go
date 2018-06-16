@@ -38,8 +38,8 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{
 		Namespaced:           command.NewNamespacedCommand(cxt),
-		PlanFilteredCommand:  command.NewPlanFilteredCommand(),
 		ClassFilteredCommand: command.NewClassFilteredCommand(),
+		PlanFilteredCommand:  command.NewPlanFilteredCommand(),
 	}
 	cmd := &cobra.Command{
 		Use:     "instances [NAME]",
@@ -58,8 +58,8 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	}
 	command.AddNamespaceFlags(cmd.Flags(), true)
 	command.AddOutputFlags(cmd.Flags())
-	getCmd.AddPlanFlag(cmd)
 	getCmd.AddClassFlag(cmd)
+	getCmd.AddPlanFlag(cmd)
 
 	return cmd
 }
@@ -81,7 +81,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	instances, err := c.App.RetrieveInstances(c.Namespace, c.PlanFilter, c.ClassFilter)
+	instances, err := c.App.RetrieveInstances(c.Namespace, c.ClassFilter, c.PlanFilter)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	instance, err := c.App.RetrieveInstance(c.Namespace, c.name, c.PlanFilter, c.ClassFilter)
+	instance, err := c.App.RetrieveInstance(c.Namespace, c.name, c.ClassFilter, c.PlanFilter)
 	if err != nil {
 		return err
 	}

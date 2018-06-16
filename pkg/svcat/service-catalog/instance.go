@@ -34,13 +34,13 @@ const (
 )
 
 // RetrieveInstances lists all instances in a namespace.
-func (sdk *SDK) RetrieveInstances(ns string, planFilter string, classFilter string) (*v1beta1.ServiceInstanceList, error) {
+func (sdk *SDK) RetrieveInstances(ns, classFilter, planFilter string) (*v1beta1.ServiceInstanceList, error) {
 	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(v1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to list instances in %s (%s)", ns, err)
 	}
 
-	if planFilter == "" && classFilter == "" {
+	if classFilter == "" && planFilter == "" {
 		return instances, nil
 	}
 
@@ -49,11 +49,11 @@ func (sdk *SDK) RetrieveInstances(ns string, planFilter string, classFilter stri
 	}
 
 	for _, instance := range instances.Items {
-		if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
+		if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
 			continue
 		}
 
-		if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
+		if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
 			continue
 		}
 
@@ -64,18 +64,18 @@ func (sdk *SDK) RetrieveInstances(ns string, planFilter string, classFilter stri
 }
 
 // RetrieveInstance gets an instance by its name.
-func (sdk *SDK) RetrieveInstance(ns, name string, planFilter string, classFilter string) (*v1beta1.ServiceInstance, error) {
+func (sdk *SDK) RetrieveInstance(ns, name, classFilter, planFilter string) (*v1beta1.ServiceInstance, error) {
 	instance, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(name, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get instance '%s.%s' (%s)", ns, name, err)
 	}
 
-	if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
-		return nil, fmt.Errorf("unable to get instance '%s.%s' (Plan do not match provided filter: %s)", ns, name, planFilter)
+	if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
+		return nil, fmt.Errorf("found instance '%s.%s', but its class doesn't match the provided filter: %s", ns, name, classFilter)
 	}
 
-	if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
-		return nil, fmt.Errorf("unable to get instance '%s.%s' (Class do not match provided filter: %s)", ns, name, classFilter)
+	if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
+		return nil, fmt.Errorf("found instance '%s.%s', but its plan doesn't match the provided filter: %s", ns, name, planFilter)
 	}
 
 	return instance, nil
