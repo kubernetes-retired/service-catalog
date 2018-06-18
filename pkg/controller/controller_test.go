@@ -724,6 +724,13 @@ func getTestServiceInstanceWithClusterRefs() *v1beta1.ServiceInstance {
 	return sc
 }
 
+func getTestServiceInstanceWithNamespacedRefs() *v1beta1.ServiceInstance {
+	sc := getTestServiceInstanceNamespacedPlanRef()
+	sc.Spec.ServiceClassRef = &v1beta1.LocalObjectReference{Name: testServiceClassGUID}
+	sc.Spec.ServicePlanRef = &v1beta1.LocalObjectReference{Name: testServicePlanGUID}
+	return sc
+}
+
 func getTestServiceInstanceWithRefsAndExternalProperties() *v1beta1.ServiceInstance {
 	sc := getTestServiceInstanceWithClusterRefs()
 	sc.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
@@ -750,6 +757,32 @@ func getTestServiceInstance() *v1beta1.ServiceInstance {
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: testClusterServiceClassName,
 				ClusterServicePlanExternalName:  testClusterServicePlanName,
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+		Status: v1beta1.ServiceInstanceStatus{
+			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusRequired,
+		},
+	}
+}
+
+// instance referencing the result of getTestServiceClass()
+// and getTestServicePlan()
+// This version sets:
+// ServiceClassExternalName and ServicePlanExternalName, so depending on the
+// test, you may need to add reactors that deal with List due to the need
+// to resolve Names to IDs for both ServiceClass and ServicePlan
+func getTestServiceInstanceNamespacedPlanRef() *v1beta1.ServiceInstance {
+	return &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ServiceClassExternalName: testServiceClassName,
+				ServicePlanExternalName:  testServicePlanName,
 			},
 			ExternalID: testServiceInstanceGUID,
 		},
