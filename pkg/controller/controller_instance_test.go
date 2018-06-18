@@ -1179,7 +1179,13 @@ func TestReconcileServiceInstance(t *testing.T) {
 
 // TestReconcileServiceInstanceNamespacedRefs tests synchronously provisioning a new service
 func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
-	fakeKubeClient, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
 			Response: &osb.ProvisionResponse{
 				DashboardURL: &testDashboardURL,
@@ -1199,8 +1205,8 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	// fakeCatalogClient.ClearActions()
+	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	fakeCatalogClient.ClearActions()
 
 	// assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
 	// fakeKubeClient.ClearActions()
@@ -6007,15 +6013,39 @@ func generateChecksumOfParametersOrFail(t *testing.T, params map[string]interfac
 }
 
 func assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
-	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID)
+	var planName, planGUID string
+	if instance.Spec.ClusterServiceClassSpecified() {
+		planName = testClusterServicePlanName
+		planGUID = testClusterServicePlanGUID
+	} else {
+		planName = testServicePlanName
+		planGUID = testServicePlanGUID
+	}
+	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationProvision, planName, planGUID)
 }
 
 func assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
-	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID)
+	var planName, planGUID string
+	if instance.Spec.ClusterServiceClassSpecified() {
+		planName = testClusterServicePlanName
+		planGUID = testClusterServicePlanGUID
+	} else {
+		planName = testServicePlanName
+		planGUID = testServicePlanGUID
+	}
+	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, planName, planGUID)
 }
 
 func assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
-	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID)
+	var planName, planGUID string
+	if instance.Spec.ClusterServiceClassSpecified() {
+		planName = testClusterServicePlanName
+		planGUID = testClusterServicePlanGUID
+	} else {
+		planName = testServicePlanName
+		planGUID = testServicePlanGUID
+	}
+	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationDeprovision, planName, planGUID)
 }
 
 func assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance, operation v1beta1.ServiceInstanceOperation, planName string, planGUID string) *v1beta1.ServiceInstance {

@@ -2844,7 +2844,7 @@ func assertServiceInstanceInProgressPropertiesPlan(t *testing.T, obj runtime.Obj
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
-	assertServiceInstancePropertiesStatePlan(t, "in-progress", instance.Status.InProgressProperties, planName, planID)
+	assertServiceInstancePropertiesStatePlan(t, "in-progress", instance, planName, planID)
 }
 
 func assertServiceInstanceInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
@@ -2883,7 +2883,7 @@ func assertServiceInstanceExternalPropertiesPlan(t *testing.T, obj runtime.Objec
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
-	assertServiceInstancePropertiesStatePlan(t, "external", instance.Status.ExternalProperties, planName, planID)
+	assertServiceInstancePropertiesStatePlan(t, "external", instance, planName, planID)
 }
 
 func assertServiceInstanceExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
@@ -2906,16 +2906,28 @@ func assertServiceInstanceExternalPropertiesUnchanged(t *testing.T, obj runtime.
 	}
 }
 
-func assertServiceInstancePropertiesStatePlan(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceInstancePropertiesState, expectedPlanName string, expectedPlanID string) {
+func assertServiceInstancePropertiesStatePlan(t *testing.T, propsLabel string, instance *v1beta1.ServiceInstance, expectedPlanName string, expectedPlanID string) {
+	actualProps := instance.Status.InProgressProperties
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
-	if e, a := expectedPlanName, actualProps.ClusterServicePlanExternalName; e != a {
-		fatalf(t, "unexpected %v properties external service plan name: expected %v, actual %v", propsLabel, e, a)
+
+	if instance.Spec.ClusterServicePlanSpecified() {
+		if e, a := expectedPlanName, actualProps.ClusterServicePlanExternalName; e != a {
+			fatalf(t, "unexpected %v properties external service plan name: expected %v, actual %v", propsLabel, e, a)
+		}
+		if e, a := expectedPlanID, actualProps.ClusterServicePlanExternalID; e != a {
+			fatalf(t, "unexpected %v properties external service plan ID: expected %v, actual %v", propsLabel, e, a)
+		}
+	} else {
+		if e, a := expectedPlanName, actualProps.ServicePlanExternalName; e != a {
+			fatalf(t, "unexpected %v properties external service plan name: expected %v, actual %v", propsLabel, e, a)
+		}
+		if e, a := expectedPlanID, actualProps.ServicePlanExternalID; e != a {
+			fatalf(t, "unexpected %v properties external service plan ID: expected %v, actual %v", propsLabel, e, a)
+		}
 	}
-	if e, a := expectedPlanID, actualProps.ClusterServicePlanExternalID; e != a {
-		fatalf(t, "unexpected %v properties external service plan ID: expected %v, actual %v", propsLabel, e, a)
-	}
+
 }
 
 func assertServiceInstancePropertiesStateParameters(t *testing.T, propsLabel string, actualProps *v1beta1.ServiceInstancePropertiesState, expectedParams map[string]interface{}, expectedChecksum string) {
