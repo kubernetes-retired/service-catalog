@@ -41,7 +41,10 @@ func getTestCommonServiceBrokerSpec() v1beta1.CommonServiceBrokerSpec {
 
 func getTestServiceBroker() *v1beta1.ServiceBroker {
 	return &v1beta1.ServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceBrokerName},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testServiceBrokerName,
+			Namespace: testNamespace,
+		},
 		Spec: v1beta1.ServiceBrokerSpec{
 			CommonServiceBrokerSpec: getTestCommonServiceBrokerSpec(),
 		},
@@ -59,7 +62,10 @@ func getTestCommonServiceClassSpec() v1beta1.CommonServiceClassSpec {
 
 func getTestServiceClass() *v1beta1.ServiceClass {
 	return &v1beta1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testServiceClassGUID,
+			Namespace: testNamespace,
+		},
 		Spec: v1beta1.ServiceClassSpec{
 			ServiceBrokerName:      testServiceBrokerName,
 			CommonServiceClassSpec: getTestCommonServiceClassSpec(),
@@ -77,7 +83,10 @@ func getTestCommonServicePlanSpec() v1beta1.CommonServicePlanSpec {
 
 func getTestServicePlan() *v1beta1.ServicePlan {
 	return &v1beta1.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: testServicePlanGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testServicePlanGUID,
+			Namespace: testNamespace,
+		},
 		Spec: v1beta1.ServicePlanSpec{
 			ServiceBrokerName:     testServiceBrokerName,
 			CommonServicePlanSpec: getTestCommonServicePlanSpec(),
