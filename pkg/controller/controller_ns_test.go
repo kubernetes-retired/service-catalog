@@ -97,3 +97,23 @@ func getTestServicePlan() *v1beta1.ServicePlan {
 		Status: v1beta1.ServicePlanStatus{},
 	}
 }
+
+func getTestServiceInstanceWithNamespacedPlanReference() *v1beta1.ServiceInstance {
+	return &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ServiceClassExternalName: testServiceClassName,
+				ServicePlanExternalName:  testServicePlanName,
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+		Status: v1beta1.ServiceInstanceStatus{
+			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusRequired,
+		},
+	}
+}

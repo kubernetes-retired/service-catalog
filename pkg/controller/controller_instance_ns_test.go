@@ -28,6 +28,10 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgotesting "k8s.io/client-go/testing"
 )
 
 // TestReconcileServiceInstanceNamespacedRefs tests synchronously provisioning a new service
@@ -188,4 +192,73 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
+}
+
+// TestResolveNamespacedReferences tests that resolveReferences works
+// correctly and resolves references when the references are of namespaced.
+func TestResolveNamespacedReferencesWorks(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+
+	instance := getTestServiceInstanceWithNamespacedPlanReference()
+
+	sc := getTestServiceClass()
+	var scItems []v1beta1.ServiceClass
+	scItems = append(scItems, *sc)
+	fakeCatalogClient.AddReactor("list", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ServiceClassList{Items: scItems}, nil
+	})
+	sp := getTestServicePlan()
+	var spItems []v1beta1.ServicePlan
+	spItems = append(spItems, *sp)
+	fakeCatalogClient.AddReactor("list", "serviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ServicePlanList{Items: spItems}, nil
+	})
+
+	modified, err := testController.resolveReferences(instance)
+	if err != nil {
+		t.Fatalf("Should not have failed, but failed with: %q", err)
+	}
+
+	if !modified {
+		t.Fatalf("Should have returned true")
+	}
+
+	// We should get the following actions:
+	// list call for ServiceClass
+	// list call for ServicePlan
+	// updating references
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 3)
+
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ServiceClassExternalName),
+	}
+	assertList(t, actions[0], &v1beta1.ServiceClass{}, listRestrictions)
+
+	listRestrictions = clientgotesting.ListRestrictions{
+		Labels: labels.Everything(),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=SCGUID"),
+	}
+	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
+
+	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	}
+	if updateObject.Spec.ServiceClassRef == nil || updateObject.Spec.ServiceClassRef.Name != testServiceClassGUID {
+		t.Fatalf("ServiceClassRef was not resolved correctly during reconcile")
+	}
+	if updateObject.Spec.ServicePlanRef == nil || updateObject.Spec.ServicePlanRef.Name != testServicePlanGUID {
+		t.Fatalf("ServicePlanRef was not resolved correctly during reconcile")
+	}
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 0)
 }
