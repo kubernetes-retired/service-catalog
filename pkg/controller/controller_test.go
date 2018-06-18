@@ -2844,7 +2844,7 @@ func assertServiceInstanceInProgressPropertiesPlan(t *testing.T, obj runtime.Obj
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
-	assertServiceInstancePropertiesStatePlan(t, "in-progress", instance, planName, planID)
+	assertServiceInstancePropertiesStatePlan(t, "in-progress", instance, instance.Status.InProgressProperties, planName, planID)
 }
 
 func assertServiceInstanceInProgressPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
@@ -2883,7 +2883,7 @@ func assertServiceInstanceExternalPropertiesPlan(t *testing.T, obj runtime.Objec
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
-	assertServiceInstancePropertiesStatePlan(t, "external", instance, planName, planID)
+	assertServiceInstancePropertiesStatePlan(t, "external", instance, instance.Status.ExternalProperties, planName, planID)
 }
 
 func assertServiceInstanceExternalPropertiesParameters(t *testing.T, obj runtime.Object, params map[string]interface{}, checksum string) {
@@ -2906,8 +2906,7 @@ func assertServiceInstanceExternalPropertiesUnchanged(t *testing.T, obj runtime.
 	}
 }
 
-func assertServiceInstancePropertiesStatePlan(t *testing.T, propsLabel string, instance *v1beta1.ServiceInstance, expectedPlanName string, expectedPlanID string) {
-	actualProps := instance.Status.InProgressProperties
+func assertServiceInstancePropertiesStatePlan(t *testing.T, propsLabel string, instance *v1beta1.ServiceInstance, actualProps *v1beta1.ServiceInstancePropertiesState, expectedPlanName string, expectedPlanID string) {
 	if actualProps == nil {
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
@@ -3501,8 +3500,8 @@ func testCatalogFinalizerExists(t *testing.T, name string, f failfFunc, obj runt
 	return true
 }
 
-func assertNumberOfClusterServiceBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
-	testNumberOfClusterServiceBrokerActions(t, "" /* name */, fatalf, actions, number)
+func assertNumberOfBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
+	testNumberOfBrokerActions(t, "" /* name */, fatalf, actions, number)
 }
 
 // assertListRestrictions compares expected Fields / Labels on a list options.
@@ -3516,10 +3515,10 @@ func assertListRestrictions(t *testing.T, e, a clientgotesting.ListRestrictions)
 }
 
 func expectNumberOfClusterServiceBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {
-	return testNumberOfClusterServiceBrokerActions(t, name, errorf, actions, number)
+	return testNumberOfBrokerActions(t, name, errorf, actions, number)
 }
 
-func testNumberOfClusterServiceBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
+func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
 	logContext := ""
 	if len(name) > 0 {
 		logContext = name + ": "

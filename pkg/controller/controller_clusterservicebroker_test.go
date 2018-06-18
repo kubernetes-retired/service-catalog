@@ -246,7 +246,7 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	listRestrictions := clientgotesting.ListRestrictions{
@@ -295,7 +295,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	listRestrictions := clientgotesting.ListRestrictions{
@@ -363,7 +363,7 @@ func TestReconcileClusterServiceBrokerRemovedAndRestoredClusterServiceClass(t *t
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	listRestrictions := clientgotesting.ListRestrictions{
@@ -420,7 +420,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServicePlan(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	listRestrictions := clientgotesting.ListRestrictions{
@@ -461,7 +461,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
@@ -513,7 +513,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
@@ -582,7 +582,7 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -642,7 +642,7 @@ func TestReconcileClusterServiceBrokerErrorFetchingCatalog(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
@@ -695,7 +695,7 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	// Verify no core kube actions occurred
@@ -842,10 +842,10 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	if shouldSucceed {
 		// GetCatalog
-		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+		assertNumberOfBrokerActions(t, brokerActions, 1)
 		assertGetCatalog(t, brokerActions[0])
 	} else {
-		assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
+		assertNumberOfBrokerActions(t, brokerActions, 0)
 	}
 
 	actions := fakeCatalogClient.Actions()
@@ -903,7 +903,7 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
@@ -960,7 +960,7 @@ func TestReconcileClusterServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
@@ -1007,7 +1007,7 @@ func TestReconcileClusterServiceBrokerFailureOnFinalRetry(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
@@ -1058,7 +1058,7 @@ func TestReconcileClusterServiceBrokerWithStatusUpdateError(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertGetCatalog(t, brokerActions[0])
 
 	actions := fakeCatalogClient.Actions()
