@@ -5071,7 +5071,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorUpdateInstanceCallFailedReason).msg("ClusterServiceBroker returned a failure for update call; update will not be retried:").msg("Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>")
+	expectedEvent := warningEventBuilder(errorUpdateInstanceCallFailedReason).msg("ServiceBroker returned a failure for update call; update will not be retried:").msg("Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}

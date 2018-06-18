@@ -481,42 +481,88 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 
 	glog.V(4).Info(pcb.Message("Processing updating event"))
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
-	if err != nil {
-		return c.handleServiceInstanceReconciliationError(instance, err)
-	}
+	var brokerClient osb.Client
+	var request *osb.UpdateInstanceRequest
 
-	// Check if the ServiceClass or ServicePlan has been deleted. If so, do
-	// not allow plan upgrades, but do allow parameter changes.
-	if err := c.checkForRemovedClusterClassAndPlan(instance, serviceClass, servicePlan); err != nil {
-		return c.handleServiceInstanceReconciliationError(instance, err)
-	}
+	if instance.Spec.ClusterServiceClassSpecified() {
 
-	request, inProgressProperties, err := c.prepareUpdateInstanceRequest(instance, serviceClass, servicePlan)
-	if err != nil {
-		return c.handleServiceInstanceReconciliationError(instance, err)
-	}
-
-	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
-		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
+		serviceClass, servicePlan, brokerName, bClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
 		if err != nil {
-			// There has been an update to the instance. Start reconciliation
-			// over with a fresh view of the instance.
-			return err
+			return c.handleServiceInstanceReconciliationError(instance, err)
 		}
-		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-		return nil
-	}
 
-	glog.V(4).Info(pcb.Messagef(
-		"Updating ServiceInstance of %s at ClusterServiceBroker %q",
-		pretty.ClusterServiceClassName(serviceClass), brokerName,
-	))
+		brokerClient = bClient
+
+		// Check if the ServiceClass or ServicePlan has been deleted. If so, do
+		// not allow plan upgrades, but do allow parameter changes.
+		if err := c.checkForRemovedClusterClassAndPlan(instance, serviceClass, servicePlan); err != nil {
+			return c.handleServiceInstanceReconciliationError(instance, err)
+		}
+
+		req, inProgressProperties, err := c.prepareUpdateInstanceRequest(instance)
+		if err != nil {
+			return c.handleServiceInstanceReconciliationError(instance, err)
+		}
+		request = req
+
+		if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
+			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
+			if err != nil {
+				// There has been an update to the instance. Start reconciliation
+				// over with a fresh view of the instance.
+				return err
+			}
+			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+			return nil
+		}
+
+		glog.V(4).Info(pcb.Messagef(
+			"Updating ServiceInstance of %s at ClusterServiceBroker %q",
+			pretty.ClusterServiceClassName(serviceClass), brokerName,
+		))
+
+	} else if instance.Spec.ServiceClassSpecified() {
+
+		serviceClass, servicePlan, brokerName, bClient, err := c.getServiceClassPlanAndServiceBroker(instance)
+		if err != nil {
+			return c.handleServiceInstanceReconciliationError(instance, err)
+		}
+
+		brokerClient = bClient
+
+		// Check if the ServiceClass or ServicePlan has been deleted. If so, do
+		// not allow plan upgrades, but do allow parameter changes.
+		if err := c.checkForRemovedClassAndPlan(instance, serviceClass, servicePlan); err != nil {
+			return c.handleServiceInstanceReconciliationError(instance, err)
+		}
+
+		req, inProgressProperties, err := c.prepareUpdateInstanceRequest(instance)
+		if err != nil {
+			return c.handleServiceInstanceReconciliationError(instance, err)
+		}
+		request = req
+
+		if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
+			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
+			if err != nil {
+				// There has been an update to the instance. Start reconciliation
+				// over with a fresh view of the instance.
+				return err
+			}
+			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+			return nil
+		}
+
+		glog.V(4).Info(pcb.Messagef(
+			"Updating ServiceInstance of %s at ServiceBroker %q",
+			pretty.ServiceClassName(serviceClass), brokerName,
+		))
+	}
 
 	response, err := brokerClient.UpdateInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
-			msg := fmt.Sprintf("ClusterServiceBroker returned a failure for update call; update will not be retried: %v", httpErr)
+			msg := fmt.Sprintf("ServiceBroker returned a failure for update call; update will not be retried: %v", httpErr)
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
 
 			if isRetriableHTTPStatus(httpErr.StatusCode) {
@@ -531,7 +577,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		reason := errorErrorCallingUpdateInstanceReason
 
 		if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
-			msg := fmt.Sprintf("Communication with the ClusterServiceBroker timed out; update will be retried: %v", urlErr)
+			msg := fmt.Sprintf("Communication with the ServiceBroker timed out; update will be retried: %v", urlErr)
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, msg)
 			return c.processTemporaryUpdateServiceInstanceFailure(instance, readyCond)
 		}
@@ -1865,34 +1911,81 @@ func (c *controller) innerPrepareProvisionRequest(instance *v1beta1.ServiceInsta
 
 // prepareUpdateInstanceRequest creates an update instance request object to be
 // passed to the broker client to update the given instance.
-func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (*osb.UpdateInstanceRequest, *v1beta1.ServiceInstancePropertiesState, error) {
-	rh, err := c.prepareRequestHelper(instance, servicePlan.Spec.ExternalName, servicePlan.Spec.ExternalID, true)
-	if err != nil {
-		return nil, nil, err
-	}
+func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInstance) (*osb.UpdateInstanceRequest, *v1beta1.ServiceInstancePropertiesState, error) {
 
-	request := &osb.UpdateInstanceRequest{
-		AcceptsIncomplete:   true,
-		InstanceID:          instance.Spec.ExternalID,
-		ServiceID:           serviceClass.Spec.ExternalID,
-		Context:             rh.requestContext,
-		OriginatingIdentity: rh.originatingIdentity,
-	}
+	var rh *requestHelper
+	var request *osb.UpdateInstanceRequest
 
-	// Only send the plan ID if the plan ID has changed from what the Broker has
-	if instance.Status.ExternalProperties == nil ||
-		servicePlan.Spec.ExternalID != instance.Status.ExternalProperties.ClusterServicePlanExternalID {
-		planID := servicePlan.Spec.ExternalID
-		request.PlanID = &planID
-	}
-	// Only send the parameters if they have changed from what the Broker has
-	if instance.Status.ExternalProperties == nil ||
-		rh.inProgressProperties.ParametersChecksum != instance.Status.ExternalProperties.ParametersChecksum {
-		if rh.parameters != nil {
-			request.Parameters = rh.parameters
-		} else {
-			request.Parameters = make(map[string]interface{})
+	if instance.Spec.ClusterServiceClassSpecified() {
+		serviceClass, servicePlan, _, _, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+		if err != nil {
+			return nil, nil, c.handleServiceInstanceReconciliationError(instance, err)
 		}
+
+		rh, err = c.prepareRequestHelper(instance, servicePlan.Spec.ExternalName, servicePlan.Spec.ExternalID, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		request = &osb.UpdateInstanceRequest{
+			AcceptsIncomplete:   true,
+			InstanceID:          instance.Spec.ExternalID,
+			ServiceID:           serviceClass.Spec.ExternalID,
+			Context:             rh.requestContext,
+			OriginatingIdentity: rh.originatingIdentity,
+		}
+
+		// Only send the plan ID if the plan ID has changed from what the Broker has
+		if instance.Status.ExternalProperties == nil ||
+			servicePlan.Spec.ExternalID != instance.Status.ExternalProperties.ClusterServicePlanExternalID {
+			planID := servicePlan.Spec.ExternalID
+			request.PlanID = &planID
+		}
+		// Only send the parameters if they have changed from what the Broker has
+		if instance.Status.ExternalProperties == nil ||
+			rh.inProgressProperties.ParametersChecksum != instance.Status.ExternalProperties.ParametersChecksum {
+			if rh.parameters != nil {
+				request.Parameters = rh.parameters
+			} else {
+				request.Parameters = make(map[string]interface{})
+			}
+		}
+
+	} else if instance.Spec.ServiceClassSpecified() {
+		serviceClass, servicePlan, _, _, err := c.getServiceClassPlanAndServiceBroker(instance)
+		if err != nil {
+			return nil, nil, c.handleServiceInstanceReconciliationError(instance, err)
+		}
+
+		rh, err = c.prepareRequestHelper(instance, servicePlan.Spec.ExternalName, servicePlan.Spec.ExternalID, true)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		request = &osb.UpdateInstanceRequest{
+			AcceptsIncomplete:   true,
+			InstanceID:          instance.Spec.ExternalID,
+			ServiceID:           serviceClass.Spec.ExternalID,
+			Context:             rh.requestContext,
+			OriginatingIdentity: rh.originatingIdentity,
+		}
+
+		// Only send the plan ID if the plan ID has changed from what the Broker has
+		if instance.Status.ExternalProperties == nil ||
+			servicePlan.Spec.ExternalID != instance.Status.ExternalProperties.ServicePlanExternalID {
+			planID := servicePlan.Spec.ExternalID
+			request.PlanID = &planID
+		}
+		// Only send the parameters if they have changed from what the Broker has
+		if instance.Status.ExternalProperties == nil ||
+			rh.inProgressProperties.ParametersChecksum != instance.Status.ExternalProperties.ParametersChecksum {
+			if rh.parameters != nil {
+				request.Parameters = rh.parameters
+			} else {
+				request.Parameters = make(map[string]interface{})
+			}
+		}
+
 	}
 
 	return request, rh.inProgressProperties, nil
