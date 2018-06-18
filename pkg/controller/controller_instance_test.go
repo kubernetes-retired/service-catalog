@@ -1177,6 +1177,80 @@ func TestReconcileServiceInstance(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceNamespacedRefs tests synchronously provisioning a new service
+func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
+	fakeKubeClient, _, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				DashboardURL: &testDashboardURL,
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := getTestServiceInstanceWithNamespacedRefs()
+
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	// fakeCatalogClient.ClearActions()
+
+	// assertNumberOfClusterServiceBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
+	// fakeKubeClient.ClearActions()
+
+	// if err := reconcileServiceInstance(t, testController, instance); err != nil {
+	// 	t.Fatalf("This should not fail : %v", err)
+	// }
+
+	// brokerActions := fakeClusterServiceBrokerClient.Actions()
+	// assertNumberOfClusterServiceBrokerActions(t, brokerActions, 1)
+	// assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+	// 	AcceptsIncomplete: true,
+	// 	InstanceID:        testServiceInstanceGUID,
+	// 	ServiceID:         testClusterServiceClassGUID,
+	// 	PlanID:            testClusterServicePlanGUID,
+	// 	OrganizationGUID:  testNamespaceGUID,
+	// 	SpaceGUID:         testNamespaceGUID,
+	// 	Context:           testContext})
+
+	// instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	// // Since synchronous operation, must not make it into the polling queue.
+	// if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+	// 	t.Fatalf("Expected polling queue to not have any record of test instance")
+	// }
+
+	// actions := fakeCatalogClient.Actions()
+	// assertNumberOfActions(t, actions, 1)
+
+	// // verify no kube resources created.
+	// // One single action comes from getting namespace uid
+	// kubeActions := fakeKubeClient.Actions()
+	// if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+	// 	{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	// }); err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	// updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	// assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	// assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+
+	// events := getRecordedEvents(testController)
+
+	// expectedEvent := normalEventBuilder(successProvisionReason).msg(successProvisionMessage)
+	// if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+	// 	t.Fatal(err)
+	// }
+}
+
 // TestReconcileServiceInstanceFailsWithDeletedPlan tests that a ServiceInstance is not
 // created if the ServicePlan specified is marked as RemovedFromCatalog.
 func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
