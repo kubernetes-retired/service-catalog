@@ -1525,6 +1525,86 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 	}
 }
 
+// TestReconcileServiceInstanceAsynchronousNamespacedRefs tests provisioning
+// a new service from namespaced classes and plans, where the request results
+// in a async response. Resulting status will indicate not ready and polling
+// in progress.
+func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	key := osb.OperationKey(testOperation)
+
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{
+				Async:        true,
+				DashboardURL: &testDashboardURL,
+				OperationKey: &key,
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := getTestServiceInstanceWithNamespacedRefs()
+
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	fakeCatalogClient.ClearActions()
+	fakeKubeClient.ClearActions()
+
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+		AcceptsIncomplete: true,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
+		OrganizationGUID:  testNamespaceGUID,
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext,
+	})
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testServicePlanName, testServicePlanGUID, instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
+
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if e, a := 1, len(kubeActions); e != a {
+		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
+	}
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
+	}
+}
+
 // TestReconcileServiceInstanceAsynchronousNoOperation tests an async provision
 // scenario.  This differs from TestReconcileServiceInstanceAsynchronous() as
 // there is no operation key returned by OSB.
