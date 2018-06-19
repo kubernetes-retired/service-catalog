@@ -34,21 +34,37 @@ const (
 
 // RetrievePlans lists all plans defined in the cluster.
 func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan, error) {
+	// Filter by Broker
+	if opts.Broker != "" {
+		brokerOpts := v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(FieldClusterServiceBrokerName, opts.Broker).String(),
+		}
+		plansByBroker, err := sdk.ServiceCatalog().ClusterServicePlans().List(brokerOpts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to list plans by broker (%s)", err)
+		} else {
+			return plansByBroker.Items, nil
+		}
+	}
+
+
+	// Filter by ClassID
+	if opts.ClassID != "" {
+		classOpts := v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(FieldServiceClassRef, opts.ClassID).String(),
+		}
+		plansByClass, err := sdk.ServiceCatalog().ClusterServicePlans().List(classOpts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to list plans by class (%s)", err)
+		} else {
+			return plansByClass.Items, nil
+		}
+	}
+
 	plans, err := sdk.ServiceCatalog().ClusterServicePlans().List(v1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to list plans (%s)", err)
 	}
-
-	if opts != nil && opts.ClassID != "" {
-		plansFiltered := make([]v1beta1.ClusterServicePlan, 0)
-		for _, p := range plans.Items {
-			if p.Spec.ClusterServiceClassRef.Name == opts.ClassID {
-				plansFiltered = append(plansFiltered, p)
-			}
-		}
-		return plansFiltered, nil
-	}
-
 	return plans.Items, nil
 }
 

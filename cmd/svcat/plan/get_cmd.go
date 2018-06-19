@@ -32,7 +32,7 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
-
+	broker       string
 	classFilter  string
 	classUUID    string
 	className    string
@@ -77,6 +77,14 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"",
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
 	)
+	cmd.Flags().StringVarP(
+		&getCmd.classFilter,
+		"broker",
+		"b",
+		"",
+		"Filter plans based on broker",
+
+	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
 }
@@ -118,9 +126,13 @@ func (c *getCmd) Run() error {
 func (c *getCmd) getAll() error {
 
 	var opts *servicecatalog.FilterOptions
+	opts = &servicecatalog.FilterOptions{
+		ClassID: c.classUUID,
+		Broker: c.broker,
+	}
 
 	// Retrieve the classes as well because plans don't have the external class name
-	classes, err := c.App.RetrieveClasses()
+	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
@@ -134,9 +146,6 @@ func (c *getCmd) getAll() error {
 					break
 				}
 			}
-		}
-		opts = &servicecatalog.FilterOptions{
-			ClassID: c.classUUID,
 		}
 	}
 

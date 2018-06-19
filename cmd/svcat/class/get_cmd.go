@@ -21,6 +21,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
 type getCmd struct {
@@ -93,7 +94,13 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses(c.broker)
+	var opts *servicecatalog.FilterOptions
+
+	opts = &servicecatalog.FilterOptions{
+		Broker: c.broker,
+	}
+
+	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return err
 	}
