@@ -755,7 +755,13 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 	instance = instance.DeepCopy()
 
-	_, _, _, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	var brokerClient osb.Client
+	var err error
+	if instance.Spec.ClusterServiceClassSpecified() {
+		_, _, _, brokerClient, err = c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+	} else {
+		_, _, _, brokerClient, err = c.getServiceClassPlanAndServiceBroker(instance)
+	}
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
@@ -2056,6 +2062,7 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 
 	var rh *requestHelper
 	var scExternalID string
+	var spExternalID string
 
 	if instance.Spec.ClusterServiceClassSpecified() {
 		serviceClass, servicePlan, _, _, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
@@ -2065,9 +2072,8 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 
 		scExternalID = serviceClass.Spec.ExternalID
 
-		// Sometimes the servicePlan is nil
+		// Sometimes the servicePlan is nil (deprovision)
 		var spExternalName string
-		var spExternalID string
 		if servicePlan != nil {
 			spExternalName = servicePlan.Spec.ExternalName
 			spExternalID = servicePlan.Spec.ExternalID
@@ -2085,9 +2091,8 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 
 		scExternalID = serviceClass.Spec.ExternalID
 
-		// Sometimes the servicePlan is nil
+		// Sometimes the servicePlan is nil (deprovision)
 		var spExternalName string
-		var spExternalID string
 		if servicePlan != nil {
 			spExternalName = servicePlan.Spec.ExternalName
 			spExternalID = servicePlan.Spec.ExternalID
@@ -2109,7 +2114,7 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 	request := &osb.LastOperationRequest{
 		InstanceID:          instance.Spec.ExternalID,
 		ServiceID:           &scExternalID,
-		PlanID:              &instance.Status.InProgressProperties.ClusterServicePlanExternalID,
+		PlanID:              &spExternalID,
 		OriginatingIdentity: rh.originatingIdentity,
 	}
 	if instance.Status.LastOperation != nil && *instance.Status.LastOperation != "" {
