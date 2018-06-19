@@ -19,5 +19,5 @@ package servicecatalog
 // FilterOptions allows for optional filtering fields to be passed to `Retrieve` methods.
 type FilterOptions struct {
 	ClassID string
-	Broker	string
+	Broker  string
 }

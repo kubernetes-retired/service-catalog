@@ -35,7 +35,7 @@ const (
 // RetrieveClasses lists all classes defined in the cluster.
 func (sdk *SDK) RetrieveClasses(opts *FilterOptions) ([]v1beta1.ClusterServiceClass, error) {
 	// Not filtering by broker, just return classes
-	if opts.Broker == ""{
+	if opts.Broker == "" {
 		classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to list classes (%s), err", err)

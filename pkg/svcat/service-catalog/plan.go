@@ -47,7 +47,6 @@ func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan
 		}
 	}
 
-
 	// Filter by ClassID
 	if opts.ClassID != "" {
 		classOpts := v1.ListOptions{

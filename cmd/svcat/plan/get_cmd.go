@@ -83,7 +83,6 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"b",
 		"",
 		"Filter plans based on broker",
-
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -128,7 +127,7 @@ func (c *getCmd) getAll() error {
 	var opts *servicecatalog.FilterOptions
 	opts = &servicecatalog.FilterOptions{
 		ClassID: c.classUUID,
-		Broker: c.broker,
+		Broker:  c.broker,
 	}
 
 	// Retrieve the classes as well because plans don't have the external class name
