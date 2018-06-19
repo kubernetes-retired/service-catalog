@@ -17,7 +17,6 @@ limitations under the License.
 package output
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
@@ -71,18 +70,6 @@ func WriteClass(w io.Writer, outputFormat string, class v1beta1.ClusterServiceCl
 	case formatTable:
 		writeClassListTable(w, []v1beta1.ClusterServiceClass{class})
 	}
-}
-
-// WriteParentClass prints identifying information for a parent class.
-func WriteParentClass(w io.Writer, class *v1beta1.ClusterServiceClass) {
-	fmt.Fprintln(w, "\nClass:")
-	t := NewDetailsTable(w)
-	t.AppendBulk([][]string{
-		{"Name:", class.Spec.ExternalName},
-		{"UUID:", string(class.Name)},
-		{"Status:", getClassStatusText(class.Status)},
-	})
-	t.Render()
 }
 
 // WriteClassDetails prints details for a single class.

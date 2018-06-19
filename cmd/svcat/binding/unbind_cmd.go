@@ -32,7 +32,7 @@ import (
 
 type unbindCmd struct {
 	*command.Namespaced
-	*command.WaitableCommand
+	*command.Waitable
 
 	instanceName string
 	bindingName  string
@@ -41,8 +41,8 @@ type unbindCmd struct {
 // NewUnbindCmd builds a "svcat unbind" command
 func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 	unbindCmd := &unbindCmd{
-		Namespaced:      command.NewNamespacedCommand(cxt),
-		WaitableCommand: command.NewWaitableCommand(),
+		Namespaced: command.NewNamespaced(cxt),
+		Waitable:   command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "unbind INSTANCE_NAME",
@@ -54,7 +54,7 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(unbindCmd),
 		RunE:    command.RunE(unbindCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	unbindCmd.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVar(
 		&unbindCmd.bindingName,
 		"name",
