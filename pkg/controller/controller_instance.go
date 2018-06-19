@@ -2059,7 +2059,6 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 // preparePollServiceInstanceRequest creates a request object to be passed to
 // the broker client to query the given instance's last operation endpoint.
 func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta1.ServiceInstance) (*osb.LastOperationRequest, error) {
-
 	var rh *requestHelper
 	var scExternalID string
 	var spExternalID string
@@ -2072,11 +2071,13 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 
 		scExternalID = serviceClass.Spec.ExternalID
 
-		// Sometimes the servicePlan is nil (deprovision)
 		var spExternalName string
 		if servicePlan != nil {
 			spExternalName = servicePlan.Spec.ExternalName
 			spExternalID = servicePlan.Spec.ExternalID
+		} else {
+			// If the ServicePlan is nil, pull from the InProgressProperties
+			spExternalID = instance.Status.InProgressProperties.ClusterServicePlanExternalID
 		}
 
 		rh, err = c.prepareRequestHelper(instance, spExternalName, spExternalID, false)
@@ -2096,6 +2097,9 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 		if servicePlan != nil {
 			spExternalName = servicePlan.Spec.ExternalName
 			spExternalID = servicePlan.Spec.ExternalID
+		} else {
+			// If the ServicePlan is nil, pull from the InProgressProperties
+			spExternalID = instance.Status.InProgressProperties.ServicePlanExternalID
 		}
 
 		rh, err = c.prepareRequestHelper(instance, spExternalName, spExternalID, false)
