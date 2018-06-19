@@ -12,7 +12,7 @@ function os::build::environment::create() {
   local additional_context="${OS_BUILD_ENV_DOCKER_ARGS:-}"
 
   local workingdir
-  workingdir=/go/src/${OS_GO_PACKAGE}
+  workingdir=$( os::build::environment::release::workingdir )
   additional_context+=" -w ${workingdir}"
 
   if [[ "${OS_BUILD_ENV_USE_DOCKER:-y}" == "y" ]]; then
