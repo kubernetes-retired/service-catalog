@@ -139,12 +139,26 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	// There are no actions.
-	assertNumberOfActions(t, actions, 0)
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
+	assertServiceBindingReadyFalse(t, updatedServiceBinding, errorServiceInstanceRefsUnresolved)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := warningEventBuilder(errorServiceInstanceRefsUnresolved).msgf(
+		"Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for ServiceInstance \"%s/%s\" have not been resolved yet",
+		binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+	)
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // TestReconcileServiceBindingUnresolvedClusterServicePlanReference
-// tests reconcileBinding to ensure a binding fails when a ClusterServiceClassRef has not been resolved.
+// tests reconcileBinding to ensure a binding fails when a ClusterServicePlanRef has not been resolved.
 func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing.T) {
 	_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
@@ -192,8 +206,22 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 	assertNumberOfClusterServiceBrokerActions(t, brokerActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	// There are no actions.
-	assertNumberOfActions(t, actions, 0)
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
+	assertServiceBindingReadyFalse(t, updatedServiceBinding, errorServiceInstanceRefsUnresolved)
+	assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := warningEventBuilder(errorServiceInstanceRefsUnresolved).msgf(
+		"Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for ServiceInstance \"%s/%s\" have not been resolved yet",
+		binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+	)
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // TestReconcileBindingNonExistingClusterServiceClass tests reconcileBinding to ensure a

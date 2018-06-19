@@ -28,11 +28,11 @@ func TestPlanReference_Format(t *testing.T) {
 		want    string
 		planRef PlanReference
 	}{
-		{"all: external-name", "%v", `{ClassExternalName:"foo", PlanExternalName:"bar"}`, PlanReference{
+		{"all: external-name", "%v", `{ClusterServiceClassExternalName:"foo", ClusterServicePlanExternalName:"bar"}`, PlanReference{
 			ClusterServiceClassExternalName: "foo", ClusterServicePlanExternalName: "bar"}},
-		{"all: external-id", "%v", `{ClassExternalID:"foo-abc123", PlanExternalID:"bar-def456"}`, PlanReference{
+		{"all: external-id", "%v", `{ClusterServiceClassExternalID:"foo-abc123", ClusterServicePlanExternalID:"bar-def456"}`, PlanReference{
 			ClusterServiceClassExternalID: "foo-abc123", ClusterServicePlanExternalID: "bar-def456"}},
-		{"all: cluster-name", "%v", `{ClassName:"k8s-foo1232", PlanName:"k8s-bar456"}`, PlanReference{
+		{"all: cluster-name", "%v", `{ClusterServiceClassName:"k8s-foo1232", ClusterServicePlanName:"k8s-bar456"}`, PlanReference{
 			ClusterServiceClassName: "k8s-foo1232", ClusterServicePlanName: "k8s-bar456"}},
 		{"short: external-name", "%s", `foo/bar`, PlanReference{
 			ClusterServiceClassExternalName: "foo", ClusterServicePlanExternalName: "bar"}},
@@ -40,17 +40,17 @@ func TestPlanReference_Format(t *testing.T) {
 			ClusterServiceClassExternalID: "foo-abc123", ClusterServicePlanExternalID: "bar-def456"}},
 		{"short: cluster-name", "%s", `k8s-foo1232/k8s-bar456`, PlanReference{
 			ClusterServiceClassName: "k8s-foo1232", ClusterServicePlanName: "k8s-bar456"}},
-		{"class: external-name", "%c", `{ClassExternalName:"foo"}`, PlanReference{
+		{"class: external-name", "%c", `{ClusterServiceClassExternalName:"foo"}`, PlanReference{
 			ClusterServiceClassExternalName: "foo", ClusterServicePlanExternalName: "bar"}},
-		{"class: external-id", "%c", `{ClassExternalID:"foo-abc123"}`, PlanReference{
+		{"class: external-id", "%c", `{ClusterServiceClassExternalID:"foo-abc123"}`, PlanReference{
 			ClusterServiceClassExternalID: "foo-abc123", ClusterServicePlanExternalID: "bar-def456"}},
-		{"class: cluster-name", "%c", `{ClassName:"k8s-foo1232"}`, PlanReference{
+		{"class: cluster-name", "%c", `{ClusterServiceClassName:"k8s-foo1232"}`, PlanReference{
 			ClusterServiceClassName: "k8s-foo1232", ClusterServicePlanName: "k8s-bar456"}},
-		{"plan: external-name", "%b", `{PlanExternalName:"bar"}`, PlanReference{
+		{"plan: external-name", "%b", `{ClusterServicePlanExternalName:"bar"}`, PlanReference{
 			ClusterServiceClassExternalName: "foo", ClusterServicePlanExternalName: "bar"}},
-		{"plan: external-id", "%b", `{PlanExternalID:"bar-def456"}`, PlanReference{
+		{"plan: external-id", "%b", `{ClusterServicePlanExternalID:"bar-def456"}`, PlanReference{
 			ClusterServiceClassExternalID: "foo-abc123", ClusterServicePlanExternalID: "bar-def456"}},
-		{"plan: cluster-name", "%b", `{PlanName:"k8s-bar456"}`, PlanReference{
+		{"plan: cluster-name", "%b", `{ClusterServicePlanName:"k8s-bar456"}`, PlanReference{
 			ClusterServiceClassName: "k8s-foo1232", ClusterServicePlanName: "k8s-bar456"}},
 	}
 

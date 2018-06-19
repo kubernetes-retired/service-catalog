@@ -32,8 +32,8 @@ type HasWaitFlags interface {
 	ApplyWaitFlags() error
 }
 
-// WaitableCommand adds support to a command for the --wait flags.
-type WaitableCommand struct {
+// Waitable adds support to a command for the --wait flags.
+type Waitable struct {
 	Wait        bool
 	rawTimeout  string
 	Timeout     *time.Duration
@@ -41,16 +41,16 @@ type WaitableCommand struct {
 	Interval    time.Duration
 }
 
-// NewWaitableCommand initializes a new waitable command.
-func NewWaitableCommand() *WaitableCommand {
-	return &WaitableCommand{}
+// NewWaitable initializes a new waitable command.
+func NewWaitable() *Waitable {
+	return &Waitable{}
 }
 
 // AddWaitFlags adds the wait related flags.
 //   --wait
 //   --timeout
 //   --interval
-func (c *WaitableCommand) AddWaitFlags(cmd *cobra.Command) {
+func (c *Waitable) AddWaitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&c.Wait, "wait", false,
 		"Wait until the operation completes.")
 	cmd.Flags().StringVar(&c.rawTimeout, "timeout", "5m",
@@ -63,7 +63,7 @@ func (c *WaitableCommand) AddWaitFlags(cmd *cobra.Command) {
 //   --wait
 //   --timeout
 //   --interval
-func (c *WaitableCommand) ApplyWaitFlags() error {
+func (c *Waitable) ApplyWaitFlags() error {
 	if !c.Wait {
 		return nil
 	}

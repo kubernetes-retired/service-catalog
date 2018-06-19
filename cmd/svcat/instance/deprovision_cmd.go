@@ -19,7 +19,6 @@ package instance
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 
@@ -29,7 +28,7 @@ import (
 
 type deprovisonCmd struct {
 	*command.Namespaced
-	*command.WaitableCommand
+	*command.Waitable
 
 	instanceName string
 }
@@ -37,8 +36,8 @@ type deprovisonCmd struct {
 // NewDeprovisionCmd builds a "svcat deprovision" command
 func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 	deprovisonCmd := &deprovisonCmd{
-		Namespaced:      command.NewNamespacedCommand(cxt),
-		WaitableCommand: command.NewWaitableCommand(),
+		Namespaced: command.NewNamespaced(cxt),
+		Waitable:   command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "deprovision NAME",
@@ -49,7 +48,7 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(deprovisonCmd),
 		RunE:    command.RunE(deprovisonCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	deprovisonCmd.AddNamespaceFlags(cmd.Flags(), false)
 	deprovisonCmd.AddWaitFlags(cmd)
 
 	return cmd
@@ -75,7 +74,7 @@ func (c *deprovisonCmd) deprovision() error {
 	}
 
 	if c.Wait {
-		glog.V(2).Infof("Waiting for the instance to be deleted...")
+		fmt.Fprintln(c.Output, "Waiting for the instance to be deleted...")
 
 		var instance *v1beta1.ServiceInstance
 		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, c.Interval, c.Timeout)

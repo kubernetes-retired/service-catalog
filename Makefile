@@ -235,7 +235,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
 
-verify-docs: .init docs
+verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
 	@$(DOCKER_CMD) verify-links.sh -s .pkg -s .bundler -s _plugins -s _includes -t $(SKIP_HTTP) .
 

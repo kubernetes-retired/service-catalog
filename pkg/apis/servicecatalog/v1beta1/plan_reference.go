@@ -21,25 +21,41 @@ import (
 	"strings"
 )
 
-// ClassSpecified checks that at least one class field is set.
-func (pr PlanReference) ClassSpecified() bool {
+// ClusterServiceClassSpecified checks that at least one clusterserviceclass
+// field is set.
+func (pr PlanReference) ClusterServiceClassSpecified() bool {
 	return pr.ClusterServiceClassExternalName != "" ||
 		pr.ClusterServiceClassExternalID != "" ||
 		pr.ClusterServiceClassName != ""
 }
 
-// PlanSpecified checks that at least one plan field is set.
-func (pr PlanReference) PlanSpecified() bool {
+// ClusterServicePlanSpecified checks that at least one clusterserviceplan
+// field is set.
+func (pr PlanReference) ClusterServicePlanSpecified() bool {
 	return pr.ClusterServicePlanExternalName != "" ||
 		pr.ClusterServicePlanExternalID != "" ||
 		pr.ClusterServicePlanName != ""
 }
 
-// GetSpecifiedClass returns the user-specified class value from either:
+// ServiceClassSpecified checks that at least one serviceclass field is set.
+func (pr PlanReference) ServiceClassSpecified() bool {
+	return pr.ServiceClassExternalName != "" ||
+		pr.ServiceClassExternalID != "" ||
+		pr.ServiceClassName != ""
+}
+
+// ServicePlanSpecified checks that at least one serviceplan field is set.
+func (pr PlanReference) ServicePlanSpecified() bool {
+	return pr.ServicePlanExternalName != "" ||
+		pr.ServicePlanExternalID != "" ||
+		pr.ServicePlanName != ""
+}
+
+// GetSpecifiedClusterServiceClass returns the user-specified class value from either:
 // * ClusterServiceClassExternalName
 // * ClusterServiceClassExternalID
 // * ClusterServiceClassName
-func (pr PlanReference) GetSpecifiedClass() string {
+func (pr PlanReference) GetSpecifiedClusterServiceClass() string {
 	if pr.ClusterServiceClassExternalName != "" {
 		return pr.ClusterServiceClassExternalName
 	}
@@ -55,11 +71,31 @@ func (pr PlanReference) GetSpecifiedClass() string {
 	return ""
 }
 
-// GetSpecifiedPlan returns the user-specified plan value from either:
+// GetSpecifiedServiceClass returns the user-specified class value from either:
+// * ServiceClassExternalName
+// * ServiceClassExternalID
+// * ServiceClassName
+func (pr PlanReference) GetSpecifiedServiceClass() string {
+	if pr.ServiceClassExternalName != "" {
+		return pr.ServiceClassExternalName
+	}
+
+	if pr.ServiceClassExternalID != "" {
+		return pr.ServiceClassExternalID
+	}
+
+	if pr.ServiceClassName != "" {
+		return pr.ServiceClassName
+	}
+
+	return ""
+}
+
+// GetSpecifiedClusterServicePlan returns the user-specified plan value from either:
 // * ClusterServicePlanExternalName
 // * ClusterServicePlanExternalID
 // * ClusterServicePlanName
-func (pr PlanReference) GetSpecifiedPlan() string {
+func (pr PlanReference) GetSpecifiedClusterServicePlan() string {
 	if pr.ClusterServicePlanExternalName != "" {
 		return pr.ClusterServicePlanExternalName
 	}
@@ -75,9 +111,29 @@ func (pr PlanReference) GetSpecifiedPlan() string {
 	return ""
 }
 
-// GetClassFilterFieldName returns the appropriate field name for filtering
+// GetSpecifiedServicePlan returns the user-specified class value from either:
+// * ServicePlanExternalName
+// * ServicePlanExternalID
+// * ServicePlanName
+func (pr PlanReference) GetSpecifiedServicePlan() string {
+	if pr.ServicePlanExternalName != "" {
+		return pr.ServicePlanExternalName
+	}
+
+	if pr.ServicePlanExternalID != "" {
+		return pr.ServicePlanExternalID
+	}
+
+	if pr.ServicePlanName != "" {
+		return pr.ServicePlanName
+	}
+
+	return ""
+}
+
+// GetClusterServiceClassFilterFieldName returns the appropriate field name for filtering
 // a list of service catalog classes by the PlanReference.
-func (pr PlanReference) GetClassFilterFieldName() string {
+func (pr PlanReference) GetClusterServiceClassFilterFieldName() string {
 	if pr.ClusterServiceClassExternalName != "" {
 		return "spec.externalName"
 	}
@@ -89,9 +145,9 @@ func (pr PlanReference) GetClassFilterFieldName() string {
 	return ""
 }
 
-// GetPlanFilterFieldName returns the appropriate field name for filtering
+// GetClusterServicePlanFilterFieldName returns the appropriate field name for filtering
 // a list of service catalog plans by the PlanReference.
-func (pr PlanReference) GetPlanFilterFieldName() string {
+func (pr PlanReference) GetClusterServicePlanFilterFieldName() string {
 	if pr.ClusterServicePlanExternalName != "" {
 		return "spec.externalName"
 	}
@@ -106,7 +162,14 @@ func (pr PlanReference) GetPlanFilterFieldName() string {
 // String representation of a PlanReference
 // Example: class_name/plan_name, class_id/plan_id
 func (pr PlanReference) String() string {
-	return fmt.Sprintf("%s/%s", pr.GetSpecifiedClass(), pr.GetSpecifiedPlan())
+	var rep string
+	if pr.ClusterServiceClassSpecified() && pr.ClusterServicePlanSpecified() {
+		rep = fmt.Sprintf("%s/%s", pr.GetSpecifiedClusterServiceClass(), pr.GetSpecifiedClusterServicePlan())
+	} else {
+		// Namespace scoped
+		rep = fmt.Sprintf("%s/%s", pr.GetSpecifiedServiceClass(), pr.GetSpecifiedServicePlan())
+	}
+	return rep
 }
 
 // Format the PlanReference
@@ -133,25 +196,46 @@ func (pr PlanReference) String() string {
 //     {ClassName:"k8s-foo123", PlanName:"k8s-bar456"}
 func (pr PlanReference) Format(s fmt.State, verb rune) {
 	var classFields []string
+	var planFields []string
+
 	if pr.ClusterServiceClassExternalName != "" {
-		classFields = append(classFields, fmt.Sprintf("ClassExternalName:%q", pr.ClusterServiceClassExternalName))
+		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassExternalName:%q", pr.ClusterServiceClassExternalName))
 	}
 	if pr.ClusterServiceClassExternalID != "" {
-		classFields = append(classFields, fmt.Sprintf("ClassExternalID:%q", pr.ClusterServiceClassExternalID))
+		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassExternalID:%q", pr.ClusterServiceClassExternalID))
 	}
 	if pr.ClusterServiceClassName != "" {
-		classFields = append(classFields, fmt.Sprintf("ClassName:%q", pr.ClusterServiceClassName))
+		classFields = append(classFields, fmt.Sprintf("ClusterServiceClassName:%q", pr.ClusterServiceClassName))
 	}
 
-	var planFields []string
 	if pr.ClusterServicePlanExternalName != "" {
-		planFields = append(planFields, fmt.Sprintf("PlanExternalName:%q", pr.ClusterServicePlanExternalName))
+		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanExternalName:%q", pr.ClusterServicePlanExternalName))
 	}
 	if pr.ClusterServicePlanExternalID != "" {
-		planFields = append(planFields, fmt.Sprintf("PlanExternalID:%q", pr.ClusterServicePlanExternalID))
+		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanExternalID:%q", pr.ClusterServicePlanExternalID))
 	}
 	if pr.ClusterServicePlanName != "" {
-		planFields = append(planFields, fmt.Sprintf("PlanName:%q", pr.ClusterServicePlanName))
+		planFields = append(planFields, fmt.Sprintf("ClusterServicePlanName:%q", pr.ClusterServicePlanName))
+	}
+
+	if pr.ServiceClassExternalName != "" {
+		classFields = append(classFields, fmt.Sprintf("ServiceClassExternalName:%q", pr.ServiceClassExternalName))
+	}
+	if pr.ServiceClassExternalID != "" {
+		classFields = append(classFields, fmt.Sprintf("ServiceClassExternalID:%q", pr.ServiceClassExternalID))
+	}
+	if pr.ServiceClassName != "" {
+		classFields = append(classFields, fmt.Sprintf("ServiceClassName:%q", pr.ServiceClassName))
+	}
+
+	if pr.ServicePlanExternalName != "" {
+		planFields = append(planFields, fmt.Sprintf("ServicePlanExternalName:%q", pr.ServicePlanExternalName))
+	}
+	if pr.ServicePlanExternalID != "" {
+		planFields = append(planFields, fmt.Sprintf("ServicePlanExternalID:%q", pr.ServicePlanExternalID))
+	}
+	if pr.ServicePlanName != "" {
+		planFields = append(planFields, fmt.Sprintf("ServicePlanName:%q", pr.ServicePlanName))
 	}
 
 	switch verb {

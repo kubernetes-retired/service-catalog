@@ -913,6 +913,12 @@ func autoConvert_v1beta1_PlanReference_To_servicecatalog_PlanReference(in *PlanR
 	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.ClusterServiceClassName = in.ClusterServiceClassName
 	out.ClusterServicePlanName = in.ClusterServicePlanName
+	out.ServiceClassExternalName = in.ServiceClassExternalName
+	out.ServicePlanExternalName = in.ServicePlanExternalName
+	out.ServiceClassExternalID = in.ServiceClassExternalID
+	out.ServicePlanExternalID = in.ServicePlanExternalID
+	out.ServiceClassName = in.ServiceClassName
+	out.ServicePlanName = in.ServicePlanName
 	return nil
 }
 
@@ -928,6 +934,12 @@ func autoConvert_servicecatalog_PlanReference_To_v1beta1_PlanReference(in *servi
 	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
 	out.ClusterServiceClassName = in.ClusterServiceClassName
 	out.ClusterServicePlanName = in.ClusterServicePlanName
+	out.ServiceClassExternalName = in.ServiceClassExternalName
+	out.ServicePlanExternalName = in.ServicePlanExternalName
+	out.ServiceClassExternalID = in.ServiceClassExternalID
+	out.ServicePlanExternalID = in.ServicePlanExternalID
+	out.ServiceClassName = in.ServiceClassName
+	out.ServicePlanName = in.ServicePlanName
 	return nil
 }
 
@@ -1549,6 +1561,8 @@ func Convert_servicecatalog_ServiceInstanceList_To_v1beta1_ServiceInstanceList(i
 func autoConvert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_ServiceInstancePropertiesState(in *ServiceInstancePropertiesState, out *servicecatalog.ServiceInstancePropertiesState, s conversion.Scope) error {
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
 	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
+	out.ServicePlanExternalName = in.ServicePlanExternalName
+	out.ServicePlanExternalID = in.ServicePlanExternalID
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
@@ -1563,6 +1577,8 @@ func Convert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_ServiceIns
 func autoConvert_servicecatalog_ServiceInstancePropertiesState_To_v1beta1_ServiceInstancePropertiesState(in *servicecatalog.ServiceInstancePropertiesState, out *ServiceInstancePropertiesState, s conversion.Scope) error {
 	out.ClusterServicePlanExternalName = in.ClusterServicePlanExternalName
 	out.ClusterServicePlanExternalID = in.ClusterServicePlanExternalID
+	out.ServicePlanExternalName = in.ServicePlanExternalName
+	out.ServicePlanExternalID = in.ServicePlanExternalID
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersChecksum = in.ParametersChecksum
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
@@ -1580,6 +1596,8 @@ func autoConvert_v1beta1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSp
 	}
 	out.ClusterServiceClassRef = (*servicecatalog.ClusterObjectReference)(unsafe.Pointer(in.ClusterServiceClassRef))
 	out.ClusterServicePlanRef = (*servicecatalog.ClusterObjectReference)(unsafe.Pointer(in.ClusterServicePlanRef))
+	out.ServiceClassRef = (*servicecatalog.LocalObjectReference)(unsafe.Pointer(in.ServiceClassRef))
+	out.ServicePlanRef = (*servicecatalog.LocalObjectReference)(unsafe.Pointer(in.ServicePlanRef))
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersFrom = *(*[]servicecatalog.ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
 	out.ExternalID = in.ExternalID
@@ -1599,6 +1617,8 @@ func autoConvert_servicecatalog_ServiceInstanceSpec_To_v1beta1_ServiceInstanceSp
 	}
 	out.ClusterServiceClassRef = (*ClusterObjectReference)(unsafe.Pointer(in.ClusterServiceClassRef))
 	out.ClusterServicePlanRef = (*ClusterObjectReference)(unsafe.Pointer(in.ClusterServicePlanRef))
+	out.ServiceClassRef = (*LocalObjectReference)(unsafe.Pointer(in.ServiceClassRef))
+	out.ServicePlanRef = (*LocalObjectReference)(unsafe.Pointer(in.ServicePlanRef))
 	out.Parameters = (*runtime.RawExtension)(unsafe.Pointer(in.Parameters))
 	out.ParametersFrom = *(*[]ParametersFromSource)(unsafe.Pointer(&in.ParametersFrom))
 	out.ExternalID = in.ExternalID

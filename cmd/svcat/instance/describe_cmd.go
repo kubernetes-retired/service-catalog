@@ -31,7 +31,7 @@ type describeCmd struct {
 
 // NewDescribeCmd builds a "svcat describe instance" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	describeCmd := &describeCmd{Namespaced: command.NewNamespaced(cxt)}
 	cmd := &cobra.Command{
 		Use:     "instance NAME",
 		Aliases: []string{"instances", "inst"},
@@ -42,7 +42,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	describeCmd.AddNamespaceFlags(cmd.Flags(), false)
 	return cmd
 }
 
