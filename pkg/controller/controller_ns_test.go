@@ -145,3 +145,42 @@ func getTestServiceInstanceAsyncProvisioningWithNamespacedRefs(operation string)
 
 	return instance
 }
+
+func getTestServiceInstanceAsyncDeprovisioningWithNamespacedRefs(operation string) *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithNamespacedRefs()
+	instance.Generation = 2
+
+	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
+			Status:             v1beta1.ConditionFalse,
+			Message:            "Deprovisioning",
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+		AsyncOpInProgress:  true,
+		OperationStartTime: &operationStartTime,
+		CurrentOperation:   v1beta1.ServiceInstanceOperationDeprovision,
+		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
+			ServicePlanExternalName: testServicePlanName,
+			ServicePlanExternalID:   testServicePlanGUID,
+		},
+
+		ReconciledGeneration: 1,
+		ObservedGeneration:   2,
+		ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
+			ServicePlanExternalName: testServicePlanName,
+			ServicePlanExternalID:   testServicePlanGUID,
+		},
+		ProvisionStatus:   v1beta1.ServiceInstanceProvisionStatusProvisioned,
+		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusRequired,
+	}
+	if operation != "" {
+		instance.Status.LastOperation = &operation
+	}
+
+	// Set the deleted timestamp to simulate deletion
+	ts := metav1.NewTime(time.Now().Add(-5 * time.Minute))
+	instance.DeletionTimestamp = &ts
+	return instance
+}
