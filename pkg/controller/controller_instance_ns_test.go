@@ -710,6 +710,81 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 	}
 }
 
+// TestPollServiceInstanceFailureDeprovisioningNamespacedRefs tests polling an
+// instance that has a async deprovision in progress where the broker responds
+// with Failed.
+func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State: osb.StateFailed,
+			},
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := getTestServiceInstanceAsyncDeprovisioningWithNamespacedRefs(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	err = testController.pollServiceInstance(instance)
+	if err == nil {
+		t.Fatalf("Expected pollServiceInstance to return an error but there was none")
+	}
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance as polling should have completed")
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	operationKey := osb.OperationKey(testOperation)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
+		OperationKey: &operationKey,
+	})
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceRequestRetriableError(
+		t,
+		updatedServiceInstance,
+		v1beta1.ServiceInstanceOperationDeprovision,
+		errorDeprovisionCalledReason,
+		testServicePlanName,
+		testServicePlanGUID,
+		instance,
+	)
+
+	events := getRecordedEvents(testController)
+
+	expectedEvent := warningEventBuilder(errorDeprovisionCalledReason).msg("Deprovision call failed: (no description provided)")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // TestResolveNamespacedReferences tests that resolveReferences works
 // correctly and resolves references when the references are of namespaced.
 func TestResolveNamespacedReferencesWorks(t *testing.T) {
