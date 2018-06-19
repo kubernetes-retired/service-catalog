@@ -195,6 +195,70 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 	}
 }
 
+// TestPollServiceInstanceInProgressProvisioningWithOperationNamespacedRefs
+// tests polling an instance that is already in process of provisioning
+// (background/asynchronously) and is still in progress (should be re-polled)
+// The instance being provisioned here refers to namespaced classes and plans.
+func TestPollServiceInstanceInProgressProvisioningWithOperationNamespacedRefs(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Response: &osb.LastOperationResponse{
+				State:       osb.StateInProgress,
+				Description: strPtr(lastOperationDescription),
+			},
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+
+	instance := getTestServiceInstanceAsyncProvisioningWithNamespacedRefs(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	err = testController.pollServiceInstance(instance)
+	if err != nil {
+		t.Fatalf("pollServiceInstance failed: %s", err)
+	}
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
+		t.Fatalf("Expected polling queue to have record of seeing test instance once")
+	}
+
+	brokerActions := fakeBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	operationKey := osb.OperationKey(testOperation)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testServiceClassGUID),
+		PlanID:       strPtr(testServicePlanGUID),
+		OperationKey: &operationKey,
+	})
+
+	// there should have been 1 action to update the status with the last operation description
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testServicePlanName, testServicePlanGUID, instance)
+	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, lastOperationDescription)
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+}
+
 // TestReconcileServiceInstanceDeleteWithNamespacedRefs tests
 // deletingdeprovisioning an instance with namespaced refs
 func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {

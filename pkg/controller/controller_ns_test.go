@@ -117,3 +117,31 @@ func getTestServiceInstanceWithNamespacedPlanReference() *v1beta1.ServiceInstanc
 		},
 	}
 }
+
+func getTestServiceInstanceAsyncProvisioningWithNamespacedRefs(operation string) *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithNamespacedRefs()
+
+	operationStartTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{{
+			Type:               v1beta1.ServiceInstanceConditionReady,
+			Status:             v1beta1.ConditionFalse,
+			Message:            "Provisioning",
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+		}},
+		AsyncOpInProgress:  true,
+		OperationStartTime: &operationStartTime,
+		CurrentOperation:   v1beta1.ServiceInstanceOperationProvision,
+		InProgressProperties: &v1beta1.ServiceInstancePropertiesState{
+			ServicePlanExternalName: testServicePlanName,
+			ServicePlanExternalID:   testServicePlanGUID,
+		},
+		ObservedGeneration: instance.Generation,
+		DeprovisionStatus:  v1beta1.ServiceInstanceDeprovisionStatusRequired,
+	}
+	if operation != "" {
+		instance.Status.LastOperation = &operation
+	}
+
+	return instance
+}
