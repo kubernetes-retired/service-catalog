@@ -2059,6 +2059,14 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 // preparePollServiceInstanceRequest creates a request object to be passed to
 // the broker client to query the given instance's last operation endpoint.
 func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta1.ServiceInstance) (*osb.LastOperationRequest, error) {
+
+	if instance.Status.InProgressProperties == nil {
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		err := stderrors.New("Instance.Status.InProgressProperties can not be nil")
+		glog.Errorf(pcb.Message(err.Error()))
+		return nil, err
+	}
+
 	var rh *requestHelper
 	var scExternalID string
 	var spExternalID string
@@ -2106,13 +2114,6 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	if instance.Status.InProgressProperties == nil {
-		pcb := pretty.NewInstanceContextBuilder(instance)
-		err := stderrors.New("Instance.Status.InProgressProperties can not be nil")
-		glog.Errorf(pcb.Message(err.Error()))
-		return nil, err
 	}
 
 	request := &osb.LastOperationRequest{
