@@ -25,6 +25,7 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"bytes"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
@@ -205,29 +206,72 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
-	serviceClass, servicePlan, brokerName, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
-	if err != nil {
-		return c.handleServiceBindingReconciliationError(binding, err)
-	}
+	var prettyName string
+	var brokerClient osb.Client
+	var request *osb.BindRequest
+	var inProgressProperties *v1beta1.ServiceBindingPropertiesState
 
-	if !isPlanBindable(serviceClass, servicePlan) {
-		msg := fmt.Sprintf(`References a non-bindable %s and Plan (%q) combination`, pretty.ClusterServiceClassName(serviceClass), instance.Spec.ClusterServicePlanExternalName)
-		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonbindableClusterServiceClassReason, msg)
-		failedCond := newServiceBindingFailedCondition(v1beta1.ConditionTrue, errorNonbindableClusterServiceClassReason, msg)
-		return c.processBindFailure(binding, readyCond, failedCond, false)
-	}
+	if instance.Spec.ClusterServiceClassSpecified() {
 
-	if !isServiceInstanceReady(instance) {
-		msg := fmt.Sprintf(`Binding cannot begin because referenced %s is not ready`, pretty.ServiceInstanceName(instance))
-		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceNotReadyReason, msg)
-		return c.processServiceBindingOperationError(binding, readyCond)
-	}
+		serviceClass, servicePlan, brokerName, bClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
 
-	glog.V(4).Info(pcb.Message("Adding/Updating"))
+		brokerClient = bClient
 
-	request, inProgressProperties, err := c.prepareBindRequest(binding, instance, serviceClass, servicePlan)
-	if err != nil {
-		return c.handleServiceBindingReconciliationError(binding, err)
+		if !isPlanBindable(serviceClass, servicePlan) {
+			msg := fmt.Sprintf(`References a non-bindable %s and Plan (%q) combination`, pretty.ClusterServiceClassName(serviceClass), instance.Spec.ClusterServicePlanExternalName)
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonbindableClusterServiceClassReason, msg)
+			failedCond := newServiceBindingFailedCondition(v1beta1.ConditionTrue, errorNonbindableClusterServiceClassReason, msg)
+			return c.processBindFailure(binding, readyCond, failedCond, false)
+		}
+
+		if !isServiceInstanceReady(instance) {
+			msg := fmt.Sprintf(`Binding cannot begin because referenced %s is not ready`, pretty.ServiceInstanceName(instance))
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceNotReadyReason, msg)
+			return c.processServiceBindingOperationError(binding, readyCond)
+		}
+
+		glog.V(4).Info(pcb.Message("Adding/Updating"))
+
+		request, inProgressProperties, err = c.prepareBindRequest(binding, instance, serviceClass, servicePlan)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		prettyName = pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName)
+
+	} else if instance.Spec.ServiceClassSpecified() {
+
+		serviceClass, servicePlan, brokerName, bClient, err := c.getServiceClassPlanAndServiceBrokerForServiceBinding(instance, binding)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		brokerClient = bClient
+
+		if !isPlanBindable(serviceClass, servicePlan) {
+			msg := fmt.Sprintf(`References a non-bindable %s and Plan (%q) combination`, pretty.ServiceClassName(serviceClass), instance.Spec.ClusterServicePlanExternalName)
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonbindableClusterServiceClassReason, msg)
+			failedCond := newServiceBindingFailedCondition(v1beta1.ConditionTrue, errorNonbindableClusterServiceClassReason, msg)
+			return c.processBindFailure(binding, readyCond, failedCond, false)
+		}
+
+		if !isServiceInstanceReady(instance) {
+			msg := fmt.Sprintf(`Binding cannot begin because referenced %s is not ready`, pretty.ServiceInstanceName(instance))
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceNotReadyReason, msg)
+			return c.processServiceBindingOperationError(binding, readyCond)
+		}
+
+		glog.V(4).Info(pcb.Message("Adding/Updating"))
+
+		request, inProgressProperties, err = c.prepareBindRequest(binding, instance, serviceClass, servicePlan)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		prettyName = pretty.FromServiceInstanceOfServiceClassAtBrokerName(instance, serviceClass, brokerName)
 	}
 
 	if binding.Status.CurrentOperation == "" {
@@ -256,10 +300,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			return c.processBindFailure(binding, nil, failedCond, true)
 		}
 
-		msg := fmt.Sprintf(
-			`Error creating ServiceBinding for %s: %s`,
-			pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), err,
-		)
+		msg := fmt.Sprintf(`Error creating ServiceBinding for %s: %s`, prettyName, err)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorBindCallReason, msg)
 
 		if c.reconciliationRetryDurationExceeded(binding.Status.OperationStartTime) {
