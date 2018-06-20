@@ -40,7 +40,7 @@ chart and their default values.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.21` |
+| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.22` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
 | `apiserver.aggregator.priority` | Priority of the APIService. | `100` |
