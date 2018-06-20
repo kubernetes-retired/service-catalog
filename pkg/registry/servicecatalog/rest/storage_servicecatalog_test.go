@@ -19,14 +19,24 @@ package rest
 import (
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/rest"
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 )
 
 type GetRESTOptionsHelper struct {
@@ -57,8 +67,7 @@ func testRESTOptionsGetter(
 ) generic.RESTOptionsGetter {
 	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
 }
-
-func TestV1Alpha1Storage(t *testing.T) {
+func TestV1Beta1Storage(t *testing.T) {
 	provider := StorageProvider{
 		DefaultNamespace: "test-default",
 		StorageType:      server.StorageTypeEtcd,
@@ -98,5 +107,49 @@ func TestV1Alpha1Storage(t *testing.T) {
 		t.Fatalf("no service instance credential storage found")
 	}
 	// TODO: do stuff with binding storage
+
+}
+
+func checkStatusStorageType(t *testing.T, s rest.Storage) {
+	// Status is New & Get & Update ONLY
+	if _, isStandardStorage := s.(rest.Storage); !isStandardStorage {
+		t.Errorf("not compliant to storage interface for %q", s)
+	}
+	if _, isStandardStorage := s.(rest.Updater); !isStandardStorage {
+		t.Errorf("not compliant to updaterer interface for %q", s)
+	}
+	if _, isStandardStorage := s.(rest.Getter); !isStandardStorage {
+		t.Errorf("not compliant to getter interface for %q", s)
+	}
+	// NONE of these things
+	if _, isStandardStorage := s.(rest.Lister); isStandardStorage {
+		t.Errorf("%q was a lister but should not be", s)
+	}
+	if _, isStandardStorage := s.(rest.Creater); isStandardStorage {
+		t.Errorf("%q was a creater but should not be", s)
+	}
+	if _, isStandardStorage := s.(rest.GracefulDeleter); isStandardStorage {
+		t.Errorf("%q was a graceful delete but should not be", s)
+	}
+	if _, isStandardStorage := s.(rest.CollectionDeleter); isStandardStorage {
+		t.Errorf("%q was a collection deleter but should not be", s)
+	}
+	if _, isStandardStorage := s.(rest.Watcher); isStandardStorage {
+		t.Errorf("%q was a watcher but should not be", s)
+	}
+	if _, isStandardStorage := s.(rest.StandardStorage); isStandardStorage {
+		t.Errorf("%q was a StandardStorage but should not be", s)
+	}
+}
+
+func TestCheckStatusRESTTypes(t *testing.T) {
+	checkStatusStorageType(t, &clusterservicebroker.StatusREST{})
+	checkStatusStorageType(t, &servicebroker.StatusREST{})
+	checkStatusStorageType(t, &clusterserviceclass.StatusREST{})
+	checkStatusStorageType(t, &serviceclass.StatusREST{})
+	checkStatusStorageType(t, &clusterserviceplan.StatusREST{})
+	checkStatusStorageType(t, &serviceplan.StatusREST{})
+	checkStatusStorageType(t, &instance.StatusREST{})
+	checkStatusStorageType(t, &binding.StatusREST{})
 
 }
