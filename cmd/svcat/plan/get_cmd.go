@@ -78,7 +78,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
 	)
 	cmd.Flags().StringVarP(
-		&getCmd.classFilter,
+		&getCmd.broker,
 		"broker",
 		"b",
 		"",
