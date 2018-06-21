@@ -78,7 +78,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"The plan name (Required)")
 	cmd.MarkFlagRequired("plan")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params-json")
+		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params-json, Sensitive information should be placed in a secret and specified with --secret")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params-json", "",

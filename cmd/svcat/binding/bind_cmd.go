@@ -86,7 +86,7 @@ func NewBindCmd(cxt *command.Context) *cobra.Command {
 		"The name of the secret. Defaults to the name of the instance.",
 	)
 	cmd.Flags().StringSliceVarP(&bindCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when binding the instance, format: NAME=VALUE. Cannot be combined with --params-json")
+		"Additional parameter to use when binding the instance, format: NAME=VALUE. Cannot be combined with --params-json, Sensitive information should be placed in a secret and specified with --secret")
 	cmd.Flags().StringSliceVarP(&bindCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when binding the instance, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&bindCmd.jsonParams, "params-json", "",
