@@ -183,6 +183,12 @@ func (r *StatusREST) Get(ctx genericapirequest.Context, name string, options *me
 	return r.store.Get(ctx, name, options)
 }
 
+var (
+	_ rest.Storage = &StatusREST{}
+	_ rest.Getter  = &StatusREST{}
+	_ rest.Updater = &StatusREST{}
+)
+
 // Update alters the status subset of an object and it
 // implements rest.Updater interface
 func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
