@@ -31,6 +31,7 @@ import (
 )
 
 func TestVersionCommand(t *testing.T) {
+	pkg.VERSION = "v0.0.0"
 	testcases := []struct {
 		name       string
 		client     bool
@@ -53,7 +54,6 @@ func TestVersionCommand(t *testing.T) {
 			wantError:  false,
 		},
 	}
-	pkg.VERSION = "v0.0.0"
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
