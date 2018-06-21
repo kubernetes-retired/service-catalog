@@ -160,11 +160,11 @@ func NewController(
 			DeleteFunc: controller.serviceClassDelete,
 		})
 		controller.servicePlanLister = servicePlanInformer.Lister()
-		//servicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		//AddFunc:    controller.servicePlanAdd,
-		//UpdateFunc: controller.servicePlanUpdate,
-		//DeleteFunc: controller.servicePlanDelete,
-		//})
+		servicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    controller.servicePlanAdd,
+			UpdateFunc: controller.servicePlanUpdate,
+			DeleteFunc: controller.servicePlanDelete,
+		})
 	}
 
 	return controller, nil
@@ -242,6 +242,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
 			createWorker(c.serviceBrokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey, stopCh, &waitGroup)
 			createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, &waitGroup)
+			createWorker(c.servicePlanQueue, "ServicePlan", maxRetries, true, c.reconcileServicePlanKey, stopCh, &waitGroup)
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
@@ -269,6 +270,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
 		c.serviceBrokerQueue.ShutDown()
 		c.serviceClassQueue.ShutDown()
+		c.servicePlanQueue.ShutDown()
 	}
 
 	waitGroup.Wait()
