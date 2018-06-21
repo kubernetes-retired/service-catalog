@@ -118,9 +118,9 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
         {{- end }}
-      {{ if .Values.nodeSelector }}
+      {{ if .Values.controllerManager.nodeSelector }}
       nodeSelector:
-         {{ .Values.nodeSelector }}
+         {{ .Values.controllerManager.nodeSelector }}
       {{ end }}
       volumes:
       - name: service-catalog-cert

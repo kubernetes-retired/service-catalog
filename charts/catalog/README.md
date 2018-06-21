@@ -42,8 +42,8 @@ chart and their default values.
 |-----------|-------------|---------|
 | `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.22` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
-| `nodeSelector` | A nodeSelector value to apply to the api server and controller manager deployments. If not specified, no nodeSelector will be applied | |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
+| `apiserver.nodeSelector` | A nodeSelector value to apply to the apiserver pods. If not specified, no nodeSelector will be applied | |
 | `apiserver.aggregator.priority` | Priority of the APIService. | `100` |
 | `apiserver.aggregator.groupPriorityMinimum` | The minimum priority the group should have. | `10000` |
 | `apiserver.aggregator.versionPriority` | The ordering of this API inside of the group | `20` |
@@ -65,6 +65,7 @@ chart and their default values.
 | `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
 | `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
 | `controllerManager.annotations` | Annotations for controllerManager pods | `{}` |
+| `controllerManager.nodeSelector` | A nodeSelector value to apply to the controllerManager pods. If not specified, no nodeSelector will be applied | |
 | `controllerManager.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |

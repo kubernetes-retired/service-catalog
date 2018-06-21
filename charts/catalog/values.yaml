@@ -4,8 +4,6 @@ image: quay.io/kubernetes-service-catalog/service-catalog:v0.1.22
 # imagePullPolicy for the service-catalog; valid values are "IfNotPresent",
 # "Never", and "Always"
 imagePullPolicy: Always
-# nodeSelector to apply to the api server and controller manager pods
-nodeSelector: 
 # determines whether the API server should be registered with the kube-aggregator
 useAggregator: true
 ## If true, create & use RBAC resources
@@ -14,6 +12,8 @@ rbacEnable: true
 apiserver:
   # annotations is a collection of annotations to add to the apiserver pods.
   annotations: {}
+  # nodeSelector to apply to the apiserver pods
+  nodeSelector: 
   # PodPreset is an optional feature and can be enabled by uncommenting the line below
   # featureGates: "PodPreset=true"
   aggregator:
@@ -93,6 +93,8 @@ apiserver:
 controllerManager:
   # annotations is a collection of annotations to add to the controllerManager pod.
   annotations: {}
+  # nodeSelector to apply to the controllerManager pods
+  nodeSelector: 
   # healthcheck configures the readiness and liveliness probes for the controllerManager pod.
   healthcheck:
     enabled: true
