@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-incubator/service-catalog/pkg"
 	svcatfake "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
-	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 
 	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
@@ -42,33 +42,22 @@ func TestVersionCommand(t *testing.T) {
 			name:       "show client version only",
 			client:     true,
 			server:     false,
-			wantOutput: "Client Version: UNKNOWN\n",
+			wantOutput: "Client Version: v0.0.0\n",
 			wantError:  false,
 		},
 		{
 			name:       "show server & client version",
 			client:     true,
 			server:     true,
-			wantOutput: "Client Version: UNKNOWN\nServer Version: v0.0.0-master+$Format:%h$\n",
+			wantOutput: "Client Version: 0.0.0\nServer Version: v0.0.0-master+$Format:%h$\n",
 			wantError:  false,
 		},
-		/*
-			{
-				name:       "show server & client version - fail",
-				client:     true,
-				server:     true,
-				wantOutput: "Client Version: UNKNOWN\nunable to get version",
-				wantError:  false,
-			},
-		*/
 	}
+	pkg.VERSION = "v0.0.0"
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Set up fake data
-			//TODO: feed fakes array
-			var fakes []runtime.Object
-			k8sClient := k8sfake.NewSimpleClientset(fakes...)
+			k8sClient := k8sfake.NewSimpleClientset()
 			svcatClient := svcatfake.NewSimpleClientset()
 			output := &bytes.Buffer{}
 			fakeApp, _ := svcat.NewApp(k8sClient, svcatClient, "default")
