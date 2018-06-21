@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/testing"
 
 	. "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
@@ -276,6 +277,39 @@ var _ = Describe("Binding", func() {
 			Expect(badClient.Actions()[0].Matches("get", "serviceinstances")).To(BeTrue())
 			Expect(badClient.Actions()[1].Matches("list", "servicebindings")).To(BeTrue())
 			Expect(badClient.Actions()[2].Matches("delete", "servicebindings")).To(BeTrue())
+		})
+	})
+
+	Describe("DeleteBindings", func() {
+		It("Calls the generated v1beta1 delete method for every binding", func() {
+			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "myinstance", Namespace: sb.Namespace}}
+			sb.Spec.ServiceInstanceRef.Name = si.Name
+			sb2.Spec.ServiceInstanceRef.Name = si.Name
+			client := fake.NewSimpleClientset(sb, sb2, si)
+			sdk = &SDK{
+				ServiceCatalogClient: client,
+			}
+
+			bindingsToDelete := []types.NamespacedName{
+				{sb.Namespace, sb.Name},
+				{sb2.Namespace, sb2.Name},
+			}
+
+			deleted, err := sdk.DeleteBindings(bindingsToDelete)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(deleted)).To(Equal(2))
+
+			deletedBindings := make(map[string]string) // maps name to namespace
+			for i := 0; i < 2; i++ {
+				action := client.Actions()[i]
+				Expect(action.Matches("delete", "servicebindings")).To(BeTrue())
+				deleteAction := action.(testing.DeleteAction)
+				deletedBindings[deleteAction.GetName()] = deleteAction.GetNamespace()
+			}
+
+			Expect(deletedBindings[sb.Name]).To(Equal(sb.Namespace))
+			Expect(deletedBindings[sb2.Name]).To(Equal(sb2.Namespace))
 		})
 	})
 })
