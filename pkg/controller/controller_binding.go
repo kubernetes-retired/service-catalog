@@ -858,7 +858,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
-	serviceClass, servicePlan, _, brokerClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
+	brokerClient, err := c.getBrokerClientForServiceBinding(instance, binding)
 	if err != nil {
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
@@ -869,7 +869,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 	mitigatingOrphan := binding.Status.OrphanMitigationInProgress
 	deleting := binding.Status.CurrentOperation == v1beta1.ServiceBindingOperationUnbind || mitigatingOrphan
 
-	request, err := c.prepareServiceBindingLastOperationRequest(binding, instance, serviceClass, servicePlan)
+	request, err := c.prepareServiceBindingLastOperationRequest(binding, instance)
 	if err != nil {
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
@@ -1266,14 +1266,46 @@ func (c *controller) prepareUnbindRequest(
 // passed to the broker client to query the given binding's last operation
 // endpoint.
 func (c *controller) prepareServiceBindingLastOperationRequest(
-	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (
+	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance) (
 	*osb.BindingLastOperationRequest, error) {
+
+	var scExternalID string
+	var spExternalID string
+
+	if instance.Spec.ClusterServiceClassSpecified() {
+
+		serviceClass, err := c.getClusterServiceClassForServiceBinding(instance, binding)
+		if err != nil {
+			return nil, c.handleServiceBindingReconciliationError(binding, err)
+		}
+		servicePlan, err := c.getClusterServicePlanForServiceBinding(instance, binding, serviceClass)
+		if err != nil {
+			return nil, c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		scExternalID = serviceClass.Spec.ExternalID
+		spExternalID = servicePlan.Spec.ExternalID
+
+	} else if instance.Spec.ServiceClassSpecified() {
+
+		serviceClass, err := c.getServiceClassForServiceBinding(instance, binding)
+		if err != nil {
+			return nil, c.handleServiceBindingReconciliationError(binding, err)
+		}
+		servicePlan, err := c.getServicePlanForServiceBinding(instance, binding, serviceClass)
+		if err != nil {
+			return nil, c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		scExternalID = serviceClass.Spec.ExternalID
+		spExternalID = servicePlan.Spec.ExternalID
+	}
 
 	request := &osb.BindingLastOperationRequest{
 		InstanceID: instance.Spec.ExternalID,
 		BindingID:  binding.Spec.ExternalID,
-		ServiceID:  &serviceClass.Spec.ExternalID,
-		PlanID:     &servicePlan.Spec.ExternalID,
+		ServiceID:  &scExternalID,
+		PlanID:     &spExternalID,
 	}
 	if binding.Status.LastOperation != nil && *binding.Status.LastOperation != "" {
 		key := osb.OperationKey(*binding.Status.LastOperation)
