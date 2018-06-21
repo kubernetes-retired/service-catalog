@@ -235,7 +235,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
 
-		request, inProgressProperties, err = c.prepareBindRequest(binding, instance, serviceClass, servicePlan)
+		request, inProgressProperties, err = c.prepareBindRequest(binding, instance)
 		if err != nil {
 			return c.handleServiceBindingReconciliationError(binding, err)
 		}
@@ -266,7 +266,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
 
-		request, inProgressProperties, err = c.prepareBindRequest(binding, instance, serviceClass, servicePlan)
+		request, inProgressProperties, err = c.prepareBindRequest(binding, instance)
 		if err != nil {
 			return c.handleServiceBindingReconciliationError(binding, err)
 		}
@@ -1109,8 +1109,57 @@ func setServiceBindingLastOperation(binding *v1beta1.ServiceBinding, operationKe
 // prepareBindRequest creates a bind request object to be passed to the broker
 // client to create the given binding.
 func (c *controller) prepareBindRequest(
-	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass, servicePlan *v1beta1.ClusterServicePlan) (
+	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance) (
 	*osb.BindRequest, *v1beta1.ServiceBindingPropertiesState, error) {
+
+	var scExternalID string
+	var spExternalID string
+	var scBindingRetrievable bool
+
+	if instance.Spec.ClusterServiceClassSpecified() {
+
+		serviceClass, err := c.getClusterServiceClassForServiceBinding(instance, binding)
+		if err != nil {
+			return nil, nil, &operationError{
+				reason:  errorNonexistentClusterServiceClassReason,
+				message: err.Error(),
+			}
+		}
+
+		servicePlan, err := c.getClusterServicePlanForServiceBinding(instance, binding, serviceClass)
+		if err != nil {
+			return nil, nil, &operationError{
+				reason:  errorNonexistentClusterServicePlanReason,
+				message: err.Error(),
+			}
+		}
+
+		scExternalID = serviceClass.Spec.ExternalID
+		spExternalID = servicePlan.Spec.ExternalID
+		scBindingRetrievable = serviceClass.Spec.BindingRetrievable
+
+	} else if instance.Spec.ServiceClassSpecified() {
+
+		serviceClass, err := c.getServiceClassForServiceBinding(instance, binding)
+		if err != nil {
+			return nil, nil, &operationError{
+				reason:  errorNonexistentClusterServiceClassReason,
+				message: err.Error(),
+			}
+		}
+
+		servicePlan, err := c.getServicePlanForServiceBinding(instance, binding, serviceClass)
+		if err != nil {
+			return nil, nil, &operationError{
+				reason:  errorNonexistentClusterServicePlanReason,
+				message: err.Error(),
+			}
+		}
+
+		scExternalID = serviceClass.Spec.ExternalID
+		spExternalID = servicePlan.Spec.ExternalID
+		scBindingRetrievable = serviceClass.Spec.BindingRetrievable
+	}
 
 	ns, err := c.kubeClient.CoreV1().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
 	if err != nil {
@@ -1143,8 +1192,8 @@ func (c *controller) prepareBindRequest(
 	request := &osb.BindRequest{
 		BindingID:    binding.Spec.ExternalID,
 		InstanceID:   instance.Spec.ExternalID,
-		ServiceID:    serviceClass.Spec.ExternalID,
-		PlanID:       servicePlan.Spec.ExternalID,
+		ServiceID:    scExternalID,
+		PlanID:       spExternalID,
 		AppGUID:      &appGUID,
 		Parameters:   parameters,
 		BindResource: &osb.BindResource{AppGUID: &appGUID},
@@ -1155,7 +1204,7 @@ func (c *controller) prepareBindRequest(
 	// AsyncBindingOperations feature gate. This may be easily set
 	// by setting `asyncBindingOperationsEnabled=true` when
 	// deploying the Service Catalog via the Helm charts.
-	if serviceClass.Spec.BindingRetrievable &&
+	if scBindingRetrievable &&
 		utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
 
 		request.AcceptsIncomplete = true
