@@ -42,6 +42,7 @@ chart and their default values.
 |-----------|-------------|---------|
 | `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.22` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
+| `nodeSelector` | A nodeSelector value to apply to the api server and controller manager deployments. If not specified, no nodeSelector will be applied | |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
 | `apiserver.aggregator.priority` | Priority of the APIService. | `100` |
 | `apiserver.aggregator.groupPriorityMinimum` | The minimum priority the group should have. | `10000` |
