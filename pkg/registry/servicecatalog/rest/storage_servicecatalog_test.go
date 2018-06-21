@@ -142,6 +142,13 @@ func checkStatusStorageType(t *testing.T, s rest.Storage) {
 	}
 }
 
+// TestCheckStatusRESTTypes ensures that our Status storage types fulfill the
+// specific interfaces that are expected and no more. This is similar to what is
+// done internally to the apiserver when it is deciding what http verbs to
+// expose on each resource. For status, we only want to support GET and a form
+// of update like PATCH. This could partly be done by type var type-assertions
+// at the site of declaration, but because we want to explicitly determine that
+// an object does NOT implement some interface, it has to be done at runtime.
 func TestCheckStatusRESTTypes(t *testing.T) {
 	checkStatusStorageType(t, &clusterservicebroker.StatusREST{})
 	checkStatusStorageType(t, &servicebroker.StatusREST{})
