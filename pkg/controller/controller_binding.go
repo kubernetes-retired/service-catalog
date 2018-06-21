@@ -414,6 +414,10 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
+	if instance.Spec.ClusterServiceClassSpecified() {
+	} else if instance.Spec.ServiceClassSpecified() {
+	}
+
 	if instance.Spec.ClusterServiceClassRef == nil {
 		return fmt.Errorf("ClusterServiceClass reference for Instance has not been resolved yet")
 	}
@@ -426,7 +430,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
 
-	request, err := c.prepareUnbindRequest(binding, instance, serviceClass)
+	request, err := c.prepareUnbindRequest(binding, instance)
 	if err != nil {
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
@@ -1227,14 +1231,41 @@ func (c *controller) prepareBindRequest(
 // prepareUnbindRequest creates an unbind request object to be passed to the
 // broker client to delete the given binding.
 func (c *controller) prepareUnbindRequest(
-	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ClusterServiceClass) (
+	binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance) (
 	*osb.UnbindRequest, error) {
+
+	var scExternalID string
+	var scBindingRetrievable bool
+	var planExternalID string
+
+	if instance.Spec.ClusterServiceClassSpecified() {
+
+		serviceClass, err := c.getClusterServiceClassForServiceBinding(instance, binding)
+		if err != nil {
+			return nil, c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		scExternalID = serviceClass.Spec.ExternalID
+		scBindingRetrievable = serviceClass.Spec.BindingRetrievable
+		planExternalID = instance.Status.ExternalProperties.ClusterServicePlanExternalID
+
+	} else if instance.Spec.ServiceClassSpecified() {
+
+		serviceClass, err := c.getServiceClassForServiceBinding(instance, binding)
+		if err != nil {
+			return nil, c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		scExternalID = serviceClass.Spec.ExternalID
+		scBindingRetrievable = serviceClass.Spec.BindingRetrievable
+		planExternalID = instance.Status.ExternalProperties.ServicePlanExternalID
+	}
 
 	request := &osb.UnbindRequest{
 		BindingID:  binding.Spec.ExternalID,
 		InstanceID: instance.Spec.ExternalID,
-		ServiceID:  serviceClass.Spec.ExternalID,
-		PlanID:     instance.Status.ExternalProperties.ClusterServicePlanExternalID,
+		ServiceID:  scExternalID,
+		PlanID:     planExternalID,
 	}
 
 	// Asynchronous binding operations is currently ALPHA and not
@@ -1242,7 +1273,7 @@ func (c *controller) prepareUnbindRequest(
 	// AsyncBindingOperations feature gate. This may be easily set
 	// by setting `asyncBindingOperationsEnabled=true` when
 	// deploying the Service Catalog via the Helm charts.
-	if serviceClass.Spec.BindingRetrievable &&
+	if scBindingRetrievable &&
 		utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
 
 		request.AcceptsIncomplete = true
