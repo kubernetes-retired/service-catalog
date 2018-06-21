@@ -1927,7 +1927,7 @@ func TestIsPlanBindable(t *testing.T) {
 		sc := serviceClass(tc.serviceClass)
 		plan := servicePlan(tc.servicePlan)
 
-		if e, a := tc.bindable, isPlanBindable(sc, plan); e != a {
+		if e, a := tc.bindable, isClusterServicePlanBindable(sc, plan); e != a {
 			t.Errorf("%v: unexpected result; expected %v, got %v", tc.name, e, a)
 		}
 	}

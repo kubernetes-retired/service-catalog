@@ -220,7 +220,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 		brokerClient = bClient
 
-		if !isPlanBindable(serviceClass, servicePlan) {
+		if !isClusterServicePlanBindable(serviceClass, servicePlan) {
 			msg := fmt.Sprintf(`References a non-bindable %s and Plan (%q) combination`, pretty.ClusterServiceClassName(serviceClass), instance.Spec.ClusterServicePlanExternalName)
 			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonbindableClusterServiceClassReason, msg)
 			failedCond := newServiceBindingFailedCondition(v1beta1.ConditionTrue, errorNonbindableClusterServiceClassReason, msg)
@@ -251,7 +251,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 		brokerClient = bClient
 
-		if !isPlanBindable(serviceClass, servicePlan) {
+		if !isServicePlanBindable(serviceClass, servicePlan) {
 			msg := fmt.Sprintf(`References a non-bindable %s and Plan (%q) combination`, pretty.ServiceClassName(serviceClass), instance.Spec.ClusterServicePlanExternalName)
 			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonbindableClusterServiceClassReason, msg)
 			failedCond := newServiceBindingFailedCondition(v1beta1.ConditionTrue, errorNonbindableClusterServiceClassReason, msg)
@@ -455,14 +455,29 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 	return c.processUnbindSuccess(binding)
 }
 
-// isPlanBindable returns whether the given ClusterServiceClass and ClusterServicePlan
+// isClusterServicePlanBindable returns whether the given ClusterServiceClass and ClusterServicePlan
 // combination is bindable.  Plans may override the service-level bindable
 // attribute, so if the plan provides a value, return that value.  Otherwise,
 // return the Bindable field of the ClusterServiceClass.
 //
 // Note: enforcing that the plan belongs to the given service class is the
 // responsibility of the caller.
-func isPlanBindable(serviceClass *v1beta1.ClusterServiceClass, plan *v1beta1.ClusterServicePlan) bool {
+func isClusterServicePlanBindable(serviceClass *v1beta1.ClusterServiceClass, plan *v1beta1.ClusterServicePlan) bool {
+	if plan.Spec.Bindable != nil {
+		return *plan.Spec.Bindable
+	}
+
+	return serviceClass.Spec.Bindable
+}
+
+// isServicePlanBindable returns whether the given ServiceClass and ServicePlan
+// combination is bindable.  Plans may override the service-level bindable
+// attribute, so if the plan provides a value, return that value.  Otherwise,
+// return the Bindable field of the ServiceClass.
+//
+// Note: enforcing that the plan belongs to the given service class is the
+// responsibility of the caller.
+func isServicePlanBindable(serviceClass *v1beta1.ServiceClass, plan *v1beta1.ServicePlan) bool {
 	if plan.Spec.Bindable != nil {
 		return *plan.Spec.Bindable
 	}
