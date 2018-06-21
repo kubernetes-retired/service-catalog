@@ -1,8 +1,7 @@
 language: generic
 notifications:
   email:
-    recipients:
-      - kubernetes-sig-service-catalog-alerts@googlegroups.com
+    - kubernetes-sig-service-catalog-alerts@googlegroups.com
 sudo: required
 services:
 - docker
