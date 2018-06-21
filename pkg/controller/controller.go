@@ -153,13 +153,12 @@ func NewController(
 			UpdateFunc: controller.serviceBrokerUpdate,
 			DeleteFunc: controller.serviceBrokerDelete,
 		})
-		// ERIK TODO: Uncomment when the controllers are brought in
 		controller.serviceClassLister = serviceClassInformer.Lister()
-		//serviceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		//AddFunc:    controller.serviceClassAdd,
-		//UpdateFunc: controller.serviceClassUpdate,
-		//DeleteFunc: controller.serviceClassDelete,
-		//})
+		serviceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    controller.serviceClassAdd,
+			UpdateFunc: controller.serviceClassUpdate,
+			DeleteFunc: controller.serviceClassDelete,
+		})
 		controller.servicePlanLister = servicePlanInformer.Lister()
 		//servicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		//AddFunc:    controller.servicePlanAdd,
@@ -242,6 +241,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
 			createWorker(c.serviceBrokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey, stopCh, &waitGroup)
+			createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, &waitGroup)
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
@@ -268,6 +268,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
 		c.serviceBrokerQueue.ShutDown()
+		c.serviceClassQueue.ShutDown()
 	}
 
 	waitGroup.Wait()
@@ -632,13 +633,9 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
 }
 
-// Broker utility methods - move?
 // getAuthCredentialsFromServiceBroker returns the auth credentials, if any, or
-// returns an error. If the AuthInfo field is nil, empty values are
-// returned.
+// returns an error. If the AuthInfo field is nil, empty values are returned.
 func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1beta1.ServiceBroker) (*osb.AuthConfig, error) {
-	// ERIK TODO: This method is mostly error handling boilerplate, is it worth consolidating with common elements?
-	// Main difference are just using the broker's namespace instead of the same namespace as the broker.
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
