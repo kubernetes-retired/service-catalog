@@ -131,7 +131,7 @@ func TestGetCommand(t *testing.T) {
 
 			// Initialize the command arguments
 			cmd := &getCmd{
-				Namespaced: command.NewNamespacedCommand(cxt),
+				Namespaced: command.NewNamespaced(cxt),
 			}
 			cmd.Namespace = namespace
 			cmd.name = tc.bindingName

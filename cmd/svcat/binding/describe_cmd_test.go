@@ -80,7 +80,7 @@ func TestDescribeCommand(t *testing.T) {
 
 			// Initialize the command arguments
 			cmd := &describeCmd{
-				Namespaced: command.NewNamespacedCommand(cxt),
+				Namespaced: command.NewNamespaced(cxt),
 			}
 			cmd.Namespace = namespace
 			cmd.name = tc.bindingName
