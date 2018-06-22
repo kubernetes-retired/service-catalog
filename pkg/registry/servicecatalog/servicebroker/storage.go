@@ -157,6 +157,12 @@ type StatusREST struct {
 	store *registry.Store
 }
 
+var (
+	_ rest.Storage = &StatusREST{}
+	_ rest.Getter  = &StatusREST{}
+	_ rest.Updater = &StatusREST{}
+)
+
 // New returns a new ServiceBroker.
 func (r *StatusREST) New() runtime.Object {
 	return &servicecatalog.ServiceBroker{}

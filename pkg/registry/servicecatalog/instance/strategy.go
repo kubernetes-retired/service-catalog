@@ -254,9 +254,19 @@ func (instanceReferenceRESTStrategy) PrepareForUpdate(ctx genericapirequest.Cont
 	// again.
 	newClusterServiceClassRef := newServiceInstance.Spec.ClusterServiceClassRef
 	newClusterServicePlanRef := newServiceInstance.Spec.ClusterServicePlanRef
+	newServiceClassRef := newServiceInstance.Spec.ServiceClassRef
+	newServicePlanRef := newServiceInstance.Spec.ServicePlanRef
+
+	// Lock down the spec to the the original values
 	newServiceInstance.Spec = oldServiceInstance.Spec
+
+	// Explicitly update the reference fields to the new ones submitted
 	newServiceInstance.Spec.ClusterServiceClassRef = newClusterServiceClassRef
 	newServiceInstance.Spec.ClusterServicePlanRef = newClusterServicePlanRef
+	newServiceInstance.Spec.ServiceClassRef = newServiceClassRef
+	newServiceInstance.Spec.ServicePlanRef = newServicePlanRef
+
+	// Lock down the status as well
 	newServiceInstance.Status = oldServiceInstance.Status
 }
 
