@@ -141,8 +141,6 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all instances filtered by not existing class", cmd: "get instances --all-namespaces --class wrong", golden: "output/get-instances-all-namespaces-by-wrong-class.txt"},
 		{name: "list all instances", cmd: "get instances --all-namespaces", golden: "output/get-instances-all-namespaces.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
-		{name: "get instance filtered by existing plan", cmd: "get instance ups-instance -n test-ns --plan default", golden: "output/get-instance-by-plan.txt"},
-		{name: "get instance filtered by existing class", cmd: "get instance ups-instance -n test-ns --class user-provided-service", golden: "output/get-instance-by-class.txt"},
 		{name: "get instance (json)", cmd: "get instance ups-instance -n test-ns -o json", golden: "output/get-instance.json"},
 		{name: "get instance (yaml)", cmd: "get instance ups-instance -n test-ns -o yaml", golden: "output/get-instance.yaml"},
 		{name: "describe instance", cmd: "describe instance ups-instance -n test-ns", golden: "output/describe-instance.txt"},

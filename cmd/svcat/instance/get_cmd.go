@@ -17,6 +17,8 @@ limitations under the License.
 package instance
 
 import (
+	"fmt"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
@@ -67,6 +69,14 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		c.name = args[0]
+
+		if c.ClassFilter != "" {
+			return fmt.Errorf("class filter is not supported when specifiying instance name")
+		}
+
+		if c.PlanFilter != "" {
+			return fmt.Errorf("plan filter is not supported when specifiying instance name")
+		}
 	}
 
 	return nil
@@ -91,7 +101,7 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	instance, err := c.App.RetrieveInstance(c.Namespace, c.name, c.ClassFilter, c.PlanFilter)
+	instance, err := c.App.RetrieveInstance(c.Namespace, c.name)
 	if err != nil {
 		return err
 	}

@@ -83,7 +83,7 @@ var _ = Describe("Instances", func() {
 			instanceName := si.Name
 			namespace := si.Namespace
 
-			instance, err := sdk.RetrieveInstance(namespace, instanceName, "", "")
+			instance, err := sdk.RetrieveInstance(namespace, instanceName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(instance).To(Equal(si))
 			actions := svcCatClient.Actions()
@@ -95,7 +95,7 @@ var _ = Describe("Instances", func() {
 			instanceName := "not_real"
 			namespace := "foobar_namespace"
 
-			_, err := sdk.RetrieveInstance(namespace, instanceName, "", "")
+			_, err := sdk.RetrieveInstance(namespace, instanceName)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("not found"))
 			actions := svcCatClient.Actions()

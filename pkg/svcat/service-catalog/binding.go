@@ -105,7 +105,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 
 // Unbind deletes all bindings associated to an instance.
 func (sdk *SDK) Unbind(ns, instanceName string) ([]types.NamespacedName, error) {
-	instance, err := sdk.RetrieveInstance(ns, instanceName, "", "")
+	instance, err := sdk.RetrieveInstance(ns, instanceName)
 	if err != nil {
 		return nil, err
 	}
