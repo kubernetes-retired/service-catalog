@@ -1005,72 +1005,70 @@ func (e TimeoutError) Error() string {
 
 // TestCreateServiceInstanceWithProvisionFailure tests creating a ServiceInstance
 // with various failure results in response to the provision request.
-// TODO(carolynvs): I'm disabling this test because it's a flake that fails so much that I'm seeing 🔥
-func FlakeTestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
+func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 	cases := []struct {
-		name                     string
-		statusCode               int
-		nonHTTPResponseError     error
-		conditionReason          string
-		expectFailCondition      bool
+		// name of the test
+		name string
+		// status code returned by failing provision calls
+		statusCode int
+		// non-HTTP error returned by failing provision calls
+		nonHTTPResponseError error
+		// expected reason used in the instance condition to indiciate that the provision failed
+		provisionErrorReason string
+		// expected reason used in the instance condiiton to indicate that the provision failed terminally
+		failReason string
+		// true if the failed provision is expected to trigger orphan mitigation
 		triggersOrphanMitigation bool
 	}{
 		{
-			name:                "Status OK",
-			statusCode:          http.StatusOK,
-			conditionReason:     "ProvisionedSuccessfully",
-			expectFailCondition: false,
+			name:                 "Status OK",
+			statusCode:           http.StatusOK,
+			provisionErrorReason: "ProvisionCallFailed",
 		},
 		{
 			name:                     "Status Created",
 			statusCode:               http.StatusCreated,
-			conditionReason:          "ProvisionedSuccessfully",
-			expectFailCondition:      false,
+			provisionErrorReason:     "ProvisionCallFailed",
 			triggersOrphanMitigation: true,
 		},
 		{
 			name:                     "other 2xx",
 			statusCode:               http.StatusNoContent,
-			conditionReason:          "ProvisionedSuccessfully",
-			expectFailCondition:      false,
+			provisionErrorReason:     "ProvisionCallFailed",
 			triggersOrphanMitigation: true,
 		},
 		{
-			name:                "3XX",
-			statusCode:          300,
-			conditionReason:     "ProvisionedSuccessfully",
-			expectFailCondition: false,
+			name:                 "3XX",
+			statusCode:           300,
+			provisionErrorReason: "ProvisionCallFailed",
 		},
 		{
 			name:                     "Status Request Timeout",
 			statusCode:               http.StatusRequestTimeout,
-			conditionReason:          "ProvisionedSuccessfully",
-			expectFailCondition:      false,
+			provisionErrorReason:     "ProvisionCallFailed",
 			triggersOrphanMitigation: false,
 		},
 		{
-			name:                "400",
-			statusCode:          400,
-			conditionReason:     "ClusterServiceBrokerReturnedFailure",
-			expectFailCondition: true,
+			name:                 "400",
+			statusCode:           400,
+			provisionErrorReason: "ProvisionCallFailed",
+			failReason:           "ClusterServiceBrokerReturnedFailure",
 		},
 		{
-			name:                "other 4XX",
-			statusCode:          403,
-			conditionReason:     "ProvisionedSuccessfully",
-			expectFailCondition: false,
+			name:                 "other 4XX",
+			statusCode:           403,
+			provisionErrorReason: "ProvisionCallFailed",
 		},
 		{
 			name:                     "5XX",
 			statusCode:               500,
-			conditionReason:          "ProvisionedSuccessfully",
-			expectFailCondition:      false,
+			provisionErrorReason:     "ProvisionCallFailed",
 			triggersOrphanMitigation: true,
 		},
 		{
 			name:                 "non-url transport error",
 			nonHTTPResponseError: fmt.Errorf("non-url error"),
-			conditionReason:      "ProvisionedSuccessfully",
+			provisionErrorReason: "ErrorCallingProvision",
 		},
 		{
 			name: "non-timeout url error",
@@ -1079,7 +1077,7 @@ func FlakeTestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				URL: "https://fakebroker.com/v2/service_instances/instance_id",
 				Err: fmt.Errorf("non-timeout error"),
 			},
-			conditionReason: "ProvisionedSuccessfully",
+			provisionErrorReason: "ErrorCallingProvision",
 		},
 		{
 			name: "network timeout",
@@ -1088,14 +1086,26 @@ func FlakeTestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				URL: "https://fakebroker.com/v2/service_instances/instance_id",
 				Err: TimeoutError("timeout error"),
 			},
-			conditionReason:          "ProvisionedSuccessfully",
-			expectFailCondition:      false,
+			provisionErrorReason:     "ErrorCallingProvision",
 			triggersOrphanMitigation: true,
 		},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+
+			provisionSuccessChan := make(chan bool, 2)
+			deprovisionSuccessChan := make(chan bool, 2)
+			deprovisionBlockChan := make(chan bool, 2)
+
+			// Ensure that broker requests respond successfully after running
+			// the core of the test so that the resource cleanup can proceed.
+			defer func() {
+				provisionSuccessChan <- true
+				deprovisionSuccessChan <- true
+				deprovisionBlockChan <- false
+			}()
+
 			//t.Parallel()
 			ct := &controllerTest{
 				t:                            t,
@@ -1111,72 +1121,127 @@ func FlakeTestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							Description:  strPtr("response description"),
 						}
 					}
+					respondSuccessfullyToProvision := false
 					ct.osbClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
-						getProvisionResponseByPollCountReactions(2, []fakeosb.ProvisionReaction{
-							fakeosb.ProvisionReaction{
-								Error: reactionError,
-							},
-							fakeosb.ProvisionReaction{
-								Response: &osb.ProvisionResponse{},
-							},
-						}))
+						func(r *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+							select {
+							case respondSuccessfullyToProvision = <-provisionSuccessChan:
+							default:
+							}
+							if respondSuccessfullyToProvision {
+								return &osb.ProvisionResponse{}, nil
+							} else {
+								return nil, reactionError
+							}
+						})
+					respondSuccessfullyToDeprovision := false
+					blockDeprovision := true
 					ct.osbClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
-						getDeprovisionResponseByPollCountReactions(2, []fakeosb.DeprovisionReaction{
-							fakeosb.DeprovisionReaction{
-								Error: osb.HTTPStatusCodeError{
+						func(r *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+							for blockDeprovision {
+								blockDeprovision = <-deprovisionBlockChan
+							}
+							select {
+							case respondSuccessfullyToDeprovision = <-deprovisionSuccessChan:
+							default:
+							}
+							if respondSuccessfullyToDeprovision {
+								return &osb.DeprovisionResponse{}, nil
+							} else {
+								return nil, osb.HTTPStatusCodeError{
 									StatusCode:   500,
 									ErrorMessage: strPtr("temporary deprovision error"),
-								},
-							},
-							fakeosb.DeprovisionReaction{
-								Response: &osb.DeprovisionResponse{},
-							},
-						}))
+								}
+							}
+						})
 				},
 			}
 			ct.run(func(ct *controllerTest) {
-				var condition v1beta1.ServiceInstanceCondition
-				if tc.expectFailCondition {
-					// Instance should get stuck in a Failed condition
-					condition = v1beta1.ServiceInstanceCondition{
-						Type:   v1beta1.ServiceInstanceConditionFailed,
-						Status: v1beta1.ConditionTrue,
-						Reason: tc.conditionReason,
-					}
-				} else {
-					// Instance provisioning should be retried and succeed
-					condition = v1beta1.ServiceInstanceCondition{
-						Type:   v1beta1.ServiceInstanceConditionReady,
-						Status: v1beta1.ConditionTrue,
-						Reason: tc.conditionReason,
-					}
+				// Wait for the provision to fail
+				condition := v1beta1.ServiceInstanceCondition{
+					Type:   v1beta1.ServiceInstanceConditionReady,
+					Status: v1beta1.ConditionFalse,
+					Reason: tc.provisionErrorReason,
+				}
+				if tc.triggersOrphanMitigation {
+					condition.Reason = "StartingInstanceOrphanMitigation"
 				}
 				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, condition); err != nil {
-					t.Fatalf("error waiting for instance condition: %v", err)
+					t.Fatalf("error waiting for provision to fail: %v", err)
 				}
 
-				if tc.expectFailCondition {
-					if err := util.WaitForInstanceProcessedGeneration(ct.client, ct.instance.Namespace, ct.instance.Name, 1); err != nil {
-						t.Fatalf("error waiting for instance reconciliation to complete: %v", err)
+				// Assert that the latest generation has been observed
+				instance, err := ct.client.ServiceInstances(testNamespace).Get(testInstanceName, metav1.GetOptions{})
+				if err != nil {
+					t.Fatalf("error getting instance: %v", err)
+				}
+				if e, a := int64(1), instance.Status.ObservedGeneration; e != a {
+					t.Fatalf("unexpected observed generation: expected %v, got %v", e, a)
+				}
+
+				// If the provision failed with a terminating failure
+				if tc.failReason != "" {
+					util.AssertServiceInstanceCondition(t, instance, v1beta1.ServiceInstanceConditionFailed, v1beta1.ConditionTrue, tc.failReason)
+					if e, a := 0, len(findBrokerActions(t, ct.osbClient, fakeosb.DeprovisionInstance)); e != a {
+						t.Fatalf("unexpected calls to deprovision instance: expected %v, got %v", e, a)
 					}
+					return
 				}
 
-				brokerActions := ct.osbClient.Actions()
-				fmt.Printf("%#v", brokerActions)
-
-				// Ensure that we meet expectations on deprovision requests for orphan mitigation
-				deprovisionActions := findBrokerActions(t, ct.osbClient, fakeosb.DeprovisionInstance)
+				// Assert that the orphan mitigation reason was set correctly
 				if tc.triggersOrphanMitigation {
-					if len(deprovisionActions) == 0 {
-						t.Fatal("expected orphan mitigation deprovision request to occur")
+					util.AssertServiceInstanceCondition(t, instance, v1beta1.ServiceInstanceConditionOrphanMitigation, v1beta1.ConditionTrue, tc.provisionErrorReason)
+					if !instance.Status.OrphanMitigationInProgress {
+						t.Fatalf("expected orphan mitigation to be in progress")
 					}
 				} else {
-					if len(deprovisionActions) != 0 {
-						t.Fatal("unexpected deprovision requests")
+					util.AssertServiceInstanceConditionFalseOrAbsent(t, instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
+					if instance.Status.OrphanMitigationInProgress {
+						t.Fatalf("expected orphan mitigation to not be in progress")
 					}
 				}
 
-				// All instances should eventually succeed
+				// Now that the provision error conditions have been asserted, allow the broker to send its response to the deprovision request
+				deprovisionBlockChan <- false
+
+				if tc.triggersOrphanMitigation {
+					// Assert that the ready condition is set to Unknown when the deprovision request fails
+					if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, v1beta1.ServiceInstanceCondition{
+						Type:   v1beta1.ServiceInstanceConditionReady,
+						Status: v1beta1.ConditionUnknown,
+					}); err != nil {
+						t.Fatalf("error waiting for instance deprovision to fail: %v", err)
+					}
+				}
+
+				// Now that everything surround the failed provision has been asserted, allow provision requests
+				// to succeed. Also, allow orphan mitigation to complete by allowing deprovision requests to succeed.
+				provisionSuccessChan <- true
+				deprovisionSuccessChan <- true
+
+				// Wait for the instance to be provisioned successfully
+				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, v1beta1.ServiceInstanceCondition{
+					Type:   v1beta1.ServiceInstanceConditionReady,
+					Status: v1beta1.ConditionTrue,
+				}); err != nil {
+					t.Fatalf("error waiting for instance to be provisioned: %v", err)
+				}
+
+				// Assert that the observed generation is up-to-date, that orphan mitigation is not in progress,
+				// and that the instance is not in a failed state.
+				instance, err = ct.client.ServiceInstances(testNamespace).Get(testInstanceName, metav1.GetOptions{})
+				if err != nil {
+					t.Fatalf("error getting instance: %v", err)
+				}
+				if g, og := instance.Generation, instance.Status.ObservedGeneration; g != og {
+					t.Fatalf("latest generation not observed: generation: %v, observed: %v", g, og)
+				}
+				if instance.Status.OrphanMitigationInProgress {
+					t.Fatalf("unexpected orphan mitigation in progress")
+				}
+				util.AssertServiceInstanceConditionFalseOrAbsent(t, instance, v1beta1.ServiceInstanceConditionFailed)
+
+				// Assert that the last broker action was a provision-instance request.
 				getLastBrokerAction(t, ct.osbClient, fakeosb.ProvisionInstance)
 			})
 		})

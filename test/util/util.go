@@ -345,7 +345,9 @@ func AssertServiceInstanceCondition(t *testing.T, instance *v1beta1.ServiceInsta
 	}
 
 	if !foundCondition {
-		t.Fatalf("%v condition not found", conditionType)
+		if status != v1beta1.ConditionFalse || len(reason) != 0 {
+			t.Fatalf("%v condition not found", conditionType)
+		}
 	}
 }
 
@@ -367,5 +369,18 @@ func AssertServiceBindingCondition(t *testing.T, binding *v1beta1.ServiceBinding
 
 	if !foundCondition {
 		t.Fatalf("%v condition not found", conditionType)
+	}
+}
+
+// AssertServiceInstanceConditionFalseOrAbsent asserts that the instance's status
+// either contains the given condition type with a status of False or does not
+// contain the given condition.
+func AssertServiceInstanceConditionFalseOrAbsent(t *testing.T, instance *v1beta1.ServiceInstance, conditionType v1beta1.ServiceInstanceConditionType) {
+	for _, condition := range instance.Status.Conditions {
+		if condition.Type == conditionType {
+			if e, a := v1beta1.ConditionFalse, condition.Status; e != a {
+				t.Fatalf("%v condition had unexpected status; expected %v, got %v", conditionType, e, a)
+			}
+		}
 	}
 }
