@@ -27,19 +27,19 @@ type HasPlanFlag interface {
 	ApplyPlanFlag(*cobra.Command) error
 }
 
-// PlanFilteredCommand adds support to a command for the --plan flag.
-type PlanFilteredCommand struct {
+// PlanFiltered adds support to a command for the --plan flag.
+type PlanFiltered struct {
 	PlanFilter string
 }
 
-// NewPlanFilteredCommand initializes a new plan specified command.
-func NewPlanFilteredCommand() *PlanFilteredCommand {
-	return &PlanFilteredCommand{}
+// NewPlanFiltered initializes a new plan specified command.
+func NewPlanFiltered() *PlanFiltered {
+	return &PlanFiltered{}
 }
 
 // AddPlanFlag adds the plan related flag.
 //   --plan
-func (c *PlanFilteredCommand) AddPlanFlag(cmd *cobra.Command) {
+func (c *PlanFiltered) AddPlanFlag(cmd *cobra.Command) {
 	cmd.Flags().StringP(
 		"plan",
 		"p",
@@ -50,7 +50,7 @@ func (c *PlanFilteredCommand) AddPlanFlag(cmd *cobra.Command) {
 
 // ApplyPlanFlag persists the plan related flag.
 //   --plan
-func (c *PlanFilteredCommand) ApplyPlanFlag(cmd *cobra.Command) error {
+func (c *PlanFiltered) ApplyPlanFlag(cmd *cobra.Command) error {
 	var err error
 	c.PlanFilter, err = cmd.Flags().GetString("plan")
 	return err

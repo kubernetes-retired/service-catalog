@@ -27,19 +27,19 @@ type HasClassFlag interface {
 	ApplyClassFlag(*cobra.Command) error
 }
 
-// ClassFilteredCommand adds support to a command for the --class flag.
-type ClassFilteredCommand struct {
+// ClassFiltered adds support to a command for the --class flag.
+type ClassFiltered struct {
 	ClassFilter string
 }
 
-// NewClassFilteredCommand initializes a new class specified command.
-func NewClassFilteredCommand() *ClassFilteredCommand {
-	return &ClassFilteredCommand{}
+// NewClassFiltered initializes a new class specified command.
+func NewClassFiltered() *ClassFiltered {
+	return &ClassFiltered{}
 }
 
 // AddClassFlag adds the class related flag.
 //   --class
-func (c *ClassFilteredCommand) AddClassFlag(cmd *cobra.Command) {
+func (c *ClassFiltered) AddClassFlag(cmd *cobra.Command) {
 	cmd.Flags().StringP(
 		"class",
 		"c",
@@ -50,7 +50,7 @@ func (c *ClassFilteredCommand) AddClassFlag(cmd *cobra.Command) {
 
 // ApplyClassFlag persists the class related flag.
 //   --class
-func (c *ClassFilteredCommand) ApplyClassFlag(cmd *cobra.Command) error {
+func (c *ClassFiltered) ApplyClassFlag(cmd *cobra.Command) error {
 	var err error
 	c.ClassFilter, err = cmd.Flags().GetString("class")
 	return err
