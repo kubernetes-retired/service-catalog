@@ -25,7 +25,8 @@ tree:
   - name: param
     shorthand: p
     desc: 'Additional parameter to use when binding the instance, format: NAME=VALUE.
-      Cannot be combined with --params-json'
+      Cannot be combined with --params-json, Sensitive information should be placed
+      in a secret and specified with --secret'
   - name: params-json
     desc: Additional parameters to use when binding the instance, provided as a JSON
       object. Cannot be combined with --param
@@ -250,7 +251,8 @@ tree:
   - name: param
     shorthand: p
     desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE.
-      Cannot be combined with --params-json'
+      Cannot be combined with --params-json, Sensitive information should be placed
+      in a secret and specified with --secret'
   - name: params-json
     desc: Additional parameters to use when provisioning the service, provided as
       a JSON object. Cannot be combined with --param

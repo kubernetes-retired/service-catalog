@@ -21,12 +21,12 @@ import (
 	"io"
 )
 
-// WriteVersion prints a list of bindings.
-func WriteVersion(w io.Writer, client, server string) {
-	if client != "" {
-		fmt.Fprintf(w, "client: %s\n", client)
-	}
-	if server != "" {
-		fmt.Fprintf(w, "server: %s\n", server)
-	}
+// WriteClientVersion prints client version
+func WriteClientVersion(w io.Writer, client string) {
+	fmt.Fprintf(w, "Client Version: %s\n", client)
+}
+
+// WriteServerVersion prints server version
+func WriteServerVersion(w io.Writer, server string) {
+	fmt.Fprintf(w, "Server Version: %s\n", server)
 }

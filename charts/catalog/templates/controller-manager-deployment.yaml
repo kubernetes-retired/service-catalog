@@ -118,6 +118,10 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
         {{- end }}
+      {{ if .Values.controllerManager.nodeSelector }}
+      nodeSelector:
+         {{ .Values.controllerManager.nodeSelector }}
+      {{ end }}
       volumes:
       - name: service-catalog-cert
         secret:
