@@ -285,7 +285,7 @@ test-integration: .init $(scBuildImageTarget) build build-integration
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
 	# golang integration tests
-	$(DOCKER_CMD) test/integration.sh $(INT_TEST_FLAGS)
+	$(DOCKER_CMD) ./integration.test -test.v $(INT_TEST_FLAGS)
 
 clean-e2e: .init $(scBuildImageTarget)
 	$(DOCKER_CMD) rm -f $(BINDIR)/e2e.test
