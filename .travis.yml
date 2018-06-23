@@ -33,9 +33,6 @@ jobs:
     - stage: test
       script:
       - |
-        # test to see if decryption works
-        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/glcoud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
-        # remove above
         if (( $DOCS_ONLY == 0 )); then
           echo "Running verify-docs"
           make verify-docs
@@ -69,4 +66,5 @@ jobs:
     - stage: push-chart
       script:
       - |
+        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/glcoud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
         test/repo-sync.sh
