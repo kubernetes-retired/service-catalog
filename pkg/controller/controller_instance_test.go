@@ -676,9 +676,9 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				ServiceID:         testClusterServiceClassGUID,
 				PlanID:            testClusterServicePlanGUID,
 				OrganizationGUID:  testClusterID,
-				// TODO SpaceGUID:         testNamespaceGUID,
-				Context:    testContext,
-				Parameters: tc.expectedParams,
+				SpaceGUID:         testNamespaceGUID,
+				Context:           testContext,
+				Parameters:        tc.expectedParams,
 			})
 
 			actions = fakeCatalogClient.Actions()
@@ -885,8 +885,8 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		// TODO SpaceGUID:         testNamespaceGUID,
-		Context: testContext})
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -986,8 +986,8 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		// TODO SpaceGUID:         testNamespaceGUID,
-		Context: testContext,
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext,
 	})
 
 	// verify no kube resources created
@@ -1071,8 +1071,8 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		// TODO SpaceGUID:         testNamespaceGUID,
-		Context: testContext})
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext})
 
 	// verify one kube action occurred
 	kubeActions := fakeKubeClient.Actions()
@@ -1527,7 +1527,8 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	// prepend to override the default test namespace
+	fakeKubeClient.PrependReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &corev1.Namespace{}, errors.New("No namespace")
 	})
 
@@ -2268,8 +2269,8 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		// TODO SpaceGUID:         testNamespaceGUID,
-		Context: testContext,
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext,
 	})
 
 	instanceKey := testNamespace + "/" + testServiceInstanceName
@@ -2984,8 +2985,8 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		// TODO SpaceGUID:         testNamespaceGUID,
-		Context: testContext})
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
@@ -3127,8 +3128,8 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		// TODO SpaceGUID:         testNamespaceGUID,
-		Context: testContext})
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -4290,8 +4291,8 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
 		OrganizationGUID:  testClusterID,
-		//		SpaceGUID:         testNamespaceGUID,
-		Context: testContext,
+		SpaceGUID:         testNamespaceGUID,
+		Context:           testContext,
 		Parameters: map[string]interface{}{
 			"a": "1",
 			"b": "2",
