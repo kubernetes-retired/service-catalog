@@ -34,25 +34,23 @@ const (
 
 // RetrieveClasses lists all classes defined in the cluster.
 func (sdk *SDK) RetrieveClasses(opts *FilterOptions) ([]v1beta1.ClusterServiceClass, error) {
-	// Not filtering by broker, just return classes
-	if opts.Broker == "" {
-		classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("unable to list classes (%s), err", err)
+	selectors := v1.ListOptions{}
+	if opts.Broker != "" {
+		selectors = v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(FieldClusterServiceBrokerName, opts.Broker).String(),
 		}
-		return classes.Items, nil
+	}
+	if opts.ClassID != "" {
+		selectors = v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(FieldExternalClassName, opts.ClassID).String(),
+		}
 	}
 
-	// Filter by broker
-	brokers := v1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(FieldClusterServiceBrokerName, opts.Broker).String(),
-	}
-
-	filtered, err := sdk.ServiceCatalog().ClusterServiceClasses().List(brokers)
+	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(selectors)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list classes (%s)", err)
 	}
-	return filtered.Items, nil
+	return classes.Items, nil
 }
 
 // RetrieveClassByName gets a class by its external name.

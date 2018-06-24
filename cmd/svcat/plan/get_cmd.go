@@ -59,6 +59,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan --class CLASS_NAME PLAN_NAME
   svcat get plans --uuid --class CLASS_UUID
   svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+  svcat get plans --broker BROKER_NAME
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -82,7 +83,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"broker",
 		"b",
 		"",
-		"Filter plans based on broker",
+		"Filter the plans by a broker name",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd

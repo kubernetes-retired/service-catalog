@@ -162,8 +162,12 @@ tree:
         svcat get classes
         svcat get class mysqldb
         svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
+        svcat get classes --broker
     command: ./svcat get classes
     flags:
+    - name: broker
+      shorthand: b
+      desc: Filters the class's by a broker name.
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
@@ -200,8 +204,12 @@ tree:
         svcat get plan --class CLASS_NAME PLAN_NAME
         svcat get plans --uuid --class CLASS_UUID
         svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+        svcat get plans --broker BROKER_NAME
     command: ./svcat get plans
     flags:
+    - name: broker
+      shorthand: b
+      desc: Filter the plans by a broker name
     - name: class
       shorthand: c
       desc: Filter plans based on class. When --uuid is specified, the class name

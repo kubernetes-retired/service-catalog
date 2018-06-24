@@ -65,7 +65,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"broker",
 		"b",
 		"",
-		"Display the associated broker.",
+		"Filters the class's by a broker name.",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -75,8 +75,6 @@ func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		if c.lookupByUUID {
 			c.uuid = args[0]
-		} else if c.broker != "" {
-			c.broker = args[0]
 		} else {
 			c.name = args[0]
 		}
@@ -94,9 +92,8 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	var opts *servicecatalog.FilterOptions
 
-	opts = &servicecatalog.FilterOptions{
+	opts := &servicecatalog.FilterOptions{
 		Broker: c.broker,
 	}
 
