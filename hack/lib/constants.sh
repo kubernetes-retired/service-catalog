@@ -3,11 +3,10 @@
 # This script provides constants for the Golang binary build process
 
 readonly OS_GO_PACKAGE=github.com/kubernetes-incubator/service-catalog
-
 readonly OS_BUILD_ENV_GOLANG="${OS_BUILD_ENV_GOLANG:-1.9}"
 readonly OS_BUILD_ENV_IMAGE="${OS_BUILD_ENV_IMAGE:-openshift/origin-release:golang-${OS_BUILD_ENV_GOLANG}}"
 readonly OS_REQUIRED_GO_VERSION="go1.8"
-readonly OS_BUILD_ENV_WORKINGDIR="/go/${OS_GO_PACKAGE}"
+readonly OS_BUILD_ENV_WORKINGDIR="/go/src/${OS_GO_PACKAGE}"
 
 readonly OS_OUTPUT_BASEPATH="${OS_OUTPUT_BASEPATH:-_output}"
 readonly OS_BASE_OUTPUT="${OS_ROOT}/${OS_OUTPUT_BASEPATH}"
