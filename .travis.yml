@@ -1,8 +1,7 @@
 language: generic
 notifications:
-  email:
-    recipients:
-      - kubernetes-sig-service-catalog-alerts@googlegroups.com
+  email: # We are using secure strings to workaround travis sending emails for forks
+    - secure: "JiJEb1Fm7YPbgOz6VOuJ/07PU/lyKK+v6yUrjEl9TiT6zApN6EHO+Q7Z8OcAN4Q6o11DSRrhYr3+eomXwu5VXiFBPUk0EI9Z1msx4z0Oi104gfS4Kna3b3PGgvFptm7cKPlByVL46rmNssukLoqIX7zU5ceBQ7nETJxan/fwfatQzPzFHksysNQPzCnuPdZLhzDiZuwIhINcEAA9/D4SI6nmS17v2wygo8oNSo2xV2kfgSxJFzUmgt55WA17Y5VyIkATyEfBRpvPAtvhNjrjQcUruX2EICJaEAmO/873z2uQbp3/REtpNFykSsNhC1sE77fZhiZ+vU94zjneEOVF+vJyAlRbBuV/HML00AsWF4gqHLsfoNguSAX7bS8rAr67bzw+6cB5eX3hkjSnY7q+75eipk3e8FO4p9RhdjidlQcLvvmj2URq48PsePIUPZhJVZBfgwwIuCvYDrAZPb9yHj3X5uGHveI6Wwl6o9dpxmTfnT3rLBON2LfOsHe/HRFNbI+EVtH10dP/oMq9SQOqX+C6chuy4kjMIqUDN/n+eVPhHCKpDuaNde0vSMt9ZB+YFHiGjXoV+YhYZEnY+/LZAUhZDyO/gm3aZ1PiFvPISCZ9oSthnkzKGI7O3SuBSokDvnkLtVJCOw61nOekcmKoHPAS8dVUms4FPJMPkOkujmM="
 sudo: required
 services:
 - docker
@@ -20,7 +19,7 @@ before_install:
           # Builds triggered by initial commit of a new branch.
           DOCS_ONLY=0
       else
-          DOCS_REGEX='(OWNERS|LICENSE)|(\.md$)|(^docs/)'
+          DOCS_REGEX='(OWNERS|LICENSE)|(\.md$)|(^docs/)|(^docsite/)'
           [[ -z "$(git diff --name-only $TRAVIS_COMMIT_RANGE | grep -vE $DOCS_REGEX)" ]]
           DOCS_ONLY=$?
       fi
@@ -36,7 +35,7 @@ jobs:
           make verify-docs
         else
           echo "Running full build"
-          make verify build build-integration build-e2e test images svcat-all
+          make verify build svcat build-integration build-e2e test
         fi
       env: GO_VERSION=1.9
     # Cross Build Check
@@ -44,9 +43,13 @@ jobs:
       script:
       - |
         if (( $DOCS_ONLY != 0 )); then
-          make images-all
+          make images-all svcat-all
         fi
       env: XBUILD=true
+    # Doc Site svc-cat.io
+    - stage: test
+      script: make docs
+      env: DOCS=true
     # Deploy
     - stage: deploy
       script: skip

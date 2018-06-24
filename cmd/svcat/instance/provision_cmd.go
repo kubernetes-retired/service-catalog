@@ -27,7 +27,7 @@ import (
 
 type provisonCmd struct {
 	*command.Namespaced
-	*command.WaitableCommand
+	*command.Waitable
 
 	instanceName string
 	externalID   string
@@ -43,8 +43,8 @@ type provisonCmd struct {
 // NewProvisionCmd builds a "svcat provision" command
 func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 	provisionCmd := &provisonCmd{
-		Namespaced:      command.NewNamespacedCommand(cxt),
-		WaitableCommand: command.NewWaitableCommand(),
+		Namespaced: command.NewNamespaced(cxt),
+		Waitable:   command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "provision NAME --plan PLAN --class CLASS",
@@ -67,7 +67,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(provisionCmd),
 		RunE:    command.RunE(provisionCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	provisionCmd.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().StringVar(&provisionCmd.externalID, "external-id", "",
 		"The ID of the instance for use with the OSB SB API (Optional)")
 	cmd.Flags().StringVar(&provisionCmd.className, "class", "",
@@ -77,7 +77,7 @@ func NewProvisionCmd(cxt *command.Context) *cobra.Command {
 		"The plan name (Required)")
 	cmd.MarkFlagRequired("plan")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params-json")
+		"Additional parameter to use when provisioning the service, format: NAME=VALUE. Cannot be combined with --params-json, Sensitive information should be placed in a secret and specified with --secret")
 	cmd.Flags().StringSliceVarP(&provisionCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when provisioning the service, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&provisionCmd.jsonParams, "params-json", "",

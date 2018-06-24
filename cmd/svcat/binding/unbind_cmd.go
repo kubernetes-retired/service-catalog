@@ -24,25 +24,24 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type unbindCmd struct {
 	*command.Namespaced
-	*command.WaitableCommand
+	*command.Waitable
 
 	instanceName string
-	bindingName  string
+	bindingNames []string
 }
 
 // NewUnbindCmd builds a "svcat unbind" command
 func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 	unbindCmd := &unbindCmd{
-		Namespaced:      command.NewNamespacedCommand(cxt),
-		WaitableCommand: command.NewWaitableCommand(),
+		Namespaced: command.NewNamespaced(cxt),
+		Waitable:   command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "unbind INSTANCE_NAME",
@@ -54,11 +53,11 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(unbindCmd),
 		RunE:    command.RunE(unbindCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
-	cmd.Flags().StringVar(
-		&unbindCmd.bindingName,
+	unbindCmd.AddNamespaceFlags(cmd.Flags(), false)
+	cmd.Flags().StringSliceVar(
+		&unbindCmd.bindingNames,
 		"name",
-		"",
+		[]string{},
 		"The name of the binding to remove",
 	)
 	unbindCmd.AddWaitFlags(cmd)
@@ -68,7 +67,7 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 
 func (c *unbindCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		if c.bindingName == "" {
+		if len(c.bindingNames) == 0 {
 			return fmt.Errorf("an instance or binding name is required")
 		}
 	} else {
@@ -79,38 +78,17 @@ func (c *unbindCmd) Validate(args []string) error {
 }
 
 func (c *unbindCmd) Run() error {
-	if c.instanceName != "" {
-		return c.unbindInstance()
-	}
-	return c.deleteBinding()
-}
-
-func (c *unbindCmd) deleteBinding() error {
-	err := c.App.DeleteBinding(c.Namespace, c.bindingName)
-	if err != nil {
-		return err
-	}
-
-	if c.Wait {
-		binding := v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Namespace: c.Namespace, Name: c.bindingName}}
-		hasErr := c.waitForBindingDeletes("waiting for the binding to be deleted...", binding)
-		if hasErr {
-			// Ensure a non-zero exit code is returned if the wait has trouble
-			return errors.New("could not remove the binding")
-		}
-	} else {
-		output.WriteDeletedResourceName(c.Output, c.bindingName)
-	}
-
-	// Don't return errors because we handle printing them as they occur above
-	return nil
-}
-
-func (c *unbindCmd) unbindInstance() error {
 	// Indicates an error occurred and that a non-zero exit code should be used
 	var hasErrors bool
+	var bindings []types.NamespacedName
+	var err error
 
-	bindings, err := c.App.Unbind(c.Namespace, c.instanceName)
+	if c.instanceName != "" {
+		bindings, err = c.App.Unbind(c.Namespace, c.instanceName)
+	} else {
+		bindings, err = c.App.DeleteBindings(c.getBindingsToDelete())
+	}
+
 	if err != nil {
 		// Do not return immediately as we still need to potentially wait or print the deleted bindings
 		hasErrors = true
@@ -118,7 +96,7 @@ func (c *unbindCmd) unbindInstance() error {
 	}
 
 	if c.Wait {
-		hasErrors = c.waitForBindingDeletes("waiting for the bindings to be deleted...", bindings...) || hasErrors
+		hasErrors = c.waitForBindingDeletes("waiting for the binding(s) to be deleted...", bindings...) || hasErrors
 	} else {
 		for _, binding := range bindings {
 			output.WriteDeletedResourceName(c.Output, binding.Name)
@@ -131,15 +109,26 @@ func (c *unbindCmd) unbindInstance() error {
 	return nil
 }
 
+func (c *unbindCmd) getBindingsToDelete() []types.NamespacedName {
+	bindings := []types.NamespacedName{}
+	for _, name := range c.bindingNames {
+		bindings = append(bindings, types.NamespacedName{Namespace: c.Namespace, Name: name})
+	}
+	return bindings
+}
+
 // waitForBindingDeletes waits for the bindings to be deleted and prints either
 // and error message or the name of the deleted binding.
-func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...v1beta1.ServiceBinding) bool {
+func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...types.NamespacedName) bool {
 	if len(bindings) == 0 {
 		return false
 	}
 
 	// Indicates an error occurred and that a non-zero exit code should be used
 	var hasErrors bool
+
+	// Used to prevent concurrent writes to c.Output
+	var mutex sync.Mutex
 
 	fmt.Fprintln(c.Output, waitMessage)
 
@@ -150,6 +139,9 @@ func (c *unbindCmd) waitForBindingDeletes(waitMessage string, bindings ...v1beta
 			defer g.Done()
 
 			binding, err := c.App.WaitForBinding(ns, name, c.Interval, c.Timeout)
+
+			mutex.Lock()
+			defer mutex.Unlock()
 
 			if err != nil && !apierrors.IsNotFound(errors.Cause(err)) {
 				hasErrors = true

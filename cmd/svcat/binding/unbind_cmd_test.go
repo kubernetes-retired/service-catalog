@@ -38,40 +38,71 @@ import (
 func TestUnbindCommand(t *testing.T) {
 	const ns = "default"
 	testcases := []struct {
-		name         string
-		fakeInstance string
-		fakeBindings []string
-		wait         bool
-		bindingName  string
-		instanceName string
-		wantOutput   string
-		wantError    bool
+		name           string
+		fakeInstance   string
+		fakeBindings   []string
+		wait           bool
+		bindingNames   []string
+		instanceName   string
+		wantOutput     string
+		wantError      bool
+		allowDiffOrder bool // whether the order of lines in the output can be different from the one in wantOutput
 	}{
 		{
 			name:         "delete binding",
 			fakeBindings: []string{"mybinding"},
-			bindingName:  "mybinding",
+			bindingNames: []string{"mybinding"},
 			wantOutput:   "deleted mybinding",
 		},
 		{
-			name:        "delete binding - fail",
-			bindingName: "badbinding",
-			wantOutput:  "remove binding default/badbinding failed",
-			wantError:   true,
+			name:         "delete binding - fail",
+			bindingNames: []string{"badbinding"},
+			wantOutput:   "remove binding default/badbinding failed",
+			wantError:    true,
 		},
 		{
 			name:         "delete binding and wait",
 			fakeBindings: []string{"mybinding"},
-			bindingName:  "mybinding",
+			bindingNames: []string{"mybinding"},
 			wait:         true,
-			wantOutput:   "waiting for the binding to be deleted...\ndeleted mybinding\n",
+			wantOutput:   "waiting for the binding(s) to be deleted...\ndeleted mybinding\n",
 		},
 		{
 			name:         "delete binding and wait - fail",
 			fakeBindings: []string{"badbinding"},
-			bindingName:  "badbinding",
+			bindingNames: []string{"badbinding"},
 			wait:         true,
 			wantOutput:   "remove binding default/badbinding failed",
+			wantError:    true,
+		},
+		{
+			name:           "delete multiple bindings",
+			fakeBindings:   []string{"binding1", "binding2"},
+			bindingNames:   []string{"binding1", "binding2"},
+			wantOutput:     "deleted binding1\ndeleted binding2",
+			allowDiffOrder: true,
+		},
+		{
+			name:         "delete multiple bindings - fail",
+			fakeBindings: []string{"binding", "badbinding"},
+			bindingNames: []string{"binding", "badbinding"},
+			wantOutput:   "error:\n  remove binding default/badbinding failed: sabotaged\ndeleted binding\ncould not remove all bindings",
+			wantError:    true,
+		},
+		{
+			name:           "delete multiple bindings and wait",
+			fakeBindings:   []string{"binding1", "binding2"},
+			bindingNames:   []string{"binding1", "binding2"},
+			wait:           true,
+			wantOutput:     "waiting for the binding(s) to be deleted...\ndeleted binding1\ndeleted binding2\n",
+			allowDiffOrder: true,
+		},
+		{
+			name:         "delete multiple bindings and wait - fail",
+			fakeBindings: []string{"binding", "badbinding"},
+			bindingNames: []string{"binding", "badbinding"},
+			wait:         true,
+			wantOutput:   "error:\n  remove binding default/badbinding failed: sabotaged\nwaiting for the binding(s) to be deleted...\ndeleted binding\ncould not remove all bindings",
 			wantError:    true,
 		},
 		{
@@ -80,6 +111,14 @@ func TestUnbindCommand(t *testing.T) {
 			fakeBindings: []string{"binding"},
 			instanceName: "myinstance",
 			wantOutput:   "deleted binding\n",
+		},
+		{
+			name:           "unbind instance - multiple bindings",
+			fakeInstance:   "myinstance",
+			fakeBindings:   []string{"binding1", "binding2"},
+			instanceName:   "myinstance",
+			wantOutput:     "deleted binding1\ndeleted binding2\n",
+			allowDiffOrder: true,
 		},
 		{
 			name:         "unbind instance - partial fail",
@@ -95,7 +134,7 @@ func TestUnbindCommand(t *testing.T) {
 			fakeBindings: []string{"binding1", "badbinding2"},
 			instanceName: "myinstance",
 			wait:         true,
-			wantOutput:   "error:\n  remove binding default/badbinding2 failed: sabotaged\nwaiting for the bindings to be deleted...\ndeleted binding1\ncould not remove all bindings",
+			wantOutput:   "error:\n  remove binding default/badbinding2 failed: sabotaged\nwaiting for the binding(s) to be deleted...\ndeleted binding1\ncould not remove all bindings",
 			wantError:    true,
 		},
 		{
@@ -157,11 +196,11 @@ func TestUnbindCommand(t *testing.T) {
 
 			// Initialize the command arguments
 			cmd := &unbindCmd{
-				Namespaced:      command.NewNamespacedCommand(cxt),
-				WaitableCommand: command.NewWaitableCommand(),
+				Namespaced: command.NewNamespaced(cxt),
+				Waitable:   command.NewWaitable(),
 			}
 			cmd.Namespace = ns
-			cmd.bindingName = tc.bindingName
+			cmd.bindingNames = tc.bindingNames
 			cmd.instanceName = tc.instanceName
 			cmd.Wait = tc.wait
 
@@ -178,9 +217,32 @@ func TestUnbindCommand(t *testing.T) {
 			if err != nil {
 				gotOutput += err.Error()
 			}
-			if !strings.Contains(gotOutput, tc.wantOutput) {
+			if !outputMatches(gotOutput, tc.wantOutput, tc.allowDiffOrder) {
 				t.Errorf("unexpected output \n\nWANT:\n%q\n\nGOT:\n%q\n", tc.wantOutput, gotOutput)
 			}
 		})
 	}
+}
+
+func outputMatches(gotOutput string, wantOutput string, allowDifferentLineOrder bool) bool {
+	if !allowDifferentLineOrder {
+		return strings.Contains(gotOutput, wantOutput)
+	}
+
+	gotLines := strings.Split(gotOutput, "\n")
+	wantLines := strings.Split(wantOutput, "\n")
+
+	for _, wantLine := range wantLines {
+		found := false
+		for _, gotLine := range gotLines {
+			if strings.Contains(gotLine, wantLine) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }

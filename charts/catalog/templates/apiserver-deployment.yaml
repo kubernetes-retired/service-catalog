@@ -144,6 +144,10 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
       {{- end }}
+      {{ if .Values.apiserver.nodeSelector }}
+      nodeSelector:
+         {{ .Values.apiserver.nodeSelector }}
+      {{ end }}
       volumes:
       - name: apiserver-cert
         secret:
