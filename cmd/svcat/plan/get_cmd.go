@@ -127,8 +127,8 @@ func (c *getCmd) getAll() error {
 
 	var opts *servicecatalog.FilterOptions
 	opts = &servicecatalog.FilterOptions{
-		ClassID: c.classUUID,
-		Broker:  c.broker,
+		ClassName: c.className,
+		Broker:    c.broker,
 	}
 
 	// Retrieve the classes as well because plans don't have the external class name
