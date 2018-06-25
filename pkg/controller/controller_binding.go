@@ -199,19 +199,18 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
-	if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
-		// retry later
-		msg := fmt.Sprintf(`Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for %s have not been resolved yet`, pretty.ServiceInstanceName(instance))
-		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceRefsUnresolved, msg)
-		return c.processServiceBindingOperationError(binding, readyCond)
-	}
-
 	var prettyName string
 	var brokerClient osb.Client
 	var request *osb.BindRequest
 	var inProgressProperties *v1beta1.ServiceBindingPropertiesState
 
 	if instance.Spec.ClusterServiceClassSpecified() {
+		if instance.Spec.ClusterServiceClassRef == nil || instance.Spec.ClusterServicePlanRef == nil {
+			// retry later
+			msg := fmt.Sprintf(`Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for %s have not been resolved yet`, pretty.ServiceInstanceName(instance))
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceRefsUnresolved, msg)
+			return c.processServiceBindingOperationError(binding, readyCond)
+		}
 
 		serviceClass, servicePlan, brokerName, bClient, err := c.getClusterServiceClassPlanAndClusterServiceBrokerForServiceBinding(instance, binding)
 		if err != nil {
@@ -243,6 +242,12 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 		prettyName = pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName)
 
 	} else if instance.Spec.ServiceClassSpecified() {
+		if instance.Spec.ServiceClassRef == nil || instance.Spec.ServicePlanRef == nil {
+			// retry later
+			msg := fmt.Sprintf(`Binding cannot begin because ServiceClass and ServicePlan references for %s have not been resolved yet`, pretty.ServiceInstanceName(instance))
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceRefsUnresolved, msg)
+			return c.processServiceBindingOperationError(binding, readyCond)
+		}
 
 		serviceClass, servicePlan, brokerName, bClient, err := c.getServiceClassPlanAndServiceBrokerForServiceBinding(instance, binding)
 		if err != nil {
