@@ -209,7 +209,7 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 			t.Logf("broker.Spec.RelistDuration set to nil")
 		}
 
-		actual := shouldReconcileClusterServiceBroker(tc.broker, tc.now)
+		actual := shouldReconcileClusterServiceBroker(tc.broker, tc.now, 24*time.Hour)
 
 		if e, a := tc.reconcile, actual; e != a {
 			t.Errorf("%v: unexpected result: %s", tc.name, expectedGot(e, a))

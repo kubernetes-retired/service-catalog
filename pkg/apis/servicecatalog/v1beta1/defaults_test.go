@@ -116,14 +116,5 @@ func TestSetDefaultClusterServiceBroker(t *testing.T) {
 				tc.name, tc.behavior, actualSpec.RelistBehavior,
 			)
 		}
-
-		if tc.duration == nil && actualSpec.RelistDuration == nil {
-			continue
-		} else if *tc.duration != *actualSpec.RelistDuration {
-			t.Errorf(
-				"%v: unexpected RelistDuration: expected %v, got %v",
-				tc.name, tc.duration, actualSpec.RelistDuration,
-			)
-		}
 	}
 }
