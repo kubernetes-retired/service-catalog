@@ -184,3 +184,22 @@ func getTestServiceInstanceAsyncDeprovisioningWithNamespacedRefs(operation strin
 	instance.DeletionTimestamp = &ts
 	return instance
 }
+
+func getTestServiceInstanceWithNamespacedRefsAndStatus(status v1beta1.ConditionStatus) *v1beta1.ServiceInstance {
+	instance := getTestServiceInstanceWithNamespacedRefsAndExternalProperties()
+	instance.Status.Conditions = []v1beta1.ServiceInstanceCondition{{
+		Type:               v1beta1.ServiceInstanceConditionReady,
+		Status:             status,
+		LastTransitionTime: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+	}}
+	return instance
+}
+
+func getTestServiceInstanceWithNamespacedRefsAndExternalProperties() *v1beta1.ServiceInstance {
+	sc := getTestServiceInstanceWithNamespacedRefs()
+	sc.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{
+		ServicePlanExternalID:   testServicePlanGUID,
+		ServicePlanExternalName: testServicePlanName,
+	}
+	return sc
+}
