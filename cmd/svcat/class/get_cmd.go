@@ -79,6 +79,10 @@ func (c *getCmd) Validate(args []string) error {
 			c.name = args[0]
 		}
 	}
+	// Just for now while I get PR reviewed
+	if c.uuid != "" && c.broker != "" {
+		return nil
+	}
 
 	return nil
 }
