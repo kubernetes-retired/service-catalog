@@ -92,7 +92,7 @@ func toSelectableFields(instance *servicecatalog.ServiceInstance) fields.Set {
 	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&instance.ObjectMeta, true)
 
-	specFieldSet := make(fields.Set, 2)
+	specFieldSet := make(fields.Set, 3)
 
 	if instance.Spec.ClusterServiceClassRef != nil {
 		specFieldSet["spec.clusterServiceClassRef.name"] = instance.Spec.ClusterServiceClassRef.Name
@@ -100,6 +100,10 @@ func toSelectableFields(instance *servicecatalog.ServiceInstance) fields.Set {
 
 	if instance.Spec.ClusterServicePlanRef != nil {
 		specFieldSet["spec.clusterServicePlanRef.name"] = instance.Spec.ClusterServicePlanRef.Name
+	}
+
+	if instance.Spec.ExternalID != "" {
+		specFieldSet["spec.externalID"] = instance.Spec.ExternalID
 	}
 
 	return generic.MergeFieldsSets(objectMetaFieldsSet, specFieldSet)
