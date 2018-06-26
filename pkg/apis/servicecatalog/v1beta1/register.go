@@ -74,6 +74,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ClusterServicePlan", ClusterServicePlanFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServicePlan", ServicePlanFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServiceInstance", ServiceInstanceFieldLabelConversionFunc)
+	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServiceBinding", ServiceBindingFieldLabelConversionFunc)
 
 	return nil
 }
