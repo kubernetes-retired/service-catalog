@@ -13,6 +13,9 @@ stages:
   - test
   - name: deploy
     if: type != pull_request
+  - name: push-chart
+    # require the tag name to match a regular expression
+    if: tag =~ ^v
 before_install:
   - |
       if [[ -z "$TRAVIS_COMMIT_RANGE" ]]; then
@@ -36,6 +39,7 @@ jobs:
         else
           echo "Running full build"
           make verify build svcat build-integration build-e2e test
+          openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in kubernetes-charts-d97457a83e61.json.enc -out kubernetes-charts-d97457a83e61.json -d
         fi
       env: GO_VERSION=1.9
     # Cross Build Check
@@ -60,3 +64,5 @@ jobs:
         on:
           repo: kubernetes-incubator/service-catalog
           all_branches: true
+    - stage: push-chart
+      script: test/repo-sync.sh
