@@ -198,8 +198,17 @@ func TestReconcileServiceBindingWithParametersNamespacedRefs(t *testing.T) {
 // TestReconcileServiceBindingAsynchronousBindNamespacedRefs tests the situation where the
 // controller receives an asynchronous bind response back from the broker when
 // doing a bind call.
-/*
+
 func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+
 	key := osb.OperationKey(testOperation)
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -210,22 +219,13 @@ func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
 		},
 	})
 
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
-	if err != nil {
-		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
-	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
-
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
 
 	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
-	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithNamespacedRefsAndStatus(v1beta1.ConditionTrue))
 
 	binding := getTestServiceBinding()
 	bindingKey := binding.Namespace + "/" + binding.Name
@@ -253,7 +253,6 @@ func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
 		t.Fatalf("Expected polling queue to have a record of seeing test binding once")
 	}
 }
-*/
 
 // TestReconcileBindingDeleteNamespacedRefs tests reconcileBinding to ensure a
 // binding deletion works as expected.
