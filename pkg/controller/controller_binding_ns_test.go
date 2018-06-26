@@ -1077,3 +1077,92 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 		})
 	}
 }
+
+// TestReconcileServiceBindingAsynchronousUnbindNamespacedRefs tests the situation where the
+// controller receives an asynchronous bind response back from the broker when
+// doing an unbind call.
+func TestReconcileServiceBindingAsynchronousUnbindNamespacedRefs(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+
+	key := osb.OperationKey(testOperation)
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		UnbindReaction: &fakeosb.UnbindReaction{
+			Response: &osb.UnbindResponse{
+				Async:        true,
+				OperationKey: &key,
+			},
+		},
+	})
+
+	sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableServiceClass())
+	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithNamespacedRefsAndStatus(v1beta1.ConditionTrue))
+
+	binding := getTestServiceBindingUnbinding()
+	bindingKey := binding.Namespace + "/" + binding.Name
+
+	fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, binding, nil
+	})
+
+	if testController.bindingPollingQueue.NumRequeues(bindingKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test binding")
+	}
+
+	if err := reconcileServiceBinding(t, testController, binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+	fakeCatalogClient.ClearActions()
+
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
+	fakeKubeClient.ClearActions()
+
+	assertNumberOfBrokerActions(t, fakeServiceBrokerClient.Actions(), 0)
+
+	if err := reconcileServiceBinding(t, testController, binding); err != nil {
+		t.Fatalf("a valid binding should not fail: %v", err)
+	}
+
+	if testController.bindingPollingQueue.NumRequeues(bindingKey) != 1 {
+		t.Fatalf("Expected polling queue to have a record of seeing test binding once")
+	}
+
+	// Broker actions
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+		BindingID:         testServiceBindingGUID,
+		InstanceID:        testServiceInstanceGUID,
+		ServiceID:         testServiceClassGUID,
+		PlanID:            testServicePlanGUID,
+		AcceptsIncomplete: true,
+	})
+
+	// Kube actions
+	assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
+
+	// Service Catalog actions
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedServiceBinding := assertUpdateStatus(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	assertServiceBindingAsyncInProgress(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, asyncUnbindingReason, testOperation, binding)
+
+	// Events
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := corev1.EventTypeNormal + " " + asyncUnbindingReason + " " + asyncUnbindingMessage
+	if e, a := expectedEvent, events[0]; e != a {
+		t.Fatalf("Received unexpected event, expected %v got %v", e, a)
+	}
+}
