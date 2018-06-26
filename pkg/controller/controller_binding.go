@@ -419,20 +419,42 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
+	var brokerClient osb.Client
+	var prettyBrokerName string
+
 	if instance.Spec.ClusterServiceClassSpecified() {
+
+		if instance.Spec.ClusterServiceClassRef == nil {
+			return fmt.Errorf("ClusterServiceClass reference for Instance has not been resolved yet")
+		}
+		if instance.Status.ExternalProperties == nil || instance.Status.ExternalProperties.ClusterServicePlanExternalID == "" {
+			return fmt.Errorf("ClusterServicePlanExternalID for Instance has not been set yet")
+		}
+
+		serviceClass, brokerName, bClient, err := c.getClusterServiceClassAndClusterServiceBrokerForServiceBinding(instance, binding)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		brokerClient = bClient
+		prettyBrokerName = pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName)
+
 	} else if instance.Spec.ServiceClassSpecified() {
-	}
 
-	if instance.Spec.ClusterServiceClassRef == nil {
-		return fmt.Errorf("ClusterServiceClass reference for Instance has not been resolved yet")
-	}
-	if instance.Status.ExternalProperties == nil || instance.Status.ExternalProperties.ClusterServicePlanExternalID == "" {
-		return fmt.Errorf("ClusterServicePlanExternalID for Instance has not been set yet")
-	}
+		if instance.Spec.ServiceClassRef == nil {
+			return fmt.Errorf("ServiceClass reference for Instance has not been resolved yet")
+		}
+		if instance.Status.ExternalProperties == nil || instance.Status.ExternalProperties.ServicePlanExternalID == "" {
+			return fmt.Errorf("ServicePlanExternalID for Instance has not been set yet")
+		}
 
-	serviceClass, brokerName, brokerClient, err := c.getClusterServiceClassAndClusterServiceBrokerForServiceBinding(instance, binding)
-	if err != nil {
-		return c.handleServiceBindingReconciliationError(binding, err)
+		serviceClass, brokerName, bClient, err := c.getServiceClassAndServiceBrokerForServiceBinding(instance, binding)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
+
+		brokerClient = bClient
+		prettyBrokerName = pretty.FromServiceInstanceOfServiceClassAtBrokerName(instance, serviceClass, brokerName)
 	}
 
 	request, err := c.prepareUnbindRequest(binding, instance)
@@ -443,8 +465,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 	response, err := brokerClient.Unbind(request)
 	if err != nil {
 		msg := fmt.Sprintf(
-			`Error unbinding from %s: %s`,
-			pretty.FromServiceInstanceOfClusterServiceClassAtBrokerName(instance, serviceClass, brokerName), err,
+			`Error unbinding from %s: %s`, prettyBrokerName, err,
 		)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionUnknown, errorUnbindCallReason, msg)
 
