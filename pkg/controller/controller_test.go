@@ -76,6 +76,7 @@ const (
 	testClusterServicePlanName              = "test-clusterserviceplan"
 	testNonExistentClusterServiceClassName  = "nothere"
 	testNonExistentClusterServicePlanName   = "nothere"
+	testNonExistentServicePlanName          = "nothere"
 	testNonbindableClusterServiceClassName  = "test-unbindable-clusterserviceclass"
 	testNonbindableClusterServicePlanName   = "test-unbindable-clusterserviceplan"
 	testRemovedClusterServiceClassName      = "removed-test-clusterserviceclass"

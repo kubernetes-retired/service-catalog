@@ -254,3 +254,153 @@ func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
 	}
 }
 */
+
+// TestReconcileBindingDeleteNamespacedRefs tests reconcileBinding to ensure a
+// binding deletion works as expected.
+func TestReconcileServiceBindingDeleteNamespacedRefs(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	cases := []struct {
+		name     string
+		instance *v1beta1.ServiceInstance
+		binding  *v1beta1.ServiceBinding
+	}{
+		{
+			name:     "normal binding",
+			instance: getTestServiceInstanceWithNamespacedRefsAndExternalProperties(),
+			binding: &v1beta1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              testServiceBindingName,
+					Namespace:         testNamespace,
+					DeletionTimestamp: &metav1.Time{},
+					Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+					Generation:        2,
+				},
+				Spec: v1beta1.ServiceBindingSpec{
+					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:         testServiceBindingGUID,
+					SecretName:         testServiceBindingSecretName,
+				},
+				Status: v1beta1.ServiceBindingStatus{
+					ReconciledGeneration: 1,
+					ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
+					UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
+				},
+			},
+		},
+		{
+			name: "binding with instance pointing to non-existent plan",
+			instance: &v1beta1.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{Name: testServiceInstanceName, Namespace: testNamespace},
+				Spec: v1beta1.ServiceInstanceSpec{
+					ExternalID:      testServiceInstanceGUID,
+					ServiceClassRef: &v1beta1.LocalObjectReference{Name: testServiceClassGUID},
+					ServicePlanRef:  nil,
+					PlanReference: v1beta1.PlanReference{
+						ServiceClassExternalName: testServiceClassName,
+						ServicePlanExternalName:  testNonExistentServicePlanName,
+					},
+				},
+				Status: v1beta1.ServiceInstanceStatus{
+					ExternalProperties: &v1beta1.ServiceInstancePropertiesState{
+						ServicePlanExternalID:   testServicePlanGUID,
+						ServicePlanExternalName: testServicePlanName,
+					},
+				},
+			},
+			binding: &v1beta1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              testServiceBindingName,
+					Namespace:         testNamespace,
+					DeletionTimestamp: &metav1.Time{},
+					Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
+					Generation:        2,
+				},
+				Spec: v1beta1.ServiceBindingSpec{
+					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:         testServiceBindingGUID,
+					SecretName:         testServiceBindingSecretName,
+				},
+				Status: v1beta1.ServiceBindingStatus{
+					ReconciledGeneration: 1,
+					ExternalProperties:   &v1beta1.ServiceBindingPropertiesState{},
+					UnbindStatus:         v1beta1.ServiceBindingUnbindStatusRequired,
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				UnbindReaction: &fakeosb.UnbindReaction{
+					Response: &osb.UnbindResponse{},
+				},
+			})
+
+			sharedInformers.ServiceBrokers().Informer().GetStore().Add(getTestServiceBroker())
+			sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
+			sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
+			sharedInformers.ServiceInstances().Informer().GetStore().Add(tc.instance)
+
+			binding := tc.binding
+			fakeCatalogClient.AddReactor("get", "servicebindings", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+				return true, binding, nil
+			})
+
+			if err := reconcileServiceBinding(t, testController, binding); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			binding = assertServiceBindingUnbindInProgressIsTheOnlyCatalogAction(t, fakeCatalogClient, binding)
+			fakeCatalogClient.ClearActions()
+
+			assertDeleteSecretAction(t, fakeKubeClient.Actions(), binding.Spec.SecretName)
+			fakeKubeClient.ClearActions()
+
+			assertNumberOfBrokerActions(t, fakeBrokerClient.Actions(), 0)
+
+			err := reconcileServiceBinding(t, testController, binding)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+
+			brokerActions := fakeBrokerClient.Actions()
+			assertNumberOfBrokerActions(t, brokerActions, 1)
+			assertUnbind(t, brokerActions[0], &osb.UnbindRequest{
+				BindingID:  testServiceBindingGUID,
+				InstanceID: testServiceInstanceGUID,
+				ServiceID:  testServiceClassGUID,
+				PlanID:     testServicePlanGUID,
+			})
+
+			kubeActions := fakeKubeClient.Actions()
+			// The action should be deleting the secret
+			assertNumberOfActions(t, kubeActions, 1)
+			assertActionEquals(t, kubeActions[0], "delete", "secrets")
+
+			deleteAction := kubeActions[0].(clientgotesting.DeleteActionImpl)
+			if e, a := binding.Spec.SecretName, deleteAction.Name; e != a {
+				t.Fatalf("Unexpected name of secret: %s", expectedGot(e, a))
+			}
+
+			actions := fakeCatalogClient.Actions()
+			// The action should be updating the ready condition
+			assertNumberOfActions(t, actions, 1)
+
+			updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
+			assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
+			assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
+
+			events := getRecordedEvents(testController)
+
+			expectedEvent := normalEventBuilder(successUnboundReason)
+			if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
