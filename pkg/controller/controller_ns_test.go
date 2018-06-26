@@ -203,19 +203,3 @@ func getTestServiceInstanceWithNamespacedRefsAndExternalProperties() *v1beta1.Se
 	}
 	return sc
 }
-
-func getTestBindingRetrievableServiceClass() *v1beta1.ServiceClass {
-	return &v1beta1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testServiceClassGUID},
-		Spec: v1beta1.ServiceClassSpec{
-			ServiceBrokerName: testServiceBrokerName,
-			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-				Description:        "a test service",
-				ExternalName:       testServiceClassName,
-				ExternalID:         testServiceClassGUID,
-				BindingRetrievable: true,
-				Bindable:           true,
-			},
-		},
-	}
-}
