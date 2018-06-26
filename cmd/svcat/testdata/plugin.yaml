@@ -177,6 +177,8 @@ tree:
     shortDesc: List instances, optionally filtered by name
     example: |2-
         svcat get instances
+        svcat get instances --class redis
+        svcat get instances --plan default
         svcat get instances --all-namespaces
         svcat get instance wordpress-mysql-instance
         svcat get instance -n ci concourse-postgres-instance
@@ -185,10 +187,16 @@ tree:
     - name: all-namespaces
       desc: If present, list the requested object(s) across all namespaces. Namespace
         in current context is ignored even if specified with --namespace
+    - name: class
+      shorthand: c
+      desc: If present, specify the class used as a filter for this request
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: plan
+      shorthand: p
+      desc: If present, specify the plan used as a filter for this request
   - name: plans
     use: plans [NAME]
     shortDesc: List plans, optionally filtered by name or class

@@ -54,7 +54,7 @@ var _ = Describe("Instances", func() {
 		It("Calls the generated v1beta1 List method with the specified namespace", func() {
 			namespace := si.Namespace
 
-			instances, err := sdk.RetrieveInstances(namespace)
+			instances, err := sdk.RetrieveInstances(namespace, "", "")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(instances.Items).Should(ConsistOf(*si, *si2))
@@ -71,7 +71,7 @@ var _ = Describe("Instances", func() {
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			_, err := sdk.RetrieveInstances(namespace)
+			_, err := sdk.RetrieveInstances(namespace, "", "")
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
