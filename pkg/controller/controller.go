@@ -565,7 +565,6 @@ func (c *controller) getClusterServiceClassAndClusterServiceBrokerForServiceBind
 		return nil, "", nil, err
 	}
 
-	//osbClient, err := c.getBrokerClientForServiceBinding(instance, binding, serviceBroker)
 	osbClient, err := c.getBrokerClientForServiceBinding(instance, binding)
 	if err != nil {
 		return nil, "", nil, err
@@ -1370,7 +1369,6 @@ func (c *controller) getServiceClassAndServiceBrokerForServiceBinding(instance *
 		return nil, "", nil, err
 	}
 
-	//osbClient, err := c.getBrokerClientForServiceBinding(instance, binding, serviceBroker)
 	osbClient, err := c.getBrokerClientForServiceBinding(instance, binding)
 	if err != nil {
 		return nil, "", nil, err
