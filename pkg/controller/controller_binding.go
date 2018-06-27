@@ -676,7 +676,7 @@ func (c *controller) updateServiceBindingCondition(
 	if err != nil {
 		glog.Errorf(pcb.Messagef(
 			"Error updating %v condition to %v: %v",
-			status, err,
+			conditionType, status, err,
 		))
 	}
 	return err
