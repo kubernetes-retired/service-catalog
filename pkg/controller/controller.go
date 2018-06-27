@@ -637,36 +637,6 @@ func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.
 	return broker, nil
 }
 
-/*
-func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding, broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
-	pcb := pretty.NewInstanceContextBuilder(instance)
-	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
-	if err != nil {
-		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Warning(pcb.Message(s))
-		c.updateServiceBindingCondition(
-			binding,
-			v1beta1.ServiceBindingConditionReady,
-			v1beta1.ConditionFalse,
-			errorAuthCredentialsReason,
-			"Error getting auth credentials. "+s,
-		)
-		c.recorder.Event(binding, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-		return nil, err
-	}
-
-	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
-
-	glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
-	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return brokerClient, nil
-}
-
-/*/
 func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (osb.Client, error) {
 
 	var brokerClient osb.Client
@@ -746,8 +716,6 @@ func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceI
 
 	return brokerClient, nil
 }
-
-//*/
 
 // Broker utility methods - move?
 // getAuthCredentialsFromClusterServiceBroker returns the auth credentials, if any, or
