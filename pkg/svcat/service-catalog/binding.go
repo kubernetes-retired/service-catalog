@@ -239,18 +239,18 @@ func (sdk *SDK) WaitForBinding(ns, name string, interval time.Duration, timeout 
 	return binding, err
 }
 
-// IsBindingReady returns if the instance is in the Ready status.
+// IsBindingReady returns true if the instance is in the Ready status.
 func (sdk *SDK) IsBindingReady(binding *v1beta1.ServiceBinding) bool {
-	return sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionReady)
+	return sdk.bindingHasStatus(binding, v1beta1.ServiceBindingConditionReady)
 }
 
-// IsBindingFailed returns if the instance is in the Failed status.
+// IsBindingFailed returns true if the instance is in the Failed status.
 func (sdk *SDK) IsBindingFailed(binding *v1beta1.ServiceBinding) bool {
-	return sdk.BindingHasStatus(binding, v1beta1.ServiceBindingConditionFailed)
+	return sdk.bindingHasStatus(binding, v1beta1.ServiceBindingConditionFailed)
 }
 
 // BindingHasStatus returns if the instance is in the specified status.
-func (sdk *SDK) BindingHasStatus(binding *v1beta1.ServiceBinding, status v1beta1.ServiceBindingConditionType) bool {
+func (sdk *SDK) bindingHasStatus(binding *v1beta1.ServiceBinding, status v1beta1.ServiceBindingConditionType) bool {
 	if binding == nil {
 		return false
 	}

@@ -118,8 +118,43 @@ var _ = Describe("Broker", func() {
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(brokerName))
 		})
 	})
+	Describe("Register", func() {
+		It("creates a broker by calling the v1beta1 Create method with the passed in arguements", func() {
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+
+			broker, err := sdk.Register(brokerName, url)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).NotTo(BeNil())
+			Expect(broker.Name).To(Equal(brokerName))
+			Expect(broker.Spec.URL).To(Equal(url))
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("create", "clusterservicebrokers")).To(BeTrue())
+			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceBroker)
+			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(brokerName))
+			Expect(objectFromRequest.Spec.URL).To(Equal(url))
+		})
+		It("Bubbles up errors", func() {
+			errorMessage := "error provisioning broker"
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("create", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			broker, err := sdk.Register(brokerName, url)
+
+			Expect(broker).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+		})
+	})
 	Describe("Sync", func() {
-		It("Useds the generated b1beta1 Retrieve method to get the broker, and then updates it with a new RelistRequests", func() {
+		It("Useds the generated v1beta1 Retrieve method to get the broker, and then updates it with a new RelistRequests", func() {
 			err := sdk.Sync(sb.Name, 3)
 			Expect(err).NotTo(HaveOccurred())
 
