@@ -17,6 +17,7 @@ limitations under the License.
 package rest
 
 import (
+	"fmt"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,7 +28,9 @@ import (
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
@@ -67,7 +70,18 @@ func testRESTOptionsGetter(
 ) generic.RESTOptionsGetter {
 	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
 }
+
+// TestV1Beta1Storage goes through each of the storages we know about and makes
+// sure they exist. It checks each storage to make sure it fulfills all of the
+// appropriate types. This could be done at compile time with an assertion, but
+// we didn't define specific objects for each storage, and instead instantiated
+// an upstream object.
 func TestV1Beta1Storage(t *testing.T) {
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatal(err)
+	}
 	provider := StorageProvider{
 		DefaultNamespace: "test-default",
 		StorageType:      server.StorageTypeEtcd,
@@ -79,35 +93,56 @@ func TestV1Beta1Storage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting v1beta1 storage (%s)", err)
 	}
-	_, brokerStorageExists := storageMap["clusterservicebrokers"]
-	if !brokerStorageExists {
-		t.Fatalf("no broker storage found")
-	}
-	// TODO: do stuff with broker storage
-	_, brokerStatusStorageExists := storageMap["clusterservicebrokers/status"]
-	if !brokerStatusStorageExists {
-		t.Fatalf("no service broker status storage found")
-	}
-	// TODO: do stuff with broker status storage
 
-	_, serviceClassStorageExists := storageMap["clusterserviceclasses"]
-	if !serviceClassStorageExists {
-		t.Fatalf("no service class storage found")
+	storages := [...]string{
+		"clusterservicebrokers",
+		"clusterserviceclasses",
+		"clusterserviceplans",
+		"serviceinstances",
+		"servicebindings",
+		"serviceclasses",
+		"serviceplans",
+		"servicebrokers",
 	}
-	// TODO: do stuff with service class storage
 
-	_, instanceStorageExists := storageMap["serviceinstances"]
-	if !instanceStorageExists {
-		t.Fatalf("no service instance storage found")
+	for _, storage := range storages {
+		s, storageExists := storageMap[storage]
+		if !storageExists {
+			t.Fatalf("no %q storage found", storage)
+		}
+		checkStorageType(t, s)
 	}
-	// TODO: do stuff with instance storage
+}
 
-	_, bindingStorageExists := storageMap["servicebindings"]
-	if !bindingStorageExists {
-		t.Fatalf("no service instance credential storage found")
+func checkStorageType(t *testing.T, s rest.Storage) {
+	// Our normal stores are all of these things
+	if _, isStorageType := s.(rest.Storage); !isStorageType {
+		t.Errorf("%q not compliant to storage interface", s)
 	}
-	// TODO: do stuff with binding storage
-
+	if _, isStorageType := s.(rest.Updater); !isStorageType {
+		t.Errorf("%q not compliant to updater interface", s)
+	}
+	if _, isStorageType := s.(rest.Getter); !isStorageType {
+		t.Errorf("%q not compliant to getter interface", s)
+	}
+	if _, isStorageType := s.(rest.Lister); !isStorageType {
+		t.Errorf("%q not compliant to lister interface", s)
+	}
+	if _, isStorageType := s.(rest.Creater); !isStorageType {
+		t.Errorf("%q not compliant to creater interface", s)
+	}
+	if _, isStorageType := s.(rest.GracefulDeleter); !isStorageType {
+		t.Errorf("%q not compliant to GracefulDeleter interface", s)
+	}
+	if _, isStorageType := s.(rest.CollectionDeleter); !isStorageType {
+		t.Errorf("%q not compliant to CollectionDeleter interface", s)
+	}
+	if _, isStorageType := s.(rest.Watcher); !isStorageType {
+		t.Errorf("%q not compliant to watcher interface", s)
+	}
+	if _, isStorageType := s.(rest.StandardStorage); !isStorageType {
+		t.Errorf("%q not compliant to StandardStorage interface", s)
+	}
 }
 
 func checkStatusStorageType(t *testing.T, s rest.Storage) {
