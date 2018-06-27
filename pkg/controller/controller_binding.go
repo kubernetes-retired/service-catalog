@@ -847,7 +847,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		return c.continuePollingServiceBinding(binding)
 	}
 
-	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, response.Description))
+	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, *response.Description))
 
 	switch response.State {
 	case osb.StateInProgress:
