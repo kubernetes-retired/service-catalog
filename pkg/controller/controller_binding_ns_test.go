@@ -18,26 +18,19 @@ package controller
 
 import (
 	"encoding/json"
-	//"errors"
 	"fmt"
 	"net/http"
-	//"reflect"
-	//"strings"
 	"testing"
-	//"time"
-	//scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1beta1informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 	corev1 "k8s.io/api/core/v1"
-	//apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	//"k8s.io/apimachinery/pkg/util/diff"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	//"github.com/kubernetes-incubator/service-catalog/test/fake"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 )
@@ -198,7 +191,6 @@ func TestReconcileServiceBindingWithParametersNamespacedRefs(t *testing.T) {
 // TestReconcileServiceBindingAsynchronousBindNamespacedRefs tests the situation where the
 // controller receives an asynchronous bind response back from the broker when
 // doing a bind call.
-
 func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
 	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
