@@ -19,6 +19,7 @@ package parameters
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -44,6 +45,9 @@ func ParseVariableJSON(params string) (map[string]interface{}, error) {
 func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 	variables := make(map[string]interface{})
 	for _, p := range params {
+		var newKeys []string
+		var subKey = ""
+		var subMap = make(map[string]string)
 
 		parts := strings.SplitN(p, "=", 2)
 		if len(parts) < 2 {
@@ -56,19 +60,38 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		}
 		value := strings.TrimSpace(parts[1])
 
+		if strings.ContainsAny(variable, ".") {
+			newKeys = strings.Split(variable, ".")
+			variable = newKeys[0]
+			subKey = newKeys[1]
+			subMap[subKey] = value
+		}
+
 		storedValue, ok := variables[variable]
 		// Logic to add new value to map variables:
 		// if variable DNE: add pair to variables as variable:value
 		// if variable exists in form of variable:value, create array to hold old value&new value
 		// if variable exists in form variable:[some values], append new value to existing array
 		if !ok {
-			variables[variable] = value // if there is no key, add key&value as string
+			if len(subKey) == 0 {
+				variables[variable] = value // if there is no key, add key&value as string
+			} else {
+				variables[variable] = make(map[string]string)
+				variables[variable] = subMap
+			}
 		} else {
 			switch storedValType := storedValue.(type) {
 			case string:
 				variables[variable] = []string{storedValType, value}
 			case []string:
 				variables[variable] = append(storedValType, value)
+			case map[string]string:
+				if len(subKey) > 0 {
+					varsv, submapv := reflect.ValueOf(variables[variable]), reflect.ValueOf(subMap)
+					for _, k := range submapv.MapKeys() {
+						varsv.SetMapIndex(k, submapv.MapIndex(k))
+					}
+				}
 			}
 		}
 	}
