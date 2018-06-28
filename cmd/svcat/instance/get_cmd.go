@@ -17,6 +17,8 @@ limitations under the License.
 package instance
 
 import (
+	"fmt"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
@@ -24,6 +26,8 @@ import (
 
 type getCmd struct {
 	*command.Namespaced
+	*command.PlanFiltered
+	*command.ClassFiltered
 	name         string
 	outputFormat string
 }
@@ -34,13 +38,19 @@ func (c *getCmd) SetFormat(format string) {
 
 // NewGetCmd builds a "svcat get instances" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	getCmd := &getCmd{
+		Namespaced:    command.NewNamespaced(cxt),
+		ClassFiltered: command.NewClassFiltered(),
+		PlanFiltered:  command.NewPlanFiltered(),
+	}
 	cmd := &cobra.Command{
 		Use:     "instances [NAME]",
 		Aliases: []string{"instance", "inst"},
 		Short:   "List instances, optionally filtered by name",
 		Example: command.NormalizeExamples(`
   svcat get instances
+  svcat get instances --class redis
+  svcat get instances --plan default
   svcat get instances --all-namespaces
   svcat get instance wordpress-mysql-instance
   svcat get instance -n ci concourse-postgres-instance
@@ -48,14 +58,25 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), true)
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddClassFlag(cmd)
+	getCmd.AddPlanFlag(cmd)
+
 	return cmd
 }
 
 func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		c.name = args[0]
+
+		if c.ClassFilter != "" {
+			return fmt.Errorf("class filter is not supported when specifiying instance name")
+		}
+
+		if c.PlanFilter != "" {
+			return fmt.Errorf("plan filter is not supported when specifiying instance name")
+		}
 	}
 
 	return nil
@@ -70,7 +91,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	instances, err := c.App.RetrieveInstances(c.Namespace)
+	instances, err := c.App.RetrieveInstances(c.Namespace, c.ClassFilter, c.PlanFilter)
 	if err != nil {
 		return err
 	}

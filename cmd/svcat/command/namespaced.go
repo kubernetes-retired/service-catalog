@@ -16,23 +16,70 @@ limitations under the License.
 
 package command
 
+import "github.com/spf13/pflag"
+
+// HasNamespaceFlags represents a command that can be scoped to a namespace.
+type HasNamespaceFlags interface {
+	Command
+
+	// ApplyNamespaceFlags persists the namespace-related flags:
+	// * --namespace
+	// * --all-namespaces
+	ApplyNamespaceFlags(flags *pflag.FlagSet)
+}
+
 // Namespaced is the base command of all svcat commands that are namespace scoped.
 type Namespaced struct {
 	*Context
 	Namespace string
 }
 
-// NewNamespacedCommand from context.
-func NewNamespacedCommand(cxt *Context) *Namespaced {
+// NewNamespaced from context.
+func NewNamespaced(cxt *Context) *Namespaced {
 	return &Namespaced{Context: cxt}
 }
 
-// GetContext retrieves the command's context.
-func (c *Namespaced) GetContext() *Context {
-	return c.Context
+// AddNamespaceFlags adds the namespace-related flags:
+// * --namespace
+// * --all-namespaces
+func (c *Namespaced) AddNamespaceFlags(flags *pflag.FlagSet, allowAll bool) {
+	flags.StringP(
+		"namespace",
+		"n",
+		"",
+		"If present, the namespace scope for this request",
+	)
+
+	if allowAll {
+		flags.Bool(
+			"all-namespaces",
+			false,
+			"If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace",
+		)
+	}
 }
 
-// SetNamespace sets the effective namespace for the command.
-func (c *Namespaced) SetNamespace(namespace string) {
-	c.Namespace = namespace
+// ApplyNamespaceFlags persists the namespace-related flags:
+// * --namespace
+// * --all-namespaces
+func (c *Namespaced) ApplyNamespaceFlags(flags *pflag.FlagSet) {
+	c.Namespace = c.determineNamespace(flags)
+}
+
+// determineNamespace using the current context's namespace, and the user-requested namespace.
+func (c *Namespaced) determineNamespace(flags *pflag.FlagSet) string {
+	currentNamespace := c.Context.App.CurrentNamespace
+
+	namespace, _ := flags.GetString("namespace")
+	allNamespaces, _ := flags.GetBool("all-namespaces")
+
+	if allNamespaces {
+		return ""
+	}
+
+	if namespace != "" {
+		return namespace
+	}
+
+	return currentNamespace
 }

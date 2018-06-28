@@ -40,9 +40,10 @@ chart and their default values.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.21` |
+| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.22` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
+| `apiserver.nodeSelector` | A nodeSelector value to apply to the apiserver pods. If not specified, no nodeSelector will be applied | |
 | `apiserver.aggregator.priority` | Priority of the APIService. | `100` |
 | `apiserver.aggregator.groupPriorityMinimum` | The minimum priority the group should have. | `10000` |
 | `apiserver.aggregator.versionPriority` | The ordering of this API inside of the group | `20` |
@@ -60,9 +61,12 @@ chart and their default values.
 | `apiserver.auth.enabled` | Enable authentication and authorization | `true` |
 | `apiserver.audit.activated` | If true, enables the use of audit features via this chart. | `false` |
 | `apiserver.audit.logPath` | If specified, audit log goes to specified path. | `"/tmp/service-catalog-apiserver-audit.log"` |
+| `apiserver.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
 | `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
 | `controllerManager.annotations` | Annotations for controllerManager pods | `{}` |
+| `controllerManager.nodeSelector` | A nodeSelector value to apply to the controllerManager pods. If not specified, no nodeSelector will be applied | |
+| `controllerManager.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |

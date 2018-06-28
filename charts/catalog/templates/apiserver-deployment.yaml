@@ -78,6 +78,7 @@ spec:
         - name: apiserver-cert
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
+        {{- if .Values.apiserver.healthcheck.enabled }}
         readinessProbe:
           httpGet:
             port: 8443
@@ -98,6 +99,7 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+        {{- end }}
       {{- if and (eq .Values.apiserver.storage.type "etcd") .Values.apiserver.storage.etcd.useEmbedded }}
       - name: etcd
         image: quay.io/coreos/etcd:latest
@@ -142,6 +144,10 @@ spec:
           successThreshold: 1
           timeoutSeconds: 2
       {{- end }}
+      {{ if .Values.apiserver.nodeSelector }}
+      nodeSelector:
+         {{ .Values.apiserver.nodeSelector }}
+      {{ end }}
       volumes:
       - name: apiserver-cert
         secret:

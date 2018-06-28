@@ -17,9 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"time"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -38,10 +35,6 @@ func SetDefaults_ServiceBrokerSpec(spec *ServiceBrokerSpec) {
 func setCommonServiceBrokerDefaults(spec *CommonServiceBrokerSpec) {
 	if spec.RelistBehavior == "" {
 		spec.RelistBehavior = ServiceBrokerRelistBehaviorDuration
-	}
-
-	if spec.RelistBehavior == ServiceBrokerRelistBehaviorDuration && spec.RelistDuration == nil {
-		spec.RelistDuration = &metav1.Duration{Duration: 15 * time.Minute}
 	}
 }
 

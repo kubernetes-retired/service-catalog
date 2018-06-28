@@ -18,6 +18,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -92,7 +93,7 @@ func (c *controller) clusterServiceBrokerDelete(obj interface{}) {
 // returns true unless the broker has a ready condition with status true and
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true, or if the broker's RelistBehavior is set to Manual.
-func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, now time.Time) bool {
+func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, now time.Time, defaultRelistInterval time.Duration) bool {
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 	if broker.Status.ReconciledGeneration != broker.Generation {
 		// If the spec has changed, we should reconcile the broker.
@@ -121,14 +122,14 @@ func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, n
 					return false
 				}
 
-				if broker.Spec.RelistDuration == nil {
-					glog.Error(pcb.Message("Unable to process because RelistBehavior is set to Duration with a nil RelistDuration value"))
-					return false
-				}
-
 				// By default, the broker should relist if it has been longer than the
 				// RelistDuration since the last time we fetched the Catalog
-				duration := broker.Spec.RelistDuration.Duration
+				duration := defaultRelistInterval
+
+				if broker.Spec.RelistDuration != nil {
+					duration = broker.Spec.RelistDuration.Duration
+				}
+
 				intervalPassed := true
 				if broker.Status.LastCatalogRetrievalTime != nil {
 					intervalPassed = now.After(broker.Status.LastCatalogRetrievalTime.Time.Add(duration))
@@ -175,7 +176,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
 	// elapsed, do not reconcile it.
-	if !shouldReconcileClusterServiceBroker(broker, time.Now()) {
+	if !shouldReconcileClusterServiceBroker(broker, time.Now(), c.brokerRelistInterval) {
 		return nil
 	}
 
@@ -310,6 +311,11 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				continue
 			}
 
+			// Do not delete user-defined classes
+			if !isServiceCatalogManagedResource(existingServiceClass) {
+				continue
+			}
+
 			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServiceClassName(existingServiceClass)))
 			existingServiceClass.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(existingServiceClass)
@@ -358,6 +364,12 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			if existingServicePlan.Status.RemovedFromBrokerCatalog {
 				continue
 			}
+
+			// Do not delete user-defined plans
+			if !isServiceCatalogManagedResource(existingServicePlan) {
+				continue
+			}
+
 			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServicePlanName(existingServicePlan)))
 			existingServicePlan.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(existingServicePlan)
@@ -498,6 +510,8 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 			}
 		}
 
+		markAsServiceCatalogManagedResource(serviceClass, broker)
+
 		glog.V(5).Info(pcb.Messagef("Fresh %s; creating", pretty.ClusterServiceClassName(serviceClass)))
 		if _, err := c.serviceCatalogClient.ClusterServiceClasses().Create(serviceClass); err != nil {
 			glog.Error(pcb.Messagef("Error creating %s: %v", pretty.ClusterServiceClassName(serviceClass), err))
@@ -529,6 +543,8 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	toUpdate.Spec.Requires = serviceClass.Spec.Requires
 	toUpdate.Spec.ExternalName = serviceClass.Spec.ExternalName
 	toUpdate.Spec.ExternalMetadata = serviceClass.Spec.ExternalMetadata
+
+	markAsServiceCatalogManagedResource(toUpdate, broker)
 
 	updatedServiceClass, err := c.serviceCatalogClient.ClusterServiceClasses().Update(toUpdate)
 	if err != nil {
@@ -582,6 +598,8 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 			}
 		}
 
+		markAsServiceCatalogManagedResource(servicePlan, broker)
+
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ClusterServicePlan.
 		if _, err := c.serviceCatalogClient.ClusterServicePlans().Create(servicePlan); err != nil {
@@ -614,6 +632,8 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 	toUpdate.Spec.ServiceInstanceCreateParameterSchema = servicePlan.Spec.ServiceInstanceCreateParameterSchema
 	toUpdate.Spec.ServiceInstanceUpdateParameterSchema = servicePlan.Spec.ServiceInstanceUpdateParameterSchema
 	toUpdate.Spec.ServiceBindingCreateParameterSchema = servicePlan.Spec.ServiceBindingCreateParameterSchema
+
+	markAsServiceCatalogManagedResource(toUpdate, broker)
 
 	updatedPlan, err := c.serviceCatalogClient.ClusterServicePlans().Update(toUpdate)
 	if err != nil {
@@ -783,4 +803,25 @@ func convertClusterServicePlanListToMap(list []v1beta1.ClusterServicePlan) map[s
 	}
 
 	return ret
+}
+
+func markAsServiceCatalogManagedResource(obj metav1.Object, broker *v1beta1.ClusterServiceBroker) {
+	if isServiceCatalogManagedResource(obj) {
+		return
+	}
+
+	var blockOwnerDeletion = false
+	controllerRef := *metav1.NewControllerRef(broker, v1beta1.SchemeGroupVersion.WithKind("ClusterServiceBroker"))
+	controllerRef.BlockOwnerDeletion = &blockOwnerDeletion
+
+	obj.SetOwnerReferences(append(obj.GetOwnerReferences(), controllerRef))
+}
+
+func isServiceCatalogManagedResource(resource metav1.Object) bool {
+	c := metav1.GetControllerOf(resource)
+	if c == nil {
+		return false
+	}
+
+	return strings.HasPrefix(c.APIVersion, v1beta1.GroupName)
 }

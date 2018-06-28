@@ -90,26 +90,6 @@ func (pr PlanReference) GetSpecifiedServiceClass() string {
 	return ""
 }
 
-// GetSpecifiedServicePlan returns the user-specified class value from either:
-// * ServicePlanExternalName
-// * ServicePlanExternalID
-// * ServicePlanName
-func (pr PlanReference) GetSpecifiedServicePlan() string {
-	if pr.ServicePlanExternalName != "" {
-		return pr.ServicePlanExternalName
-	}
-
-	if pr.ServicePlanExternalID != "" {
-		return pr.ServicePlanExternalID
-	}
-
-	if pr.ServicePlanName != "" {
-		return pr.ServicePlanName
-	}
-
-	return ""
-}
-
 // GetSpecifiedClusterServicePlan returns the user-specified plan value from one of:
 // * ClusterServicePlanExternalName
 // * ClusterServicePlanExternalID
@@ -126,6 +106,26 @@ func (pr PlanReference) GetSpecifiedClusterServicePlan() string {
 
 	if pr.ClusterServicePlanName != "" {
 		return pr.ClusterServicePlanName
+	}
+
+	return ""
+}
+
+// GetSpecifiedServicePlan returns the user-specified plan value from either:
+// * ServicePlanExternalName
+// * ServicePlanExternalID
+// * ServicePlanName
+func (pr PlanReference) GetSpecifiedServicePlan() string {
+	if pr.ServicePlanExternalName != "" {
+		return pr.ServicePlanExternalName
+	}
+
+	if pr.ServicePlanExternalID != "" {
+		return pr.ServicePlanExternalID
+	}
+
+	if pr.ServicePlanName != "" {
+		return pr.ServicePlanName
 	}
 
 	return ""

@@ -135,11 +135,23 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all instances in a namespace", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
 		{name: "list all instances in a namespace (json)", cmd: "get instances -n test-ns -o json", golden: "output/get-instances.json"},
 		{name: "list all instances in a namespace (yaml)", cmd: "get instances -n test-ns -o yaml", golden: "output/get-instances.yaml"},
+		{name: "list all instances filtered by existing plan", cmd: "get instances --all-namespaces --plan default", golden: "output/get-instances-all-namespaces-by-plan.txt"},
+		{name: "list all instances filtered by not existing plan", cmd: "get instances --all-namespaces --plan wrong", golden: "output/get-instances-all-namespaces-by-wrong-plan.txt"},
+		{name: "list all instances filtered by existing class", cmd: "get instances --all-namespaces --class user-provided-service", golden: "output/get-instances-all-namespaces-by-class.txt"},
+		{name: "list all instances filtered by not existing class", cmd: "get instances --all-namespaces --class wrong", golden: "output/get-instances-all-namespaces-by-wrong-class.txt"},
 		{name: "list all instances", cmd: "get instances --all-namespaces", golden: "output/get-instances-all-namespaces.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
 		{name: "get instance (json)", cmd: "get instance ups-instance -n test-ns -o json", golden: "output/get-instance.json"},
 		{name: "get instance (yaml)", cmd: "get instance ups-instance -n test-ns -o yaml", golden: "output/get-instance.yaml"},
 		{name: "describe instance", cmd: "describe instance ups-instance -n test-ns", golden: "output/describe-instance.txt"},
+		{name: "bind instance", cmd: "bind ups-instance --name ups-binding -n test-ns", golden: "output/bind-instance.txt"},
+		{name: "bind instance and wait", cmd: "bind ups-instance --name ups-binding -n test-ns --wait", golden: "output/bind-instance-and-wait.txt"},
+		{name: "unbind instance", cmd: "unbind ups-instance -n test-ns", golden: "output/unbind-instance.txt"},
+		{name: "unbind instance and wait", cmd: "unbind ups-instance -n test-ns --wait", golden: "output/unbind-instance-and-wait.txt"},
+		{name: "provision instance", cmd: "provision ups-instance -n test-ns --class user-provided-service --plan default", golden: "output/provision-instance.txt"},
+		{name: "provision instance and wait", cmd: "provision ups-instance -n test-ns --class user-provided-service --plan default --wait", golden: "output/provision-instance-and-wait.txt"},
+		{name: "deprovision instance", cmd: "deprovision ups-instance -n test-ns", golden: "output/deprovision-instance.txt"},
+		{name: "deprovision instance and wait", cmd: "deprovision ups-instance -n test-ns --wait", golden: "output/deprovision-instance-and-wait.txt"},
 
 		{name: "list all bindings in a namespace", cmd: "get bindings -n test-ns", golden: "output/get-bindings.txt"},
 		{name: "list all bindings in a namespace (json)", cmd: "get bindings -n test-ns -o json", golden: "output/get-bindings.json"},
@@ -150,6 +162,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get binding (yaml)", cmd: "get binding ups-binding -n test-ns -o yaml", golden: "output/get-binding.yaml"},
 		{name: "describe binding", cmd: "describe binding ups-binding -n test-ns", golden: "output/describe-binding.txt"},
 		{name: "describe binding and decode secret", cmd: "describe binding ups-binding -n test-ns --show-secrets", golden: "output/describe-binding-show-secrets.txt"},
+		{name: "delete binding", cmd: "unbind --name ups-binding -n test-ns", golden: "output/delete-binding.txt"},
+		{name: "delete binding and wait", cmd: "unbind --name ups-binding -n test-ns --wait", golden: "output/delete-binding-and-wait.txt"},
 
 		{name: "completion bash", cmd: "completion bash", golden: "output/completion-bash.txt"},
 		{name: "completion zsh", cmd: "completion zsh", golden: "output/completion-zsh.txt"},
@@ -528,10 +542,17 @@ func apihandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method != http.MethodGet {
-		// Anything more interesting than a GET, i.e. it relies upon server behavior
-		// probably should be an integration test instead
-		w.WriteHeader(500)
-		w.Write([]byte(fmt.Sprintf("unallowed method for request %s %s", r.Method, r.RequestURI)))
+		requestBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		// Just echo back whatever was sent for now, these tests are being refactored very soon to become e2e
+		// so more mocking work isn't necessary
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(requestBody)
 		return
 	}
 

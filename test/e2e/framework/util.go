@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -31,8 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -70,30 +69,10 @@ func Skipf(format string, args ...interface{}) {
 	Skip(nowStamp() + ": " + msg)
 }
 
-func RestclientConfig(config, context string) (*api.Config, error) {
-	Logf(">>> config: %s\n", config)
-	if config == "" {
-		return nil, fmt.Errorf("Config file must be specified to load client config")
-	}
-	c, err := clientcmd.LoadFromFile(config)
-	if err != nil {
-		return nil, fmt.Errorf("error loading config: %v", err.Error())
-	}
-	if context != "" {
-		Logf(">>> context: %s\n", context)
-		c.CurrentContext = context
-	}
-	return c, nil
-}
-
 type ClientConfigGetter func() (*rest.Config, error)
 
 func LoadConfig(config, context string) (*rest.Config, error) {
-	c, err := RestclientConfig(config, context)
-	if err != nil {
-		return nil, err
-	}
-	return clientcmd.NewDefaultClientConfig(*c, &clientcmd.ConfigOverrides{}).ClientConfig()
+	return kube.GetConfig(context, config).ClientConfig()
 }
 
 // unique identifier of the e2e run

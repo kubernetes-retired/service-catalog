@@ -235,7 +235,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
 
-verify-docs: .init docs
+verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
 	@$(DOCKER_CMD) verify-links.sh -s .pkg -s .bundler -s _plugins -s _includes -t $(SKIP_HTTP) .
 
@@ -285,7 +285,7 @@ test-integration: .init $(scBuildImageTarget) build build-integration
 	contrib/hack/setup-kubectl.sh
 	contrib/hack/test-apiserver.sh
 	# golang integration tests
-	$(DOCKER_CMD) test/integration.sh $(INT_TEST_FLAGS)
+	$(DOCKER_CMD) ./integration.test -test.v $(INT_TEST_FLAGS)
 
 clean-e2e: .init $(scBuildImageTarget)
 	$(DOCKER_CMD) rm -f $(BINDIR)/e2e.test

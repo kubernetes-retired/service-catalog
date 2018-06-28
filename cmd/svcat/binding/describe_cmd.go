@@ -32,7 +32,7 @@ type describeCmd struct {
 
 // NewDescribeCmd builds a "svcat describe binding" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Namespaced: command.NewNamespacedCommand(cxt)}
+	describeCmd := &describeCmd{Namespaced: command.NewNamespaced(cxt)}
 	cmd := &cobra.Command{
 		Use:     "binding NAME",
 		Aliases: []string{"bindings", "bnd"},
@@ -41,7 +41,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
-	command.AddNamespaceFlags(cmd.Flags(), false)
+	describeCmd.AddNamespaceFlags(cmd.Flags(), false)
 	cmd.Flags().BoolVar(
 		&describeCmd.showSecrets,
 		"show-secrets",

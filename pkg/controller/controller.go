@@ -153,13 +153,12 @@ func NewController(
 			UpdateFunc: controller.serviceBrokerUpdate,
 			DeleteFunc: controller.serviceBrokerDelete,
 		})
-		// ERIK TODO: Uncomment when the controllers are brought in
 		controller.serviceClassLister = serviceClassInformer.Lister()
-		//serviceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		//AddFunc:    controller.serviceClassAdd,
-		//UpdateFunc: controller.serviceClassUpdate,
-		//DeleteFunc: controller.serviceClassDelete,
-		//})
+		serviceClassInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    controller.serviceClassAdd,
+			UpdateFunc: controller.serviceClassUpdate,
+			DeleteFunc: controller.serviceClassDelete,
+		})
 		controller.servicePlanLister = servicePlanInformer.Lister()
 		//servicePlanInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		//AddFunc:    controller.servicePlanAdd,
@@ -242,6 +241,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
 			createWorker(c.serviceBrokerQueue, "ServiceBroker", maxRetries, true, c.reconcileServiceBrokerKey, stopCh, &waitGroup)
+			createWorker(c.serviceClassQueue, "ServiceClass", maxRetries, true, c.reconcileServiceClassKey, stopCh, &waitGroup)
 		}
 
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
@@ -268,6 +268,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
 		c.serviceBrokerQueue.ShutDown()
+		c.serviceClassQueue.ShutDown()
 	}
 
 	waitGroup.Wait()
@@ -415,6 +416,29 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	return serviceClass, servicePlan, brokerName, brokerClient, nil
 }
 
+func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceClass, *v1beta1.ServicePlan, string, osb.Client, error) {
+	serviceClass, brokerName, brokerClient, err := c.getServiceClassAndServiceBroker(instance)
+	if err != nil {
+		return nil, nil, "", nil, err
+	}
+
+	var servicePlan *v1beta1.ServicePlan
+	if instance.Spec.ServicePlanRef != nil {
+		var err error
+		servicePlan, err = c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
+		if nil != err {
+			return nil, nil, "", nil, &operationError{
+				reason: errorNonexistentServicePlanReason,
+				message: fmt.Sprintf(
+					"The instance references a non-existent ServicePlan %q - %v",
+					instance.Spec.ServicePlanRef.Name, instance.Spec.PlanReference,
+				),
+			}
+		}
+	}
+	return serviceClass, servicePlan, brokerName, brokerClient, nil
+}
+
 // getClusterServiceClassAndClusterServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class and creates
 // a brokerClient to use for that method given an ServiceInstance.
@@ -456,6 +480,55 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 
 	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
 	glog.V(4).Info(pcb.Messagef("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
+	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
+	if err != nil {
+		return nil, "", nil, err
+	}
+
+	return serviceClass, broker.Name, brokerClient, nil
+}
+
+// getServiceClassAndServiceBroker is a sequence of operations that's done in couple of
+// places so this method fetches the Service Class and creates
+// a brokerClient to use for that method given a ServiceInstance.
+func (c *controller) getServiceClassAndServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceClass, string, osb.Client, error) {
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
+	serviceClass, err := c.serviceClassLister.ServiceClasses(instance.Namespace).Get(instance.Spec.ServiceClassRef.Name)
+	if err != nil {
+		return nil, "", nil, &operationError{
+			reason: errorNonexistentServiceClassReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent ServiceClass (K8S: %q ExternalName: %q)",
+				instance.Spec.ServiceClassRef.Name, instance.Spec.ServiceClassExternalName,
+			),
+		}
+	}
+
+	broker, err := c.serviceBrokerLister.ServiceBrokers(instance.Namespace).Get(serviceClass.Spec.ServiceBrokerName)
+	if err != nil {
+		return nil, "", nil, &operationError{
+			reason: errorNonexistentServiceBrokerReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent broker %q",
+				serviceClass.Spec.ServiceBrokerName,
+			),
+		}
+
+	}
+
+	authConfig, err := getAuthCredentialsFromServiceBroker(c.kubeClient, broker)
+	if err != nil {
+		return nil, "", nil, &operationError{
+			reason: errorAuthCredentialsReason,
+			message: fmt.Sprintf(
+				"Error getting broker auth credentials for broker %q: %s",
+				broker.Name, err,
+			),
+		}
+	}
+
+	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
+	glog.V(4).Info(pcb.Messagef("Creating client for ServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, "", nil, err
@@ -632,13 +705,9 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
 }
 
-// Broker utility methods - move?
 // getAuthCredentialsFromServiceBroker returns the auth credentials, if any, or
-// returns an error. If the AuthInfo field is nil, empty values are
-// returned.
+// returns an error. If the AuthInfo field is nil, empty values are returned.
 func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1beta1.ServiceBroker) (*osb.AuthConfig, error) {
-	// ERIK TODO: This method is mostly error handling boilerplate, is it worth consolidating with common elements?
-	// Main difference are just using the broker's namespace instead of the same namespace as the broker.
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
