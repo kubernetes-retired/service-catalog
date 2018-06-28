@@ -932,11 +932,11 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		return c.continuePollingServiceBinding(binding)
 	}
 
+	description := "(no description provided)"
 	if response.Description != nil {
-		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, *response.Description))
-	} else {
-		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, "no description"))
+		description = *response.Description
 	}
+	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, description))
 
 	switch response.State {
 	case osb.StateInProgress:
@@ -1016,11 +1016,6 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 		return c.finishPollingServiceBinding(binding)
 	case osb.StateFailed:
-		description := "(no description provided)"
-		if response.Description != nil {
-			description = *response.Description
-		}
-
 		if !deleting {
 			reason := errorBindCallReason
 			message := "Bind call failed: " + description

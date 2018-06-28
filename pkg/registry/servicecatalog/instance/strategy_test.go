@@ -17,6 +17,7 @@ limitations under the License.
 package instance
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -56,7 +57,7 @@ func getTestInstance() *servicecatalog.ServiceInstance {
 	}
 }
 
-func contextWithUserName(userName string) genericapirequest.Context {
+func contextWithUserName(userName string) context.Context {
 	ctx := genericapirequest.NewContext()
 	userInfo := &user.DefaultInfo{
 		Name: userName,

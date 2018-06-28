@@ -806,11 +806,11 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		return c.continuePollingServiceInstance(instance)
 	}
 
+	description := "(no description provided)"
 	if response.Description != nil {
-		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, *response.Description))
-	} else {
-		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, "no description"))
+		description = *response.Description
 	}
+	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, description))
 
 	switch response.State {
 	case osb.StateInProgress:
@@ -864,11 +864,6 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		}
 		return c.finishPollingServiceInstance(instance)
 	case osb.StateFailed:
-		description := "(no description provided)"
-		if response.Description != nil {
-			description = *response.Description
-		}
-
 		var err error
 		switch {
 		case deleting:

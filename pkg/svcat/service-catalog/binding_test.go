@@ -291,8 +291,8 @@ var _ = Describe("Binding", func() {
 			}
 
 			bindingsToDelete := []types.NamespacedName{
-				{sb.Namespace, sb.Name},
-				{sb2.Namespace, sb2.Name},
+				{Namespace: sb.Namespace, Name: sb.Name},
+				{Namespace: sb2.Namespace, Name: sb2.Name},
 			}
 
 			deleted, err := sdk.DeleteBindings(bindingsToDelete)

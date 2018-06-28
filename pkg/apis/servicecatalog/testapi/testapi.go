@@ -32,7 +32,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/recognizer"
@@ -103,7 +102,7 @@ func init() {
 	}
 
 	if _, ok := Groups[servicecatalog.GroupName]; !ok {
-		externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName, Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
+		externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName, Version: api.Scheme.PrioritizedVersionsForGroup(servicecatalog.GroupName)[0].Version}
 		Groups[servicecatalog.GroupName] = TestGroup{
 			externalGroupVersion: externalGroupVersion,
 			internalGroupVersion: servicecatalog.SchemeGroupVersion,
@@ -180,25 +179,9 @@ func (g TestGroup) StorageCodec() runtime.Codec {
 	return api.Codecs.CodecForVersions(s, ds, schema.GroupVersions{g.externalGroupVersion}, nil)
 }
 
-// Converter returns the api.Scheme for the API version to test against, as set by the
-// KUBE_TEST_API env var.
-func (g TestGroup) Converter() runtime.ObjectConvertor {
-	interfaces, err := api.Registry.GroupOrDie(g.externalGroupVersion.Group).InterfacesFor(g.externalGroupVersion)
-	if err != nil {
-		panic(err)
-	}
-	return interfaces.ObjectConvertor
-}
+// Converter() is gone upstream as of e2fc5cf259463f896213afdef15d58ef9a91eb35
 
-// MetadataAccessor returns the MetadataAccessor for the API version to test against,
-// as set by the KUBE_TEST_API env var.
-func (g TestGroup) MetadataAccessor() meta.MetadataAccessor {
-	interfaces, err := api.Registry.GroupOrDie(g.externalGroupVersion.Group).InterfacesFor(g.externalGroupVersion)
-	if err != nil {
-		panic(err)
-	}
-	return interfaces.MetadataAccessor
-}
+// MetadataAccessor is gone upstream as of 0710f72c65ad23e7a3726b345898ef4aaaac26fa
 
 // SelfLink returns a self link that will appear to be for the version Version().
 // 'resource' should be the resource path, e.g. "pods" for the Pod type. 'name' should be
@@ -255,10 +238,7 @@ func (g TestGroup) ResourcePath(resource, namespace, name string) string {
 	return g.ResourcePathWithPrefix("", resource, namespace, name)
 }
 
-// RESTMapper returns the rest mapper interface
-func (g TestGroup) RESTMapper() meta.RESTMapper {
-	return api.Registry.RESTMapper()
-}
+// RESTMapper is gone upstream as of ef0d1ab81927214db80c30d5af491f67546d790b
 
 // ExternalGroupVersions returns all external group versions allowed for the server.
 func ExternalGroupVersions() schema.GroupVersions {

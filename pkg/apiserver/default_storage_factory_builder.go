@@ -19,11 +19,11 @@ package apiserver
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/server/resourceconfig"
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	utilflag "k8s.io/apiserver/pkg/util/flag"
@@ -38,7 +38,7 @@ func NewStorageFactory(storageConfig storagebackend.Config, defaultMediaType str
 
 	resourceEncodingConfig := mergeGroupEncodingConfigs(defaultResourceEncoding, storageEncodingOverrides)
 	resourceEncodingConfig = mergeResourceEncodingConfigs(resourceEncodingConfig, resourceEncodingOverrides)
-	apiResourceConfig, err := mergeAPIResourceConfigs(defaultAPIResourceConfig, resourceConfigOverrides)
+	apiResourceConfig, err := resourceconfig.MergeAPIResourceConfigs(defaultAPIResourceConfig, resourceConfigOverrides, api.Scheme)
 	if err != nil {
 		return nil, err
 	}
@@ -62,84 +62,6 @@ func mergeGroupEncodingConfigs(defaultResourceEncoding *serverstorage.DefaultRes
 		resourceEncodingConfig.SetVersionEncoding(group, storageEncodingVersion, schema.GroupVersion{Group: group, Version: runtime.APIVersionInternal})
 	}
 	return resourceEncodingConfig
-}
-
-// Merges the given defaultAPIResourceConfig with the given resourceConfigOverrides.
-func mergeAPIResourceConfigs(defaultAPIResourceConfig *serverstorage.ResourceConfig, resourceConfigOverrides utilflag.ConfigurationMap) (*serverstorage.ResourceConfig, error) {
-	resourceConfig := defaultAPIResourceConfig
-	overrides := resourceConfigOverrides
-
-	// "api/all=false" allows users to selectively enable specific api versions.
-	allAPIFlagValue, ok := overrides["api/all"]
-	if ok {
-		if allAPIFlagValue == "false" {
-			// Disable all group versions.
-			resourceConfig.DisableVersions(api.Registry.RegisteredGroupVersions()...)
-		} else if allAPIFlagValue == "true" {
-			resourceConfig.EnableVersions(api.Registry.RegisteredGroupVersions()...)
-		}
-	}
-
-	// "api/legacy=false" allows users to disable legacy api versions.
-	disableLegacyAPIs := false
-	legacyAPIFlagValue, ok := overrides["api/legacy"]
-	if ok && legacyAPIFlagValue == "false" {
-		disableLegacyAPIs = true
-	}
-	_ = disableLegacyAPIs // hush the compiler while we don't have legacy APIs to disable.
-
-	// "<resourceSpecifier>={true|false} allows users to enable/disable API.
-	// This takes preference over api/all and api/legacy, if specified.
-	// Iterate through all group/version overrides specified in runtimeConfig.
-	for key := range overrides {
-		if key == "api/all" || key == "api/legacy" {
-			// Have already handled them above. Can skip them here.
-			continue
-		}
-		tokens := strings.Split(key, "/")
-		if len(tokens) != 2 {
-			continue
-		}
-		groupVersionString := tokens[0] + "/" + tokens[1]
-		// HACK: Hack for "v1" legacy group version.
-		// Remove when we stop supporting the legacy group version.
-		if groupVersionString == "api/v1" {
-			groupVersionString = "v1"
-		}
-		groupVersion, err := schema.ParseGroupVersion(groupVersionString)
-		if err != nil {
-			return nil, fmt.Errorf("invalid key %s", key)
-		}
-		// Verify that the groupVersion is api.Registry.
-		if !api.Registry.IsRegisteredVersion(groupVersion) {
-			return nil, fmt.Errorf("group version %s that has not been registered", groupVersion.String())
-		}
-		enabled, err := getRuntimeConfigValue(overrides, key, false)
-		if err != nil {
-			return nil, err
-		}
-		if enabled {
-			resourceConfig.EnableVersions(groupVersion)
-		} else {
-			resourceConfig.DisableVersions(groupVersion)
-		}
-	}
-
-	// Iterate through all group/version/resource overrides specified in runtimeConfig.
-	for key := range overrides {
-		tokens := strings.Split(key, "/")
-		if len(tokens) != 3 {
-			continue
-		}
-
-		// TODO nilebox: resourceConfig.EnableResources and resourceConfig.DisableResources
-		// methods were removed.
-		// Remove the resource loop after we make sure that we don't have
-		// overrides for resources in our config.
-		return nil, fmt.Errorf("resource overrides are not supported anymore: %v", key)
-
-	}
-	return resourceConfig, nil
 }
 
 func getRuntimeConfigValue(overrides utilflag.ConfigurationMap, apiKey string, defaultValue bool) (bool, error) {

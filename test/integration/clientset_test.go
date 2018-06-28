@@ -127,7 +127,7 @@ func TestEtcdHealthCheckerSuccess(t *testing.T) {
 func TestEtcdHealthCheckerFail(t *testing.T) {
 	serverConfig := NewTestServerConfig()
 	// this server won't exist
-	serverConfig.etcdServerList = []string{""}
+	serverConfig.etcdServerList = []string{"example.com:1"}
 	serverConfig.storageType = server.StorageTypeEtcd
 	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
 	tr := &http.Transport{

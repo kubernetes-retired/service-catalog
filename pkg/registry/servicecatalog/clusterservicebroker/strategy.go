@@ -19,11 +19,12 @@ package clusterservicebroker
 // this was copied from where else and edited to fit our objects
 
 import (
+	"context"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
@@ -85,7 +86,7 @@ func (clusterServiceBrokerRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives a the incoming ClusterServiceBroker and clears it's
 // Status. Status is not a user settable field.
-func (clusterServiceBrokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (clusterServiceBrokerRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.ClusterServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-clusterservicebroker object to create")
@@ -102,7 +103,7 @@ func (clusterServiceBrokerRESTStrategy) PrepareForCreate(ctx genericapirequest.C
 	broker.Generation = 1
 }
 
-func (clusterServiceBrokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (clusterServiceBrokerRESTStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateClusterServiceBroker(obj.(*sc.ClusterServiceBroker))
 }
 
@@ -114,7 +115,7 @@ func (clusterServiceBrokerRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (clusterServiceBrokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServiceBrokerRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-clusterservicebroker object to update to")
@@ -138,7 +139,7 @@ func (clusterServiceBrokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.C
 	}
 }
 
-func (clusterServiceBrokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServiceBrokerRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-clusterservicebroker object to validate to")
@@ -151,7 +152,7 @@ func (clusterServiceBrokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Con
 	return scv.ValidateClusterServiceBrokerUpdate(newClusterServiceBroker, oldClusterServiceBroker)
 }
 
-func (clusterServiceBrokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServiceBrokerStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-clusterservicebroker object to update to")
@@ -164,7 +165,7 @@ func (clusterServiceBrokerStatusRESTStrategy) PrepareForUpdate(ctx genericapireq
 	newClusterServiceBroker.Spec = oldClusterServiceBroker.Spec
 }
 
-func (clusterServiceBrokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServiceBrokerStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-clusterservicebroker object to validate to")

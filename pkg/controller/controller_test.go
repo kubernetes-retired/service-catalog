@@ -559,7 +559,7 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 			},
 		},
 		Status: v1beta1.ClusterServiceClassStatus{
-			v1beta1.CommonServiceClassStatus{
+			CommonServiceClassStatus: v1beta1.CommonServiceClassStatus{
 				RemovedFromBrokerCatalog: true,
 			},
 		},

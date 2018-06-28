@@ -19,11 +19,12 @@ package servicebroker
 // this was copied from where else and edited to fit our objects
 
 import (
+	"context"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
@@ -84,7 +85,7 @@ func (serviceBrokerRESTStrategy) NamespaceScoped() bool {
 
 // PrepareForCreate receives a the incoming ServiceBroker and clears it's
 // Status. Status is not a user settable field.
-func (serviceBrokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (serviceBrokerRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-servicebroker object to create")
@@ -101,7 +102,7 @@ func (serviceBrokerRESTStrategy) PrepareForCreate(ctx genericapirequest.Context,
 	broker.Generation = 1
 }
 
-func (serviceBrokerRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (serviceBrokerRESTStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateServiceBroker(obj.(*sc.ServiceBroker))
 }
 
@@ -113,7 +114,7 @@ func (serviceBrokerRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (serviceBrokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (serviceBrokerRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-servicebroker object to update to")
@@ -137,7 +138,7 @@ func (serviceBrokerRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context,
 	}
 }
 
-func (serviceBrokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (serviceBrokerRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-servicebroker object to validate to")
@@ -150,7 +151,7 @@ func (serviceBrokerRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, n
 	return scv.ValidateServiceBrokerUpdate(newServiceBroker, oldServiceBroker)
 }
 
-func (serviceBrokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (serviceBrokerStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-servicebroker object to update to")
@@ -163,7 +164,7 @@ func (serviceBrokerStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Co
 	newServiceBroker.Spec = oldServiceBroker.Spec
 }
 
-func (serviceBrokerStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (serviceBrokerStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
 		glog.Fatal("received a non-servicebroker object to validate to")

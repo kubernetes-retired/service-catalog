@@ -19,10 +19,11 @@ package serviceclass
 // this was copied from where else and edited to fit our objects
 
 import (
+	"context"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
@@ -85,7 +86,7 @@ func (serviceClassRESTStrategy) NamespaceScoped() bool {
 }
 
 // PrepareForCreate receives the incoming ServiceClass.
-func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (serviceClassRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	serviceClass, ok := obj.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to create")
@@ -93,7 +94,7 @@ func (serviceClassRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, 
 	serviceClass.Status = sc.ServiceClassStatus{}
 }
 
-func (serviceClassRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (serviceClassRESTStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateServiceClass(obj.(*sc.ServiceClass))
 }
 
@@ -105,7 +106,7 @@ func (serviceClassRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (serviceClassRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update to")
@@ -121,7 +122,7 @@ func (serviceClassRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, 
 	newServiceClass.Spec.ServiceBrokerName = oldServiceClass.Spec.ServiceBrokerName
 }
 
-func (serviceClassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (serviceClassRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to validate to")
@@ -134,7 +135,7 @@ func (serviceClassRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, ne
 	return scv.ValidateServiceClassUpdate(newServiceclass, oldServiceclass)
 }
 
-func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ServiceClass)
 	if !ok {
 		glog.Fatal("received a non-serviceclass object to update to")
@@ -147,6 +148,6 @@ func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Con
 	newServiceClass.Spec = oldServiceClass.Spec
 }
 
-func (serviceClassStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (serviceClassStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	return field.ErrorList{}
 }

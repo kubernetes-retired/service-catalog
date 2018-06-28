@@ -30,6 +30,7 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	admissionmetrics "k8s.io/apiserver/pkg/admission/metrics"
 	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
+	apiopenapi "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 	kubeinformers "k8s.io/client-go/informers"
@@ -96,7 +97,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 
 	if s.ServeOpenAPISpec {
 		genericConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
-			openapi.GetOpenAPIDefinitions, api.Scheme)
+			openapi.GetOpenAPIDefinitions, apiopenapi.NewDefinitionNamer(api.Scheme))
 		if genericConfig.OpenAPIConfig.Info == nil {
 			genericConfig.OpenAPIConfig.Info = &spec.Info{}
 		}
