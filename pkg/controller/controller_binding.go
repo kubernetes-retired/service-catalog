@@ -17,14 +17,13 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
-	"bytes"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
