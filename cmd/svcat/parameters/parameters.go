@@ -19,7 +19,6 @@ package parameters
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 )
@@ -87,10 +86,7 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 				variables[variable] = append(storedValType, value)
 			case map[string]string:
 				if len(subKey) > 0 {
-					varsv, submapv := reflect.ValueOf(variables[variable]), reflect.ValueOf(subMap)
-					for _, k := range submapv.MapKeys() {
-						varsv.SetMapIndex(k, submapv.MapIndex(k))
-					}
+					storedValType[subKey] = value
 				}
 			}
 		}
