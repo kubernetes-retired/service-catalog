@@ -761,7 +761,7 @@ func (c *controller) updateServiceBindingCondition(
 	if err != nil {
 		glog.Errorf(pcb.Messagef(
 			"Error updating %v condition to %v: %v",
-			status, err,
+			conditionType, status, err,
 		))
 	}
 	return err
@@ -932,7 +932,11 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		return c.continuePollingServiceBinding(binding)
 	}
 
-	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, response.Description))
+	if response.Description != nil {
+		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, *response.Description))
+	} else {
+		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, "no description"))
+	}
 
 	switch response.State {
 	case osb.StateInProgress:

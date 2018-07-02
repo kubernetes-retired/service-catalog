@@ -806,7 +806,11 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		return c.continuePollingServiceInstance(instance)
 	}
 
-	glog.V(4).Info(pcb.Messagef("Poll returned %q: Response description: %v", response.State, response.Description))
+	if response.Description != nil {
+		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, *response.Description))
+	} else {
+		glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, "no description"))
+	}
 
 	switch response.State {
 	case osb.StateInProgress:
