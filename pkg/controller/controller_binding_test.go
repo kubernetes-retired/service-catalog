@@ -959,7 +959,8 @@ func TestReconcileServiceBindingServiceInstanceNotReady(t *testing.T) {
 func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	// prepend to override the default test namespace
+	fakeKubeClient.PrependReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &corev1.Namespace{}, errors.New("No namespace")
 	})
 
@@ -1649,9 +1650,9 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 		InstanceID: testServiceInstanceGUID,
 		ServiceID:  testClusterServiceClassGUID,
 		PlanID:     testClusterServicePlanGUID,
-		AppGUID:    strPtr(""),
+		AppGUID:    strPtr(testNamespaceGUID),
 		BindResource: &osb.BindResource{
-			AppGUID: strPtr(""),
+			AppGUID: strPtr(testNamespaceGUID),
 		},
 	})
 
@@ -1723,9 +1724,9 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 		InstanceID: testServiceInstanceGUID,
 		ServiceID:  testClusterServiceClassGUID,
 		PlanID:     testClusterServicePlanGUID,
-		AppGUID:    strPtr(""),
+		AppGUID:    strPtr(testNamespaceGUID),
 		BindResource: &osb.BindResource{
-			AppGUID: strPtr(""),
+			AppGUID: strPtr(testNamespaceGUID),
 		},
 	})
 

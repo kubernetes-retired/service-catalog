@@ -2014,6 +2014,15 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		t.Fatal(err)
 	}
 
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testNamespace,
+				UID:  testNamespaceGUID,
+			},
+		}, nil
+	})
+
 	return fakeKubeClient, fakeCatalogClient, fakeOSBClient, testController.(*controller), serviceCatalogSharedInformers
 }
 
