@@ -46,7 +46,6 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 	for _, p := range params {
 		var newKeys []string
 		var subKey = ""
-		var subMap = make(map[string]string)
 
 		parts := strings.SplitN(p, "=", 2)
 		if len(parts) < 2 {
@@ -63,7 +62,6 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 			newKeys = strings.Split(variable, ".")
 			variable = newKeys[0]
 			subKey = newKeys[1]
-			subMap[subKey] = value
 		}
 
 		storedValue, ok := variables[variable]
@@ -75,8 +73,7 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 			if len(subKey) == 0 {
 				variables[variable] = value // if there is no key, add key&value as string
 			} else {
-				variables[variable] = make(map[string]string)
-				variables[variable] = subMap
+				variables[variable] = map[string]string{subKey: value,}
 			}
 		} else {
 			switch storedValType := storedValue.(type) {
