@@ -55,7 +55,7 @@ subjects:
   -
     kind: ServiceAccount
     name: default
-    namespace: default
+    namespace: catalog
   -
     kind: ServiceAccount
     name: default

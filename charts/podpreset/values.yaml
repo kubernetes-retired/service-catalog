@@ -1,0 +1,7 @@
+# Default values for Health Check
+# Image to use
+#image: quay.io/kubernetes-service-catalog/podpreset-crd:v0.0.1
+# JPEELER
+image: docker.io/service-catalog/podpreset-crd:latest
+# ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
+imagePullPolicy: IfNotPresent

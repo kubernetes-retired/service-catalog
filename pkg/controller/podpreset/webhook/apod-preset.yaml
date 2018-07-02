@@ -9,11 +9,3 @@ spec:
   env:
     - name: PORT
       value: "6379"
-  volumeMounts:
-    - name: one-secret
-      mountPath: "/one"
-      readOnly: true
-  volumes:
-  - name: one-secret
-    secret:
-      secretName: podpreset-service-tls

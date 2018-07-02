@@ -1,13 +1,15 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  creationTimestamp: null
-  labels:
-    api: podpreset-crd
-    kubebuilder.k8s.io: 0.1.11
-  name: podpreset-crd-system
-spec: {}
-status: {}
+# this file is named ./install.yaml from kubebuilder
+# helm creates namespace, so remove this from install
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+#  creationTimestamp: null
+#  labels:
+#    api: podpreset-crd
+#    kubebuilder.k8s.io: 0.1.11
+#  name: podpreset-crd-system
+#spec: {}
+#status: {}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
