@@ -57,7 +57,7 @@ STAT           = stat -c '%Y %n'
 endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION    ?= 1.9
+GO_VERSION    ?= 1.10
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
@@ -110,7 +110,9 @@ ifdef NO_DOCKER
 	scBuildImageTarget =
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
-	DOCKER_CMD = docker run --security-opt label:disable --rm -v $(CURDIR):/go/src/$(SC_PKG) \
+	DOCKER_CMD = docker run --security-opt label:disable --rm \
+	  -v $(CURDIR):/go/src/$(SC_PKG) \
+	  -v $(CURDIR)/.cache:/root/.cache/ \
 	  -v $(CURDIR)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
 	scBuildImageTarget = .scBuildImage
 endif
@@ -196,6 +198,8 @@ $(BINDIR):
 	mkdir -p $@
 
 .scBuildImage: build/build-image/Dockerfile
+	mkdir -p .cache
+	mkdir -p .pkg
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
 	  docker build -t scbuildimage -f - .
 	touch $@
