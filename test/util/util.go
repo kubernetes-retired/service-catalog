@@ -345,9 +345,7 @@ func AssertServiceInstanceCondition(t *testing.T, instance *v1beta1.ServiceInsta
 	}
 
 	if !foundCondition {
-		if status != v1beta1.ConditionFalse || len(reason) != 0 {
-			t.Fatalf("%v condition not found", conditionType)
-		}
+		t.Fatalf("%v condition not found", conditionType)
 	}
 }
 
