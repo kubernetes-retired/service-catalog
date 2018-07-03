@@ -73,7 +73,7 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 			if len(subKey) == 0 {
 				variables[variable] = value // if there is no key, add key&value as string
 			} else {
-				variables[variable] = map[string]string{subKey: value,}
+				variables[variable] = map[string]string{subKey: value}
 			}
 		} else {
 			switch storedValType := storedValue.(type) {
