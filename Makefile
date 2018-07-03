@@ -77,7 +77,7 @@ endif
 BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.3
 
 GO_BUILD       = env CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) \
-                  go build -i $(GOFLAGS) -a -tags netgo -installsuffix netgo \
+                  go build $(GOFLAGS) -a -tags netgo -installsuffix netgo \
                   -ldflags '-s -w -X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)'
 
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
