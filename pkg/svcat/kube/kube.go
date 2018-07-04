@@ -18,6 +18,7 @@ package kube
 
 import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // Load all client auth plugins for gcp, azure, etc
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -35,4 +36,9 @@ func GetConfig(context, kubeconfig string) clientcmd.ClientConfig {
 	}
 
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides)
+}
+
+// LoadConfig return a Kubernetes client config to be used by rest clients.
+func LoadConfig(config, context string) (*rest.Config, error) {
+	return GetConfig(context, config).ClientConfig()
 }
