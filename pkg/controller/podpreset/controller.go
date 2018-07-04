@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -64,6 +65,7 @@ func (bc *PodPresetController) Reconcile(k types.ReconcileKey) error {
 			if !found || found && resourceVersion < pp.GetResourceVersion() {
 				// bounce pod since this is the first mutation or a later mutation has occurred
 				glog.V(4).Infof("Detected deployment '%v' needs bouncing", deployment.Name)
+				bc.podpresetrecorder.Eventf(pp, v1.EventTypeNormal, "DeploymentBounced", "Bounced %v-%v due to newly created or updated podpreset", deployment.Name, deployment.GetResourceVersion())
 				metav1.SetMetaDataAnnotation(&deployment.Spec.Template.ObjectMeta, bouncedKey, pp.GetResourceVersion())
 				_, err = clientset.AppsV1().Deployments(k.Namespace).Update(&deployment)
 				if err != nil {

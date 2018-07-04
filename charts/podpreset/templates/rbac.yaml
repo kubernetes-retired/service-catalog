@@ -40,7 +40,15 @@ rules:
       - list
       - watch
       - update
-
+  -
+    apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
