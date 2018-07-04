@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -70,10 +69,6 @@ func Skipf(format string, args ...interface{}) {
 }
 
 type ClientConfigGetter func() (*rest.Config, error)
-
-func LoadConfig(config, context string) (*rest.Config, error) {
-	return kube.GetConfig(context, config).ClientConfig()
-}
 
 // unique identifier of the e2e run
 var RunId = uuid.NewUUID()
