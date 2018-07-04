@@ -9,6 +9,8 @@ cache:
   directories:
     # ${GOPATH}/pkg is mounted in DOCKER_CMD in Makefile
     - .pkg
+    # golang cache is mounted in DOCKER_CMD in Makefile
+    - .cache
 stages:
   - test
   - name: deploy
@@ -40,7 +42,7 @@ jobs:
           echo "Running full build"
           make verify build svcat build-integration build-e2e test
         fi
-      env: GO_VERSION=1.9
+      env: GO_VERSION=1.10
     # Cross Build Check
     - stage: test
       script:
