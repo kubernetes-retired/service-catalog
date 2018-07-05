@@ -23,7 +23,6 @@ rules:
       - ""
     resources:
       - pods
-      - podtemplates
     verbs:
       - get
       - list
@@ -33,7 +32,6 @@ rules:
       - extensions
       - apps
     resources:
-      - replicasets
       - deployments
     verbs:
       - get
@@ -60,10 +58,6 @@ roleRef:
   kind: ClusterRole
   name: podpreset-access
 subjects:
-  -
-    kind: ServiceAccount
-    name: default
-    namespace: catalog
   -
     kind: ServiceAccount
     name: default
