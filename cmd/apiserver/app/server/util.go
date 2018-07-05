@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apiserver/pkg/admission"
+	"k8s.io/apiserver/pkg/admission/initializer"
 	admissionmetrics "k8s.io/apiserver/pkg/admission/metrics"
 	"k8s.io/apiserver/pkg/authorization/authorizerfactory"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -42,8 +43,8 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
 	"github.com/kubernetes-incubator/service-catalog/pkg/openapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
-	"k8s.io/apiserver/pkg/admission/initializer"
 )
 
 // serviceCatalogConfig is a placeholder for configuration
@@ -61,8 +62,7 @@ type serviceCatalogConfig struct {
 // buildGenericConfig takes the server options and produces the genericapiserver.RecommendedConfig associated with it
 func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.RecommendedConfig, *serviceCatalogConfig, error) {
 	// check if we are running in standalone mode (for test scenarios)
-	inCluster := !s.StandaloneMode
-	if !inCluster {
+	if s.StandaloneMode {
 		glog.Infof("service catalog is in standalone mode")
 	}
 	// server configuration options
@@ -76,7 +76,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	if err := s.SecureServingOptions.ApplyTo(&genericConfig.Config); err != nil {
 		return nil, nil, err
 	}
-	if !s.DisableAuth && inCluster {
+	if !s.DisableAuth && !s.StandaloneMode {
 		if err := s.AuthenticationOptions.ApplyTo(&genericConfig.Config.Authentication, genericConfig.Config.SecureServing, genericConfig.Config.OpenAPIConfig); err != nil {
 			return nil, nil, err
 		}
@@ -132,15 +132,23 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 		client:          client,
 		sharedInformers: sharedInformers,
 	}
-	if inCluster {
-		inClusterConfig, err := restclient.InClusterConfig()
+	if !s.StandaloneMode {
+		clusterConfig, err := kube.LoadConfig(s.KubeconfigPath, "")
 		if err != nil {
-			glog.Errorf("Failed to get kube client config: %v", err)
+			glog.Errorf("Failed to parse kube client config: %v", err)
 			return nil, nil, err
 		}
-		inClusterConfig.GroupVersion = &schema.GroupVersion{}
+		// If clusterConfig is nil, look at the default in-cluster config.
+		if clusterConfig == nil {
+			clusterConfig, err = restclient.InClusterConfig()
+			if err != nil {
+				glog.Errorf("Failed to get kube client config: %v", err)
+				return nil, nil, err
+			}
+		}
+		clusterConfig.GroupVersion = &schema.GroupVersion{}
 
-		kubeClient, err := kubeclientset.NewForConfig(inClusterConfig)
+		kubeClient, err := kubeclientset.NewForConfig(clusterConfig)
 		if err != nil {
 			glog.Errorf("Failed to create clientset interface: %v", err)
 			return nil, nil, err
