@@ -45,7 +45,7 @@ spec:
       containers:
       - name: podpreset-webhook
         imagePullPolicy: IfNotPresent
-        image: docker.io/service-catalog/admission-webhook:latest
+        image: {{ .Values.imageAdmission }}
         args:
         - -tls-cert-file=/keys/tls.crt
         - -tls-private-key-file=/keys/tls.key

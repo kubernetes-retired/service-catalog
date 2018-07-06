@@ -14,5 +14,5 @@
 
 FROM alpine:latest
 
-ADD webhook /webhook
-ENTRYPOINT ["/webhook"]
+ADD podpreset-webhook /podpreset-webhook
+ENTRYPOINT ["/podpreset-webhook"]

@@ -27,10 +27,10 @@
 ##RUN go test ./pkg/... ./cmd/...
 #
 # Copy the controller-manager into a thin image
-FROM scratch
+FROM alpine
 # RUN apk --no-cache add ca-certificates
-#WORKDIR /root/
+# WORKDIR /root/
 #COPY --from=builder /go/src/github.com/kubernetes-incubator/service-catalog/controller-manager .
-COPY podpreset /opt/services
-ENTRYPOINT ["/opt/services/controller-manager"]
+COPY podpreset podpreset
+ENTRYPOINT ["./podpreset"]
 CMD ["--install-crds=false"]

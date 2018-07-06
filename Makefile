@@ -93,6 +93,8 @@ HEALTHCHECK_IMAGE                 = $(REGISTRY)healthcheck-$(ARCH):$(VERSION)
 HEALTHCHECK_MUTABLE_IMAGE         = $(REGISTRY)healthcheck-$(ARCH):$(MUTABLE_TAG)
 PODPRESET_IMAGE                   = $(REGISTRY)podpreset-$(ARCH):$(VERSION)
 PODPRESET_MUTABLE_IMAGE           = $(REGISTRY)podpreset-$(ARCH):$(MUTABLE_TAG)
+PODPRESET_WEBHOOK_IMAGE           = $(REGISTRY)podpreset-webhook-$(ARCH):$(VERSION)
+PODPRESET_WEBHOOK_MUTABLE_IMAGE   = $(REGISTRY)podpreset-webhook-$(ARCH):$(MUTABLE_TAG)
 ifdef UNIT_TESTS
 	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
 endif
@@ -392,6 +394,14 @@ ifeq ($(ARCH),amd64)
 	docker tag $(PODPRESET_MUTABLE_IMAGE) $(REGISTRY)podpreset:$(MUTABLE_TAG)
 endif
 
+podpreset-webhook-image: build/podpreset-webhook/Dockerfile $(BINDIR)/podpreset-webhook
+	$(call build-and-tag,"podpreset-webhook",$(PODPRESET_WEBHOOK_IMAGE),$(PODPRESET_WEBHOOK_MUTABLE_IMAGE))
+ifeq ($(ARCH),amd64)
+	docker tag $(PODPRESET_WEBHOOK_IMAGE) $(REGISTRY)podpreset-webhook:$(VERSION)
+	docker tag $(PODPRESET_WEBHOOK_MUTABLE_IMAGE) $(REGISTRY)podpreset-webhook:$(MUTABLE_TAG)
+endif
+
+
 # Push our Docker Images to a registry
 ######################################
 push: user-broker-push service-catalog-push
@@ -453,6 +463,11 @@ svcat-publish: clean-bin svcat-all
 podpreset: .init $(BINDIR)/podpreset
 $(BINDIR)/podpreset:
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
+
+.PHONY: $(BINDIR)/podpreset-webhook
+podpreset-webhook: .init $(BINDIR)/podpreset-webhook
+$(BINDIR)/podpreset-webhook:
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/podpreset-webhook
 
 # Dependency management via dep (https://golang.github.io/dep)
 .PHONY: verify-vendor test-dep

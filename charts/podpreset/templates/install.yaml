@@ -247,9 +247,9 @@ spec:
         - --install-crds=false
         - -alsologtostderr
         - -v=6
-        command:
-        - /root/controller-manager
-        image: docker.io/service-catalog/podpreset-crd:latest
+          #command:
+          #- /root/controller-manager
+        image: {{ .Values.imageCRD }}
         # pull policy manually added
         imagePullPolicy: IfNotPresent
         name: controller-manager
