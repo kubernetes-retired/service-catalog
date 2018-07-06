@@ -388,8 +388,8 @@ endif
 podpreset-image: build/podpreset/Dockerfile $(BINDIR)/podpreset
 	$(call build-and-tag,"podpreset",$(PODPRESET_IMAGE),$(PODPRESET_MUTABLE_IMAGE))
 ifeq ($(ARCH),amd64)
-	docker tag $(SERVICE_CATALOG_IMAGE) $(REGISTRY)podpreset:$(VERSION)
-	docker tag $(SERVICE_CATALOG_MUTABLE_IMAGE) $(REGISTRY)podpreset:$(MUTABLE_TAG)
+	docker tag $(PODPRESET_IMAGE) $(REGISTRY)podpreset:$(VERSION)
+	docker tag $(PODPRESET_MUTABLE_IMAGE) $(REGISTRY)podpreset:$(MUTABLE_TAG)
 endif
 
 # Push our Docker Images to a registry
@@ -450,7 +450,7 @@ svcat-publish: clean-bin svcat-all
 # podpreset CRD
 #############################
 .PHONY: $(BINDIR)/podpreset
-podpreset: $(BINDIR)/podpreset
+podpreset: .init $(BINDIR)/podpreset
 $(BINDIR)/podpreset:
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/cmd/controller-manager
 
