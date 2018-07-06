@@ -59,6 +59,7 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		value := strings.TrimSpace(parts[1])
 
 		if strings.ContainsAny(variable, ".") {
+			//check if params form is -p xxx.xx
 			newKeys = strings.Split(variable, ".")
 			variable = newKeys[0]
 			subKey = newKeys[1]
@@ -66,12 +67,16 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 
 		storedValue, ok := variables[variable]
 		// Logic to add new value to map variables:
-		// if variable DNE: add pair to variables as variable:value
-		// if variable exists in form of variable:value, create array to hold old value&new value
-		// if variable exists in form variable:[some values], append new value to existing array
+		// if variable DNE and not exploding params -> variable:value
+		// if variable DNE and exploding params -> variable: map[somekey:somevalue]
+		// Logic to add value to variables where variable already exists in variables:
+		// if variable:value -> variable:[old value, newvalue]
+		// if variable:[value1, value2] -> variable:[value1, value2, newvalue]
+		// if variable:map[somekey:somevalue] -> variable:map[somekey:somevalue newkey:newvalue]
+		// more logic/combinations TBD
 		if !ok {
 			if len(subKey) == 0 {
-				variables[variable] = value // if there is no key, add key&value as string
+				variables[variable] = value
 			} else {
 				variables[variable] = map[string]string{subKey: value}
 			}
