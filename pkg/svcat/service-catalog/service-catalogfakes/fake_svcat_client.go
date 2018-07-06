@@ -184,6 +184,17 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ServiceBinding
 		result2 error
 	}
+	DeregisterStub        func(string) error
+	deregisterMutex       sync.RWMutex
+	deregisterArgsForCall []struct {
+		arg1 string
+	}
+	deregisterReturns struct {
+		result1 error
+	}
+	deregisterReturnsOnCall map[int]struct {
+		result1 error
+	}
 	RetrieveBrokersStub        func() ([]apiv1beta1.ClusterServiceBroker, error)
 	retrieveBrokersMutex       sync.RWMutex
 	retrieveBrokersArgsForCall []struct{}
@@ -1136,6 +1147,54 @@ func (fake *FakeSvcatClient) WaitForBindingReturnsOnCall(i int, result1 *apiv1be
 		result1 *apiv1beta1.ServiceBinding
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) Deregister(arg1 string) error {
+	fake.deregisterMutex.Lock()
+	ret, specificReturn := fake.deregisterReturnsOnCall[len(fake.deregisterArgsForCall)]
+	fake.deregisterArgsForCall = append(fake.deregisterArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("Deregister", []interface{}{arg1})
+	fake.deregisterMutex.Unlock()
+	if fake.DeregisterStub != nil {
+		return fake.DeregisterStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.deregisterReturns.result1
+}
+
+func (fake *FakeSvcatClient) DeregisterCallCount() int {
+	fake.deregisterMutex.RLock()
+	defer fake.deregisterMutex.RUnlock()
+	return len(fake.deregisterArgsForCall)
+}
+
+func (fake *FakeSvcatClient) DeregisterArgsForCall(i int) string {
+	fake.deregisterMutex.RLock()
+	defer fake.deregisterMutex.RUnlock()
+	return fake.deregisterArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) DeregisterReturns(result1 error) {
+	fake.DeregisterStub = nil
+	fake.deregisterReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeSvcatClient) DeregisterReturnsOnCall(i int, result1 error) {
+	fake.DeregisterStub = nil
+	if fake.deregisterReturnsOnCall == nil {
+		fake.deregisterReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deregisterReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeSvcatClient) RetrieveBrokers() ([]apiv1beta1.ClusterServiceBroker, error) {
@@ -2579,6 +2638,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.unbindMutex.RUnlock()
 	fake.waitForBindingMutex.RLock()
 	defer fake.waitForBindingMutex.RUnlock()
+	fake.deregisterMutex.RLock()
+	defer fake.deregisterMutex.RUnlock()
 	fake.retrieveBrokersMutex.RLock()
 	defer fake.retrieveBrokersMutex.RUnlock()
 	fake.retrieveBrokerMutex.RLock()
