@@ -222,7 +222,6 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	  'for i in $$(find $(TOP_SRC_DIRS) -name *.go \
 	    | grep -v ^pkg/kubernetes/ \
 	    | grep -v generated \
-	    | grep -v ^pkg/client/ \
 	    | grep -v v1beta1/defaults.go); \
 	  do \
 	   golint --set_exit_status $$i || exit 1; \
