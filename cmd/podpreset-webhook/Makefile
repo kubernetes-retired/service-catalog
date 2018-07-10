@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This file is only for development of the webhook.
 build:
-	CGO_ENABLED=0 GOOS=linux go build -o webhook .
+	CGO_ENABLED=0 GOOS=linux go build -o podpreset-webhook .
 	docker build --no-cache -t docker.io/service-catalog/admission-webhook .
-	rm -rf webhook
+	rm -rf podpreset-webhook
