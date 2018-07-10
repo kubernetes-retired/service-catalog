@@ -4,8 +4,6 @@ metadata:
   name: apod-deployment
   labels:
     app: apod-deployment
-    # the line doesn't apply to podpresets, but for the deployment bounce (old)
-    # mutateAll: "true"
 spec:
   replicas: 1
   selector:
