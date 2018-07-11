@@ -207,4 +207,38 @@ var _ = Describe("Class", func() {
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(fakeClassName))
 		})
 	})
+	Describe("CreateClassByName", func() {
+		It("Calls the generated v1beta1 create method with the passed in class", func() {
+			realClient := &fake.Clientset{}
+			realClient.AddReactor("create", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sc, nil
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: realClient,
+			}
+			class, err := sdk.CreateClass(sc)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(class).To(Equal(sc))
+			actions := realClient.Actions()
+			Expect(actions[0].Matches("create", "clusterserviceclasses")).To(BeTrue())
+		})
+		It("Bubbles up errors", func() {
+			errorMessage := "failed to create"
+			emptyClient := &fake.Clientset{}
+			emptyClient.AddReactor("create", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, errors.New(errorMessage)
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: emptyClient,
+			}
+			class, err := sdk.CreateClass(sc)
+
+			Expect(class).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring("failed to create"))
+			actions := emptyClient.Actions()
+			Expect(actions[0].Matches("create", "clusterserviceclasses")).To(BeTrue())
+		})
+	})
 })
