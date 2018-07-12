@@ -8,8 +8,6 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 
 	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
@@ -29,21 +27,6 @@ const (
 // This files was created by "kubebuilder create resource" for you to edit.
 // Controller implementation logic for PodPreset resources goes here.
 
-// Get a clientset with in-cluster config.
-// TODO: share with webhook's config.go?
-func getClient() *kubernetes.Clientset {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		glog.Fatal(err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		glog.Fatal(err)
-	}
-
-	return clientset
-}
-
 func (bc *PodPresetController) Reconcile(k types.ReconcileKey) error {
 	// INSERT YOUR CODE HERE
 	log.Printf("Implement the Reconcile function on podpreset.PodPresetController to reconcile %s\n", k.Name)
@@ -53,9 +36,8 @@ func (bc *PodPresetController) Reconcile(k types.ReconcileKey) error {
 		return err
 	}
 
-	clientset := getClient()
 	selector, _ := metav1.LabelSelectorAsSelector(&pp.Spec.Selector)
-	deploymentList, err := clientset.AppsV1().Deployments(k.Namespace).List(metav1.ListOptions{})
+	deploymentList, err := bc.args.KubernetesClientSet.AppsV1().Deployments(k.Namespace).List(metav1.ListOptions{})
 
 	for i, deployment := range deploymentList.Items {
 		glog.V(6).Infof("(%v) Looking at deployment %v\n", i, deployment.Name)
@@ -67,7 +49,7 @@ func (bc *PodPresetController) Reconcile(k types.ReconcileKey) error {
 				glog.V(4).Infof("Detected deployment '%v' needs bouncing", deployment.Name)
 				bc.podpresetrecorder.Eventf(pp, v1.EventTypeNormal, "DeploymentBounced", "Bounced %v-%v due to newly created or updated podpreset", deployment.Name, deployment.GetResourceVersion())
 				metav1.SetMetaDataAnnotation(&deployment.Spec.Template.ObjectMeta, bouncedKey, pp.GetResourceVersion())
-				_, err = clientset.AppsV1().Deployments(k.Namespace).Update(&deployment)
+				_, err = bc.args.KubernetesClientSet.AppsV1().Deployments(k.Namespace).Update(&deployment)
 				if err != nil {
 					return err
 				}
@@ -86,6 +68,7 @@ type PodPresetController struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	podpresetrecorder record.EventRecorder
+	args              args.InjectArgs
 }
 
 // ProvideController provides a controller that will be run at startup.  Kubebuilder will use codegeneration
@@ -96,6 +79,7 @@ func ProvideController(arguments args.InjectArgs) (*controller.GenericController
 		podpresetLister:   arguments.ControllerManager.GetInformerProvider(&settingsv1alpha1.PodPreset{}).(settingsv1alpha1informer.PodPresetInformer).Lister(),
 		podpresetclient:   arguments.Clientset.SettingsV1alpha1(),
 		podpresetrecorder: arguments.CreateRecorder("PodPresetController"),
+		args:              arguments,
 	}
 
 	// Create a new controller that will call PodPresetController.Reconcile on changes to PodPresets
