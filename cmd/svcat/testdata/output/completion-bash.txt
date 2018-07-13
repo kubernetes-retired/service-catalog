@@ -307,6 +307,56 @@ _svcat_completion()
     noun_aliases=()
 }
 
+_svcat_create_class()
+{
+    last_command="svcat_create_class"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--from=")
+    two_word_flags+=("-f")
+    local_nonpersistent_flags+=("--from=")
+    flags+=("--context=")
+    flags+=("--kubeconfig=")
+    flags+=("--logtostderr")
+    flags+=("--v=")
+    two_word_flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_flag+=("--from=")
+    must_have_one_flag+=("-f")
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_svcat_create()
+{
+    last_command="svcat_create"
+    commands=()
+    commands+=("class")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--context=")
+    flags+=("--kubeconfig=")
+    flags+=("--logtostderr")
+    flags+=("--v=")
+    two_word_flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _svcat_deprovision()
 {
     last_command="svcat_deprovision"
@@ -920,6 +970,7 @@ _svcat_root_command()
     commands=()
     commands+=("bind")
     commands+=("completion")
+    commands+=("create")
     commands+=("deprovision")
     commands+=("describe")
     commands+=("get")

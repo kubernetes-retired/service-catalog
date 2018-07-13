@@ -207,37 +207,27 @@ var _ = Describe("Class", func() {
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(fakeClassName))
 		})
 	})
-	Describe("CreateClassByName", func() {
+	Describe("CreateClass", func() {
 		It("Calls the generated v1beta1 create method with the passed in class", func() {
-			realClient := &fake.Clientset{}
-			realClient.AddReactor("create", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
-				return true, sc, nil
-			})
-			sdk = &SDK{
-				ServiceCatalogClient: realClient,
-			}
-			class, err := sdk.CreateClass(sc)
+			className := "newclass"
+			nc := &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: className}}
+
+			class, err := sdk.CreateClass(nc)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(class).To(Equal(sc))
-			actions := realClient.Actions()
+			Expect(class).To(Equal(nc))
+			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("create", "clusterserviceclasses")).To(BeTrue())
+			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceClass)
+			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(className))
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "failed to create"
-			emptyClient := &fake.Clientset{}
-			emptyClient.AddReactor("create", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
-				return true, nil, errors.New(errorMessage)
-			})
-			sdk = &SDK{
-				ServiceCatalogClient: emptyClient,
-			}
 			class, err := sdk.CreateClass(sc)
 
 			Expect(class).To(BeNil())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).Should(ContainSubstring("failed to create"))
-			actions := emptyClient.Actions()
+			Expect(err.Error()).Should(ContainSubstring("unable to create class"))
+			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("create", "clusterserviceclasses")).To(BeTrue())
 		})
 	})

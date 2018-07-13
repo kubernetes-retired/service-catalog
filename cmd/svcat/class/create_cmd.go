@@ -20,6 +20,8 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 )
 
@@ -41,28 +43,20 @@ func NewCreateCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(createCmd),
 		RunE:    command.RunE(createCmd),
 	}
-	cmd.Flags().StringVarP(
-		&createCmd.from,
-		"from",
-		"f",
-		"",
-		"Name from an existing class that will be copied",
+	cmd.Flags().StringVarP(&createCmd.from, "from", "f", "",
+		"Name from an existing class that will be copied (Required)",
 	)
+	cmd.MarkFlagRequired("from")
+
 	return cmd
 }
 
 func (c *createCmd) Validate(args []string) error {
-	if len(args) > 0 {
-		c.name = args[0]
-	}
-
-	if c.name == "" {
+	if len(args) <= 0 {
 		return fmt.Errorf("new class name should be provided")
 	}
 
-	if c.from == "" {
-		return fmt.Errorf("an exisitng class name should be provided")
-	}
+	c.name = args[0]
 
 	return nil
 }
@@ -73,12 +67,22 @@ func (c *createCmd) Run() error {
 		return err
 	}
 
-	class.Spec.ExternalName = c.name
+	newClass := &v1beta1.ClusterServiceClass{
+		Spec: v1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: class.Spec.ClusterServiceBrokerName,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				ExternalName: c.name,
+				Description:  class.Spec.Description,
+				Tags:         class.Spec.Tags,
+			},
+		},
+	}
 
-	_, err = c.App.CreateClass(class)
+	createdClass, err := c.App.CreateClass(newClass)
 	if err != nil {
 		return err
 	}
 
+	output.WriteCreatedResourceName(c.Output, createdClass.Spec.ExternalName)
 	return nil
 }

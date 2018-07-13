@@ -115,6 +115,7 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&opts.KubeContext, "context", "", "name of the kubeconfig context to use.")
 	cmd.PersistentFlags().StringVar(&opts.KubeConfig, "kubeconfig", "", "path to kubeconfig file. Overrides $KUBECONFIG")
 
+	cmd.AddCommand(newCreateCmd(cxt))
 	cmd.AddCommand(newGetCmd(cxt))
 	cmd.AddCommand(newDescribeCmd(cxt))
 	cmd.AddCommand(instance.NewProvisionCmd(cxt))
@@ -139,6 +140,16 @@ func newSyncCmd(cxt *command.Context) *cobra.Command {
 		Aliases: []string{"relist"},
 	}
 	cmd.AddCommand(broker.NewSyncCmd(cxt))
+
+	return cmd
+}
+
+func newCreateCmd(cxt *command.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create an user-defined resource",
+	}
+	cmd.AddCommand(class.NewCreateCmd(cxt))
 
 	return cmd
 }
