@@ -61,7 +61,7 @@ func completeGenericConfig(cfg *genericapiserver.RecommendedConfig) genericapise
 }
 
 func createSkeletonServer(genericCfg genericapiserver.CompletedConfig) (*ServiceCatalogAPIServer, error) {
-	genericServer, err := genericCfg.New(apiServerName, genericapiserver.EmptyDelegate)
+	genericServer, err := genericCfg.New(apiServerName, genericapiserver.NewEmptyDelegate())
 	if err != nil {
 		return nil, err
 	}

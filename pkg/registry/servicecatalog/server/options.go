@@ -17,11 +17,11 @@ limitations under the License.
 package server
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"k8s.io/apimachinery/pkg/runtime"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage"
@@ -96,14 +96,14 @@ func (o Options) ResourcePrefix() string {
 // KeyRootFunc returns the appropriate key root function for the storage type in o.
 // This function produces a path that etcd or TPR storage understands, to the root of the resource
 // by combining the namespace in the context with the given prefix
-func (o Options) KeyRootFunc() func(genericapirequest.Context) string {
+func (o Options) KeyRootFunc() func(context.Context) string {
 	prefix := o.ResourcePrefix()
 	sType, err := o.StorageType()
 	if err != nil {
 		return nil
 	}
 	if sType == StorageTypeEtcd {
-		return func(ctx genericapirequest.Context) string {
+		return func(ctx context.Context) string {
 			return registry.NamespaceKeyRootFunc(ctx, prefix)
 		}
 	}
@@ -114,14 +114,14 @@ func (o Options) KeyRootFunc() func(genericapirequest.Context) string {
 // KeyFunc returns the appropriate key function for the storage type in o.
 // This function should produce a path that etcd or TPR storage understands, to the resource
 // by combining the namespace in the context with the given prefix
-func (o Options) KeyFunc(namespaced bool) func(genericapirequest.Context, string) (string, error) {
+func (o Options) KeyFunc(namespaced bool) func(context.Context, string) (string, error) {
 	prefix := o.ResourcePrefix()
 	sType, err := o.StorageType()
 	if err != nil {
 		return nil
 	}
 	if sType == StorageTypeEtcd {
-		return func(ctx genericapirequest.Context, name string) (string, error) {
+		return func(ctx context.Context, name string) (string, error) {
 			if namespaced {
 				return registry.NamespaceKeyFunc(ctx, prefix, name)
 			}

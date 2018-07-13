@@ -33,7 +33,7 @@ func serviceCatalogAPIGroup() testapi.TestGroup {
 
 	externalGroupVersion := schema.GroupVersion{
 		Group:   servicecatalog.GroupName,
-		Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version,
+		Version: api.Scheme.PrioritizedVersionsForGroup(servicecatalog.GroupName)[0].Version,
 	}
 
 	return testapi.NewTestGroup(

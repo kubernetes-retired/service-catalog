@@ -9,6 +9,8 @@ cache:
   directories:
     # ${GOPATH}/pkg is mounted in DOCKER_CMD in Makefile
     - .pkg
+    # golang cache is mounted in DOCKER_CMD in Makefile
+    - .cache
 stages:
   - test
   - name: deploy
@@ -40,7 +42,7 @@ jobs:
           echo "Running full build"
           make verify build svcat build-integration build-e2e test
         fi
-      env: GO_VERSION=1.9
+      env: GO_VERSION=1.10
     # Cross Build Check
     - stage: test
       script:
@@ -51,7 +53,9 @@ jobs:
       env: XBUILD=true
     # Doc Site svc-cat.io
     - stage: test
-      script: make docs
+      script:
+      - |
+        make docs
       env: DOCS=true
     # Deploy
     - stage: deploy
@@ -66,5 +70,5 @@ jobs:
     - stage: push-chart
       script:
       - |
-        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/glcoud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
+        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/gcloud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
         test/repo-sync.sh

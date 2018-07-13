@@ -675,6 +675,8 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				InstanceID:        testServiceInstanceGUID,
 				ServiceID:         testClusterServiceClassGUID,
 				PlanID:            testClusterServicePlanGUID,
+				OrganizationGUID:  testClusterID,
+				SpaceGUID:         testNamespaceGUID,
 				Context:           testContext,
 				Parameters:        tc.expectedParams,
 			})
@@ -882,6 +884,8 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
 	// verify no kube resources created
@@ -981,6 +985,8 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext,
 	})
 
@@ -1064,6 +1070,8 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
 	// verify one kube action occurred
@@ -1142,7 +1150,7 @@ func TestReconcileServiceInstance(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		OrganizationGUID:  testNamespaceGUID,
+		OrganizationGUID:  testClusterID,
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
@@ -1337,7 +1345,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		OrganizationGUID:  testNamespaceGUID,
+		OrganizationGUID:  testClusterID,
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
@@ -1421,7 +1429,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		OrganizationGUID:  testNamespaceGUID,
+		OrganizationGUID:  testClusterID,
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext,
 	})
@@ -1491,7 +1499,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
-		OrganizationGUID:  testNamespaceGUID,
+		OrganizationGUID:  testClusterID,
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
@@ -1519,7 +1527,8 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 func TestReconcileServiceInstanceNamespaceError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+	// prepend to override the default test namespace
+	fakeKubeClient.PrependReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, &corev1.Namespace{}, errors.New("No namespace")
 	})
 
@@ -2259,6 +2268,8 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext,
 	})
 
@@ -2973,6 +2984,8 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
 	actions := fakeCatalogClient.Actions()
@@ -3114,6 +3127,8 @@ func TestReconcileServiceInstanceFailureOnFinalRetry(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
 	// verify no kube resources created
@@ -4275,6 +4290,8 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            testClusterServicePlanGUID,
+		OrganizationGUID:  testClusterID,
+		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext,
 		Parameters: map[string]interface{}{
 			"a": "1",

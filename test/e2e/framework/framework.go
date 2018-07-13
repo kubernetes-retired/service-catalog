@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
 )
 
 // Framework supports common operations used by e2e tests; it will keep a client & a namespace for you.
@@ -61,14 +62,14 @@ func (f *Framework) BeforeEach() {
 	f.cleanupHandle = AddCleanupAction(f.AfterEach)
 
 	By("Creating a kubernetes client")
-	kubeConfig, err := LoadConfig(TestContext.KubeConfig, TestContext.KubeContext)
+	kubeConfig, err := kube.LoadConfig(TestContext.KubeConfig, TestContext.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
 	kubeConfig.QPS = 50
 	kubeConfig.Burst = 100
 	f.KubeClientSet, err = kubernetes.NewForConfig(kubeConfig)
 	Expect(err).NotTo(HaveOccurred())
 	By("Creating a service catalog client")
-	serviceCatalogConfig, err := LoadConfig(TestContext.ServiceCatalogConfig, TestContext.ServiceCatalogContext)
+	serviceCatalogConfig, err := kube.LoadConfig(TestContext.ServiceCatalogConfig, TestContext.ServiceCatalogContext)
 	Expect(err).NotTo(HaveOccurred())
 	serviceCatalogConfig.QPS = 50
 	serviceCatalogConfig.Burst = 100

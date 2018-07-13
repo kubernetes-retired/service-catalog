@@ -82,7 +82,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 		etcdOpts.StorageConfig,
 		etcdOpts.DefaultStorageMediaType,
 		api.Codecs,
-		genericapiserverstorage.NewDefaultResourceEncodingConfig(api.Registry),
+		genericapiserverstorage.NewDefaultResourceEncodingConfig(api.Scheme),
 		storageGroupsToEncodingVersion,
 		nil, /* group storage version overrides */
 		apiserver.DefaultAPIResourceConfigSource(),

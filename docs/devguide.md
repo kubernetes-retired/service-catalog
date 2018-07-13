@@ -65,7 +65,7 @@ document.
 
 At a minimum you will need:
 
-* [Docker](https://www.docker.com) installed locally
+* [Docker](https://www.docker.com) 17.05+ installed locally
 * GNU Make
 * [git](https://git-scm.com)
 

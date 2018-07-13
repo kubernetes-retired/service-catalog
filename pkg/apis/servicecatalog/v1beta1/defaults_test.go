@@ -38,8 +38,7 @@ func init() {
 		panic(fmt.Sprintf("Error parsing groupversion: %v", err))
 	}
 
-	externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName,
-		Version: api.Registry.GroupOrDie(servicecatalog.GroupName).GroupVersion.Version}
+	externalGroupVersion := schema.GroupVersion{Group: servicecatalog.GroupName, Version: api.Scheme.PrioritizedVersionsForGroup(servicecatalog.GroupName)[0].Version}
 
 	testapi.Groups[servicecatalog.GroupName] = testapi.NewTestGroup(
 		groupVersion,

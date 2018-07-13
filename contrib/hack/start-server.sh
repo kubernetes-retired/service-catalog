@@ -30,6 +30,7 @@ echo Starting etcd
 # namespace as etcd
 docker run --name etcd-svc-cat -p 443 -d quay.io/coreos/etcd > /dev/null
 PORT=$(docker port etcd-svc-cat 443 | sed "s/.*://")
+echo ${PORT}
 
 # And now our API Server
 echo Starting the API Server
@@ -43,7 +44,7 @@ docker run -d --name apiserver \
 	--privileged \
 	--net container:etcd-svc-cat \
 	scbuildimage \
-	bin/service-catalog apiserver -v 10 --etcd-servers http://localhost:2379 \
+	bin/service-catalog apiserver -v 10 --logtostderr --etcd-servers http://localhost:2379 \
 		--storage-type=etcd --disable-auth \
     --feature-gates "PodPreset=true" \
     --feature-gates "NamespacedServiceBroker=true"

@@ -59,7 +59,7 @@ func (c *FakeClusterServicePlans) List(opts v1.ListOptions) (result *servicecata
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &servicecatalog.ClusterServicePlanList{}
+	list := &servicecatalog.ClusterServicePlanList{ListMeta: obj.(*servicecatalog.ClusterServicePlanList).ListMeta}
 	for _, item := range obj.(*servicecatalog.ClusterServicePlanList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)

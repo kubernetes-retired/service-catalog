@@ -76,6 +76,7 @@ const (
 	testClusterServicePlanName              = "test-clusterserviceplan"
 	testNonExistentClusterServiceClassName  = "nothere"
 	testNonExistentClusterServicePlanName   = "nothere"
+	testNonExistentServicePlanName          = "nothere"
 	testNonbindableClusterServiceClassName  = "test-unbindable-clusterserviceclass"
 	testNonbindableClusterServicePlanName   = "test-unbindable-clusterserviceplan"
 	testRemovedClusterServiceClassName      = "removed-test-clusterserviceclass"
@@ -558,7 +559,7 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 			},
 		},
 		Status: v1beta1.ClusterServiceClassStatus{
-			v1beta1.CommonServiceClassStatus{
+			CommonServiceClassStatus: v1beta1.CommonServiceClassStatus{
 				RemovedFromBrokerCatalog: true,
 			},
 		},
@@ -594,6 +595,25 @@ func getTestBindingRetrievableClusterServiceClass() *v1beta1.ClusterServiceClass
 				Description:        "a test service",
 				ExternalName:       testClusterServiceClassName,
 				ExternalID:         testClusterServiceClassGUID,
+				BindingRetrievable: true,
+				Bindable:           true,
+			},
+		},
+	}
+}
+
+func getTestBindingRetrievableServiceClass() *v1beta1.ServiceClass {
+	return &v1beta1.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testServiceClassGUID,
+			Namespace: testNamespace,
+		},
+		Spec: v1beta1.ServiceClassSpec{
+			ServiceBrokerName: testServiceBrokerName,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Description:        "a test service",
+				ExternalName:       testServiceClassName,
+				ExternalID:         testServiceClassGUID,
 				BindingRetrievable: true,
 				Bindable:           true,
 			},
@@ -1927,7 +1947,7 @@ func TestIsPlanBindable(t *testing.T) {
 		sc := serviceClass(tc.serviceClass)
 		plan := servicePlan(tc.servicePlan)
 
-		if e, a := tc.bindable, isPlanBindable(sc, plan); e != a {
+		if e, a := tc.bindable, isClusterServicePlanBindable(sc, plan); e != a {
 			t.Errorf("%v: unexpected result; expected %v, got %v", tc.name, e, a)
 		}
 	}
@@ -1993,6 +2013,15 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testNamespace,
+				UID:  testNamespaceGUID,
+			},
+		}, nil
+	})
 
 	return fakeKubeClient, fakeCatalogClient, fakeOSBClient, testController.(*controller), serviceCatalogSharedInformers
 }

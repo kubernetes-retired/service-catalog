@@ -80,7 +80,7 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testServiceClassGUID,
 		PlanID:            testServicePlanGUID,
-		OrganizationGUID:  testNamespaceGUID,
+		OrganizationGUID:  testClusterID,
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
@@ -171,7 +171,7 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testServiceClassGUID,
 		PlanID:            testServicePlanGUID,
-		OrganizationGUID:  testNamespaceGUID,
+		OrganizationGUID:  testClusterID,
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext,
 	})

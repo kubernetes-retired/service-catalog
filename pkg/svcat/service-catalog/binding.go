@@ -116,7 +116,7 @@ func (sdk *SDK) Unbind(ns, instanceName string) ([]types.NamespacedName, error) 
 
 	namespacedNames := []types.NamespacedName{}
 	for _, b := range bindings {
-		namespacedNames = append(namespacedNames, types.NamespacedName{b.Namespace, b.Name})
+		namespacedNames = append(namespacedNames, types.NamespacedName{Namespace: b.Namespace, Name: b.Name})
 	}
 	return sdk.DeleteBindings(namespacedNames)
 }
