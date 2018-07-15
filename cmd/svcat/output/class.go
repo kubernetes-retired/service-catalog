@@ -34,8 +34,8 @@ func writeClassListTable(w io.Writer, classes []v1beta1.ClusterServiceClass) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
-		"Description",
 		"Broker",
+		"Description",
 	})
 	for _, class := range classes {
 		t.Append([]string{

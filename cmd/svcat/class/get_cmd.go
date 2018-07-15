@@ -22,6 +22,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
+	"fmt"
 )
 
 type getCmd struct {
@@ -48,7 +49,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get classes
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
-  svcat get classes --broker
+  svcat get classes --broker 
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -65,7 +66,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"broker",
 		"b",
 		"",
-		"Filters the class's by a broker name.",
+		"Filters the classes by a broker name.",
 	)
 	command.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -81,7 +82,7 @@ func (c *getCmd) Validate(args []string) error {
 	}
 	// Just for now while I get PR reviewed
 	if c.uuid != "" && c.broker != "" {
-		return nil
+		return fmt.Errorf("currently not supported")
 	}
 
 	return nil
