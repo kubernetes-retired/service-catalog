@@ -210,16 +210,15 @@ var _ = Describe("Class", func() {
 	Describe("CreateClass", func() {
 		It("Calls the generated v1beta1 create method with the passed in class", func() {
 			className := "newclass"
-			nc := &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: className}}
-
-			class, err := sdk.CreateClass(nc)
+			sc.Spec.ExternalName = className
+			class, err := sdk.CreateClass(sc)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(class).To(Equal(nc))
+			Expect(class).To(Equal(sc))
 			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("create", "clusterserviceclasses")).To(BeTrue())
 			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceClass)
-			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(className))
+			Expect(objectFromRequest.Spec.ExternalName).To(Equal(className))
 		})
 		It("Bubbles up errors", func() {
 			class, err := sdk.CreateClass(sc)
