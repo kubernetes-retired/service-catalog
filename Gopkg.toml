@@ -26,6 +26,26 @@ required = [
   "golang.org/x/lint/golint",
 ]
 
+[[override]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/apiextensions-apiserver"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/apiserver"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/kube-aggregator"
+  version = "kubernetes-1.11.0"
+
 [[constraint]]
   name = "github.com/kubernetes-sigs/kubebuilder"
 

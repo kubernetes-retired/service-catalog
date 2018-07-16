@@ -853,6 +853,17 @@
   version = "kubernetes-1.11.0"
 
 [[projects]]
+  name = "k8s.io/apiextensions-apiserver"
+  packages = [
+    "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset/scheme",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+  ]
+  revision = "3de98c57bc05a81cf463e0ad7a0af4cec8a5b510"
+  version = "kubernetes-1.11.0"
+
+[[projects]]
   branch = "release-1.11"
   name = "k8s.io/apimachinery"
   packages = [
@@ -1227,6 +1238,18 @@
   revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
 
 [[projects]]
+  name = "k8s.io/kube-aggregator"
+  packages = [
+    "pkg/apis/apiregistration",
+    "pkg/apis/apiregistration/v1",
+    "pkg/apis/apiregistration/v1beta1",
+    "pkg/client/clientset_generated/clientset/scheme",
+    "pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1"
+  ]
+  revision = "bd6e1ad75c9758cad2069bb2f65880cf805ad8e9"
+  version = "kubernetes-1.11.0"
+
+[[projects]]
   name = "k8s.io/kube-openapi"
   packages = [
     "pkg/builder",
@@ -1255,6 +1278,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1cf27edf2c8dd4bad7c5aa80f4bd5c7bec2652e61bfee5f4bd0f5a8eb9aba030"
+  inputs-digest = "f33822359dcd26b174e8dbe49149c5ede576c91a23ec0bc6ef28d56fc71ade69"
   solver-name = "gps-cdcl"
   solver-version = 1
