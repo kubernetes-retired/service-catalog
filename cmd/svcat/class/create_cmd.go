@@ -21,7 +21,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 )
 
@@ -67,18 +66,9 @@ func (c *createCmd) Run() error {
 		return err
 	}
 
-	newClass := &v1beta1.ClusterServiceClass{
-		Spec: v1beta1.ClusterServiceClassSpec{
-			ClusterServiceBrokerName: class.Spec.ClusterServiceBrokerName,
-			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-				ExternalName: c.name,
-				Description:  class.Spec.Description,
-				Tags:         class.Spec.Tags,
-			},
-		},
-	}
+	class.Spec.ExternalName = c.name
 
-	createdClass, err := c.App.CreateClass(newClass)
+	createdClass, err := c.App.CreateClass(class)
 	if err != nil {
 		return err
 	}
