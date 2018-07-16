@@ -152,8 +152,6 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 				{Name: "Name", Type: "string", Format: "name"},
 				{Name: "External-Name", Type: "string"},
 				{Name: "Broker", Type: "string"},
-				{Name: "Bindable", Type: "bool"},
-				{Name: "Plan-Updatable", Type: "bool"},
 				{Name: "Age", Type: "string"},
 			},
 			func(obj runtime.Object, m metav1.Object, name, age string) ([]interface{}, error) {
@@ -162,8 +160,6 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 					name,
 					class.Spec.ExternalName,
 					class.Spec.ServiceBrokerName,
-					class.Spec.Bindable,
-					class.Spec.PlanUpdatable,
 					age,
 				}
 				return cells, nil
