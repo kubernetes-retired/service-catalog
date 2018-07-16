@@ -98,20 +98,20 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 
 	glog.V(4).Infoln("Installing API groups")
 	// default namespace doesn't matter for etcd
-	providers := restStorageProviders("" /* default namespace */, nil)
+	providers := restStorageProviders()
 	for _, provider := range providers {
-		groupInfo, err := provider.NewRESTStorage(c.apiResourceConfigSource, roFactory)
+		groupInfo, groupName, err := provider(c.apiResourceConfigSource, roFactory)
 		if IsErrAPIGroupDisabled(err) {
-			glog.Warningf("Skipping API group %v because it is not enabled", provider.GroupName())
+			glog.Warningf("Skipping API group %v because it is not enabled", groupName)
 			continue
 		} else if err != nil {
-			glog.Errorf("Error initializing storage for provider %v: %v", provider.GroupName(), err)
+			glog.Errorf("Error initializing storage for provider %v: %v", groupName, err)
 			return nil, err
 		}
 
-		glog.V(4).Infof("Installing API group %v", provider.GroupName())
+		glog.V(4).Infof("Installing API group %v", groupName)
 		if err := s.GenericAPIServer.InstallAPIGroup(groupInfo); err != nil {
-			glog.Fatalf("Error installing API group %v: %v", provider.GroupName(), err)
+			glog.Fatalf("Error installing API group %v: %v", groupName, err)
 		} else {
 			// we've sucessfully installed, so hook the stopCh to the destroy func of all the sucessfully installed apigroups
 			for _, mappings := range groupInfo.VersionedResourcesStorageMap { // gv to resource mappings

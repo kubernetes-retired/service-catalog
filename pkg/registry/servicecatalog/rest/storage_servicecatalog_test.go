@@ -80,13 +80,9 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 			}
 		}
 
-		provider := StorageProvider{
-			DefaultNamespace: "test-default",
-			RESTClient:       nil,
-		}
 		configSource := serverstorage.NewResourceConfig()
 		roGetter := testRESTOptionsGetter(nil, func() {})
-		storageMap, err := provider.v1beta1Storage(configSource, roGetter)
+		storageMap, err := v1beta1Storage(configSource, roGetter)
 		Expect(err).Should(BeNil())
 
 		storages := [...]string{

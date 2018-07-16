@@ -20,35 +20,25 @@ import (
 	api "github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
 	settingsapiv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/settings/podpreset"
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
-	"k8s.io/apiserver/pkg/storage"
-	restclient "k8s.io/client-go/rest"
 )
 
-// StorageProvider provides a factory method to create a new APIGroupInfo for
-// the servicecatalog API group. It implements (./pkg/apiserver).RESTStorageProvider
-type StorageProvider struct {
-	DefaultNamespace string
-	RESTClient       restclient.Interface
-}
-
+// NewRESTStorage implements (./pkg/apiserver).RESTStorageProvider.
 // NewRESTStorage is a factory method to make a new APIGroupInfo for the
 // settings API group.
-func (p StorageProvider) NewRESTStorage(
+func NewRESTStorage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter,
-) (*genericapiserver.APIGroupInfo, error) {
+) (*genericapiserver.APIGroupInfo, string, error) {
 
-	storage, err := p.v1alpha1Storage(apiResourceConfigSource, restOptionsGetter)
+	storage, err := v1alpha1Storage(apiResourceConfigSource, restOptionsGetter)
 	if err != nil {
-		return nil, err
+		return nil, settings.GroupName, err
 	}
 
 	apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(settings.GroupName, api.Scheme, api.ParameterCodec, api.Codecs)
@@ -59,44 +49,26 @@ func (p StorageProvider) NewRESTStorage(
 		}
 	}
 
-	return &apiGroupInfo, nil
+	return &apiGroupInfo, settings.GroupName, nil
 }
 
-func (p StorageProvider) v1alpha1Storage(
+func v1alpha1Storage(
 	apiResourceConfigSource serverstorage.APIResourceConfigSource,
 	restOptionsGetter generic.RESTOptionsGetter) (map[string]rest.Storage, error) {
-
-	podPresetRESTOptions, err := restOptionsGetter.GetRESTOptions(settings.Resource("podpresets"))
-	if err != nil {
-		return nil, err
-	}
-
-	podPresetOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   podPresetRESTOptions,
-			Capacity:      1000,
-			ObjectType:    podpreset.EmptyObject(),
-			ScopeStrategy: podpreset.NewScopeStrategy(),
-			NewListFunc:   podpreset.NewList,
-			GetAttrsFunc:  podpreset.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-	)
 
 	version := settingsapiv1alpha1.SchemeGroupVersion
 
 	storage := map[string]rest.Storage{}
 	if apiResourceConfigSource.VersionEnabled(version) {
-		podPresetStorage, err := podpreset.NewStorage(*podPresetOpts)
+		podPresetRESTOptions, err := restOptionsGetter.GetRESTOptions(settings.Resource("podpresets"))
+		if err != nil {
+			return nil, err
+		}
+		podPresetStorage, err := podpreset.NewStorage(podPresetRESTOptions)
 		if err != nil {
 			return nil, err
 		}
 		storage["podpresets"] = podPresetStorage
 	}
 	return storage, nil
-}
-
-// GroupName returns the API group name.
-func (p StorageProvider) GroupName() string {
-	return settings.GroupName
 }

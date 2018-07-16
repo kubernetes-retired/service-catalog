@@ -39,20 +39,14 @@ func IsErrAPIGroupDisabled(e error) bool {
 	return ok
 }
 
-// RESTStorageProvider is a local interface describing a REST storage factory.
-// It can report the name of the API group and create a new storage interface
-// for it.
-type RESTStorageProvider interface {
-	// GroupName returns the API group name that the storage manages
-	GroupName() string
-	// NewRESTStorage returns a new group info representing the storage this provider provides. If
-	// the API group should be disabled, a non-nil error will be returned, and
-	// IsErrAPIGroupDisabled(e) will return true for it. Otherwise, if the storage couldn't be
-	// created, a different non-nil error will be returned
-	// second parameter indicates whether the API group should be enabled. A non-nil error will
-	// be returned if a new group info couldn't be created
-	NewRESTStorage(
-		apiResourceConfigSource storage.APIResourceConfigSource,
-		restOptionsGetter generic.RESTOptionsGetter,
-	) (*genericapiserver.APIGroupInfo, error)
-}
+// RESTStorageProvider is a function describing a REST storage factory.
+// RESTStorageProviders return a new group info representing the storage this provider provides,
+// plus the group name. If the API group should be disabled, a non-nil error will be returned, and
+// IsErrAPIGroupDisabled(e) will return true for it. Otherwise, if the storage couldn't be
+// created, a different non-nil error will be returned
+// second parameter indicates whether the API group should be enabled. A non-nil error will
+// be returned if a new group info couldn't be created
+type RESTStorageProvider func(
+	apiResourceConfigSource storage.APIResourceConfigSource,
+	restOptionsGetter generic.RESTOptionsGetter,
+) (apiGroupInfo *genericapiserver.APIGroupInfo, groupName string, err error)
