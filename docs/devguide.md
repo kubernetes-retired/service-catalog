@@ -310,6 +310,13 @@ Keep in mind that golden files help catch errors when the output unexpectedly ch
 It's up to you to judge when you should run the tests with -update, 
 and to diff the changes in the golden file to ensure that the new output is correct.
 
+### Counterfeiter
+Certain tests use fakes generated with [Counterfeiter](http://github.com/maxbrunsfeld/counterfeiter). If you add a method
+to an interface (such as SvcatClient in pkg/svcat/service-catalog) you may need to regenerate the fake. You can install
+Counterfeiter by running `go get http://github.com/maxbrunsfeld/counterfeiter && go install http://github.com/maxbrunsfeld/countefeiter`.
+Then regenerate the fake with `counterfeiter ./path/to/dir/with/interface InterfaceName`. You may have to manually paste the boilerplate
+comment into the fakes.
+
 ## Documentation
 
 Our documentation site is located at [svc-cat.io](https://svc-cat.io). The content files are located

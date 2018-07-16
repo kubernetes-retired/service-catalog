@@ -55,6 +55,26 @@ func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 	return broker, nil
 }
 
+// Register creates a broker
+func (sdk *SDK) Register(brokerName string, url string) (*v1beta1.ClusterServiceBroker, error) {
+	request := &v1beta1.ClusterServiceBroker{
+		ObjectMeta: v1.ObjectMeta{
+			Name: brokerName,
+		},
+		Spec: v1beta1.ClusterServiceBrokerSpec{
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+				URL: url,
+			},
+		},
+	}
+	result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(request)
+	if err != nil {
+		return nil, fmt.Errorf("register request failed (%s)", err)
+	}
+
+	return result, nil
+}
+
 // Sync or relist a broker to refresh its catalog metadata.
 func (sdk *SDK) Sync(name string, retries int) error {
 	for j := 0; j < retries; j++ {
