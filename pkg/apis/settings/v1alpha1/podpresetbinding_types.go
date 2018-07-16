@@ -31,7 +31,7 @@ type PodPresetBindingStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PodPresetBinding
+// PodPresetBinding is a preset that is an associated with a specific binding
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:path=podpresetbindings
 type PodPresetBinding struct {

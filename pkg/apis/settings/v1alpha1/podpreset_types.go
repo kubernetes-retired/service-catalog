@@ -45,7 +45,7 @@ type PodPresetStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PodPreset
+// PodPreset is the resource for describing which pods to mutate and how
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:path=podpresets
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list

@@ -2,6 +2,7 @@
 // backward compatibility by support multiple concurrent versions
 // of the same resource
 
+// Package v1alpha1 is largely code generated
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=github.com/kubernetes-incubator/service-catalog/pkg/apis/settings

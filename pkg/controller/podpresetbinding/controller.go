@@ -52,6 +52,7 @@ func getCrdClient() *crdversioned.Clientset {
 	return clientset
 }
 
+// Reconcile is the loop that implements the continuous periodic action logic for this resource
 func (bc *PodPresetBindingController) Reconcile(k types.ReconcileKey) error {
 	// INSERT YOUR CODE HERE
 	log.Printf("Implement the Reconcile function on podpresetbinding.PodPresetBindingController to reconcile %s\n", k.Name)
@@ -88,6 +89,7 @@ func (bc *PodPresetBindingController) Reconcile(k types.ReconcileKey) error {
 	return nil
 }
 
+// PodPresetBindingController is made up of items that are necessary for the reconcile loop to function
 // +kubebuilder:controller:group=settings,version=v1alpha1,kind=PodPresetBinding,resource=podpresetbindings
 type PodPresetBindingController struct {
 	// INSERT ADDITIONAL FIELDS HERE

@@ -39,11 +39,13 @@ func main() {
 	}
 }
 
+// InstallStrategy is for choosing which CRDs to install
 type InstallStrategy struct {
 	install.EmptyInstallStrategy
 	crds []*extensionsv1beta1.CustomResourceDefinition
 }
 
+// GetCRDs returns the crds to install
 func (s *InstallStrategy) GetCRDs() []*extensionsv1beta1.CustomResourceDefinition {
 	return s.crds
 }
