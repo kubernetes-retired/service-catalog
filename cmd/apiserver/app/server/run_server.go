@@ -27,31 +27,21 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver/options"
-	registryserver "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 )
 
 // RunServer runs an API server with configuration according to opts
 func RunServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error {
-	storageType, err := opts.StorageType()
-	if err != nil {
-		return err
-	}
 	if stopCh == nil {
 		/* the caller of RunServer should generate the stop channel
 		if there is a need to stop the API server */
 		stopCh = make(chan struct{})
 	}
 
-	err = opts.Validate()
-	if nil != err {
+	if err := opts.Validate(); err != nil {
 		return err
 	}
 
-	if storageType == registryserver.StorageTypeEtcd {
-		return runEtcdServer(opts, stopCh)
-	}
-	// This should never happen, catch for potential bugs
-	panic("Unexpected storage type: " + storageType)
+	return runEtcdServer(opts, stopCh)
 }
 
 func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error {
