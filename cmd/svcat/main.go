@@ -147,7 +147,7 @@ func newSyncCmd(cxt *command.Context) *cobra.Command {
 func newCreateCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create an user-defined resource",
+		Short: "Create a user-defined resource",
 	}
 	cmd.AddCommand(class.NewCreateCmd(cxt))
 
