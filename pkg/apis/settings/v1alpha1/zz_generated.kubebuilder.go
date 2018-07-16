@@ -80,19 +80,19 @@ var (
 				OpenAPIV3Schema: &v1beta1.JSONSchemaProps{
 					Type: "object",
 					Properties: map[string]v1beta1.JSONSchemaProps{
-						"apiVersion": v1beta1.JSONSchemaProps{
+						"apiVersion": {
 							Type: "string",
 						},
-						"kind": v1beta1.JSONSchemaProps{
+						"kind": {
 							Type: "string",
 						},
-						"metadata": v1beta1.JSONSchemaProps{
+						"metadata": {
 							Type: "object",
 						},
-						"spec": v1beta1.JSONSchemaProps{
+						"spec": {
 							Type: "object",
 							Properties: map[string]v1beta1.JSONSchemaProps{
-								"env": v1beta1.JSONSchemaProps{
+								"env": {
 									Type: "array",
 									Items: &v1beta1.JSONSchemaPropsOrArray{
 										Schema: &v1beta1.JSONSchemaProps{
@@ -101,7 +101,7 @@ var (
 										},
 									},
 								},
-								"envFrom": v1beta1.JSONSchemaProps{
+								"envFrom": {
 									Type: "array",
 									Items: &v1beta1.JSONSchemaPropsOrArray{
 										Schema: &v1beta1.JSONSchemaProps{
@@ -110,11 +110,11 @@ var (
 										},
 									},
 								},
-								"selector": v1beta1.JSONSchemaProps{
+								"selector": {
 									Type:       "object",
 									Properties: map[string]v1beta1.JSONSchemaProps{},
 								},
-								"volumeMounts": v1beta1.JSONSchemaProps{
+								"volumeMounts": {
 									Type: "array",
 									Items: &v1beta1.JSONSchemaPropsOrArray{
 										Schema: &v1beta1.JSONSchemaProps{
@@ -123,7 +123,7 @@ var (
 										},
 									},
 								},
-								"volumes": v1beta1.JSONSchemaProps{
+								"volumes": {
 									Type: "array",
 									Items: &v1beta1.JSONSchemaPropsOrArray{
 										Schema: &v1beta1.JSONSchemaProps{
@@ -136,7 +136,7 @@ var (
 							Required: []string{
 								"selector",
 							}},
-						"status": v1beta1.JSONSchemaProps{
+						"status": {
 							Type:       "object",
 							Properties: map[string]v1beta1.JSONSchemaProps{},
 						},
@@ -162,47 +162,47 @@ var (
 				OpenAPIV3Schema: &v1beta1.JSONSchemaProps{
 					Type: "object",
 					Properties: map[string]v1beta1.JSONSchemaProps{
-						"apiVersion": v1beta1.JSONSchemaProps{
+						"apiVersion": {
 							Type: "string",
 						},
-						"kind": v1beta1.JSONSchemaProps{
+						"kind": {
 							Type: "string",
 						},
-						"metadata": v1beta1.JSONSchemaProps{
+						"metadata": {
 							Type: "object",
 						},
-						"spec": v1beta1.JSONSchemaProps{
+						"spec": {
 							Type: "object",
 							Properties: map[string]v1beta1.JSONSchemaProps{
-								"apiVersion": v1beta1.JSONSchemaProps{
+								"apiVersion": {
 									Type: "string",
 								},
-								"bindingRef": v1beta1.JSONSchemaProps{
+								"bindingRef": {
 									Type:       "object",
 									Properties: map[string]v1beta1.JSONSchemaProps{},
 								},
-								"kind": v1beta1.JSONSchemaProps{
+								"kind": {
 									Type: "string",
 								},
-								"metadata": v1beta1.JSONSchemaProps{
+								"metadata": {
 									Type: "object",
 								},
-								"podPresetTemplate": v1beta1.JSONSchemaProps{
+								"podPresetTemplate": {
 									Type: "object",
 									Properties: map[string]v1beta1.JSONSchemaProps{
-										"apiVersion": v1beta1.JSONSchemaProps{
+										"apiVersion": {
 											Type: "string",
 										},
-										"kind": v1beta1.JSONSchemaProps{
+										"kind": {
 											Type: "string",
 										},
-										"metadata": v1beta1.JSONSchemaProps{
+										"metadata": {
 											Type: "object",
 										},
-										"spec": v1beta1.JSONSchemaProps{
+										"spec": {
 											Type: "object",
 											Properties: map[string]v1beta1.JSONSchemaProps{
-												"env": v1beta1.JSONSchemaProps{
+												"env": {
 													Type: "array",
 													Items: &v1beta1.JSONSchemaPropsOrArray{
 														Schema: &v1beta1.JSONSchemaProps{
@@ -211,7 +211,7 @@ var (
 														},
 													},
 												},
-												"envFrom": v1beta1.JSONSchemaProps{
+												"envFrom": {
 													Type: "array",
 													Items: &v1beta1.JSONSchemaPropsOrArray{
 														Schema: &v1beta1.JSONSchemaProps{
@@ -220,11 +220,11 @@ var (
 														},
 													},
 												},
-												"selector": v1beta1.JSONSchemaProps{
+												"selector": {
 													Type:       "object",
 													Properties: map[string]v1beta1.JSONSchemaProps{},
 												},
-												"volumeMounts": v1beta1.JSONSchemaProps{
+												"volumeMounts": {
 													Type: "array",
 													Items: &v1beta1.JSONSchemaPropsOrArray{
 														Schema: &v1beta1.JSONSchemaProps{
@@ -233,7 +233,7 @@ var (
 														},
 													},
 												},
-												"volumes": v1beta1.JSONSchemaProps{
+												"volumes": {
 													Type: "array",
 													Items: &v1beta1.JSONSchemaPropsOrArray{
 														Schema: &v1beta1.JSONSchemaProps{
@@ -246,7 +246,7 @@ var (
 											Required: []string{
 												"selector",
 											}},
-										"status": v1beta1.JSONSchemaProps{
+										"status": {
 											Type:       "object",
 											Properties: map[string]v1beta1.JSONSchemaProps{},
 										},
@@ -256,7 +256,7 @@ var (
 							Required: []string{
 								"podPresetTemplate",
 							}},
-						"status": v1beta1.JSONSchemaProps{
+						"status": {
 							Type:       "object",
 							Properties: map[string]v1beta1.JSONSchemaProps{},
 						},
