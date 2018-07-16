@@ -36,15 +36,8 @@ func restStorageProviders(
 	restClient restclient.Interface,
 ) []RESTStorageProvider {
 	return []RESTStorageProvider{
-		servicecatalogrest.StorageProvider{
-			DefaultNamespace: defaultNamespace,
-			StorageType:      storageType,
-			RESTClient:       restClient,
-		},
-		settingsrest.StorageProvider{
-			StorageType: storageType,
-			RESTClient:  restClient,
-		},
+		servicecatalogrest.StorageProvider{},
+		settingsrest.StorageProvider{},
 	}
 }
 

@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -120,43 +118,22 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 
 // NewStorage creates a new rest.Storage responsible for accessing ServiceInstance
 // resources
-func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) {
-	prefix := "/" + opts.ResourcePrefix()
-
-	storageInterface, dFunc := opts.GetStorage(
-		&servicecatalog.ServiceInstance{},
-		prefix,
-		instanceRESTStrategies,
-		NewList,
-		nil,
-		storage.NoTriggerPublisher,
-	)
-
+func NewStorage(optsGetter generic.RESTOptionsGetter) (instancePlans, instanceStatus, instanceReference rest.Storage, err error) {
 	store := registry.Store{
-		NewFunc:     EmptyObject,
-		NewListFunc: NewList,
-		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(true),
-		// Retrieve the name field of the resource.
-		ObjectNameFunc: func(obj runtime.Object) (string, error) {
-			return scmeta.GetAccessor().Name(obj)
-		},
-		// Used to match objects based on labels/fields for list.
-		PredicateFunc: Match,
-		// DefaultQualifiedResource should always be plural
+		NewFunc:                  EmptyObject,
+		NewListFunc:              NewList,
+		PredicateFunc:            Match,
 		DefaultQualifiedResource: servicecatalog.Resource("serviceinstances"),
 
 		CreateStrategy:          instanceRESTStrategies,
 		UpdateStrategy:          instanceRESTStrategies,
 		DeleteStrategy:          instanceRESTStrategies,
 		EnableGarbageCollection: true,
-
-		Storage:     storageInterface,
-		DestroyFunc: dFunc,
 	}
-	options := &generic.StoreOptions{RESTOptions: opts.EtcdOptions.RESTOptions, AttrFunc: GetAttrs}
+
+	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
 	if err := store.CompleteWithOptions(options); err != nil {
-		panic(err) // TODO: Propagate error up
+		return nil, nil, nil, err
 	}
 
 	statusStore := store
@@ -165,8 +142,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) 
 	referenceStore := store
 	referenceStore.UpdateStrategy = instanceReferenceUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}, &ReferenceREST{&referenceStore}
-
+	return &store, &StatusREST{&statusStore}, &ReferenceREST{&referenceStore}, nil
 }
 
 // StatusREST defines the REST operations for the status subresource via

@@ -17,15 +17,7 @@ limitations under the License.
 package server
 
 import (
-	"context"
 	"fmt"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apiserver/pkg/registry/generic/registry"
-	"k8s.io/apiserver/pkg/registry/rest"
-	"k8s.io/apiserver/pkg/storage"
-	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
 )
 
 type errUnsupportedStorageType struct {
@@ -62,17 +54,14 @@ const (
 // Options is the extension of a generic.RESTOptions struct, complete with service-catalog
 // specific things
 type Options struct {
-	EtcdOptions etcd.Options
 	storageType StorageType
 }
 
 // NewOptions returns a new Options with the given parameters
 func NewOptions(
-	etcdOpts etcd.Options,
 	sType StorageType,
 ) *Options {
 	return &Options{
-		EtcdOptions: etcdOpts,
 		storageType: sType,
 	}
 }
@@ -86,71 +75,4 @@ func (o Options) StorageType() (StorageType, error) {
 	default:
 		return StorageType(""), errUnsupportedStorageType{t: o.storageType}
 	}
-}
-
-// ResourcePrefix gets the resource prefix of all etcd keys
-func (o Options) ResourcePrefix() string {
-	return o.EtcdOptions.RESTOptions.ResourcePrefix
-}
-
-// KeyRootFunc returns the appropriate key root function for the storage type in o.
-// This function produces a path that etcd or TPR storage understands, to the root of the resource
-// by combining the namespace in the context with the given prefix
-func (o Options) KeyRootFunc() func(context.Context) string {
-	prefix := o.ResourcePrefix()
-	sType, err := o.StorageType()
-	if err != nil {
-		return nil
-	}
-	if sType == StorageTypeEtcd {
-		return func(ctx context.Context) string {
-			return registry.NamespaceKeyRootFunc(ctx, prefix)
-		}
-	}
-	// This should never happen, catch for potential bugs
-	panic("Unexpected storage type: " + sType)
-}
-
-// KeyFunc returns the appropriate key function for the storage type in o.
-// This function should produce a path that etcd or TPR storage understands, to the resource
-// by combining the namespace in the context with the given prefix
-func (o Options) KeyFunc(namespaced bool) func(context.Context, string) (string, error) {
-	prefix := o.ResourcePrefix()
-	sType, err := o.StorageType()
-	if err != nil {
-		return nil
-	}
-	if sType == StorageTypeEtcd {
-		return func(ctx context.Context, name string) (string, error) {
-			if namespaced {
-				return registry.NamespaceKeyFunc(ctx, prefix, name)
-			}
-			return registry.NoNamespaceKeyFunc(ctx, prefix, name)
-		}
-	}
-	panic("Unexpected storage type: " + o.storageType)
-}
-
-// GetStorage returns the storage from the given parameters
-func (o Options) GetStorage(
-	objectType runtime.Object,
-	resourcePrefix string,
-	scopeStrategy rest.NamespaceScopedStrategy,
-	newListFunc func() runtime.Object,
-	getAttrsFunc storage.AttrFunc,
-	trigger storage.TriggerPublisherFunc,
-) (storage.Interface, factory.DestroyFunc) {
-	if o.storageType == StorageTypeEtcd {
-		etcdRESTOpts := o.EtcdOptions.RESTOptions
-		return etcdRESTOpts.Decorator(
-			etcdRESTOpts.StorageConfig,
-			objectType,
-			resourcePrefix,
-			nil, /* keyFunc for decorator -- looks to be unused everywhere */
-			newListFunc,
-			getAttrsFunc,
-			trigger,
-		)
-	}
-	panic("Unexpected storage type: " + o.storageType)
 }

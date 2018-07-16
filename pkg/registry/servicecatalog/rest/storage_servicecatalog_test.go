@@ -33,7 +33,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
@@ -68,13 +67,9 @@ func testRESTOptionsGetter(
 	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
 }
 func TestV1Beta1Storage(t *testing.T) {
-	provider := StorageProvider{
-		DefaultNamespace: "test-default",
-		StorageType:      server.StorageTypeEtcd,
-		RESTClient:       nil,
-	}
 	configSource := serverstorage.NewResourceConfig()
 	roGetter := testRESTOptionsGetter(nil, func() {})
+	provider := StorageProvider{}
 	storageMap, err := provider.v1beta1Storage(configSource, roGetter)
 	if err != nil {
 		t.Fatalf("error getting v1beta1 storage (%s)", err)

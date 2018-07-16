@@ -18,13 +18,11 @@ package server
 
 import (
 	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 )
 
 func TestNewOptions(t *testing.T) {
 	origStorageType := StorageTypeEtcd
-	opts := NewOptions(etcd.Options{}, origStorageType)
+	opts := NewOptions(origStorageType)
 	retStorageType, err := opts.StorageType()
 	if err != nil {
 		t.Fatalf("getting storage type (%s)", err)

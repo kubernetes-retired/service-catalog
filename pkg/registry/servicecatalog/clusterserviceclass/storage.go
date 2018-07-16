@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -114,49 +112,28 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 
 // NewStorage creates a new rest.Storage responsible for accessing
 // ClusterServiceClass resources.
-func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
-	prefix := "/" + opts.ResourcePrefix()
-
-	storageInterface, dFunc := opts.GetStorage(
-		&servicecatalog.ClusterServiceClass{},
-		prefix,
-		clusterServiceClassRESTStrategies,
-		NewList,
-		nil,
-		storage.NoTriggerPublisher,
-	)
-
+func NewStorage(optsGetter generic.RESTOptionsGetter) (clusterServiceClasses, clusterServiceClassStatus rest.Storage, err error) {
 	store := registry.Store{
-		NewFunc: EmptyObject,
-		// NewListFunc returns an object capable of storing results of an etcd list.
-		NewListFunc: NewList,
-		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(false),
-		// Retrieve the name field of the resource.
-		ObjectNameFunc: func(obj runtime.Object) (string, error) {
-			return scmeta.GetAccessor().Name(obj)
-		},
-		// Used to match objects based on labels/fields for list.
-		PredicateFunc: Match,
-		// DefaultQualifiedResource should always be plural
+		NewFunc:                  EmptyObject,
+		NewListFunc:              NewList,
+		PredicateFunc:            Match,
 		DefaultQualifiedResource: servicecatalog.Resource("clusterserviceclasses"),
 
-		CreateStrategy: clusterServiceClassRESTStrategies,
-		UpdateStrategy: clusterServiceClassRESTStrategies,
-		DeleteStrategy: clusterServiceClassRESTStrategies,
-		Storage:        storageInterface,
-		DestroyFunc:    dFunc,
+		CreateStrategy:          clusterServiceClassRESTStrategies,
+		UpdateStrategy:          clusterServiceClassRESTStrategies,
+		DeleteStrategy:          clusterServiceClassRESTStrategies,
+		EnableGarbageCollection: true,
 	}
 
-	options := &generic.StoreOptions{RESTOptions: opts.EtcdOptions.RESTOptions, AttrFunc: GetAttrs}
+	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
 	if err := store.CompleteWithOptions(options); err != nil {
-		panic(err) // TODO: Propagate error up
+		return nil, nil, err
 	}
 
 	statusStore := store
 	statusStore.UpdateStrategy = clusterServiceClassStatusUpdateStrategy
 
-	return &store, &StatusREST{&statusStore}
+	return &store, &StatusREST{&statusStore}, nil
 }
 
 // StatusREST defines the REST operations for the status subresource via
