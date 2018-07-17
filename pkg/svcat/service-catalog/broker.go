@@ -24,6 +24,16 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Deregister deletes a broker
+func (sdk *SDK) Deregister(brokerName string) error {
+	err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(brokerName, &v1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("deregister request failed (%s)", err)
+	}
+
+	return nil
+}
+
 // RetrieveBrokers lists all brokers defined in the cluster.
 func (sdk *SDK) RetrieveBrokers() ([]v1beta1.ClusterServiceBroker, error) {
 	brokers, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(v1.ListOptions{})

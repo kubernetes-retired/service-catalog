@@ -48,6 +48,33 @@ var _ = Describe("Broker", func() {
 		}
 	})
 
+	Describe("Deregister", func() {
+		It("deletes a broker by calling the v1beta1 Delete method with the passed in arguement", func() {
+			brokerName := "foobar"
+
+			err := sdk.Deregister(brokerName)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("delete", "clusterservicebrokers")).To(BeTrue())
+			Expect(actions[0].(testing.DeleteActionImpl).Name).To(Equal(brokerName))
+		})
+		It("Bubbles up errors", func() {
+			errorMessage := "error deregistering broker"
+			brokerName := "potato_broker"
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("delete", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			err := sdk.Deregister(brokerName)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+		})
+	})
 	Describe("RetrieveBrokers", func() {
 		It("Calls the generated v1beta1 List method", func() {
 			brokers, err := sdk.RetrieveBrokers()
