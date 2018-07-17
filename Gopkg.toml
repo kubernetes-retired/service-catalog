@@ -26,6 +26,29 @@ required = [
   "golang.org/x/lint/golint",
 ]
 
+[[override]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/apiextensions-apiserver"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/apiserver"
+  version = "kubernetes-1.11.0"
+
+[[override]]
+  name = "k8s.io/kube-aggregator"
+  version = "kubernetes-1.11.0"
+
+[[constraint]]
+  name = "github.com/kubernetes-sigs/kubebuilder"
+
 # in sync with Kubernetes master (k8s 1.10 future release), but different from Kubernetes etcd version (3.1.10),
 # but seems to have some improvements in memory consumption for embedded mode used in integration tests?
 # (with v3.1.10 etcd pod crashes in Travis CI while we run tests)

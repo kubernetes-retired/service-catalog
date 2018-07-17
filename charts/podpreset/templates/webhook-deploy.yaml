@@ -1,0 +1,103 @@
+{{- $ca := genCA "podpreset-webhook-ca" 3650 }}
+{{- $cn := "podpreset-webhook-service" }}
+{{- $altName1 := "podpreset-webhook-service.podpreset-crd-system" }}
+{{- $altName2 := "podpreset-webhook-service.podpreset-crd-system.svc" }}
+#{{- $altName1 := printf "podpreset-webhook-service.%s" .Release.Namespace }}
+#{{- $altName2 := printf "podpreset-webhook-service.%s.svc" .Release.Namespace }}
+{{- $altName3 := "podpreset-webhook-service" }}
+{{- $altName4 := "127.0.0.1" }}
+{{- $crdCert := genSignedCert $cn nil (list $altName1 $altName2 $altName3 $altName4) 3650 $ca }}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: podpreset-webhook-cert
+#  namespace: {{ .Release.Namespace }}
+  namespace: podpreset-crd-system
+  labels:
+    app: podpreset-webhook
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+type: Opaque
+data:
+  tls.crt: {{ b64enc $crdCert.Cert }}
+  tls.key: {{ b64enc $crdCert.Key }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podpreset-webhook-deployment
+#  namespace: {{ .Release.Namespace }}
+  namespace: podpreset-crd-system
+  labels:
+    app: podpreset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podpreset
+  template:
+    metadata:
+      labels:
+        app: podpreset
+    spec:
+      containers:
+      - name: podpreset-webhook
+        imagePullPolicy: IfNotPresent
+        image: {{ .Values.imageAdmission }}
+        args:
+        - -tls-cert-file=/keys/tls.crt
+        - -tls-private-key-file=/keys/tls.key
+        - -alsologtostderr
+        - -v=6
+        ports:
+        - containerPort: 443
+        volumeMounts:
+        - name: tls-keys
+          mountPath: /keys
+      volumes:
+      - name: tls-keys
+        secret:
+          secretName: podpreset-webhook-cert
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: podpreset-webhook-service
+#  namespace: {{ .Release.Namespace }}
+  namespace: podpreset-crd-system
+spec:
+  selector:
+    app: podpreset
+  ports:
+  - protocol: TCP
+    port: 443
+    targetPort: 443
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: podpreset-webook-configuration
+#  namespace: {{ .Release.Namespace }}
+  namespace: podpreset-crd-system
+webhooks:
+  - name: podpresets.settings.servicecatalog.k8s.io
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+        resources:
+          - pods
+    failurePolicy: Ignore
+    clientConfig:
+      caBundle: {{ b64enc $ca.Cert }}
+      service:
+        name: podpreset-webhook-service
+#        namespace: {{ .Release.Namespace }}
+        namespace: podpreset-crd-system
+        path: "/mutating-pods"
+---

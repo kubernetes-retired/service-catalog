@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: apod
+  labels:
+    mutate: "true"
+spec:
+  terminationGracePeriodSeconds: 1
+  containers:
+  - name: apod
+    image: busybox
+    args:
+    - sleep
+    - "86400"

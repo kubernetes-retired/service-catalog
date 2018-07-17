@@ -56,7 +56,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
@@ -197,9 +196,6 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	}
 	// We also emit events for our own types
 	if err = servicecatalogv1beta1.AddToScheme(eventsScheme); err != nil {
-		return err
-	}
-	if err = settingsv1alpha1.AddToScheme(eventsScheme); err != nil {
 		return err
 	}
 

@@ -20,7 +20,6 @@ package fake
 
 import (
 	servicecataloginternalversion "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	settingsinternalversion "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -52,5 +51,4 @@ func init() {
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
 	servicecataloginternalversion.AddToScheme(scheme)
-	settingsinternalversion.AddToScheme(scheme)
 }

@@ -1,0 +1,3 @@
+name: podpreset
+description: PodPreset add resources to enable deployments to monitor and automatically add instance credentials when ready.
+version: 0.0.1

@@ -10,12 +10,6 @@ useAggregator: true
 ##
 rbacEnable: true
 apiserver:
-  # annotations is a collection of annotations to add to the apiserver pods.
-  annotations: {}
-  # nodeSelector to apply to the apiserver pods
-  nodeSelector: 
-  # PodPreset is an optional feature and can be enabled by uncommenting the line below
-  # featureGates: "PodPreset=true"
   aggregator:
     # priority is the priority of the APIService. Please see
     # https://github.com/kubernetes/kubernetes/blob/v1.7.0/staging/src/k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1/types.go#L56-L61
