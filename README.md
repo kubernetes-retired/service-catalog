@@ -75,6 +75,7 @@ The project was established 2016-Sept-12. The incubator team for the project is:
 - Sponsor: Brian Grant ([@bgrant0607](https://github.com/bgrant0607))
 - Champion: Paul Morie ([@pmorie](https://github.com/pmorie))
 - SIG: [sig-service-catalog](https://github.com/kubernetes/community/tree/master/sig-service-catalog)
+- See our "working" [SIG Charter](https://github.com/carolynvs/community/blob/sig-service-catalog-charter/sig-service-catalog/charter.md), which should be ratified by the Kubernetes Steering Committee soon.
 
 For more information about sig-service-catalog, such as meeting times and agenda,
 check out the [community site](https://github.com/kubernetes/community/tree/master/sig-service-catalog).
