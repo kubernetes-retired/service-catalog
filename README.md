@@ -60,8 +60,8 @@ Also see the [developer's guide](./docs/devguide.md) for information on how to
 build and test the code.
 
 We have weekly meetings - see
-[Kubernetes SIGs](https://github.com/kubernetes/community/blob/master/sig-list.md)
-(search for "Service Catalog") for the exact date and time. For meeting agendas
+[our SIG Readme](https://github.com/kubernetes/community/blob/master/sig-service-catalog/README.md#meetings)
+for details. For meeting agendas
 and notes, see [Kubernetes SIG Service Catalog Agenda](https://docs.google.com/document/d/17xlpkoEbPR5M6P5VDzNx17q6-IPFxKyebEekCGYiIKM/edit).
 
 Previous meeting notes are also available:
@@ -84,4 +84,3 @@ check out the [community site](https://github.com/kubernetes/community/tree/mast
 
 Participation in the Kubernetes community is governed by the
 [Kubernetes Code of Conduct](./code-of-conduct.md).
-
