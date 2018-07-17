@@ -18,7 +18,6 @@ package rest
 
 import (
 	"fmt"
-	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,7 +39,67 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
+	. "github.com/onsi/ginkgo"
 )
+
+var _ = Describe("Testing with Ginkgo", func() {
+	It("checks v1beta1 standard storage", func() {
+
+		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+		err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+		if err != nil {
+			GinkgoT().Fatal(err)
+		}
+		provider := StorageProvider{
+			DefaultNamespace: "test-default",
+			StorageType:      server.StorageTypeEtcd,
+			RESTClient:       nil,
+		}
+		configSource := serverstorage.NewResourceConfig()
+		roGetter := testRESTOptionsGetter(nil, func() {})
+		storageMap, err := provider.v1beta1Storage(configSource, roGetter)
+		if err != nil {
+			GinkgoT().Fatalf("error getting v1beta1 storage (%s)", err)
+		}
+
+		storages := [...]string{
+			"clusterservicebrokers",
+			"clusterserviceclasses",
+			"clusterserviceplans",
+			"serviceinstances",
+			"servicebindings",
+			"serviceclasses",
+			"serviceplans",
+			"servicebrokers",
+		}
+
+		for _, storage := range storages {
+			s, storageExists := storageMap[storage]
+			if !storageExists {
+				GinkgoT().Fatalf("no %q storage found", storage)
+			}
+			checkStorageType(GinkgoT(), s)
+		}
+	})
+
+	// TestCheckStatusRESTTypes ensures that our Status storage types fulfill the
+	// specific interfaces that are expected and no more. This is similar to what is
+	// done internally to the apiserver when it is deciding what http verbs to
+	// expose on each resource. For status, we only want to support GET and a form
+	// of update like PATCH. This could partly be done by type var type-assertions
+	// at the site of declaration, but because we want to explicitly determine that
+	// an object does NOT implement some interface, it has to be done at runtime.
+	It("checks v1beta1 StatusREST storage", func() {
+		checkStatusStorageType(GinkgoT(), &clusterservicebroker.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &servicebroker.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &clusterserviceclass.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &serviceclass.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &clusterserviceplan.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &serviceplan.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &instance.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &binding.StatusREST{})
+	})
+})
 
 type GetRESTOptionsHelper struct {
 	retStorageInterface storage.Interface
@@ -71,50 +130,7 @@ func testRESTOptionsGetter(
 	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
 }
 
-// TestV1Beta1Storage goes through each of the storages we know about and makes
-// sure they exist. It checks each storage to make sure it fulfills all of the
-// appropriate types. This could be done at compile time with an assertion, but
-// we didn't define specific objects for each storage, and instead instantiated
-// an upstream object.
-func TestV1Beta1Storage(t *testing.T) {
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
-	if err != nil {
-		t.Fatal(err)
-	}
-	provider := StorageProvider{
-		DefaultNamespace: "test-default",
-		StorageType:      server.StorageTypeEtcd,
-		RESTClient:       nil,
-	}
-	configSource := serverstorage.NewResourceConfig()
-	roGetter := testRESTOptionsGetter(nil, func() {})
-	storageMap, err := provider.v1beta1Storage(configSource, roGetter)
-	if err != nil {
-		t.Fatalf("error getting v1beta1 storage (%s)", err)
-	}
-
-	storages := [...]string{
-		"clusterservicebrokers",
-		"clusterserviceclasses",
-		"clusterserviceplans",
-		"serviceinstances",
-		"servicebindings",
-		"serviceclasses",
-		"serviceplans",
-		"servicebrokers",
-	}
-
-	for _, storage := range storages {
-		s, storageExists := storageMap[storage]
-		if !storageExists {
-			t.Fatalf("no %q storage found", storage)
-		}
-		checkStorageType(t, s)
-	}
-}
-
-func checkStorageType(t *testing.T, s rest.Storage) {
+func checkStorageType(t GinkgoTInterface, s rest.Storage) {
 	// Our normal stores are all of these things
 	if _, isStorageType := s.(rest.Storage); !isStorageType {
 		t.Errorf("%q not compliant to storage interface", s)
@@ -145,7 +161,7 @@ func checkStorageType(t *testing.T, s rest.Storage) {
 	}
 }
 
-func checkStatusStorageType(t *testing.T, s rest.Storage) {
+func checkStatusStorageType(t GinkgoTInterface, s rest.Storage) {
 	// Status is New & Get & Update ONLY
 	if _, isStandardStorage := s.(rest.Storage); !isStandardStorage {
 		t.Errorf("not compliant to storage interface for %q", s)
@@ -175,23 +191,4 @@ func checkStatusStorageType(t *testing.T, s rest.Storage) {
 	if _, isStandardStorage := s.(rest.StandardStorage); isStandardStorage {
 		t.Errorf("%q was a StandardStorage but should not be", s)
 	}
-}
-
-// TestCheckStatusRESTTypes ensures that our Status storage types fulfill the
-// specific interfaces that are expected and no more. This is similar to what is
-// done internally to the apiserver when it is deciding what http verbs to
-// expose on each resource. For status, we only want to support GET and a form
-// of update like PATCH. This could partly be done by type var type-assertions
-// at the site of declaration, but because we want to explicitly determine that
-// an object does NOT implement some interface, it has to be done at runtime.
-func TestCheckStatusRESTTypes(t *testing.T) {
-	checkStatusStorageType(t, &clusterservicebroker.StatusREST{})
-	checkStatusStorageType(t, &servicebroker.StatusREST{})
-	checkStatusStorageType(t, &clusterserviceclass.StatusREST{})
-	checkStatusStorageType(t, &serviceclass.StatusREST{})
-	checkStatusStorageType(t, &clusterserviceplan.StatusREST{})
-	checkStatusStorageType(t, &serviceplan.StatusREST{})
-	checkStatusStorageType(t, &instance.StatusREST{})
-	checkStatusStorageType(t, &binding.StatusREST{})
-
 }
