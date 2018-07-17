@@ -232,11 +232,12 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ClusterServiceBroker
 		result2 error
 	}
-	RegisterStub        func(string, string) (*apiv1beta1.ClusterServiceBroker, error)
+	RegisterStub        func(string, string, *servicecatalog.RegisterOptions) (*apiv1beta1.ClusterServiceBroker, error)
 	registerMutex       sync.RWMutex
 	registerArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 *servicecatalog.RegisterOptions
 	}
 	registerReturns struct {
 		result1 *apiv1beta1.ClusterServiceBroker
@@ -1344,17 +1345,18 @@ func (fake *FakeSvcatClient) RetrieveBrokerByClassReturnsOnCall(i int, result1 *
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) Register(arg1 string, arg2 string) (*apiv1beta1.ClusterServiceBroker, error) {
+func (fake *FakeSvcatClient) Register(arg1 string, arg2 string, arg3 *servicecatalog.RegisterOptions) (*apiv1beta1.ClusterServiceBroker, error) {
 	fake.registerMutex.Lock()
 	ret, specificReturn := fake.registerReturnsOnCall[len(fake.registerArgsForCall)]
 	fake.registerArgsForCall = append(fake.registerArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("Register", []interface{}{arg1, arg2})
+		arg3 *servicecatalog.RegisterOptions
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Register", []interface{}{arg1, arg2, arg3})
 	fake.registerMutex.Unlock()
 	if fake.RegisterStub != nil {
-		return fake.RegisterStub(arg1, arg2)
+		return fake.RegisterStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1368,10 +1370,10 @@ func (fake *FakeSvcatClient) RegisterCallCount() int {
 	return len(fake.registerArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RegisterArgsForCall(i int) (string, string) {
+func (fake *FakeSvcatClient) RegisterArgsForCall(i int) (string, string, *servicecatalog.RegisterOptions) {
 	fake.registerMutex.RLock()
 	defer fake.registerMutex.RUnlock()
-	return fake.registerArgsForCall[i].arg1, fake.registerArgsForCall[i].arg2
+	return fake.registerArgsForCall[i].arg1, fake.registerArgsForCall[i].arg2, fake.registerArgsForCall[i].arg3
 }
 
 func (fake *FakeSvcatClient) RegisterReturns(result1 *apiv1beta1.ClusterServiceBroker, result2 error) {

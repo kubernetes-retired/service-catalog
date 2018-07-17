@@ -18,6 +18,7 @@ package servicecatalog
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -65,18 +66,55 @@ func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 	return broker, nil
 }
 
-// Register creates a broker
-func (sdk *SDK) Register(brokerName string, url string) (*v1beta1.ClusterServiceBroker, error) {
+//Register creates a broker
+func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions) (*v1beta1.ClusterServiceBroker, error) {
+	var err error
+	var caBytes []byte
+	if opts.CAFile != "" {
+		caBytes, err = ioutil.ReadFile(opts.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("Error opening CA file: %v", err.Error())
+		}
+
+	}
 	request := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: v1.ObjectMeta{
 			Name: brokerName,
 		},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
 			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
-				URL: url,
+				CABundle:              caBytes,
+				InsecureSkipTLSVerify: opts.SkipTLS,
+				RelistBehavior:        opts.RelistBehavior,
+				RelistDuration:        opts.RelistDuration,
+				URL:                   url,
+				CatalogRestrictions: &v1beta1.CatalogRestrictions{
+					ServiceClass: opts.ClassRestrictions,
+					ServicePlan:  opts.PlanRestrictions,
+				},
 			},
 		},
 	}
+	if opts.BasicSecret != "" {
+		request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+			Basic: &v1beta1.ClusterBasicAuthConfig{
+				SecretRef: &v1beta1.ObjectReference{
+					Name:      opts.BasicSecret,
+					Namespace: opts.Namespace,
+				},
+			},
+		}
+	} else if opts.BearerSecret != "" {
+		request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
+			Bearer: &v1beta1.ClusterBearerTokenAuthConfig{
+				SecretRef: &v1beta1.ObjectReference{
+					Name:      opts.BearerSecret,
+					Namespace: opts.Namespace,
+				},
+			},
+		}
+	}
+
 	result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(request)
 	if err != nil {
 		return nil, fmt.Errorf("register request failed (%s)", err)
