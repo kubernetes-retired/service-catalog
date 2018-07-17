@@ -19,6 +19,8 @@ package rest
 import (
 	"fmt"
 
+	. "github.com/onsi/ginkgo"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -39,10 +41,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
-	. "github.com/onsi/ginkgo"
 )
 
-var _ = Describe("Testing with Ginkgo", func() {
+var _ = Describe("ensure that our storage types implement the appropriate interfaces", func() {
 	It("checks v1beta1 standard storage", func() {
 
 		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
@@ -50,6 +51,38 @@ var _ = Describe("Testing with Ginkgo", func() {
 		if err != nil {
 			GinkgoT().Fatal(err)
 		}
+
+		checkStorageType := func(t GinkgoTInterface, s rest.Storage) {
+			// Our normal stores are all of these things
+			if _, isStorageType := s.(rest.Storage); !isStorageType {
+				t.Errorf("%q not compliant to storage interface", s)
+			}
+			if _, isStorageType := s.(rest.Updater); !isStorageType {
+				t.Errorf("%q not compliant to updater interface", s)
+			}
+			if _, isStorageType := s.(rest.Getter); !isStorageType {
+				t.Errorf("%q not compliant to getter interface", s)
+			}
+			if _, isStorageType := s.(rest.Lister); !isStorageType {
+				t.Errorf("%q not compliant to lister interface", s)
+			}
+			if _, isStorageType := s.(rest.Creater); !isStorageType {
+				t.Errorf("%q not compliant to creater interface", s)
+			}
+			if _, isStorageType := s.(rest.GracefulDeleter); !isStorageType {
+				t.Errorf("%q not compliant to GracefulDeleter interface", s)
+			}
+			if _, isStorageType := s.(rest.CollectionDeleter); !isStorageType {
+				t.Errorf("%q not compliant to CollectionDeleter interface", s)
+			}
+			if _, isStorageType := s.(rest.Watcher); !isStorageType {
+				t.Errorf("%q not compliant to watcher interface", s)
+			}
+			if _, isStorageType := s.(rest.StandardStorage); !isStorageType {
+				t.Errorf("%q not compliant to StandardStorage interface", s)
+			}
+		}
+
 		provider := StorageProvider{
 			DefaultNamespace: "test-default",
 			StorageType:      server.StorageTypeEtcd,
@@ -90,6 +123,38 @@ var _ = Describe("Testing with Ginkgo", func() {
 	// at the site of declaration, but because we want to explicitly determine that
 	// an object does NOT implement some interface, it has to be done at runtime.
 	It("checks v1beta1 StatusREST storage", func() {
+		checkStatusStorageType := func(t GinkgoTInterface, s rest.Storage) {
+			// Status is New & Get & Update ONLY
+			if _, isStandardStorage := s.(rest.Storage); !isStandardStorage {
+				t.Errorf("not compliant to storage interface for %q", s)
+			}
+			if _, isStandardStorage := s.(rest.Updater); !isStandardStorage {
+				t.Errorf("not compliant to updaterer interface for %q", s)
+			}
+			if _, isStandardStorage := s.(rest.Getter); !isStandardStorage {
+				t.Errorf("not compliant to getter interface for %q", s)
+			}
+			// NONE of these things
+			if _, isStandardStorage := s.(rest.Lister); isStandardStorage {
+				t.Errorf("%q was a lister but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.Creater); isStandardStorage {
+				t.Errorf("%q was a creater but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.GracefulDeleter); isStandardStorage {
+				t.Errorf("%q was a graceful delete but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.CollectionDeleter); isStandardStorage {
+				t.Errorf("%q was a collection deleter but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.Watcher); isStandardStorage {
+				t.Errorf("%q was a watcher but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.StandardStorage); isStandardStorage {
+				t.Errorf("%q was a StandardStorage but should not be", s)
+			}
+		}
+
 		checkStatusStorageType(GinkgoT(), &clusterservicebroker.StatusREST{})
 		checkStatusStorageType(GinkgoT(), &servicebroker.StatusREST{})
 		checkStatusStorageType(GinkgoT(), &clusterserviceclass.StatusREST{})
@@ -128,67 +193,4 @@ func testRESTOptionsGetter(
 	retDestroyFunc func(),
 ) generic.RESTOptionsGetter {
 	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
-}
-
-func checkStorageType(t GinkgoTInterface, s rest.Storage) {
-	// Our normal stores are all of these things
-	if _, isStorageType := s.(rest.Storage); !isStorageType {
-		t.Errorf("%q not compliant to storage interface", s)
-	}
-	if _, isStorageType := s.(rest.Updater); !isStorageType {
-		t.Errorf("%q not compliant to updater interface", s)
-	}
-	if _, isStorageType := s.(rest.Getter); !isStorageType {
-		t.Errorf("%q not compliant to getter interface", s)
-	}
-	if _, isStorageType := s.(rest.Lister); !isStorageType {
-		t.Errorf("%q not compliant to lister interface", s)
-	}
-	if _, isStorageType := s.(rest.Creater); !isStorageType {
-		t.Errorf("%q not compliant to creater interface", s)
-	}
-	if _, isStorageType := s.(rest.GracefulDeleter); !isStorageType {
-		t.Errorf("%q not compliant to GracefulDeleter interface", s)
-	}
-	if _, isStorageType := s.(rest.CollectionDeleter); !isStorageType {
-		t.Errorf("%q not compliant to CollectionDeleter interface", s)
-	}
-	if _, isStorageType := s.(rest.Watcher); !isStorageType {
-		t.Errorf("%q not compliant to watcher interface", s)
-	}
-	if _, isStorageType := s.(rest.StandardStorage); !isStorageType {
-		t.Errorf("%q not compliant to StandardStorage interface", s)
-	}
-}
-
-func checkStatusStorageType(t GinkgoTInterface, s rest.Storage) {
-	// Status is New & Get & Update ONLY
-	if _, isStandardStorage := s.(rest.Storage); !isStandardStorage {
-		t.Errorf("not compliant to storage interface for %q", s)
-	}
-	if _, isStandardStorage := s.(rest.Updater); !isStandardStorage {
-		t.Errorf("not compliant to updaterer interface for %q", s)
-	}
-	if _, isStandardStorage := s.(rest.Getter); !isStandardStorage {
-		t.Errorf("not compliant to getter interface for %q", s)
-	}
-	// NONE of these things
-	if _, isStandardStorage := s.(rest.Lister); isStandardStorage {
-		t.Errorf("%q was a lister but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.Creater); isStandardStorage {
-		t.Errorf("%q was a creater but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.GracefulDeleter); isStandardStorage {
-		t.Errorf("%q was a graceful delete but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.CollectionDeleter); isStandardStorage {
-		t.Errorf("%q was a collection deleter but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.Watcher); isStandardStorage {
-		t.Errorf("%q was a watcher but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.StandardStorage); isStandardStorage {
-		t.Errorf("%q was a StandardStorage but should not be", s)
-	}
 }
