@@ -6,10 +6,10 @@ toc:
 - title: Cluster-Scoped vs Namespace-scoped Broker
   path: "#cluster-scopedvsmamespace-scopedbrokerresources"
 - title: Possible Use Cases
-  path: "#possibleusecases"
+  path: "#possible-use-cases"
 - title: Enabling Namespace Scoped Broker Resources
-  path: "#enablingnamespacescopedbrokerresources"
+  path: "#enabling-namespace-scoped-broker-resources"
 - title: Using Namespace Scoped Broker Resources
-  path: "#usingnamespacescopedbrokerresources"
+  path: "#using-namespace-scoped-broker-resources"
 - title: Further Restricting Plan Access
-  path: "#furtherrestrictingplanaccess"
+  path: "#further-restricting-plan-access"

@@ -4,11 +4,11 @@ landing_page: /docs/resources
 toc:
 - docs/resources.md
 - title: Service Broker
-  path: "#servicebrokers"
+  path: "#service-brokers"
 - title: Service Class
-  path: "#serviceclasses"
+  path: "#service-classes"
 - title: Service Plans
-  path: "#serviceplans"
+  path: "#service-plans"
 - title: Instance
   path: "#serviceinstance"
 - title: Instance Parameters
