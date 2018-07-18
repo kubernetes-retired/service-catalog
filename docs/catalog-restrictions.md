@@ -50,9 +50,9 @@ either service classes and service plans. These rules have a special format
 
 The rule format is expected to be `<property><conditional><requirement>`
 
-* <conditional> is allowed to be one of the following: ==, !=, in, notin
-* <requirement> will be a string value if `==` or `!=` are used.
-* <requirement> will be a set of string values if `in` or `notin` are used.
+* `<conditional>` is allowed to be one of the following: ==, !=, in, notin
+* `<requirement>` will be a string value if `==` or `!=` are used.
+* `<requirement>` will be a set of string values if `in` or `notin` are used.
 
 
 Catalog restrictions, while similar to label selectors, only operate on a 
