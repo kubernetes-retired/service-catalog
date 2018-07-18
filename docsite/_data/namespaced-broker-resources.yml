@@ -4,7 +4,7 @@ landing_page: /docs/namespaced-broker-resources
 toc:
 - docs/namespaced-broker-resources.md
 - title: Cluster-Scoped vs Namespace-scoped Broker
-  path: "#cluster-scopedvsmamespace-scopedbroker-resources"
+  path: "#cluster-scoped-vs-namespace-scoped-broker-resources"
 - title: Possible Use Cases
   path: "#possible-use-cases"
 - title: Enabling Namespace Scoped Broker Resources
