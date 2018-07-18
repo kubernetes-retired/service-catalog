@@ -1,0 +1,15 @@
+bigheader: "Namespaces"
+abstract: "Namespaced Broker Resources"
+landing_page: /docs/namespaced-broker-resources
+toc:
+- docs/namespaced-broker-resources.md
+- title: Cluster-Scoped vs Namespace-scoped Broker
+  path: "#cluster-scoped-vs-namespace-scoped-broker-resources"
+- title: Possible Use Cases
+  path: "#possible-use-cases"
+- title: Enabling Namespace Scoped Broker Resources
+  path: "#enabling-namespace-scoped-broker-resources"
+- title: Using Namespace Scoped Broker Resources
+  path: "#using-namespace-scoped-broker-resources"
+- title: Further Restricting Plan Access
+  path: "#further-restricting-plan-access"
