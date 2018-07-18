@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,10 +48,7 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 	It("checks v1beta1 standard storage", func() {
 
 		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-		err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
-		if err != nil {
-			GinkgoT().Fatal(err)
-		}
+		Ω(utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))).Should(Succeed())
 
 		checkStorageType := func(t GinkgoTInterface, s rest.Storage) {
 			// Our normal stores are all of these things
@@ -91,9 +89,7 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 		configSource := serverstorage.NewResourceConfig()
 		roGetter := testRESTOptionsGetter(nil, func() {})
 		storageMap, err := provider.v1beta1Storage(configSource, roGetter)
-		if err != nil {
-			GinkgoT().Fatalf("error getting v1beta1 storage (%s)", err)
-		}
+		Ω(err).Should(BeNil())
 
 		storages := [...]string{
 			"clusterservicebrokers",
@@ -108,9 +104,7 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 
 		for _, storage := range storages {
 			s, storageExists := storageMap[storage]
-			if !storageExists {
-				GinkgoT().Fatalf("no %q storage found", storage)
-			}
+			Ω(storageExists).Should(BeTrue(), "no %q storage found", storage)
 			checkStorageType(GinkgoT(), s)
 		}
 	})
