@@ -72,7 +72,13 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 				return err
 			}
 		}
-		return cmd.Validate(args)
+		// validate the args and print help info if needed.
+		err := cmd.Validate(args)
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println(c.UsageString())
+		}
+		return err
 	}
 }
 
