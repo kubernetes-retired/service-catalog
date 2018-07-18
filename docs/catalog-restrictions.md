@@ -50,10 +50,10 @@ either service classes and service plans. These rules have a special format
 
 The rule format is expected to be `<property><conditional><requirement>`
 
-* `<conditional>` is allowed to be one of the following: ==, !=, in, notin
-* `<requirement>` will be a string value if `==` or `!=` are used.
-* `<requirement>` will be a set of string values if `in` or `notin` are used.
-
+* `<property>` is one of the supported properties of a service class or service plan resource, described below
+* `<conditional>` is allowed to be one of the following: `==`, `!=`, `in`, `notin`
+* `<requirement>` will be a string value if `==` or `!=` are used, otherwise it will be a set of string values if `in` or `notin` are used
+* `<requirement>` is case sensitive
 
 Catalog restrictions, while similar to label selectors, only operate on a 
 subset of properties on service class and service plan resources. The following
@@ -62,41 +62,41 @@ subset of properties on service class and service plan resources. The following
 
 `ClusterServiceClass` allowed property names:
 
-| Property Name    | Description    |
-| name |  the value set to ClusterServiceClass.Name |
-| spec.externalName | the value set to ClusterServiceClass.Spec.ExternalName |
-| spec.externalID | the value set to ClusterServiceClass.Spec.ExternalID |
+| Property Key    | Description    |
+| name |  This key will match the ClusterServiceClass.Name property |
+| spec.externalName | This key will match the ClusterServiceClass.Spec.ExternalName property |
+| spec.externalID | This key will match the ClusterServiceClass.Spec.ExternalID property |
 
 `ServiceClass` allowed property names:
 
-| Property Name    | Description    |
-| name |  the value set to ServiceClass.Name |
-| spec.externalName | the value set to ServiceClass.Spec.ExternalName |
-| spec.externalID | the value set to ServiceClass.Spec.ExternalID |
+| Property Key    | Description    |
+| name |  This key will match the ServiceClass.Name |
+| spec.externalName | This key will match the ServiceClass.Spec.ExternalName property |
+| spec.externalID | This key will match the ServiceClass.Spec.ExternalID property |
 
 `ClusterServicePlan` allowed property names:
 
-| Property Name    | Description    |
-| name | the value set to ClusterServicePlan.Name |
-| spec.externalName | the value set to ClusterServicePlan.Spec.ExternalName |
-| spec.externalID | the value set to ClusterServicePlan.Spec.ExternalID |
-| spec.free | the value set to ClusterServicePlan.Spec.Free |
-| spec.clusterServiceClass.name | the value set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name |
+| Property Key    | Description    |
+| name | This key will match the ClusterServicePlan.Name |
+| spec.externalName | This key will match the ClusterServicePlan.Spec.ExternalName property |
+| spec.externalID | This key will match the ClusterServicePlan.Spec.ExternalID property |
+| spec.free | This key will match the ClusterServicePlan.Spec.Free property |
+| spec.clusterServiceClass.name | This key will match the ClusterServicePlan.Spec.ClusterServiceClassRef.Name property |
 
 `ServicePlan` allowed property names:
 
-| Property Name    | Description    |
-| name | the value set to ServicePlan.Name |
-| spec.externalName | the value set to ServicePlan.Spec.ExternalName |
-| spec.externalID | the value set to ServicePlan.Spec.ExternalID |
-| spec.free | the value set to ServicePlan.Spec.Free |
-| spec.serviceClass.name | the value set to ServicePlan.Spec.ServiceClassRef.Name |
+| Property Key    | Description    |
+| name | This key will match the ServicePlan.Name property |
+| spec.externalName | This key will match the ServicePlan.Spec.ExternalName property |
+| spec.externalID | This key will match the ServicePlan.Spec.ExternalID property |
+| spec.free | This key will match the ServicePlan.Spec.Free property |
+| spec.serviceClass.name | This key will match the ServicePlan.Spec.ServiceClassRef.Name property |
 
 ## Examples
 
 The following examples show some possible ways to apply catalog restrictions.
 
-### Service Class externalName Whitelist
+### Allow Only Service Class Resources with Specific External Name
 
 This example creates a Service Class restriction on spec.externalName using the
  `in` operator. In this case, only services that have the externalName 
@@ -120,7 +120,7 @@ spec:
   url: http://sample-broker.brokers.svc.cluster.local
 ```
 
-### Service Class externalName Blacklist
+### Allow All Service Class Resources Except Those with Specific External Name
 
  To allow all services, except those named `FooService` or `BarService`, 
  the `notin` operator can be used. The YAML for this would look like:
