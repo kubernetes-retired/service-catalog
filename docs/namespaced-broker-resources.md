@@ -63,12 +63,13 @@ Service Catalog's cluster-scoped resources for brokers, services, and plans are
  only to the service and plans that they should. For these resources, 
  application of RBAC is really centered around what is visible to them, but is 
  not enforced when a provision request is issued. For example, a `ClusterRole` 
- could be created to prohibit a given user or group to view classes and plans, 
- but cannot at provisioning time to ensure that the user cannot create the 
- resource. Namespace-scoped brokers, services and plans, however, can be 
- effectively combined with Kubernetes role based access control and Service 
- Catalog Catalog Restrictions in order to provide more granular control over 
- service instance provisioning.
+ could be created to prohibit a given user or group from viewing 
+ `ClusterServiceClass` and `ClusterServicePlan` resources, but this role cannot
+be used to prevent a user from creating a `ServiceInstance` using that 
+`ClusterServiceClass` and `ClusterServicePlan`. Namespace-scoped brokers, 
+services and plans, however, can be effectively combined with Kubernetes RBAC
+and Service Catalog Catalog Restrictions in order to provide more granular 
+control over service instance provisioning.
 
 ## Enabling Namespace Scoped Broker Resources
 
