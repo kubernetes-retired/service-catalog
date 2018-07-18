@@ -1,9 +1,9 @@
 ---
-title: Namespaced Broker Resources
+title: Using Namespaced Broker Resources
 layout: docwithnav
 ---
 
-# Namespaced Broker Resources
+# Cluster-Scoped vs Namespace-Scoped Broker Resources
 
 Service Catalog enables service brokers to be registered in two manners: as a cluster-scoped resource or as a namespace-scoped resource. As a user of service catalog, you might use these approaches to accomplish different goals, like providing a common set of service broker resources to all users or extending your existing role based access control (RBAC) policies to the lifecycle of service broker resources. This document will explain some use cases for namespace-scoped resources and how to accomplish them using Service Catalog.
 
