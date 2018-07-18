@@ -45,7 +45,7 @@ spec:
 In this example, a catalog restriction has been defined that specifies that 
 only service plans that have an external name of basic should be selected. 
 Catalog restrictions are defined as a set of one or more rules that target 
-either service classes and service plans. These rules have a special format
+ service classes and/or service plans. These rules have a special format
  similar to Kubernetes label selectors. 
 
 The rule format is expected to be `<property><conditional><requirement>`
