@@ -99,7 +99,7 @@ apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceClass
 metadata:
   name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
-  namesspace: default
+  namespace: default
 spec:
   bindable: true
   serviceBrokerName: ups-broker
