@@ -258,15 +258,17 @@ type FakeSvcatClient struct {
 	syncReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RetrieveClassesStub        func() ([]apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassesStub        func(servicecatalog.ScopeOptions) ([]servicecatalog.Class, error)
 	retrieveClassesMutex       sync.RWMutex
-	retrieveClassesArgsForCall []struct{}
-	retrieveClassesReturns     struct {
-		result1 []apiv1beta1.ClusterServiceClass
+	retrieveClassesArgsForCall []struct {
+		arg1 servicecatalog.ScopeOptions
+	}
+	retrieveClassesReturns struct {
+		result1 []servicecatalog.Class
 		result2 error
 	}
 	retrieveClassesReturnsOnCall map[int]struct {
-		result1 []apiv1beta1.ClusterServiceClass
+		result1 []servicecatalog.Class
 		result2 error
 	}
 	RetrieveClassByNameStub        func(string) (*apiv1beta1.ClusterServiceClass, error)
@@ -1443,14 +1445,16 @@ func (fake *FakeSvcatClient) SyncReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeSvcatClient) RetrieveClasses() ([]apiv1beta1.ClusterServiceClass, error) {
+func (fake *FakeSvcatClient) RetrieveClasses(arg1 servicecatalog.ScopeOptions) ([]servicecatalog.Class, error) {
 	fake.retrieveClassesMutex.Lock()
 	ret, specificReturn := fake.retrieveClassesReturnsOnCall[len(fake.retrieveClassesArgsForCall)]
-	fake.retrieveClassesArgsForCall = append(fake.retrieveClassesArgsForCall, struct{}{})
-	fake.recordInvocation("RetrieveClasses", []interface{}{})
+	fake.retrieveClassesArgsForCall = append(fake.retrieveClassesArgsForCall, struct {
+		arg1 servicecatalog.ScopeOptions
+	}{arg1})
+	fake.recordInvocation("RetrieveClasses", []interface{}{arg1})
 	fake.retrieveClassesMutex.Unlock()
 	if fake.RetrieveClassesStub != nil {
-		return fake.RetrieveClassesStub()
+		return fake.RetrieveClassesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1464,24 +1468,30 @@ func (fake *FakeSvcatClient) RetrieveClassesCallCount() int {
 	return len(fake.retrieveClassesArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveClassesReturns(result1 []apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassesArgsForCall(i int) servicecatalog.ScopeOptions {
+	fake.retrieveClassesMutex.RLock()
+	defer fake.retrieveClassesMutex.RUnlock()
+	return fake.retrieveClassesArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) RetrieveClassesReturns(result1 []servicecatalog.Class, result2 error) {
 	fake.RetrieveClassesStub = nil
 	fake.retrieveClassesReturns = struct {
-		result1 []apiv1beta1.ClusterServiceClass
+		result1 []servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassesReturnsOnCall(i int, result1 []apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassesReturnsOnCall(i int, result1 []servicecatalog.Class, result2 error) {
 	fake.RetrieveClassesStub = nil
 	if fake.retrieveClassesReturnsOnCall == nil {
 		fake.retrieveClassesReturnsOnCall = make(map[int]struct {
-			result1 []apiv1beta1.ClusterServiceClass
+			result1 []servicecatalog.Class
 			result2 error
 		})
 	}
 	fake.retrieveClassesReturnsOnCall[i] = struct {
-		result1 []apiv1beta1.ClusterServiceClass
+		result1 []servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
