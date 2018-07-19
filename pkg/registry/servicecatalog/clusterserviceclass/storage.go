@@ -100,7 +100,7 @@ func toSelectableFields(clusterServiceClass *servicecatalog.ClusterServiceClass)
 	cscSpecificFieldsSet["spec.clusterServiceBrokerName"] = clusterServiceClass.Spec.ClusterServiceBrokerName
 	cscSpecificFieldsSet["spec.externalName"] = clusterServiceClass.Spec.ExternalName
 	cscSpecificFieldsSet["spec.externalID"] = clusterServiceClass.Spec.ExternalID
-	return generic.AddObjectMetaFieldsSet(cscSpecificFieldsSet, &clusterServiceClass.ObjectMeta, true)
+	return generic.AddObjectMetaFieldsSet(cscSpecificFieldsSet, &clusterServiceClass.ObjectMeta, false)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
