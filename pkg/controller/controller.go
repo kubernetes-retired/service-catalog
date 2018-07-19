@@ -166,9 +166,8 @@ func NewController(
 			DeleteFunc: controller.servicePlanDelete,
 		})
 	}
-	controller.instanceOperationRetryQueue.retryTime = make(map[string]time.Time)
+	controller.instanceOperationRetryQueue.instances = make(map[string]backoffEntry)
 	controller.instanceOperationRetryQueue.rateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerOperationRetryDelay, maxBrokerOperationRetryDelay)
-	controller.instanceOperationRetryQueue.backoffBeforeRetrying = make(map[string]time.Time)
 	return controller, nil
 }
 
@@ -223,7 +222,7 @@ type controller struct {
 	// monitor writing the value from the configmap, and any
 	// readers passing the clusterID to a broker.
 	clusterIDLock               sync.RWMutex
-	instanceOperationRetryQueue retryQueue
+	instanceOperationRetryQueue instanceOperationBackoff
 }
 
 // Run runs the controller until the given stop channel can be read from.
