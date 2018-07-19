@@ -68,7 +68,7 @@ Service Catalog's cluster-scoped resources for brokers, services, and plans are
 be used to prevent a user from creating a `ServiceInstance` using that 
 `ClusterServiceClass` and `ClusterServicePlan`. Namespace-scoped brokers, 
 services and plans, however, can be effectively combined with Kubernetes RBAC
-and Service Catalog Catalog Restrictions in order to provide more granular 
+and Service Catalog [Catalog Restrictions](catalog-restrictions.md) in order to provide more granular 
 control over service instance provisioning.
 
 ## Enabling Namespace Scoped Broker Resources
@@ -212,7 +212,7 @@ The use of namespace-scoped resources enables you to register brokers within a
  given namespace and leverage RBAC in order to control who can 
 provision services in that namespace. By default, all service classes and plans 
 from that broker will be available to users of the namespace. When registering 
-a broker, catalog restrictions can be specified in order to restrict what plans
+a broker, [catalog restrictions](catalog-restrictions.md) can be specified in order to restrict what plans
  are available within a given namespace. This allows you to specify that in 
  the `developer` namespace, only plans named `basic` can be created. The YAML 
  to accomplish this might look like:
