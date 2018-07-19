@@ -53,8 +53,38 @@ Successfully fetched catalog entries from the ups-broker broker
 
 ## List available service classes
 
+This lists all classes available in the current namespace and at the cluster scope.
 ```console
 $ svcat get classes
+                 NAME                  NAMESPACE           DESCRIPTION
++------------------------------------+------------+---------------------------+
+  user-provided-service                             A user provided service
+  user-provided-service-single-plan                 A user provided service
+  user-provided-service-with-schemas                A user provided service
+  mariadb                              minibroker   Helm Chart for mariadb
+  mongodb                              minibroker   Helm Chart for mongodb
+  mysql                                minibroker   Helm Chart for mysql
+  postgresql                           minibroker   Helm Chart for postgresql
+  redis                                minibroker   Helm Chart for redis
+```
+
+Use the `--namespace` and `--all-namespaces` flags to control which namespace to view:
+
+```
+$ svcat get classes --namespace minibroker
+     NAME      NAMESPACE           DESCRIPTION
++------------+------------+---------------------------+
+  mariadb      minibroker   Helm Chart for mariadb
+  mongodb      minibroker   Helm Chart for mongodb
+  mysql        minibroker   Helm Chart for mysql
+  postgresql   minibroker   Helm Chart for postgresql
+  redis        minibroker   Helm Chart for redis
+```
+
+You can view only cluster-scoped classes with the `--scope` flag:
+
+```
+$ svcat get classes --scope cluster
                 NAME                        DESCRIPTION                         UUID
 +-----------------------------------+-------------------------+--------------------------------------+
   user-provided-service               A user provided service   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
