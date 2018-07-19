@@ -48,7 +48,7 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 	It("checks v1beta1 standard storage", func() {
 
 		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-		Ω(utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))).Should(Succeed())
+		Expect(utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))).Should(Succeed())
 
 		checkStorageType := func(t GinkgoTInterface, s rest.Storage) {
 			// Our normal stores are all of these things
@@ -89,7 +89,7 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 		configSource := serverstorage.NewResourceConfig()
 		roGetter := testRESTOptionsGetter(nil, func() {})
 		storageMap, err := provider.v1beta1Storage(configSource, roGetter)
-		Ω(err).Should(BeNil())
+		Expect(err).Should(BeNil())
 
 		storages := [...]string{
 			"clusterservicebrokers",
@@ -104,7 +104,7 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 
 		for _, storage := range storages {
 			s, storageExists := storageMap[storage]
-			Ω(storageExists).Should(BeTrue(), "no %q storage found", storage)
+			Expect(storageExists).Should(BeTrue(), "no %q storage found", storage)
 			checkStorageType(GinkgoT(), s)
 		}
 	})
