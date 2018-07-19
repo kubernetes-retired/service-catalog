@@ -32,6 +32,7 @@ Afterward, see the topics below.
 ## Topics for operators:
 
 - [Using Namespaced Broker Resources](./namespaced-broker-resources.md)
+- [Filtering Broker Catalogs](./catalog-restrictions.md)
 
 ## Request for Comments
 

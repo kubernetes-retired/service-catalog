@@ -58,4 +58,5 @@ tocs:
   - concepts
   - resources
   - namespaced-broker-resources
+  - catalog-restrictions
   - docs-home # fallthrough, leave this last

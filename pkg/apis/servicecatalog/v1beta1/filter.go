@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"strconv"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -50,6 +52,7 @@ func ConvertServicePlanToProperties(servicePlan *ServicePlan) filter.Properties 
 		FilterSpecExternalName:     servicePlan.Spec.ExternalName,
 		FilterSpecExternalID:       servicePlan.Spec.ExternalID,
 		FilterSpecServiceClassName: servicePlan.Spec.ServiceClassRef.Name,
+		FilterSpecFree:             strconv.FormatBool(servicePlan.Spec.Free),
 	}
 }
 
@@ -79,5 +82,6 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 		FilterSpecExternalName:            servicePlan.Spec.ExternalName,
 		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
 		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
+		FilterSpecFree:                    strconv.FormatBool(servicePlan.Spec.Free),
 	}
 }
