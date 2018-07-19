@@ -20,11 +20,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 type getCmd struct {
 	*command.Namespaced
+	*command.Scoped
 	lookupByUUID bool
 	uuid         string
 	name         string
@@ -39,6 +41,7 @@ func (c *getCmd) SetFormat(format string) {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{
 		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
 	}
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
@@ -61,6 +64,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	)
 	command.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
+	getCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -85,7 +89,11 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses(c.Namespace)
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return err
 	}
