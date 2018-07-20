@@ -148,9 +148,9 @@ func TestListClasses(t *testing.T) {
 
 			// Initialize the command arguments
 			cmd := &getCmd{
-				Namespaced:   command.NewNamespaced(cxt),
-				Scoped:       command.NewScoped(),
-				outputFormat: "table",
+				Namespaced: command.NewNamespaced(cxt),
+				Scoped:     command.NewScoped(),
+				Formatted:  command.NewFormatted(),
 			}
 			cmd.Namespace = ns
 			cmd.Scope = tc.scope

@@ -24,17 +24,16 @@ import (
 
 type getCmd struct {
 	*command.Context
-	name         string
-	outputFormat string
-}
-
-func (c *getCmd) SetFormat(format string) {
-	c.outputFormat = format
+	*command.Formatted
+	name string
 }
 
 // NewGetCmd builds a "svcat get brokers" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{
+		Context:   cxt,
+		Formatted: command.NewFormatted(),
+	}
 	cmd := &cobra.Command{
 		Use:     "brokers [NAME]",
 		Aliases: []string{"broker", "brk"},
@@ -46,7 +45,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
-	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -72,7 +71,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteBrokerList(c.Output, c.outputFormat, brokers...)
+	output.WriteBrokerList(c.Output, c.OutputFormat, brokers...)
 	return nil
 }
 
@@ -82,6 +81,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteBroker(c.Output, c.outputFormat, *broker)
+	output.WriteBroker(c.Output, c.OutputFormat, *broker)
 	return nil
 }

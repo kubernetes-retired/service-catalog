@@ -132,10 +132,11 @@ func TestGetCommand(t *testing.T) {
 			// Initialize the command arguments
 			cmd := &getCmd{
 				Namespaced: command.NewNamespaced(cxt),
+				Formatted:  command.NewFormatted(),
 			}
 			cmd.Namespace = namespace
 			cmd.name = tc.bindingName
-			cmd.outputFormat = tc.outputFormat
+			cmd.OutputFormat = tc.outputFormat
 
 			err := cmd.Run()
 

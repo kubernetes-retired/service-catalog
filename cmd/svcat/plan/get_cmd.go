@@ -29,23 +29,22 @@ import (
 
 type getCmd struct {
 	*command.Context
+	*command.Formatted
 	lookupByUUID bool
 	uuid         string
 	name         string
 
-	classFilter  string
-	classUUID    string
-	className    string
-	outputFormat string
-}
-
-func (c *getCmd) SetFormat(format string) {
-	c.outputFormat = format
+	classFilter string
+	classUUID   string
+	className   string
 }
 
 // NewGetCmd builds a "svcat get plans" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{
+		Context:   cxt,
+		Formatted: command.NewFormatted(),
+	}
 	cmd := &cobra.Command{
 		Use:     "plans [NAME]",
 		Aliases: []string{"plan", "pl"},
@@ -77,7 +76,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"",
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
 	)
-	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddOutputFlags(cmd.Flags())
 	return cmd
 }
 
@@ -148,7 +147,7 @@ func (c *getCmd) getAll() error {
 		return fmt.Errorf("unable to list plans (%s)", err)
 	}
 
-	output.WritePlanList(c.Output, c.outputFormat, plans, classes)
+	output.WritePlanList(c.Output, c.OutputFormat, plans, classes)
 	return nil
 }
 
@@ -175,7 +174,7 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WritePlan(c.Output, c.outputFormat, *plan, *class)
+	output.WritePlan(c.Output, c.OutputFormat, *plan, *class)
 
 	return nil
 }
