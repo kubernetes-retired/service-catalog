@@ -172,6 +172,8 @@ tree:
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
