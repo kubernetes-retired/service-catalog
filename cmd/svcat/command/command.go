@@ -41,12 +41,11 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 		if scopedCmd, ok := cmd.(HasScopedFlags); ok {
 			scopedCmd.ApplyScopedFlags(c.Flags())
 		}
-		if fmtCmd, ok := cmd.(FormattedCommand); ok {
-			fmtString, err := determineOutputFormat(c.Flags())
+		if fmtCmd, ok := cmd.(HasFormatFlags); ok {
+			err := fmtCmd.ApplyFormatFlags(c.Flags())
 			if err != nil {
 				return err
 			}
-			fmtCmd.SetFormat(fmtString)
 		}
 		if classFilteredCmd, ok := cmd.(HasClassFlag); ok {
 			err := classFilteredCmd.ApplyClassFlag(c)

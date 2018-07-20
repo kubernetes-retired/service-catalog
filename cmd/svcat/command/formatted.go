@@ -23,35 +23,39 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// FormattedCommand represents a command that can have it's output
-// formatted
-type FormattedCommand interface {
-	// SetFormat sets the commands output format
-	SetFormat(format string)
+// HasFormatFlags represents a command that can have its output formatted.
+type HasFormatFlags interface {
+	// ApplyFormatFlags persists the format-related flags:
+	// * --output
+	ApplyFormatFlags(lags *pflag.FlagSet) error
+}
+
+// Formatted is the base command of all svcat commands that support customizable output formats.
+type Formatted struct {
+	OutputFormat string
+}
+
+// NewFormatted command.
+func NewFormatted() *Formatted {
+	return &Formatted{}
 }
 
 // AddOutputFlags adds common output flags to a command that can have variable output formats.
-func AddOutputFlags(flags *pflag.FlagSet) {
-	flags.StringP(
-		"output",
-		"o",
-		"",
+func (c *Formatted) AddOutputFlags(flags *pflag.FlagSet) {
+	flags.StringVarP(&c.OutputFormat, "output", "o", "table",
 		"The output format to use. Valid options are table, json or yaml. If not present, defaults to table",
 	)
 }
 
-func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
-	format, _ := flags.GetString("output")
-	format = strings.ToLower(format)
+// ApplyFormatFlags persists the format-related flags:
+// * --output
+func (c *Formatted) ApplyFormatFlags(flags *pflag.FlagSet) error {
+	c.OutputFormat = strings.ToLower(c.OutputFormat)
 
-	switch format {
-	case "", "table":
-		return "table", nil
-	case "json":
-		return "json", nil
-	case "yaml":
-		return "yaml", nil
+	switch c.OutputFormat {
+	case "table", "json", "yaml":
+		return nil
 	default:
-		return "", fmt.Errorf("invalid --output format %q, allowed values are table, json and yaml", format)
+		return fmt.Errorf("invalid --output format %q, allowed values are: table, json and yaml", c.OutputFormat)
 	}
 }
