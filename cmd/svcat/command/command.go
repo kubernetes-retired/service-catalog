@@ -17,12 +17,10 @@ limitations under the License.
 package command
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 // Command represents an svcat command.
@@ -32,13 +30,6 @@ type Command interface {
 
 	// Run a validated svcat command.
 	Run() error
-}
-
-// FormattedCommand represents a command that can have it's output
-// formatted
-type FormattedCommand interface {
-	// SetFormat sets the commands output format
-	SetFormat(format string)
 }
 
 // PreRunE validates os args, and then saves them on the svcat command.
@@ -89,32 +80,6 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 func RunE(cmd Command) func(*cobra.Command, []string) error {
 	return func(_ *cobra.Command, args []string) error {
 		return cmd.Run()
-	}
-}
-
-// AddOutputFlags adds common output flags to a command that can have variable output formats.
-func AddOutputFlags(flags *pflag.FlagSet) {
-	flags.StringP(
-		"output",
-		"o",
-		"",
-		"The output format to use. Valid options are table, json or yaml. If not present, defaults to table",
-	)
-}
-
-func determineOutputFormat(flags *pflag.FlagSet) (string, error) {
-	format, _ := flags.GetString("output")
-	format = strings.ToLower(format)
-
-	switch format {
-	case "", "table":
-		return "table", nil
-	case "json":
-		return "json", nil
-	case "yaml":
-		return "yaml", nil
-	default:
-		return "", fmt.Errorf("invalid --output format %q, allowed values are table, json and yaml", format)
 	}
 }
 
