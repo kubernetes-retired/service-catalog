@@ -463,15 +463,15 @@ func (c *controller) purgeExpiredRetryEntries() {
 	// entries are not prematurely removed
 	overDue := now.Add(-maxBrokerOperationRetryDelay)
 	purgedEntries := 0
-	for k := range c.instanceOperationRetryQueue.instances {
-		if due := c.instanceOperationRetryQueue.instances[k]; due.calculatedRetryTime.Before(overDue) {
-			glog.V(5).Infof("removing %s from instanceOperationRetryQueue which had retry time of %v", k, due)
+	for k, v := range c.instanceOperationRetryQueue.instances {
+		if v.calculatedRetryTime.Before(overDue) {
+			glog.V(5).Infof("removing %s from instanceOperationRetryQueue which had retry time of %v", k, v.calculatedRetryTime)
 			delete(c.instanceOperationRetryQueue.instances, k)
 			c.instanceOperationRetryQueue.rateLimiter.Forget(k)
 			purgedEntries++
 		}
 	}
-	glog.V(5).Infof("purged %v expired entries, instanceOperationRetryQueue queue length is %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
+	glog.V(5).Infof("purged %v expired entries from instanceOperationRetryQueue.instances, number of entries remaining: %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
 
 }
 
