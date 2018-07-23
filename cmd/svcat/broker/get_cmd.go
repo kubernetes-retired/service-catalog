@@ -19,6 +19,7 @@ package broker
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -33,16 +34,18 @@ type getCmd struct {
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{
 		Namespaced: command.NewNamespaced(cxt),
-		Formatted: command.NewFormatted(),
+		Formatted:  command.NewFormatted(),
 		Scoped:     command.NewScoped(),
 	}
 	cmd := &cobra.Command{
 		Use:     "brokers [NAME]",
 		Aliases: []string{"broker", "brk"},
-		Short:   "List brokers, optionally filtered by name",
+		Short:   "List brokers, optionally filtered by name, scope or namespace",
 		Example: command.NormalizeExamples(`
   svcat get brokers
-  svcat get broker asb
+  svcat get brokers --scope=cluster
+  svcat get brokers --scope=all
+  svcat get broker minibroker
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -70,7 +73,11 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	brokers, err := c.App.RetrieveBrokers(c.Scope)
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+	brokers, err := c.App.RetrieveBrokers(opts)
 	if err != nil {
 		return err
 	}

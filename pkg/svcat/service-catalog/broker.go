@@ -51,7 +51,7 @@ func (sdk *SDK) Deregister(brokerName string) error {
 }
 
 // RetrieveBrokers lists all brokers defined in the cluster.
-func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]v1beta1.ClusterServiceBroker, error) {
+func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 	var brokers []Broker
 
 	if opts.Scope.Matches(ClusterScope) {
@@ -68,6 +68,10 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]v1beta1.ClusterServiceBrok
 	if opts.Scope.Matches(NamespaceScope) {
 		sb, err := sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).List(v1.ListOptions{})
 		if err != nil {
+			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
+			if errors.IsNotFound(err) {
+				return brokers, nil
+			}
 			return nil, fmt.Errorf("unable to list brokers in %q (%s)", opts.Namespace, err)
 		}
 		for _, b := range sb.Items {

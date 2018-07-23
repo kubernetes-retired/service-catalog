@@ -17,56 +17,55 @@ limitations under the License.
 package output
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
-func getBrokerStatusCondition(status v1beta1.ClusterServiceBrokerStatus) v1beta1.ServiceBrokerCondition {
+func getBrokerStatusCondition(status v1beta1.CommonServiceBrokerStatus) v1beta1.ServiceBrokerCondition {
 	if len(status.Conditions) > 0 {
 		return status.Conditions[len(status.Conditions)-1]
 	}
 	return v1beta1.ServiceBrokerCondition{}
 }
 
-func getBrokerStatusShort(status v1beta1.ClusterServiceBrokerStatus) string {
+func getBrokerStatusShort(status v1beta1.CommonServiceBrokerStatus) string {
 	lastCond := getBrokerStatusCondition(status)
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
 }
 
-func getBrokerStatusFull(status v1beta1.ClusterServiceBrokerStatus) string {
+func getBrokerStatusFull(status v1beta1.CommonServiceBrokerStatus) string {
 	lastCond := getBrokerStatusCondition(status)
 	return formatStatusFull(string(lastCond.Type), lastCond.Status, lastCond.Reason, lastCond.Message, lastCond.LastTransitionTime)
 }
 
-func writeBrokerListTable(w io.Writer, brokers []v1beta1.ClusterServiceBroker) {
+func writeBrokerListTable(w io.Writer, brokers []servicecatalog.Broker) {
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
+		"Namespace",
 		"URL",
 		"Status",
 	})
 	for _, broker := range brokers {
 		t.Append([]string{
-			broker.Name,
-			broker.Spec.URL,
-			getBrokerStatusShort(broker.Status),
+			broker.GetName(),
+			broker.GetNamespace(),
+			broker.GetURL(),
+			getBrokerStatusShort(broker.GetStatus()),
 		})
 	}
 	t.Render()
 }
 
 // WriteBrokerList prints a list of brokers in the specified output format.
-func WriteBrokerList(w io.Writer, outputFormat string, brokers ...v1beta1.ClusterServiceBroker) {
-	l := v1beta1.ClusterServiceBrokerList{
-		Items: brokers,
-	}
+func WriteBrokerList(w io.Writer, outputFormat string, brokers ...servicecatalog.Broker) {
 	switch outputFormat {
 	case FormatJSON:
-		writeJSON(w, l)
+		writeJSON(w, brokers)
 	case FormatYAML:
-		writeYAML(w, l, 0)
+		writeYAML(w, brokers, 0)
 	case FormatTable:
 		writeBrokerListTable(w, brokers)
 	}
@@ -80,29 +79,18 @@ func WriteBroker(w io.Writer, outputFormat string, broker v1beta1.ClusterService
 	case FormatYAML:
 		writeYAML(w, broker, 0)
 	case FormatTable:
-		writeBrokerListTable(w, []v1beta1.ClusterServiceBroker{broker})
+		writeBrokerListTable(w, []servicecatalog.Broker{&broker})
 	}
 }
 
-// WriteParentBroker prints identifying information for a parent broker.
-func WriteParentBroker(w io.Writer, broker *v1beta1.ClusterServiceBroker) {
-	fmt.Fprintln(w, "\nBroker:")
-	t := NewDetailsTable(w)
-	t.AppendBulk([][]string{
-		{"Name:", broker.Name},
-		{"Status:", getBrokerStatusShort(broker.Status)},
-	})
-	t.Render()
-}
-
 // WriteBrokerDetails prints details for a single broker.
-func WriteBrokerDetails(w io.Writer, broker *v1beta1.ClusterServiceBroker) {
+func WriteBrokerDetails(w io.Writer, broker servicecatalog.Broker) {
 	t := NewDetailsTable(w)
 
 	t.AppendBulk([][]string{
-		{"Name:", broker.Name},
-		{"URL:", broker.Spec.URL},
-		{"Status:", getBrokerStatusFull(broker.Status)},
+		{"Name:", broker.GetName()},
+		{"URL:", broker.GetURL()},
+		{"Status:", getBrokerStatusFull(broker.GetStatus())},
 	})
 
 	t.Render()
