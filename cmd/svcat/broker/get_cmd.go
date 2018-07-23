@@ -23,7 +23,7 @@ import (
 )
 
 type getCmd struct {
-	*command.Context
+	*command.Namespaced
 	*command.Formatted
 	*command.Scoped
 	name string
@@ -32,9 +32,9 @@ type getCmd struct {
 // NewGetCmd builds a "svcat get brokers" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{
-		Context:   cxt,
+		Namespaced: command.NewNamespaced(cxt),
 		Formatted: command.NewFormatted(),
-		Scoped:  command.NewScoped(),
+		Scoped:     command.NewScoped(),
 	}
 	cmd := &cobra.Command{
 		Use:     "brokers [NAME]",
@@ -49,6 +49,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	}
 	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddScopedFlags(cmd.Flags(), true)
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	return cmd
 }
 
