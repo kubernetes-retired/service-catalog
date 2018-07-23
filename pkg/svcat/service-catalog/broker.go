@@ -24,6 +24,22 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Broker provides a unifying layer of cluster and namespace scoped broker resources.
+type Broker interface {
+
+	// GetName returns the broker's name.
+	GetName() string
+
+	// GetNamespace returns the broker's namespace, or "" if it's cluster-scoped.
+	GetNamespace() string
+
+	// GetURL returns the broker's URL.
+	GetURL() string
+
+	// GetStatus returns the broker's status.
+	GetStatus() v1beta1.CommonServiceBrokerStatus
+}
+
 // Deregister deletes a broker
 func (sdk *SDK) Deregister(brokerName string) error {
 	err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(brokerName, &v1.DeleteOptions{})
