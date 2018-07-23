@@ -27,6 +27,9 @@ import (
 const (
 	// FieldExternalClassName is the jsonpath to a class's external name.
 	FieldExternalClassName = "spec.externalName"
+
+	// FieldClusterServiceBrokerName is the json path to a classes associated broker
+	FieldClusterServiceBrokerName = "spec.clusterServiceBrokerName"
 )
 
 // Class provides a unifying layer of cluster and namespace scoped class resources.
@@ -43,12 +46,22 @@ type Class interface {
 }
 
 // RetrieveClasses lists all classes defined in the cluster.
-func (sdk *SDK) RetrieveClasses() ([]v1beta1.ClusterServiceClass, error) {
-	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to list classes (%s)", err)
+func (sdk *SDK) RetrieveClasses(opts *FilterOptions) ([]v1beta1.ClusterServiceClass, error) {
+	brokerSelector := fields.Everything()
+	classNameSelector := fields.Everything()
+	if opts.Broker != "" {
+		brokerSelector = fields.OneTermEqualSelector(FieldClusterServiceBrokerName, opts.Broker)
 	}
-
+	if opts.ClassName != "" {
+		classNameSelector = fields.OneTermEqualSelector(FieldExternalClassName, opts.ClassName)
+	}
+	selectors := v1.ListOptions{
+		FieldSelector: fields.AndSelectors(brokerSelector, classNameSelector).String(),
+	}
+	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(selectors)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to list classes. (%s)", err)
+	}
 	return classes.Items, nil
 }
 

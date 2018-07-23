@@ -1,4 +1,4 @@
-            NAME                   DESCRIPTION         
-+--------------------------+--------------------------+
-  user-provided-service      A user provided service   
-  another-provided-service   Another provided service  
+            NAME                   DESCRIPTION            BROKER    
++--------------------------+--------------------------+------------+
+  user-provided-service      A user provided service    ups-broker  
+  another-provided-service   Another provided service   ups-broker  
