@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// HasScopedFlags represents a command that can be scoped to can be scoped
+// HasScopedFlags represents a command that can be scoped
 // to either namespace level or cluster level resources.
 type HasScopedFlags interface {
 	// ApplyScopedFlags persists the scope related flags:
