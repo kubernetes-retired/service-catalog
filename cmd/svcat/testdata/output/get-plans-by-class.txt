@@ -1,4 +1,4 @@
-   NAME             CLASS                 DESCRIPTION        
-+---------+-----------------------+-------------------------+
-  default   user-provided-service   Sample plan description  
-  premium   user-provided-service   Premium plan             
+   NAME             CLASS                          DESCRIPTION                 
++---------+-----------------------+-------------------------------------------+
+  default   user-provided-service   Sample plan description                    
+  premium   user-provided-service   Premium plan                               

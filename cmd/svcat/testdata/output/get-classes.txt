@@ -1,6 +1,6 @@
-            NAME             NAMESPACE         DESCRIPTION         
-+--------------------------+-----------+--------------------------+
-  user-provided-service                  A user provided service   
-  another-provided-service               Another provided service  
-  user-provided-service      default     A user provided service   
-  another-provided-service   default     Another provided service  
+            NAME             NAMESPACE               DESCRIPTION               
++--------------------------+-----------+--------------------------------------+
+  user-provided-service                  A user provided service               
+  another-provided-service               Another provided service              
+  user-provided-service      default     A user provided service               
+  another-provided-service   default     Another provided service              

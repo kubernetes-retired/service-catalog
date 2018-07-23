@@ -1,7 +1,6 @@
-   NAME              CLASS                      DESCRIPTION            
-+---------+--------------------------+--------------------------------+
-  default   user-provided-service      Sample plan description         
-  premium   user-provided-service      Premium plan                    
-  default   another-provided-service   Another sample plan             
-                                       description                     
-  premium   another-provided-service   Another premium plan            
+   NAME              CLASS                          DESCRIPTION                
++---------+--------------------------+----------------------------------------+
+  default   user-provided-service      Sample plan description                 
+  premium   user-provided-service      Premium plan                            
+  default   another-provided-service   Another sample plan description         
+  premium   another-provided-service   Another premium plan                    
