@@ -16,6 +16,22 @@ limitations under the License.
 
 package integration
 
+import (
+	"time"
+
+	"k8s.io/apiserver/pkg/util/feature"
+
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+)
+
+var (
+	// How often to poll for conditions
+	pollInterval = 2 * time.Second
+
+	// Default time to wait for operations to complete
+	defaultTimeout = 30 * time.Second
+)
+
 // strPtr, String Pointer, returns the address of s. useful for filling struct
 // fields that require a *string (for json decoding purposes).
 func strPtr(s string) *string {
@@ -32,4 +48,20 @@ func truePtr() *bool {
 func falsePtr() *bool {
 	b := false
 	return &b
+}
+
+func enableNamespacedResources() (resetFeaturesFunc func(), err error) {
+	previousFeatureGate := feature.DefaultFeatureGate
+
+	newFeatureGate := feature.NewFeatureGate()
+	if err := newFeatureGate.Add(map[feature.Feature]feature.FeatureSpec{
+		scfeatures.NamespacedServiceBroker: {Default: true, PreRelease: feature.Alpha},
+	}); err != nil {
+		return nil, err
+	}
+	feature.DefaultFeatureGate = newFeatureGate
+
+	return func() {
+		feature.DefaultFeatureGate = previousFeatureGate
+	}, nil
 }
