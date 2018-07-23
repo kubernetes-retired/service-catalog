@@ -25,6 +25,7 @@ import (
 type getCmd struct {
 	*command.Context
 	*command.Formatted
+	*command.Scoped
 	name string
 }
 
@@ -33,6 +34,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{
 		Context:   cxt,
 		Formatted: command.NewFormatted(),
+		Scoped:  command.NewScoped(),
 	}
 	cmd := &cobra.Command{
 		Use:     "brokers [NAME]",
@@ -46,6 +48,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 	getCmd.AddOutputFlags(cmd.Flags())
+	getCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -66,7 +69,7 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	brokers, err := c.App.RetrieveBrokers()
+	brokers, err := c.App.RetrieveBrokers(c.Scope)
 	if err != nil {
 		return err
 	}

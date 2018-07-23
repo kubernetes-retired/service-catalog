@@ -35,13 +35,32 @@ func (sdk *SDK) Deregister(brokerName string) error {
 }
 
 // RetrieveBrokers lists all brokers defined in the cluster.
-func (sdk *SDK) RetrieveBrokers() ([]v1beta1.ClusterServiceBroker, error) {
-	brokers, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(v1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to list brokers (%s)", err)
+func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]v1beta1.ClusterServiceBroker, error) {
+	var brokers []Broker
+
+	if opts.Scope.Matches(ClusterScope) {
+		csb, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(v1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("unable to list cluster-scoped brokers (%s)", err)
+		}
+		for _, b := range csb.Items {
+			broker := b
+			brokers = append(brokers, &broker)
+		}
 	}
 
-	return brokers.Items, nil
+	if opts.Scope.Matches(NamespaceScope) {
+		sb, err := sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).List(v1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("unable to list brokers in %q (%s)", opts.Namespace, err)
+		}
+		for _, b := range sb.Items {
+			broker := b
+			brokers = append(brokers, &broker)
+		}
+	}
+
+	return brokers, nil
 }
 
 // RetrieveBroker gets a broker by its name.

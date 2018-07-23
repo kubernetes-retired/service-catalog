@@ -45,7 +45,7 @@ type SvcatClient interface {
 	WaitForBinding(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceBinding, error)
 
 	Deregister(string) error
-	RetrieveBrokers() ([]apiv1beta1.ClusterServiceBroker, error)
+	RetrieveBrokers(opts ScopeOptions) ([]apiv1beta1.ClusterServiceBroker, error)
 	RetrieveBroker(string) (*apiv1beta1.ClusterServiceBroker, error)
 	RetrieveBrokerByClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
 	Register(string, string) (*apiv1beta1.ClusterServiceBroker, error)
