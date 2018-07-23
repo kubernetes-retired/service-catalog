@@ -136,13 +136,13 @@ type CommonServiceBrokerSpec struct {
 // This is an example of a whitelist on service externalName.
 // Goal: Only list Services with the externalName of FooService and BarService,
 // Solution: restrictions := ServiceCatalogRestrictions{
-// 		ServiceClass: ["externalName in (FooService, BarService)"]
+// 		ServiceClass: ["spec.externalName in (FooService, BarService)"]
 // }
 //
 // This is an example of a blacklist on service externalName.
 // Goal: Allow all services except the ones with the externalName of FooService and BarService,
 // Solution: restrictions := ServiceCatalogRestrictions{
-// 		ServiceClass: ["externalName notin (FooService, BarService)"]
+// 		ServiceClass: ["spec.externalName notin (FooService, BarService)"]
 // }
 //
 // This whitelists plans called "Demo", and blacklists (but only a single element in
@@ -150,7 +150,7 @@ type CommonServiceBrokerSpec struct {
 // Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name,
 // Solution: restrictions := ServiceCatalogRestrictions{
 // 		ServiceClass: ["name!=AABBB-CCDD-EEGG-HIJK"]
-// 		ServicePlan: ["externalName in (Demo)", "name!=AABBCC"]
+// 		ServicePlan: ["spec.externalName in (Demo)", "name!=AABBCC"]
 // }
 //
 // CatalogRestrictions strings have a special format similar to Label Selectors,
@@ -171,8 +171,9 @@ type CommonServiceBrokerSpec struct {
 //   name - the value set to [Cluster]ServicePlan.Name
 //   spec.externalName - the value set to [Cluster]ServicePlan.Spec.ExternalName
 //   spec.externalID - the value set to [Cluster]ServicePlan.Spec.ExternalID
+//   spec.free - the value set to [Cluster]ServicePlan.Spec.Free
 //   spec.serviceClass.name - the value set to ServicePlan.Spec.ServiceClassRef.Name
-//   spec.clusterServiceClass.name - the vlaue set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name
+//   spec.clusterServiceClass.name - the value set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
 	ServiceClass []string `json:"serviceClass,omitempty"`
@@ -1372,6 +1373,8 @@ const (
 	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
 	// SpecServiceClassName is only used for plans, the parent service class name.
 	FilterSpecServiceClassName = "spec.serviceClass.name"
+	// FilterSpecFree is only used for plans, determines if the plan is free.
+	FilterSpecFree = "spec.free"
 )
 
 // SecretTransform is a single transformation that is applied to the

@@ -24,6 +24,16 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Deregister deletes a broker
+func (sdk *SDK) Deregister(brokerName string) error {
+	err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(brokerName, &v1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("deregister request failed (%s)", err)
+	}
+
+	return nil
+}
+
 // RetrieveBrokers lists all brokers defined in the cluster.
 func (sdk *SDK) RetrieveBrokers() ([]v1beta1.ClusterServiceBroker, error) {
 	brokers, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(v1.ListOptions{})
@@ -53,6 +63,26 @@ func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 		return nil, err
 	}
 	return broker, nil
+}
+
+// Register creates a broker
+func (sdk *SDK) Register(brokerName string, url string) (*v1beta1.ClusterServiceBroker, error) {
+	request := &v1beta1.ClusterServiceBroker{
+		ObjectMeta: v1.ObjectMeta{
+			Name: brokerName,
+		},
+		Spec: v1beta1.ClusterServiceBrokerSpec{
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+				URL: url,
+			},
+		},
+	}
+	result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(request)
+	if err != nil {
+		return nil, fmt.Errorf("register request failed (%s)", err)
+	}
+
+	return result, nil
 }
 
 // Sync or relist a broker to refresh its catalog metadata.

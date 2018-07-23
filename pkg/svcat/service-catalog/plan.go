@@ -32,6 +32,19 @@ const (
 	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
 )
 
+// Plan provides a unifying layer of cluster and namespace scoped plan resources.
+type Plan interface {
+
+	// GetName returns the plan's name.
+	GetName() string
+
+	// GetExternalName returns the plan's external name.
+	GetExternalName() string
+
+	// GetDescription returns the plan description.
+	GetDescription() string
+}
+
 // RetrievePlans lists all plans defined in the cluster.
 func (sdk *SDK) RetrievePlans(opts *FilterOptions) ([]v1beta1.ClusterServicePlan, error) {
 	brokerSelector := fields.Everything()

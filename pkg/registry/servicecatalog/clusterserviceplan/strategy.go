@@ -19,10 +19,11 @@ package clusterserviceplan
 // this was copied from where else and edited to fit our objects
 
 import (
+	"context"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
@@ -82,7 +83,7 @@ func (clusterServicePlanRESTStrategy) NamespaceScoped() bool {
 }
 
 // PrepareForCreate receives the incoming ClusterServicePlan.
-func (clusterServicePlanRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (clusterServicePlanRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServicePlan)
 	if !ok {
 		glog.Fatal("received a non-ClusterServicePlan object to create")
@@ -90,7 +91,7 @@ func (clusterServicePlanRESTStrategy) PrepareForCreate(ctx genericapirequest.Con
 	// service plan is a data record and has no status to track
 }
 
-func (clusterServicePlanRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (clusterServicePlanRESTStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateClusterServicePlan(obj.(*sc.ClusterServicePlan))
 }
 
@@ -102,7 +103,7 @@ func (clusterServicePlanRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (clusterServicePlanRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServicePlanRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
 		glog.Fatal("received a non-ClusterServicePlan object to update to")
@@ -116,7 +117,7 @@ func (clusterServicePlanRESTStrategy) PrepareForUpdate(ctx genericapirequest.Con
 	newServicePlan.Spec.ClusterServiceBrokerName = oldServicePlan.Spec.ClusterServiceBrokerName
 }
 
-func (clusterServicePlanRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServicePlanRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
 		glog.Fatal("received a non-ClusterServicePlan object to validate to")
@@ -129,7 +130,7 @@ func (clusterServicePlanRESTStrategy) ValidateUpdate(ctx genericapirequest.Conte
 	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)
 }
 
-func (clusterServicePlanStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (clusterServicePlanStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
 		glog.Fatal("received a non-ClusterServicePlan object to update to")
@@ -142,7 +143,7 @@ func (clusterServicePlanStatusRESTStrategy) PrepareForUpdate(ctx genericapireque
 	newServiceClass.Spec = oldServiceClass.Spec
 }
 
-func (clusterServicePlanStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (clusterServicePlanStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
 		glog.Fatal("received a non-ClusterServicePlan object to validate to")

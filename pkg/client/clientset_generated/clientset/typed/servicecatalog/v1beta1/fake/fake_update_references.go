@@ -21,6 +21,7 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
+// UpdateReferences is a non-generated fake to update with the reference subresource
 func (c *FakeServiceInstances) UpdateReferences(serviceInstance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(serviceinstancesResource, "reference", c.ns, serviceInstance), serviceInstance)

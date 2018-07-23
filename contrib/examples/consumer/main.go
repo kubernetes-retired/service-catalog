@@ -18,11 +18,12 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 )
 
 func main() {
-	a, _ := svcat.NewApp("", "")
+	a, _ := svcat.NewApp(nil, nil, "")
 	brokers, _ := a.RetrieveBrokers()
 	for _, b := range brokers {
 		fmt.Println(b.Name)

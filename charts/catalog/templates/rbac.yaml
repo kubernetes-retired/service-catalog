@@ -106,6 +106,20 @@ items:
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","serviceinstances/reference","servicebindings/status"]
     verbs:     ["update"]
+  {{- if .Values.namespacedServiceBrokerEnabled }}
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["serviceclasses"]
+    verbs:     ["get","list","watch","create","patch","update","delete"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["serviceplans"]
+    verbs:     ["get","list","watch","create","patch","update","delete"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["servicebrokers"]
+    verbs:     ["get","list","watch"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["servicebrokers/status","serviceclasses/status","serviceplans/status"]
+    verbs:     ["update"]
+  {{- end }}
 # give the controller-manager service account access to whats defined in its role.
 - apiVersion: {{template "rbacApiVersion" . }}
   kind: ClusterRoleBinding

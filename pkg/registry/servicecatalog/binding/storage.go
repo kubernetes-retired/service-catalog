@@ -17,6 +17,7 @@ limitations under the License.
 package binding
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -27,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -88,8 +88,17 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
 func toSelectableFields(binding *servicecatalog.ServiceBinding) fields.Set {
+	// If you add a new selectable field, you also need to modify
+	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&binding.ObjectMeta, true)
-	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
+
+	specFieldSet := make(fields.Set, 1)
+
+	if binding.Spec.ExternalID != "" {
+		specFieldSet["spec.externalID"] = binding.Spec.ExternalID
+	}
+
+	return generic.MergeFieldsSets(objectMetaFieldsSet, specFieldSet)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
@@ -170,12 +179,12 @@ func (r *StatusREST) New() runtime.Object {
 
 // Get retrieves the object from the storage. It is required to support Patch
 // and to implement the rest.Getter interface.
-func (r *StatusREST) Get(ctx genericapirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return r.store.Get(ctx, name, options)
 }
 
 // Update alters the status subset of an object and implements the rest.Updater
 // interface.
-func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
+func (r *StatusREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
 	return r.store.Update(ctx, name, objInfo, createValidation, updateValidation)
 }

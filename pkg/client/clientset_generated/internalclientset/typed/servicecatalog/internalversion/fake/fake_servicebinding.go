@@ -62,7 +62,7 @@ func (c *FakeServiceBindings) List(opts v1.ListOptions) (result *servicecatalog.
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &servicecatalog.ServiceBindingList{}
+	list := &servicecatalog.ServiceBindingList{ListMeta: obj.(*servicecatalog.ServiceBindingList).ListMeta}
 	for _, item := range obj.(*servicecatalog.ServiceBindingList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)

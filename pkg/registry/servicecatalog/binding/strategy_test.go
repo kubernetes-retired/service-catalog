@@ -17,6 +17,7 @@ limitations under the License.
 package binding
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -50,7 +51,7 @@ func getTestInstanceCredential() *servicecatalog.ServiceBinding {
 	}
 }
 
-func contextWithUserName(userName string) genericapirequest.Context {
+func contextWithUserName(userName string) context.Context {
 	ctx := genericapirequest.NewContext()
 	userInfo := &user.DefaultInfo{
 		Name: userName,

@@ -117,6 +117,7 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 
 	cmd.AddCommand(newGetCmd(cxt))
 	cmd.AddCommand(newDescribeCmd(cxt))
+	cmd.AddCommand(broker.NewRegisterCmd(cxt))
 	cmd.AddCommand(instance.NewProvisionCmd(cxt))
 	cmd.AddCommand(instance.NewDeprovisionCmd(cxt))
 	cmd.AddCommand(binding.NewBindCmd(cxt))

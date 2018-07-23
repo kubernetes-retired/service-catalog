@@ -20,10 +20,11 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 )
 
 const (
@@ -59,6 +60,8 @@ type ServiceCatalogServerOptions struct {
 	StandaloneMode bool
 	// whether or not to serve the OpenAPI spec (at /swagger.json)
 	ServeOpenAPISpec bool
+	// KubeconfigPath, if specified, is used over the in-cluster service account token.
+	KubeconfigPath string
 }
 
 // NewServiceCatalogServerOptions creates a new instances of
@@ -102,6 +105,12 @@ func (s *ServiceCatalogServerOptions) AddFlags(flags *pflag.FlagSet) {
 		"serve-openapi-spec",
 		false,
 		"Whether this API server should serve the OpenAPI spec (problematic with older versions of kubectl)",
+	)
+	flags.StringVar(
+		&s.KubeconfigPath,
+		"kubeconfig",
+		"",
+		"Path to kubeconfig to use over the in-cluster service account token",
 	)
 
 	s.GenericServerRunOptions.AddUniversalFlags(flags)

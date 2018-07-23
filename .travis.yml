@@ -9,10 +9,15 @@ cache:
   directories:
     # ${GOPATH}/pkg is mounted in DOCKER_CMD in Makefile
     - .pkg
+    # golang cache is mounted in DOCKER_CMD in Makefile
+    - .cache
 stages:
   - test
   - name: deploy
     if: type != pull_request
+  - name: push-chart
+    # require the tag name to match a regular expression
+    if: tag =~ ^v
 before_install:
   - |
       if [[ -z "$TRAVIS_COMMIT_RANGE" ]]; then
@@ -37,18 +42,27 @@ jobs:
           echo "Running full build"
           make verify build svcat build-integration build-e2e test
         fi
-      env: GO_VERSION=1.9
+      env: GO_VERSION=1.10
     # Cross Build Check
     - stage: test
       script:
       - |
         if (( $DOCS_ONLY != 0 )); then
-          make images-all svcat-all
+          make images-all
         fi
-      env: XBUILD=true
+      env: XBUILD_SERVER=true
+    - stage: test
+      script:
+      - |
+        if (( $DOCS_ONLY != 0 )); then
+          make svcat-all
+        fi
+      env: XBUILD_CLIENT=true
     # Doc Site svc-cat.io
     - stage: test
-      script: make docs
+      script:
+      - |
+        make docs
       env: DOCS=true
     # Deploy
     - stage: deploy
@@ -60,3 +74,8 @@ jobs:
         on:
           repo: kubernetes-incubator/service-catalog
           all_branches: true
+    - stage: push-chart
+      script:
+      - |
+        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/gcloud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
+        test/repo-sync.sh

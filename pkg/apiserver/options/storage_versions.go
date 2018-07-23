@@ -17,11 +17,12 @@ limitations under the License.
 package options
 
 import (
+	"sort"
 	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	"github.com/spf13/pflag"
 )
 
@@ -37,8 +38,8 @@ type StorageSerializationOptions struct {
 // NewStorageSerializationOptions is used in runEtcdServer
 func NewStorageSerializationOptions() *StorageSerializationOptions {
 	return &StorageSerializationOptions{
-		DefaultStorageVersions: api.Registry.AllPreferredGroupVersions(),
-		StorageVersions:        api.Registry.AllPreferredGroupVersions(),
+		DefaultStorageVersions: ToPreferredVersionString(api.Scheme.PreferredVersionAllGroups()),
+		StorageVersions:        ToPreferredVersionString(api.Scheme.PreferredVersionAllGroups()),
 	}
 }
 
@@ -108,4 +109,17 @@ func (s *StorageSerializationOptions) AddFlags(fs *pflag.FlagSet) {
 		"It defaults to a list of preferred versions of all registered groups, "+
 		"which is derived from the KUBE_API_VERSIONS environment variable.")
 
+}
+
+// ToPreferredVersionString returns the preferred versions of all registered
+// groups in the form of "group1/version1,group2/version2,...".  This is compatible
+// with the flag format. This code is copied from upstream.
+func ToPreferredVersionString(versions []schema.GroupVersion) string {
+	var defaults []string
+	for _, version := range versions {
+		defaults = append(defaults, version.String())
+	}
+	// sorting provides stable output for help.
+	sort.Strings(defaults)
+	return strings.Join(defaults, ",")
 }

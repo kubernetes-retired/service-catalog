@@ -62,7 +62,7 @@ func (c *FakeServiceBrokers) List(opts v1.ListOptions) (result *v1beta1.ServiceB
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1beta1.ServiceBrokerList{}
+	list := &v1beta1.ServiceBrokerList{ListMeta: obj.(*v1beta1.ServiceBrokerList).ListMeta}
 	for _, item := range obj.(*v1beta1.ServiceBrokerList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
