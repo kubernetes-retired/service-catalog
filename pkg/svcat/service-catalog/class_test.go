@@ -54,7 +54,7 @@ var _ = Describe("Class", func() {
 	})
 
 	Describe("RetrieveClasses", func() {
-		FIt("Calls the generated v1beta1 List methods", func() {
+		It("Calls the generated v1beta1 List methods", func() {
 			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope})
 
 			Expect(err).NotTo(HaveOccurred())
