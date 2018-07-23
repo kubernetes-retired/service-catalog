@@ -42,6 +42,28 @@ required = [
   name = "github.com/golang/glog"
   revision = "44145f04b68cf362d9c4df2182967c2275eaefed"
 
+# until https://github.com/operator-framework/getting-started/issues/16 is fixed
+# use the changes from 
+# https://github.com/kubernetes/apimachinery/commit/5a8013207d0d28c7fe98193e5b6cdbf92e98a000
+# which contains this change
+# https://github.com/json-iterator/go/commit/f2b4162afba35581b6d4a50d3b8f34e33c144682
+[[override]]
+  name = "github.com/json-iterator/go"
+  revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
+
+# explicit dependency by upsteram k8s.io/apiserver as the repository
+# is unversioned and untagged
+[[override]]
+  name = "k8s.io/kube-openapi"
+  revision = "91cfa479c814065e420cee7ed227db0f63a5854e"
+
+# explicit dependency by upsteram k8s.io/go-client as it is compatible
+# and does not build otherwise
+# vendor/k8s.io/client-go/plugin/pkg/client/auth/azure/azure.go:300:25: cannot call non-function spt.Token (type adal.Token)
+[[override]]
+  name = "github.com/Azure/go-autorest"
+  revision = "1ff28809256a84bb6966640ff3d0371af82ccba4"
+
 [[constraint]]
   name = "github.com/Azure/go-autorest"
   version = "^9.1.0"
@@ -56,23 +78,23 @@ required = [
 
 [[constraint]]
   name = "k8s.io/api"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/apiserver"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.11.0"
 
 [[override]]
   name = "k8s.io/client-go"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/code-generator"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "github.com/pmorie/go-open-service-broker-client"

@@ -61,8 +61,8 @@ func TestParseVariableAssignments_MissingVariableName(t *testing.T) {
 	}
 }
 
-func TestParseVariableAssignments_OneVariableTwoValues(t *testing.T) {
-	params := []string{"a=banana", "a=pineapple"}
+func TestParseVariableAssignments_OneVariableThreeValues(t *testing.T) {
+	params := []string{"a=banana", "a=pineapple", "a=coconut"}
 
 	got, err := ParseVariableAssignments(params)
 	if err != nil {
@@ -70,11 +70,11 @@ func TestParseVariableAssignments_OneVariableTwoValues(t *testing.T) {
 	}
 
 	want := map[string]interface{}{
-		"a": []string{"banana", "pineapple"},
+		"a": []string{"banana", "pineapple", "coconut"},
 	}
 
 	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", "one var two values", want, got)
+		t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", "one var three values", want, got)
 	}
 }
 

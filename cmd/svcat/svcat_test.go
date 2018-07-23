@@ -103,6 +103,7 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get broker (json)", cmd: "get broker ups-broker -o json", golden: "output/get-broker.json"},
 		{name: "get broker (yaml)", cmd: "get broker ups-broker -o yaml", golden: "output/get-broker.yaml"},
 		{name: "describe broker", cmd: "describe broker ups-broker", golden: "output/describe-broker.txt"},
+		{name: "register broker", cmd: "register ups-broker --url http://upsbroker.com", golden: "output/register-broker.txt"},
 
 		{name: "list all classes", cmd: "get classes", golden: "output/get-classes.txt"},
 		{name: "list all classes (json)", cmd: "get classes -o json", golden: "output/get-classes.json"},
@@ -135,6 +136,10 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all instances in a namespace", cmd: "get instances -n test-ns", golden: "output/get-instances.txt"},
 		{name: "list all instances in a namespace (json)", cmd: "get instances -n test-ns -o json", golden: "output/get-instances.json"},
 		{name: "list all instances in a namespace (yaml)", cmd: "get instances -n test-ns -o yaml", golden: "output/get-instances.yaml"},
+		{name: "list all instances filtered by existing plan", cmd: "get instances --all-namespaces --plan default", golden: "output/get-instances-all-namespaces-by-plan.txt"},
+		{name: "list all instances filtered by not existing plan", cmd: "get instances --all-namespaces --plan wrong", golden: "output/get-instances-all-namespaces-by-wrong-plan.txt"},
+		{name: "list all instances filtered by existing class", cmd: "get instances --all-namespaces --class user-provided-service", golden: "output/get-instances-all-namespaces-by-class.txt"},
+		{name: "list all instances filtered by not existing class", cmd: "get instances --all-namespaces --class wrong", golden: "output/get-instances-all-namespaces-by-wrong-class.txt"},
 		{name: "list all instances", cmd: "get instances --all-namespaces", golden: "output/get-instances-all-namespaces.txt"},
 		{name: "get instance", cmd: "get instance ups-instance -n test-ns", golden: "output/get-instance.txt"},
 		{name: "get instance (json)", cmd: "get instance ups-instance -n test-ns -o json", golden: "output/get-instance.json"},
@@ -245,7 +250,7 @@ func TestNamespacedCommands(t *testing.T) {
 			cxt := newContext()
 			cxt.App = &svcat.App{
 				CurrentNamespace: contextNS,
-				SDK:              &servicecatalog.SDK{ServiceCatalogClient: fakeClient},
+				SvcatClient:      &servicecatalog.SDK{ServiceCatalogClient: fakeClient},
 			}
 			cxt.Output = ioutil.Discard
 
@@ -300,7 +305,7 @@ func TestParametersForBinding(t *testing.T) {
 
 			cxt := newContext()
 			cxt.App = &svcat.App{
-				SDK: &servicecatalog.SDK{ServiceCatalogClient: fakeClient},
+				SvcatClient: &servicecatalog.SDK{ServiceCatalogClient: fakeClient},
 			}
 			cxt.Output = ioutil.Discard
 

@@ -34,13 +34,33 @@ const (
 )
 
 // RetrieveInstances lists all instances in a namespace.
-func (sdk *SDK) RetrieveInstances(ns string) (*v1beta1.ServiceInstanceList, error) {
+func (sdk *SDK) RetrieveInstances(ns, classFilter, planFilter string) (*v1beta1.ServiceInstanceList, error) {
 	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(v1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to list instances in %s (%s)", ns, err)
 	}
 
-	return instances, nil
+	if classFilter == "" && planFilter == "" {
+		return instances, nil
+	}
+
+	filtered := v1beta1.ServiceInstanceList{
+		Items: []v1beta1.ServiceInstance{},
+	}
+
+	for _, instance := range instances.Items {
+		if classFilter != "" && instance.Spec.GetSpecifiedClusterServiceClass() != classFilter {
+			continue
+		}
+
+		if planFilter != "" && instance.Spec.GetSpecifiedClusterServicePlan() != planFilter {
+			continue
+		}
+
+		filtered.Items = append(filtered.Items, instance)
+	}
+
+	return &filtered, nil
 }
 
 // RetrieveInstance gets an instance by its name.

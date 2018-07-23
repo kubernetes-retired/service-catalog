@@ -17,6 +17,7 @@ limitations under the License.
 package instance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -27,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -92,7 +92,7 @@ func toSelectableFields(instance *servicecatalog.ServiceInstance) fields.Set {
 	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&instance.ObjectMeta, true)
 
-	specFieldSet := make(fields.Set, 2)
+	specFieldSet := make(fields.Set, 3)
 
 	if instance.Spec.ClusterServiceClassRef != nil {
 		specFieldSet["spec.clusterServiceClassRef.name"] = instance.Spec.ClusterServiceClassRef.Name
@@ -100,6 +100,10 @@ func toSelectableFields(instance *servicecatalog.ServiceInstance) fields.Set {
 
 	if instance.Spec.ClusterServicePlanRef != nil {
 		specFieldSet["spec.clusterServicePlanRef.name"] = instance.Spec.ClusterServicePlanRef.Name
+	}
+
+	if instance.Spec.ExternalID != "" {
+		specFieldSet["spec.externalID"] = instance.Spec.ExternalID
 	}
 
 	return generic.MergeFieldsSets(objectMetaFieldsSet, specFieldSet)
@@ -179,7 +183,7 @@ func (r *StatusREST) New() runtime.Object {
 
 // Get retrieves the object from the storage. It is required to support Patch
 // and to implement the rest.Getter interface.
-func (r *StatusREST) Get(ctx genericapirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return r.store.Get(ctx, name, options)
 }
 
@@ -191,7 +195,7 @@ var (
 
 // Update alters the status subset of an object and it
 // implements rest.Updater interface
-func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
+func (r *StatusREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
 	return r.store.Update(ctx, name, objInfo, createValidation, updateValidation)
 }
 
@@ -207,12 +211,12 @@ func (r *ReferenceREST) New() runtime.Object {
 
 // Get retrieves the object from the storage. It is required to support Patch
 // and to implement the rest.Getter interface.
-func (r *ReferenceREST) Get(ctx genericapirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+func (r *ReferenceREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return r.store.Get(ctx, name, options)
 }
 
 // Update alters the reference subset of an object and it
 // implements rest.Updater interface
-func (r *ReferenceREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
+func (r *ReferenceREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
 	return r.store.Update(ctx, name, objInfo, createValidation, updateValidation)
 }

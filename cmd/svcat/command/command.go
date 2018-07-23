@@ -54,6 +54,18 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 			}
 			fmtCmd.SetFormat(fmtString)
 		}
+		if classFilteredCmd, ok := cmd.(HasClassFlag); ok {
+			err := classFilteredCmd.ApplyClassFlag(c)
+			if err != nil {
+				return err
+			}
+		}
+		if planFilteredCmd, ok := cmd.(HasPlanFlag); ok {
+			err := planFilteredCmd.ApplyPlanFlag(c)
+			if err != nil {
+				return err
+			}
+		}
 		if waitCmd, ok := cmd.(HasWaitFlags); ok {
 			err := waitCmd.ApplyWaitFlags()
 			if err != nil {

@@ -35,13 +35,16 @@ start-server.sh
 # setup. Kubectl was initially configured in a different script and
 # the port mapping may have changed by the time we get here.
 PORT=$(docker port etcd-svc-cat 443 | sed "s/.*://")
+echo $PORT
 D_HOST=${DOCKER_HOST:-localhost}
 D_HOST=${D_HOST#*//}   # remove leading proto://
 D_HOST=${D_HOST%:*}    # remove trailing port #
 NO_TTY=1 kubectl config set-cluster service-catalog-cluster --server=https://${D_HOST}:${PORT} --certificate-authority=/var/run/kubernetes-service-catalog/apiserver.crt
 
+
 # create a few resources
 set -x
+NO_TTY=1 kubectl config view
 NO_TTY=1 kubectl create -f contrib/examples/apiserver/clusterservicebroker.yaml
 NO_TTY=1 kubectl create -f contrib/examples/apiserver/servicebroker.yaml
 NO_TTY=1 kubectl create -f contrib/examples/apiserver/clusterserviceclass.yaml

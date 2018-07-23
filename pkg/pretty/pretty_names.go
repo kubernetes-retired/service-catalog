@@ -90,3 +90,11 @@ func FromServiceInstanceOfClusterServiceClassAtBrokerName(instance *v1beta1.Serv
 		ServiceInstanceName(instance), ClusterServiceClassName(serviceClass), ClusterServiceBrokerName(brokerName),
 	)
 }
+
+// FromServiceInstanceOfServiceClassAtBrokerName returns a string in the form of "%s of %s at %s" to help in logging the full context.
+func FromServiceInstanceOfServiceClassAtBrokerName(instance *v1beta1.ServiceInstance, serviceClass *v1beta1.ServiceClass, brokerName string) string {
+	return fmt.Sprintf(
+		"%s of %s at %s",
+		ServiceInstanceName(instance), ServiceClassName(serviceClass), ServiceBrokerName(brokerName),
+	)
+}

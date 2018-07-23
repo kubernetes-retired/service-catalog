@@ -259,7 +259,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "invalid clusterservicebroker - manual behavior with RelistDuration",
+			name: "valid clusterservicebroker - manual behavior with RelistDuration",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-clusterservicebroker",
@@ -272,7 +272,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 		{
 			name: "valid clusterservicebroker - manual behavior without RelistDuration",
@@ -291,7 +291,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "invalid clusterservicebroker - duration behavior without duration",
+			name: "valid clusterservicebroker - duration behavior defaulting to controller provided value",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-clusterservicebroker",
@@ -304,7 +304,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 		{
 			name: "invalid clusterservicebroker - relistBehavior is invalid",
@@ -825,7 +825,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "invalid servicebroker - manual behavior with RelistDuration",
+			name: "valid servicebroker - manual behavior with RelistDuration",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-clusterservicebroker",
@@ -839,7 +839,7 @@ func TestValidateServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 		{
 			name: "valid servicebroker - manual behavior without RelistDuration",
@@ -859,7 +859,7 @@ func TestValidateServiceBroker(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "invalid servicebroker - duration behavior without duration",
+			name: "valid servicebroker - duration behavior defaulting to controller provided value",
 			broker: &servicecatalog.ServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-clusterservicebroker",
@@ -873,7 +873,7 @@ func TestValidateServiceBroker(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			valid: true,
 		},
 		{
 			name: "invalid servicebroker - relistBehavior is invalid",

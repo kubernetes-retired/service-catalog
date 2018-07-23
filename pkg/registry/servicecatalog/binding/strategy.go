@@ -19,6 +19,8 @@ package binding
 // this was copied from where else and edited to fit our objects
 
 import (
+	"context"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,7 +91,7 @@ func (bindingRESTStrategy) NamespaceScoped() bool {
 // PrepareForCreate receives a the incoming ServiceBinding and clears it's
 // Status. Status is not a user settable field.
 // It also creates a UUID if the user hasn't specified one.
-func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (bindingRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	binding, ok := obj.(*sc.ServiceBinding)
 	if !ok {
 		glog.Fatal("received a non-binding object to create")
@@ -100,7 +102,7 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 	}
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
-		setServiceBindingUserInfo(binding, ctx)
+		setServiceBindingUserInfo(ctx, binding)
 	}
 
 	// Creating a brand new object, thus it must have no
@@ -115,7 +117,7 @@ func (bindingRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj r
 	binding.Generation = 1
 }
 
-func (bindingRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (bindingRESTStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	return scv.ValidateServiceBinding(obj.(*sc.ServiceBinding))
 }
 
@@ -127,7 +129,7 @@ func (bindingRESTStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (bindingRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update to")
@@ -152,13 +154,13 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, 
 	// the generation will never be incremented
 	if !apiequality.Semantic.DeepEqual(oldServiceBinding.Spec, newServiceBinding.Spec) {
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
-			setServiceBindingUserInfo(newServiceBinding, ctx)
+			setServiceBindingUserInfo(ctx, newServiceBinding)
 		}
 		newServiceBinding.Generation = oldServiceBinding.Generation + 1
 	}
 }
 
-func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (bindingRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate to")
@@ -176,19 +178,19 @@ func (bindingRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, ol
 // Note that this is a hack way of setting the UserInfo. However, there is not
 // currently any other mechanism in the Delete strategies for getting access to
 // the resource being deleted and the context.
-func (bindingRESTStrategy) CheckGracefulDelete(ctx genericapirequest.Context, obj runtime.Object, options *metav1.DeleteOptions) bool {
+func (bindingRESTStrategy) CheckGracefulDelete(ctx context.Context, obj runtime.Object, options *metav1.DeleteOptions) bool {
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		serviceInstanceCredential, ok := obj.(*sc.ServiceBinding)
 		if !ok {
 			glog.Fatal("received a non-ServiceBinding object to delete")
 		}
-		setServiceBindingUserInfo(serviceInstanceCredential, ctx)
+		setServiceBindingUserInfo(ctx, serviceInstanceCredential)
 	}
 	// Don't actually do graceful deletion. We are just using this strategy to set the user info prior to reconciling the delete.
 	return false
 }
 
-func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
+func (bindingStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
 		glog.Fatal("received a non-binding object to update to")
@@ -201,7 +203,7 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context,
 	newServiceBinding.Spec = oldServiceBinding.Spec
 }
 
-func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
+func (bindingStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
 		glog.Fatal("received a non-binding object to validate to")
@@ -215,7 +217,7 @@ func (bindingStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, n
 }
 
 // setServiceBindingUserInfo injects user.Info from the request context
-func setServiceBindingUserInfo(instanceCredential *sc.ServiceBinding, ctx genericapirequest.Context) {
+func setServiceBindingUserInfo(ctx context.Context, instanceCredential *sc.ServiceBinding) {
 	instanceCredential.Spec.UserInfo = nil
 	if user, ok := genericapirequest.UserFrom(ctx); ok {
 		instanceCredential.Spec.UserInfo = &sc.UserInfo{

@@ -82,7 +82,7 @@ func TestMonitorConfigMapNoConfigmap(t *testing.T) {
 	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		m := make(map[string]string)
 		m["id"] = testClusterID
-		return true, nil, errors.NewNotFound(schema.GroupResource{"core", "configmap"}, DefaultClusterIDConfigMapName)
+		return true, nil, errors.NewNotFound(schema.GroupResource{Group: "core", Resource: "configmap"}, DefaultClusterIDConfigMapName)
 	})
 	tc.setClusterID(testClusterID)
 	tc.monitorConfigMap()
@@ -107,7 +107,7 @@ func TestMonitorConfigMapNoConfigmapNoExistingClusterID(t *testing.T) {
 	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		m := make(map[string]string)
 		m["id"] = testClusterID
-		return true, nil, errors.NewNotFound(schema.GroupResource{"core", "configmap"}, DefaultClusterIDConfigMapName)
+		return true, nil, errors.NewNotFound(schema.GroupResource{Group: "core", Resource: "configmap"}, DefaultClusterIDConfigMapName)
 	})
 	tc.setClusterID("")
 	tc.monitorConfigMap()
