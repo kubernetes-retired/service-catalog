@@ -20,11 +20,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 type getCmd struct {
-	*command.Context
+	*command.Namespaced
+	*command.Scoped
 	lookupByUUID bool
 	uuid         string
 	name         string
@@ -37,7 +39,10 @@ func (c *getCmd) SetFormat(format string) {
 
 // NewGetCmd builds a "svcat get classes" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+	}
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
 		Aliases: []string{"class", "cl"},
@@ -58,6 +63,8 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"Whether or not to get the class by UUID (the default is by name)",
 	)
 	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
+	getCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -82,7 +89,11 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses()
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return err
 	}
