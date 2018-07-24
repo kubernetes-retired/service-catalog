@@ -2,5 +2,7 @@
 +---------+--------------------------+----------------------------------------+
   default   user-provided-service      Sample plan description                 
   premium   user-provided-service      Premium plan                            
-  default   another-provided-service   Another sample plan description         
+  default   another-provided-service   Another sample plan description that's  
+                                       really really really really really,     
+                                       kinda, wide                             
   premium   another-provided-service   Another premium plan                    

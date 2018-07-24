@@ -34,31 +34,12 @@ func getClassStatusText(status v1beta1.ClusterServiceClassStatus) string {
 func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 	t := NewListTable(w)
 
-	// Pre-parse the data so we allow the last column to be really wide.
-	// We can't set the MinWidth after data has been loaded
-	maxNameWidth := len("Name")
-	maxNSWidth := len("Namespace")
-	maxDescWidth := len("Description")
-	for _, class := range classes {
-		if tmp := len(class.GetExternalName()); tmp > maxNameWidth {
-			maxNameWidth = tmp
-		}
-		if tmp := len(class.GetNamespace()); tmp > maxNSWidth {
-			maxNSWidth = tmp
-		}
-		if tmp := len(class.GetDescription()); tmp > maxDescWidth {
-			maxDescWidth = tmp
-		}
-	}
-	if tmp := (80 - (maxNameWidth + maxNSWidth + 11)); tmp > maxDescWidth {
-		t.SetColMinWidth(2, tmp)
-	}
-
 	t.SetHeader([]string{
 		"Name",
 		"Namespace",
 		"Description",
 	})
+	t.SetVariableColumn(3)
 
 	for _, class := range classes {
 		t.Append([]string{

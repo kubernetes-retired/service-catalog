@@ -57,29 +57,6 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 		"Class",
 		"Description",
 	})
-
-	// Pre-parse the data so we allow the last column to be really wide.
-	// We can't set the MinWidth after data has been loaded
-	maxNameWidth := len("Name")
-	maxClassWidth := len("Class")
-	maxDescWidth := len("Description")
-
-	for _, plan := range plans {
-		if tmp := len(plan.Spec.ExternalName); tmp > maxNameWidth {
-			maxNameWidth = tmp
-		}
-		tmp := len(classNames[plan.Spec.ClusterServiceClassRef.Name])
-		if tmp > maxClassWidth {
-			maxClassWidth = tmp
-		}
-		if tmp := len(plan.Spec.Description); tmp > maxDescWidth {
-			maxDescWidth = tmp
-		}
-	}
-	if tmp := (80 - (maxNameWidth + maxClassWidth + 11)); tmp > maxDescWidth {
-		t.SetColMinWidth(2, tmp)
-	}
-
 	for _, plan := range plans {
 		t.Append([]string{
 			plan.Spec.ExternalName,
@@ -87,6 +64,7 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 			plan.Spec.Description,
 		})
 	}
+	t.SetVariableColumn(3)
 
 	t.Render()
 }
