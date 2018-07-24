@@ -17,7 +17,10 @@ limitations under the License.
 package rest
 
 import (
-	"testing"
+	"fmt"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -27,7 +30,9 @@ import (
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
@@ -38,6 +43,122 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 )
+
+var _ = Describe("ensure that our storage types implement the appropriate interfaces", func() {
+	It("checks v1beta1 standard storage", func() {
+
+		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+		Expect(utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))).Should(Succeed())
+
+		checkStorageType := func(t GinkgoTInterface, s rest.Storage) {
+			// Our normal stores are all of these things
+			if _, isStorageType := s.(rest.Storage); !isStorageType {
+				t.Errorf("%q not compliant to storage interface", s)
+			}
+			if _, isStorageType := s.(rest.Updater); !isStorageType {
+				t.Errorf("%q not compliant to updater interface", s)
+			}
+			if _, isStorageType := s.(rest.Getter); !isStorageType {
+				t.Errorf("%q not compliant to getter interface", s)
+			}
+			if _, isStorageType := s.(rest.Lister); !isStorageType {
+				t.Errorf("%q not compliant to lister interface", s)
+			}
+			if _, isStorageType := s.(rest.Creater); !isStorageType {
+				t.Errorf("%q not compliant to creater interface", s)
+			}
+			if _, isStorageType := s.(rest.GracefulDeleter); !isStorageType {
+				t.Errorf("%q not compliant to GracefulDeleter interface", s)
+			}
+			if _, isStorageType := s.(rest.CollectionDeleter); !isStorageType {
+				t.Errorf("%q not compliant to CollectionDeleter interface", s)
+			}
+			if _, isStorageType := s.(rest.Watcher); !isStorageType {
+				t.Errorf("%q not compliant to watcher interface", s)
+			}
+			if _, isStorageType := s.(rest.StandardStorage); !isStorageType {
+				t.Errorf("%q not compliant to StandardStorage interface", s)
+			}
+		}
+
+		provider := StorageProvider{
+			DefaultNamespace: "test-default",
+			StorageType:      server.StorageTypeEtcd,
+			RESTClient:       nil,
+		}
+		configSource := serverstorage.NewResourceConfig()
+		roGetter := testRESTOptionsGetter(nil, func() {})
+		storageMap, err := provider.v1beta1Storage(configSource, roGetter)
+		Expect(err).Should(BeNil())
+
+		storages := [...]string{
+			"clusterservicebrokers",
+			"clusterserviceclasses",
+			"clusterserviceplans",
+			"serviceinstances",
+			"servicebindings",
+			"serviceclasses",
+			"serviceplans",
+			"servicebrokers",
+		}
+
+		for _, storage := range storages {
+			s, storageExists := storageMap[storage]
+			Expect(storageExists).Should(BeTrue(), "no %q storage found", storage)
+			checkStorageType(GinkgoT(), s)
+		}
+	})
+
+	// TestCheckStatusRESTTypes ensures that our Status storage types fulfill the
+	// specific interfaces that are expected and no more. This is similar to what is
+	// done internally to the apiserver when it is deciding what http verbs to
+	// expose on each resource. For status, we only want to support GET and a form
+	// of update like PATCH. This could partly be done by type var type-assertions
+	// at the site of declaration, but because we want to explicitly determine that
+	// an object does NOT implement some interface, it has to be done at runtime.
+	It("checks v1beta1 StatusREST storage", func() {
+		checkStatusStorageType := func(t GinkgoTInterface, s rest.Storage) {
+			// Status is New & Get & Update ONLY
+			if _, isStandardStorage := s.(rest.Storage); !isStandardStorage {
+				t.Errorf("not compliant to storage interface for %q", s)
+			}
+			if _, isStandardStorage := s.(rest.Updater); !isStandardStorage {
+				t.Errorf("not compliant to updaterer interface for %q", s)
+			}
+			if _, isStandardStorage := s.(rest.Getter); !isStandardStorage {
+				t.Errorf("not compliant to getter interface for %q", s)
+			}
+			// NONE of these things
+			if _, isStandardStorage := s.(rest.Lister); isStandardStorage {
+				t.Errorf("%q was a lister but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.Creater); isStandardStorage {
+				t.Errorf("%q was a creater but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.GracefulDeleter); isStandardStorage {
+				t.Errorf("%q was a graceful delete but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.CollectionDeleter); isStandardStorage {
+				t.Errorf("%q was a collection deleter but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.Watcher); isStandardStorage {
+				t.Errorf("%q was a watcher but should not be", s)
+			}
+			if _, isStandardStorage := s.(rest.StandardStorage); isStandardStorage {
+				t.Errorf("%q was a StandardStorage but should not be", s)
+			}
+		}
+
+		checkStatusStorageType(GinkgoT(), &clusterservicebroker.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &servicebroker.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &clusterserviceclass.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &serviceclass.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &clusterserviceplan.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &serviceplan.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &instance.StatusREST{})
+		checkStatusStorageType(GinkgoT(), &binding.StatusREST{})
+	})
+})
 
 type GetRESTOptionsHelper struct {
 	retStorageInterface storage.Interface
@@ -66,97 +187,4 @@ func testRESTOptionsGetter(
 	retDestroyFunc func(),
 ) generic.RESTOptionsGetter {
 	return GetRESTOptionsHelper{retStorageInterface, retDestroyFunc}
-}
-func TestV1Beta1Storage(t *testing.T) {
-	provider := StorageProvider{
-		DefaultNamespace: "test-default",
-		StorageType:      server.StorageTypeEtcd,
-		RESTClient:       nil,
-	}
-	configSource := serverstorage.NewResourceConfig()
-	roGetter := testRESTOptionsGetter(nil, func() {})
-	storageMap, err := provider.v1beta1Storage(configSource, roGetter)
-	if err != nil {
-		t.Fatalf("error getting v1beta1 storage (%s)", err)
-	}
-	_, brokerStorageExists := storageMap["clusterservicebrokers"]
-	if !brokerStorageExists {
-		t.Fatalf("no broker storage found")
-	}
-	// TODO: do stuff with broker storage
-	_, brokerStatusStorageExists := storageMap["clusterservicebrokers/status"]
-	if !brokerStatusStorageExists {
-		t.Fatalf("no service broker status storage found")
-	}
-	// TODO: do stuff with broker status storage
-
-	_, serviceClassStorageExists := storageMap["clusterserviceclasses"]
-	if !serviceClassStorageExists {
-		t.Fatalf("no service class storage found")
-	}
-	// TODO: do stuff with service class storage
-
-	_, instanceStorageExists := storageMap["serviceinstances"]
-	if !instanceStorageExists {
-		t.Fatalf("no service instance storage found")
-	}
-	// TODO: do stuff with instance storage
-
-	_, bindingStorageExists := storageMap["servicebindings"]
-	if !bindingStorageExists {
-		t.Fatalf("no service instance credential storage found")
-	}
-	// TODO: do stuff with binding storage
-
-}
-
-func checkStatusStorageType(t *testing.T, s rest.Storage) {
-	// Status is New & Get & Update ONLY
-	if _, isStandardStorage := s.(rest.Storage); !isStandardStorage {
-		t.Errorf("not compliant to storage interface for %q", s)
-	}
-	if _, isStandardStorage := s.(rest.Updater); !isStandardStorage {
-		t.Errorf("not compliant to updaterer interface for %q", s)
-	}
-	if _, isStandardStorage := s.(rest.Getter); !isStandardStorage {
-		t.Errorf("not compliant to getter interface for %q", s)
-	}
-	// NONE of these things
-	if _, isStandardStorage := s.(rest.Lister); isStandardStorage {
-		t.Errorf("%q was a lister but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.Creater); isStandardStorage {
-		t.Errorf("%q was a creater but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.GracefulDeleter); isStandardStorage {
-		t.Errorf("%q was a graceful delete but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.CollectionDeleter); isStandardStorage {
-		t.Errorf("%q was a collection deleter but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.Watcher); isStandardStorage {
-		t.Errorf("%q was a watcher but should not be", s)
-	}
-	if _, isStandardStorage := s.(rest.StandardStorage); isStandardStorage {
-		t.Errorf("%q was a StandardStorage but should not be", s)
-	}
-}
-
-// TestCheckStatusRESTTypes ensures that our Status storage types fulfill the
-// specific interfaces that are expected and no more. This is similar to what is
-// done internally to the apiserver when it is deciding what http verbs to
-// expose on each resource. For status, we only want to support GET and a form
-// of update like PATCH. This could partly be done by type var type-assertions
-// at the site of declaration, but because we want to explicitly determine that
-// an object does NOT implement some interface, it has to be done at runtime.
-func TestCheckStatusRESTTypes(t *testing.T) {
-	checkStatusStorageType(t, &clusterservicebroker.StatusREST{})
-	checkStatusStorageType(t, &servicebroker.StatusREST{})
-	checkStatusStorageType(t, &clusterserviceclass.StatusREST{})
-	checkStatusStorageType(t, &serviceclass.StatusREST{})
-	checkStatusStorageType(t, &clusterserviceplan.StatusREST{})
-	checkStatusStorageType(t, &serviceplan.StatusREST{})
-	checkStatusStorageType(t, &instance.StatusREST{})
-	checkStatusStorageType(t, &binding.StatusREST{})
-
 }
