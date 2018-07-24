@@ -33,9 +33,8 @@ import (
 // RegisterCmd contains the information needed to register a broker
 type RegisterCmd struct {
 	*command.Namespaced
+	*command.Scoped
 	*command.Waitable
-
-	Context *command.Context
 
 	BasicSecret       string
 	BearerSecret      string
@@ -52,8 +51,8 @@ type RegisterCmd struct {
 // NewRegisterCmd builds a "svcat register" command
 func NewRegisterCmd(cxt *command.Context) *cobra.Command {
 	registerCmd := &RegisterCmd{
-		Context:    cxt,
 		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
 		Waitable:   command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
@@ -85,6 +84,7 @@ func NewRegisterCmd(cxt *command.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&registerCmd.SkipTLS, "skip-tls", false,
 		"Disables TLS certificate verification when communicating with this broker. This is strongly discouraged. You should use --ca instead.")
 	registerCmd.AddNamespaceFlags(cmd.Flags(), false)
+	registerCmd.AddScopedFlags(cmd.Flags(), false)
 	registerCmd.AddWaitFlags(cmd)
 
 	return cmd
@@ -127,6 +127,10 @@ func (c *RegisterCmd) Run() error {
 		PlanRestrictions:  c.PlanRestrictions,
 		SkipTLS:           c.SkipTLS,
 	}
+	scopeOpts := &servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
 	if c.RelistBehavior == "duration" {
 		opts.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorDuration
 		opts.RelistDuration = &metav1.Duration{Duration: c.RelistDuration}
@@ -134,7 +138,7 @@ func (c *RegisterCmd) Run() error {
 		opts.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorManual
 	}
 
-	broker, err := c.Context.App.Register(c.BrokerName, c.URL, opts)
+	broker, err := c.Context.App.Register(c.BrokerName, c.URL, opts, scopeOpts)
 	if err != nil {
 		return err
 	}
