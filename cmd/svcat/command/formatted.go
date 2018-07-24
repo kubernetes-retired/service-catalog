@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/spf13/pflag"
 )
 
@@ -37,12 +38,14 @@ type Formatted struct {
 
 // NewFormatted command.
 func NewFormatted() *Formatted {
-	return &Formatted{}
+	return &Formatted{
+		OutputFormat: output.FormatTable,
+	}
 }
 
 // AddOutputFlags adds common output flags to a command that can have variable output formats.
 func (c *Formatted) AddOutputFlags(flags *pflag.FlagSet) {
-	flags.StringVarP(&c.OutputFormat, "output", "o", "table",
+	flags.StringVarP(&c.OutputFormat, "output", "o", output.FormatTable,
 		"The output format to use. Valid options are table, json or yaml. If not present, defaults to table",
 	)
 }
@@ -53,7 +56,7 @@ func (c *Formatted) ApplyFormatFlags(flags *pflag.FlagSet) error {
 	c.OutputFormat = strings.ToLower(c.OutputFormat)
 
 	switch c.OutputFormat {
-	case "table", "json", "yaml":
+	case output.FormatTable, output.FormatJSON, output.FormatYAML:
 		return nil
 	default:
 		return fmt.Errorf("invalid --output format %q, allowed values are: table, json and yaml", c.OutputFormat)
