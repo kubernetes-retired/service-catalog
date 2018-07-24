@@ -46,9 +46,11 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
 		Aliases: []string{"class", "cl"},
-		Short:   "List classes, optionally filtered by name",
+		Short:   "List classes, optionally filtered by name, scope or namespace",
 		Example: command.NormalizeExamples(`
   svcat get classes
+  svcat get classes --scope cluster
+  svcat get classes --scope namespace --namespace dev
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
 `),

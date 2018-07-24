@@ -28,6 +28,9 @@ import (
 	svcatfake "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
@@ -174,3 +177,126 @@ func TestListClasses(t *testing.T) {
 		})
 	}
 }
+
+var _ = Describe("Get Classes Command", func() {
+	Describe("NewGetClassesCmd", func() {
+		It("Builds and returns a cobra command", func() {
+			cxt := &command.Context{}
+			cmd := NewGetCmd(cxt)
+			Expect(*cmd).NotTo(BeNil())
+			Expect(cmd.Use).To(Equal("classes [NAME]"))
+			Expect(cmd.Short).To(ContainSubstring("List classes, optionally filtered by name, scope or namespace"))
+			Expect(cmd.Example).To(ContainSubstring("svcat get classes"))
+			Expect(cmd.Example).To(ContainSubstring("svcat get classes --scope cluster"))
+			Expect(cmd.Example).To(ContainSubstring("svcat get classes --scope namespace --namespace dev"))
+			Expect(len(cmd.Aliases)).To(Equal(2))
+		})
+	})
+	Describe("Validate", func() {
+		It("allows class name arg to be empty", func() {
+			cmd := &getCmd{}
+			err := cmd.Validate([]string{})
+			Expect(err).To(BeNil())
+		})
+		It("optionally parses the class name argument", func() {
+			cmd := &getCmd{}
+			err := cmd.Validate([]string{"mysqldb"})
+			Expect(err).To(BeNil())
+			Expect(cmd.name).To(Equal("mysqldb"))
+		})
+	})
+	Describe("getAll", func() {
+		It("Calls the pkg/svcat libs RetrieveClasses with namespace scope and current namespace", func() {
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.RetrieveClassesReturns(
+				[]servicecatalog.Class{&v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "mysqldb", Namespace: "default"}}},
+				nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := getCmd{
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+			}
+			cmd.Namespace = "default"
+			cmd.Scope = servicecatalog.NamespaceScope
+
+			err := cmd.getAll()
+
+			Expect(err).NotTo(HaveOccurred())
+			scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
+			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
+				Namespace: "default",
+				Scope:     servicecatalog.NamespaceScope,
+			}))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring("mysqldb"))
+		})
+		It("Calls the pkg/svcat libs RetrieveClasses with namespace scope and all namespaces", func() {
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.RetrieveClassesReturns(
+				[]servicecatalog.Class{
+					&v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "mysqldb", Namespace: "default"}},
+					&v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "postgresdb", Namespace: "test-ns"}},
+				},
+				nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := getCmd{
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+			}
+			cmd.Namespace = ""
+			cmd.Scope = servicecatalog.NamespaceScope
+
+			err := cmd.getAll()
+
+			Expect(err).NotTo(HaveOccurred())
+			scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
+			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
+				Namespace: "",
+				Scope:     servicecatalog.NamespaceScope,
+			}))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring("mysqldb"))
+			Expect(output).To(ContainSubstring("postgresdb"))
+		})
+		It("Calls the pkg/svcat libs RetrieveClasses with all scope and current namespaces", func() {
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.RetrieveClassesReturns(
+				[]servicecatalog.Class{
+					&v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "mysqldb"}},
+					&v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "postgresdb", Namespace: "default"}},
+				},
+				nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := getCmd{
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+			}
+			cmd.Namespace = "default"
+			cmd.Scope = servicecatalog.AllScope
+
+			err := cmd.getAll()
+
+			Expect(err).NotTo(HaveOccurred())
+			scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
+			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
+				Namespace: "default",
+				Scope:     servicecatalog.AllScope,
+			}))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring("mysqldb"))
+			Expect(output).To(ContainSubstring("postgresdb"))
+		})
+	})
+})
