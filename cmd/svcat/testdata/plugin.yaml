@@ -158,9 +158,11 @@ tree:
         present, defaults to table
   - name: classes
     use: classes [NAME]
-    shortDesc: List classes, optionally filtered by name
+    shortDesc: List classes, optionally filtered by name, scope or namespace
     example: |2-
         svcat get classes
+        svcat get classes --scope cluster
+        svcat get classes --scope namespace --namespace dev
         svcat get class mysqldb
         svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
     command: ./svcat get classes
