@@ -313,9 +313,9 @@ and to diff the changes in the golden file to ensure that the new output is corr
 ### Counterfeiter
 Certain tests use fakes generated with [Counterfeiter](http://github.com/maxbrunsfeld/counterfeiter). If you add a method
 to an interface (such as SvcatClient in pkg/svcat/service-catalog) you may need to regenerate the fake. You can install
-Counterfeiter by running `go get http://github.com/maxbrunsfeld/counterfeiter && go install http://github.com/maxbrunsfeld/countefeiter`.
-Then regenerate the fake with `counterfeiter ./path/to/dir/with/interface InterfaceName`. You may have to manually paste the boilerplate
-comment into the fakes.
+Counterfeiter by running `go get github.com/maxbrunsfeld/counterfeiter`.
+Then regenerate the fake with `counterfeiter ./pkg/svcat/service-catalog SvcatClient` and manually paste the boilerplate
+copyright comment into the the generated file.
 
 ## Documentation
 
