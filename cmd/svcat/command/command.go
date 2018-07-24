@@ -20,6 +20,8 @@ import (
 	"strings"
 	"unicode"
 
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -68,8 +70,8 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 		// validate the args and print help info if needed.
 		err := cmd.Validate(args)
 		if err != nil {
-			fmt.Println(err)
-			fmt.Println(c.UsageString())
+			fmt.Fprintln(c.OutOrStderr(), err)
+			fmt.Fprintln(c.OutOrStdout(), c.UsageString())
 		}
 		return err
 	}
