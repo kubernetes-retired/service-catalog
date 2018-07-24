@@ -77,11 +77,11 @@ func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServ
 		Items: plans,
 	}
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, list)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, list, 0)
-	case formatTable:
+	case FormatTable:
 		writePlanListTable(w, plans, classNames)
 	}
 }
@@ -90,11 +90,11 @@ func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServ
 func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan, class v1beta1.ClusterServiceClass) {
 
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, plan)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, plan, 0)
-	case formatTable:
+	case FormatTable:
 		classNames := map[string]string{}
 		classNames[class.Name] = class.Spec.ExternalName
 		writePlanListTable(w, []v1beta1.ClusterServicePlan{plan}, classNames)

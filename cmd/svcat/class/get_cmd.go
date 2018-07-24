@@ -27,14 +27,10 @@ import (
 type getCmd struct {
 	*command.Namespaced
 	*command.Scoped
+	*command.Formatted
 	lookupByUUID bool
 	uuid         string
 	name         string
-	outputFormat string
-}
-
-func (c *getCmd) SetFormat(format string) {
-	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get classes" command
@@ -42,6 +38,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &getCmd{
 		Namespaced: command.NewNamespaced(cxt),
 		Scoped:     command.NewScoped(),
+		Formatted:  command.NewFormatted(),
 	}
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
@@ -62,7 +59,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
 	)
-	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	getCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
@@ -98,7 +95,7 @@ func (c *getCmd) getAll() error {
 		return err
 	}
 
-	output.WriteClassList(c.Output, c.outputFormat, classes...)
+	output.WriteClassList(c.Output, c.OutputFormat, classes...)
 	return nil
 }
 
@@ -115,6 +112,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteClass(c.Output, c.outputFormat, *class)
+	output.WriteClass(c.Output, c.OutputFormat, *class)
 	return nil
 }

@@ -51,11 +51,11 @@ func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 // WriteClassList prints a list of classes in the specified output format.
 func WriteClassList(w io.Writer, outputFormat string, classes ...servicecatalog.Class) {
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, classes)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, classes, 0)
-	case formatTable:
+	case FormatTable:
 		writeClassListTable(w, classes)
 	}
 }
@@ -63,11 +63,11 @@ func WriteClassList(w io.Writer, outputFormat string, classes ...servicecatalog.
 // WriteClass prints a single class in the specified output format.
 func WriteClass(w io.Writer, outputFormat string, class v1beta1.ClusterServiceClass) {
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, class)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, class, 0)
-	case formatTable:
+	case FormatTable:
 		writeClassListTable(w, []servicecatalog.Class{&class})
 	}
 }
