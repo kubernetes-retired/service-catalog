@@ -53,10 +53,20 @@ cid: community
     <main>
         <h3>Leadership</h3>
         <div id="usersGrid">
-          <a target="_blank" href="https://github.com/pmorie"><img src="/images/pmorie.jpg" width="100"><br/>Paul Morie<br/>Red Hat</a>
-          <a target="_blank" href="https://github.com/arschles"><img src="/images/arschles.jpg" width="100"><br/>Aaron Schlesinger<br/>Microsoft</a>
-          <a target="_blank" href="https://github.com/vaikas-google"><img src="/images/vaikas-google.jpg" width="100"><br/>Ville Aikas<br/>Google</a>
-          <a target="_blank" href="https://github.com/duglin"><img src="/images/duglin.png" width="100"><br/>Doug Davis<br/>IBM</a>
+          <a target="_blank" href="https://github.com/pmorie"><img src="https://avatars2.githubusercontent.com/u/366488" width="100"><br/>Paul Morie<br/>Red Hat</a>
+          <a target="_blank" href="https://github.com/carolynvs"><img src="https://avatars1.githubusercontent.com/u/1368985" width="100"><br/>Carolyn Van Slyck<br/>Microsoft</a>
+          <a target="_blank" href="https://github.com/kibbles-n-bytes"><img src="https://avatars0.githubusercontent.com/u/4024724" width="100"><br/>Michael Kibbe<br/>Google</a>
+          <a target="_blank" href="https://github.com/duglin"><img src="https://avatars3.githubusercontent.com/u/1944671" width="100"><br/>Doug Davis<br/>IBM</a>
+        </div>
+    </main>
+</section>
+
+<section id="users">
+    <main>
+        <h3>Emeritus Leadership</h3>
+        <div id="usersGrid">
+          <a target="_blank" href="https://github.com/arschles"><img src="https://avatars3.githubusercontent.com/u/70865" width="100"><br/>Aaron Schlesinger<br/>Microsoft</a>
+          <a target="_blank" href="https://github.com/vaikas-google"><img src="https://avatars3.githubusercontent.com/u/11279988" width="100"><br/>Ville Aikas<br/>Google</a>
         </div>
     </main>
 </section>

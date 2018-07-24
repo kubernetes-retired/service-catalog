@@ -16,6 +16,8 @@ not just a partial solution.
 include tests that demonstrates the issue w/o your fix. New features should
 include as many testcases, within reason, to cover any variants of use of the
 feature.
+- All PRs must have appropriate documentation. New features should be
+  described, and an example of use provided.
 - PR authors will need to have CLA on-file with the Linux Foundation before 
 the PR will be merged.
 See Kubernete's [contributing guidelines](https://github.com/kubernetes/kubernetes/blob/master/CONTRIBUTING.md) for more information.

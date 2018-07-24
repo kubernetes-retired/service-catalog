@@ -31,12 +31,7 @@ spec:
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         resources:
-          requests:
-            cpu: 100m
-            memory: 20Mi
-          limits:
-            cpu: 100m
-            memory: 30Mi
+{{ toYaml .Values.apiserver.resources | indent 10 }}
         args:
         - apiserver
         {{ if .Values.apiserver.audit.activated -}}
@@ -105,12 +100,7 @@ spec:
         image: quay.io/coreos/etcd:latest
         imagePullPolicy: Always
         resources:
-          requests:
-            cpu: 100m
-            memory: 30Mi
-          limits:
-            cpu: 100m
-            memory: 40Mi
+{{ toYaml .Values.apiserver.storage.etcd.resources | indent 10 }}
         env:
         - name: ETCD_DATA_DIR
           value: /etcd-data-dir
