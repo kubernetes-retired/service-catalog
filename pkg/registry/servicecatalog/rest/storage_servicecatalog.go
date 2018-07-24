@@ -25,17 +25,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
-	"k8s.io/apiserver/pkg/storage"
-	restclient "k8s.io/client-go/rest"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -44,9 +40,6 @@ import (
 // StorageProvider provides a factory method to create a new APIGroupInfo for
 // the servicecatalog API group. It implements (./pkg/apiserver).RESTStorageProvider
 type StorageProvider struct {
-	DefaultNamespace string
-	StorageType      server.StorageType
-	RESTClient       restclient.Interface
 }
 
 // NewRESTStorage is a factory method to make a new APIGroupInfo for the
@@ -78,92 +71,43 @@ func (p StorageProvider) v1beta1Storage(
 	if err != nil {
 		return nil, err
 	}
-	clusterServiceBrokerOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   clusterServiceBrokerRESTOptions,
-			Capacity:      1000,
-			ObjectType:    clusterservicebroker.EmptyObject(),
-			ScopeStrategy: clusterservicebroker.NewScopeStrategy(),
-			NewListFunc:   clusterservicebroker.NewList,
-			GetAttrsFunc:  clusterservicebroker.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		p.StorageType,
-	)
+	clusterServiceBrokerStorage, clusterServiceBrokerStatusStorage, err := clusterservicebroker.NewStorage(clusterServiceBrokerRESTOptions)
+	if err != nil {
+		return nil, err
+	}
 
 	clusterServiceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceclasses"))
 	if err != nil {
 		return nil, err
 	}
-	clusterServiceClassOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   clusterServiceClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    clusterserviceclass.EmptyObject(),
-			ScopeStrategy: clusterserviceclass.NewScopeStrategy(),
-			NewListFunc:   clusterserviceclass.NewList,
-			GetAttrsFunc:  clusterserviceclass.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		p.StorageType,
-	)
+	clusterServiceClassStorage, clusterServiceClassStatusStorage, err := clusterserviceclass.NewStorage(clusterServiceClassRESTOptions)
+	if err != nil {
+		return nil, err
+	}
 
 	clusterServicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
 	if err != nil {
 		return nil, err
 	}
-	clusterServicePlanOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   clusterServicePlanRESTOptions,
-			Capacity:      1000,
-			ObjectType:    clusterserviceplan.EmptyObject(),
-			ScopeStrategy: clusterserviceplan.NewScopeStrategy(),
-			NewListFunc:   clusterserviceplan.NewList,
-			GetAttrsFunc:  clusterserviceplan.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		p.StorageType,
-	)
+	clusterServicePlanStorage, clusterServicePlanStatusStorage, err := clusterserviceplan.NewStorage(clusterServicePlanRESTOptions)
+	if err != nil {
+		return nil, err
+	}
 
 	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstances"))
 	if err != nil {
 		return nil, err
 	}
-	instanceOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   instanceClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    instance.EmptyObject(),
-			ScopeStrategy: instance.NewScopeStrategy(),
-			NewListFunc:   instance.NewList,
-			GetAttrsFunc:  instance.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		p.StorageType,
-	)
+	instanceStorage, instanceStatusStorage, instanceReferencesStorage, err := instance.NewStorage(instanceClassRESTOptions)
+	if err != nil {
+		return nil, err
+	}
 
 	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebindings"))
 	if err != nil {
 		return nil, err
 	}
-	bindingsOpts := server.NewOptions(
-		etcd.Options{
-			RESTOptions:   bindingClassRESTOptions,
-			Capacity:      1000,
-			ObjectType:    binding.EmptyObject(),
-			ScopeStrategy: binding.NewScopeStrategy(),
-			NewListFunc:   binding.NewList,
-			GetAttrsFunc:  binding.GetAttrs,
-			Trigger:       storage.NoTriggerPublisher,
-		},
-		p.StorageType,
-	)
-
-	clusterServiceBrokerStorage, clusterServiceBrokerStatusStorage := clusterservicebroker.NewStorage(*clusterServiceBrokerOpts)
-	clusterServiceClassStorage, clusterServiceClassStatusStorage := clusterserviceclass.NewStorage(*clusterServiceClassOpts)
-	clusterServicePlanStorage, clusterServicePlanStatusStorage := clusterserviceplan.NewStorage(*clusterServicePlanOpts)
-	instanceStorage, instanceStatusStorage, instanceReferencesStorage := instance.NewStorage(*instanceOpts)
-	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
+	bindingStorage, bindingStatusStorage, err := binding.NewStorage(bindingClassRESTOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -187,59 +131,28 @@ func (p StorageProvider) v1beta1Storage(
 		if err != nil {
 			return nil, err
 		}
-
-		serviceClassOpts := server.NewOptions(
-			etcd.Options{
-				RESTOptions:   serviceClassRESTOptions,
-				Capacity:      1000,
-				ObjectType:    serviceclass.EmptyObject(),
-				ScopeStrategy: serviceclass.NewScopeStrategy(),
-				NewListFunc:   serviceclass.NewList,
-				GetAttrsFunc:  serviceclass.GetAttrs,
-				Trigger:       storage.NoTriggerPublisher,
-			},
-			p.StorageType,
-		)
+		serviceClassStorage, serviceClassStatusStorage, err := serviceclass.NewStorage(serviceClassRESTOptions)
+		if err != nil {
+			return nil, err
+		}
 
 		serviceBrokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebrokers"))
 		if err != nil {
 			return nil, err
 		}
-
-		serviceBrokerOpts := server.NewOptions(
-			etcd.Options{
-				RESTOptions:   serviceBrokerRESTOptions,
-				Capacity:      1000,
-				ObjectType:    servicebroker.EmptyObject(),
-				ScopeStrategy: servicebroker.NewScopeStrategy(),
-				NewListFunc:   servicebroker.NewList,
-				GetAttrsFunc:  servicebroker.GetAttrs,
-				Trigger:       storage.NoTriggerPublisher,
-			},
-			p.StorageType,
-		)
+		serviceBrokerStorage, serviceBrokerStatusStorage, err := servicebroker.NewStorage(serviceBrokerRESTOptions)
+		if err != nil {
+			return nil, err
+		}
 
 		servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
 		if err != nil {
 			return nil, err
 		}
-
-		servicePlanOpts := server.NewOptions(
-			etcd.Options{
-				RESTOptions:   servicePlanRESTOptions,
-				Capacity:      1000,
-				ObjectType:    serviceplan.EmptyObject(),
-				ScopeStrategy: serviceplan.NewScopeStrategy(),
-				NewListFunc:   serviceplan.NewList,
-				GetAttrsFunc:  serviceplan.GetAttrs,
-				Trigger:       storage.NoTriggerPublisher,
-			},
-			p.StorageType,
-		)
-
-		serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)
-		servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
-		serviceBrokerStorage, serviceBrokerStatusStorage := servicebroker.NewStorage(*serviceBrokerOpts)
+		servicePlanStorage, servicePlanStatusStorage, err := serviceplan.NewStorage(servicePlanRESTOptions)
+		if err != nil {
+			return nil, err
+		}
 
 		storageMap["serviceclasses"] = serviceClassStorage
 		storageMap["serviceclasses/status"] = serviceClassStatusStorage

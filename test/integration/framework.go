@@ -40,7 +40,6 @@ import (
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install"
 	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	serverstorage "github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -52,7 +51,6 @@ func init() {
 
 type TestServerConfig struct {
 	etcdServerList []string
-	storageType    serverstorage.StorageType
 	emptyObjFunc   func() runtime.Object
 }
 
@@ -77,15 +75,10 @@ func withConfigGetFreshApiserverAndClient(
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
 
 	var etcdOptions *server.EtcdOptions
-	if serverstorage.StorageTypeEtcd == serverConfig.storageType {
-		etcdOptions = server.NewEtcdOptions()
-		etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
-		etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
-	} else {
-		t.Log("no storage type specified")
-	}
+	etcdOptions = server.NewEtcdOptions()
+	etcdOptions.StorageConfig.ServerList = serverConfig.etcdServerList
+	etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
 	options := &server.ServiceCatalogServerOptions{
-		StorageTypeString:       serverConfig.storageType.String(),
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
 		SecureServingOptions:    genericserveroptions.WithLoopback(secureServingOptions),
@@ -145,18 +138,11 @@ func withConfigGetFreshApiserverAndClient(
 
 func getFreshApiserverAndClient(
 	t *testing.T,
-	storageTypeStr string,
 	newEmptyObj func() runtime.Object,
 ) (servicecatalogclient.Interface, *restclient.Config, func()) {
-	var serverStorageType serverstorage.StorageType
-	serverStorageType, err := serverstorage.StorageTypeFromString(storageTypeStr)
-	if nil != err {
-		t.Fatal("non supported storage type")
-	}
 
 	serverConfig := &TestServerConfig{
 		etcdServerList: []string{"http://localhost:2379"},
-		storageType:    serverStorageType,
 		emptyObjFunc:   newEmptyObj,
 	}
 	client, clientConfig, shutdownFunc := withConfigGetFreshApiserverAndClient(t, serverConfig)

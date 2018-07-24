@@ -21,13 +21,11 @@ import (
 
 	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"k8s.io/apiserver/pkg/storage"
 
-	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	settingsapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 )
 
 var (
@@ -46,37 +44,22 @@ func NewList() runtime.Object {
 
 // NewStorage creates a new rest.Storage responsible for accessing PodPreset
 // resources
-func NewStorage(opts server.Options) (rest.Storage, error) {
-	prefix := "/" + opts.ResourcePrefix()
-
-	storageInterface, dFunc := opts.GetStorage(
-		&settingsapi.PodPreset{},
-		prefix,
-		podPresetRESTStrategy,
-		NewList,
-		nil,
-		storage.NoTriggerPublisher,
-	)
-
-	store := genericregistry.Store{
-		NewFunc:     func() runtime.Object { return &settingsapi.PodPreset{} },
-		NewListFunc: NewList,
-		KeyRootFunc: opts.KeyRootFunc(),
-		KeyFunc:     opts.KeyFunc(true),
-		ObjectNameFunc: func(obj runtime.Object) (string, error) {
-			return scmeta.GetAccessor().Name(obj)
-		},
+func NewStorage(optsGetter generic.RESTOptionsGetter) (serviceBindings rest.Storage, err error) {
+	store := registry.Store{
+		NewFunc:                  EmptyObject,
+		NewListFunc:              NewList,
 		PredicateFunc:            Matcher,
 		DefaultQualifiedResource: settingsapi.Resource("podpresets"),
-		// WatchCacheSize:    cachesize.GetWatchCacheSizeByResource("podpresets"),
 
 		CreateStrategy:          podPresetRESTStrategy,
 		UpdateStrategy:          podPresetRESTStrategy,
 		DeleteStrategy:          podPresetRESTStrategy,
 		EnableGarbageCollection: true,
+	}
 
-		Storage:     storageInterface,
-		DestroyFunc: dFunc,
+	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
+	if err := store.CompleteWithOptions(options); err != nil {
+		return nil, err
 	}
 
 	return &store, nil

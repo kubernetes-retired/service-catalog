@@ -23,23 +23,18 @@ import (
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 )
 
 const (
 	// Store generated SSL certificates in a place that won't collide with the
 	// k8s core API server.
 	certDirectory = "/var/run/kubernetes-service-catalog"
-
-	storageTypeFlagName = "storageType"
 )
 
 // ServiceCatalogServerOptions contains the aggregation of configuration structs for
 // the service-catalog server. It contains everything needed to configure a basic API server.
 // It is public so that integration tests can access it.
 type ServiceCatalogServerOptions struct {
-	StorageTypeString string
 	// the runtime configuration of our server
 	GenericServerRunOptions *genericserveroptions.ServerRunOptions
 	// the admission options
@@ -86,11 +81,10 @@ func NewServiceCatalogServerOptions() *ServiceCatalogServerOptions {
 
 // AddFlags adds to the flag set the flags to configure the API Server.
 func (s *ServiceCatalogServerOptions) AddFlags(flags *pflag.FlagSet) {
-	flags.StringVar(
-		&s.StorageTypeString,
+	_ = flags.String(
 		"storage-type",
-		"etcd",
-		"The type of backing storage this API server should use",
+		"",
+		"DEPRECATED: The value of this flag is now unused and will be removed in the near future",
 	)
 
 	flags.BoolVar(
@@ -122,12 +116,6 @@ func (s *ServiceCatalogServerOptions) AddFlags(flags *pflag.FlagSet) {
 	s.AuditOptions.AddFlags(flags)
 }
 
-// StorageType returns the storage type configured on s, or a non-nil error if s holds an
-// invalid storage type
-func (s *ServiceCatalogServerOptions) StorageType() (server.StorageType, error) {
-	return server.StorageTypeFromString(s.StorageTypeString)
-}
-
 // Validate checks all subOptions flags have been set and that they
 // have not been set in a conflictory manner.
 func (s *ServiceCatalogServerOptions) Validate() error {
@@ -139,13 +127,11 @@ func (s *ServiceCatalogServerOptions) Validate() error {
 	errors = append(errors, s.AuthenticationOptions.Validate()...)
 	errors = append(errors, s.AuthorizationOptions.Validate()...)
 	// etcd options
-	if "etcd" == s.StorageTypeString {
-		etcdErrs := s.EtcdOptions.Validate()
-		if len(etcdErrs) > 0 {
-			glog.Errorln("Error validating etcd options, do you have `--etcd-servers localhost` set?")
-		}
-		errors = append(errors, etcdErrs...)
+	etcdErrs := s.EtcdOptions.Validate()
+	if len(etcdErrs) > 0 {
+		glog.Errorln("Error validating etcd options, do you have `--etcd-servers localhost` set?")
 	}
+	errors = append(errors, etcdErrs...)
 	// TODO add alternative storage validation
 	// errors = append(errors, s.CRDOptions.Validate()...)
 	// TODO uncomment after 1.8 rebase expecting

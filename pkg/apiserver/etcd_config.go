@@ -18,7 +18,6 @@ package apiserver
 
 import (
 	"github.com/golang/glog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -99,7 +98,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 
 	glog.V(4).Infoln("Installing API groups")
 	// default namespace doesn't matter for etcd
-	providers := restStorageProviders("" /* default namespace */, server.StorageTypeEtcd, nil)
+	providers := restStorageProviders()
 	for _, provider := range providers {
 		groupInfo, err := provider.NewRESTStorage(c.apiResourceConfigSource, roFactory)
 		if IsErrAPIGroupDisabled(err) {
