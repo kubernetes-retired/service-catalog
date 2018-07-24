@@ -20,6 +20,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -34,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -99,18 +101,45 @@ const (
 	startingInstanceOrphanMitigationMessage string = "The instance provision call failed with an ambiguous error; attempting to deprovision the instance in order to mitigate an orphaned resource"
 
 	clusterIdentifierKey string = "clusterid"
+
+	minBrokerOperationRetryDelay time.Duration = time.Second * 1
+	maxBrokerOperationRetryDelay time.Duration = time.Minute * 20
 )
+
+type backoffEntry struct {
+	generation          int64
+	calculatedRetryTime time.Time // earliest time we should retry
+	dirty               bool      // true indicates new backoff should be calculated
+}
+
+type instanceOperationBackoff struct {
+	// lock to be used for accessing retry map
+	mutex       sync.RWMutex
+	instances   map[string]backoffEntry
+	rateLimiter workqueue.RateLimiter // used to calculate next retry time
+}
 
 // ServiceInstance handlers and control-loop
 
+// instanceAdd adds the instance key to the work queue
 func (c *controller) instanceAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
-
 	c.instanceQueue.Add(key)
+}
+
+// instanceAddAfter adds the instance key to the work queue after the specified
+// duration elapses
+func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		return
+	}
+	c.instanceQueue.AddAfter(key, d)
 }
 
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
@@ -341,6 +370,126 @@ func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInst
 	return false, nil
 }
 
+// setRetryBackoffRequired marks the specified instance/generation as needing a
+// delay before the next provision/update is attempted.  We always set this flag
+// before attempting a provision or update operation in case we must retry.  This
+// will eventually be cleared by the background worker running
+// purgeExpiredRetryEntries() or when the operation is successful.
+func (c *controller) setRetryBackoffRequired(instance *v1beta1.ServiceInstance) {
+	pcb := pretty.NewInstanceContextBuilder(instance)
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf(pcb.Messagef("Couldn't create a key for object %+v: %v", instance, err))
+		return
+	}
+
+	c.instanceOperationRetryQueue.mutex.Lock()
+	defer c.instanceOperationRetryQueue.mutex.Unlock()
+	retryEntry, found := c.instanceOperationRetryQueue.instances[key]
+	if !found || retryEntry.generation != instance.Generation {
+		retryEntry.generation = instance.Generation
+
+		// reset the backoff as the generation changed
+		if found {
+			c.instanceOperationRetryQueue.rateLimiter.Forget(key)
+		}
+	}
+	retryEntry.dirty = true
+	c.instanceOperationRetryQueue.instances[key] = retryEntry
+	glog.V(4).Info(pcb.Messagef("added %v generation %v to backoffBeforeRetrying map", key, instance.Generation))
+}
+
+// backoffAndRequeueIfRetrying returns true if this is a retry and a backoff
+// (delay) needs to be observed before retrying.  This only applies to
+// Provisioning and Updating and is generation specific.  If the generation has
+// been bumped since the instance was added to the retry map there will be no
+// backoff delay.
+func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstance, operation string) bool {
+	pcb := pretty.NewInstanceContextBuilder(instance)
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf(pcb.Messagef("Couldn't create a key for object %+v: %v", instance, err))
+		return false
+	}
+	delay := time.Millisecond * 0
+
+	// if there is a pending delay, calculate it and clear the dirty bit
+	c.instanceOperationRetryQueue.mutex.Lock()
+	defer c.instanceOperationRetryQueue.mutex.Unlock()
+	retryEntry, exists := c.instanceOperationRetryQueue.instances[key]
+	if exists {
+		if retryEntry.generation != instance.Generation {
+			// the retry entry was on an old generation, we don't care,
+			// cleanup and no delay
+			delete(c.instanceOperationRetryQueue.instances, key)
+			c.instanceOperationRetryQueue.rateLimiter.Forget(key)
+			return false
+		}
+		if retryEntry.dirty {
+			// calculate earliest retry time with exponential backoff
+			retryEntry.calculatedRetryTime = time.Now().Add(c.instanceOperationRetryQueue.rateLimiter.When(key))
+			retryEntry.dirty = false
+			c.instanceOperationRetryQueue.instances[key] = retryEntry
+			glog.V(4).Infof(pcb.Messagef("generation %v retryTime calculated as %v", instance.Generation, retryEntry.calculatedRetryTime))
+		}
+
+		now := time.Now()
+		delay = retryEntry.calculatedRetryTime.Sub(now)
+
+		if delay > 0 {
+			msg := fmt.Sprintf("Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
+			c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
+			glog.V(2).Info(pcb.Message(msg))
+
+			// add back to worker queue to retry at the specified time
+			c.instanceAddAfter(instance, delay)
+			return true
+		}
+	}
+	return false
+}
+
+// purgeExpiredRetryEntries clears entries from the map that have an expired
+// retry time.  Invoked by a worker on a timer.
+func (c *controller) purgeExpiredRetryEntries() {
+	now := time.Now()
+
+	c.instanceOperationRetryQueue.mutex.Lock()
+	defer c.instanceOperationRetryQueue.mutex.Unlock()
+
+	// Ensure we only purge items that aren't being acted on by retries.
+	// Due to queues and potential delays, only remove entries that are at
+	// least maxBrokerOperationRetryDelay past next retry time to ensure
+	// entries are not prematurely removed
+	overDue := now.Add(-maxBrokerOperationRetryDelay)
+	purgedEntries := 0
+	for k, v := range c.instanceOperationRetryQueue.instances {
+		if v.calculatedRetryTime.Before(overDue) {
+			glog.V(5).Infof("removing %s from instanceOperationRetryQueue which had retry time of %v", k, v.calculatedRetryTime)
+			delete(c.instanceOperationRetryQueue.instances, k)
+			c.instanceOperationRetryQueue.rateLimiter.Forget(k)
+			purgedEntries++
+		}
+	}
+	glog.V(5).Infof("purged %v expired entries from instanceOperationRetryQueue.instances, number of entries remaining: %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
+
+}
+
+// removeInstanceFromRetryMap removes the instance from the retry & ratelimter maps
+func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstance) {
+	pcb := pretty.NewInstanceContextBuilder(instance)
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
+	if err != nil {
+		glog.Errorf(pcb.Messagef("Couldn't create a key for object %+v: %v", instance, err))
+		return
+	}
+	c.instanceOperationRetryQueue.mutex.Lock()
+	defer c.instanceOperationRetryQueue.mutex.Unlock()
+	delete(c.instanceOperationRetryQueue.instances, key)
+	c.instanceOperationRetryQueue.rateLimiter.Forget(key)
+	glog.V(4).Infof(pcb.Message("removed from instanceOperationRetryQueue"))
+}
+
 // reconcileServiceInstanceAdd is responsible for handling the provisioning
 // of new service instances.
 func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstance) error {
@@ -348,6 +497,12 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
+		return nil
+	}
+
+	// don't DOS the broker.  If we already did a provision attempt that ended with a non-terminal
+	// error wait for the exponential backoff to pass
+	if c.backoffAndRequeueIfRetrying(instance, "provision") {
 		return nil
 	}
 
@@ -403,6 +558,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		prettyClass, brokerName,
 	))
 
+	c.setRetryBackoffRequired(instance)
 	response, err := brokerClient.ProvisionInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
@@ -460,6 +616,12 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 
 	if isServiceInstanceProcessedAlready(instance) {
 		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
+		return nil
+	}
+
+	// don't DOS the broker.  If we already did an update attempt that ended with a non-terminal
+	// error wait for the exponential backoff to pass
+	if c.backoffAndRequeueIfRetrying(instance, "update") {
 		return nil
 	}
 
@@ -559,6 +721,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		))
 	}
 
+	c.setRetryBackoffRequired(instance)
 	response, err := brokerClient.UpdateInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
@@ -2062,7 +2225,7 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 	if instance.Status.InProgressProperties == nil {
 		pcb := pretty.NewInstanceContextBuilder(instance)
 		err := stderrors.New("Instance.Status.InProgressProperties can not be nil")
-		glog.Errorf(pcb.Message(err.Error()))
+		glog.Error(pcb.Message(err.Error()))
 		return nil, err
 	}
 
@@ -2195,6 +2358,7 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 		return err
 	}
 
+	c.removeInstanceFromRetryMap(instance)
 	c.recorder.Eventf(instance, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
 	return nil
 }
@@ -2205,6 +2369,7 @@ func (c *controller) processTerminalProvisionFailure(instance *v1beta1.ServiceIn
 	if failedCond == nil {
 		return fmt.Errorf("failedCond must not be nil")
 	}
+	c.removeInstanceFromRetryMap(instance)
 	return c.processProvisionFailure(instance, readyCond, failedCond, shouldMitigateOrphan)
 }
 
@@ -2301,6 +2466,7 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 		return err
 	}
 
+	c.removeInstanceFromRetryMap(instance)
 	c.recorder.Eventf(instance, corev1.EventTypeNormal, successUpdateInstanceReason, successUpdateInstanceMessage)
 	return nil
 }
@@ -2311,6 +2477,7 @@ func (c *controller) processTerminalUpdateServiceInstanceFailure(instance *v1bet
 	if failedCond == nil {
 		return fmt.Errorf("failedCond must not be nil")
 	}
+	c.removeInstanceFromRetryMap(instance)
 	return c.processUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 }
 
