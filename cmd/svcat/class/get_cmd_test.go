@@ -205,7 +205,7 @@ var _ = Describe("Get Classes Command", func() {
 			Expect(cmd.name).To(Equal("mysqldb"))
 		})
 	})
-	Describe("getAll", func() {
+	Describe("Run", func() {
 		It("Calls the pkg/svcat libs RetrieveClasses with namespace scope and current namespace", func() {
 			outputBuffer := &bytes.Buffer{}
 
@@ -222,7 +222,7 @@ var _ = Describe("Get Classes Command", func() {
 			cmd.Namespace = "default"
 			cmd.Scope = servicecatalog.NamespaceScope
 
-			err := cmd.getAll()
+			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
@@ -253,7 +253,7 @@ var _ = Describe("Get Classes Command", func() {
 			cmd.Namespace = ""
 			cmd.Scope = servicecatalog.NamespaceScope
 
-			err := cmd.getAll()
+			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
@@ -285,7 +285,7 @@ var _ = Describe("Get Classes Command", func() {
 			cmd.Namespace = "default"
 			cmd.Scope = servicecatalog.AllScope
 
-			err := cmd.getAll()
+			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
