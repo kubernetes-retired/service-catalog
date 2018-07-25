@@ -1,0 +1,11 @@
+bigheader: "Catalog Restrictions"
+abstract: "Using Catalog Restrictions to control Service Class and Plan access."
+landing_page: /docs/catalog-restrictions/
+toc:
+- docs/catalog-restrictions.md
+- title: Catalog Restrictions
+  path: "#catalog-restrictions"
+- title: Using Catalog Restrictions
+  path: "#using-catalog-restrictions"
+- title: Examples
+  path: "#examples"

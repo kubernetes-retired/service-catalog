@@ -83,13 +83,14 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 					CommonServicePlanSpec: CommonServicePlanSpec{
 						ExternalName: "external-plan-name",
 						ExternalID:   "external-id",
+						Free:         true,
 					},
 					ServiceClassRef: LocalObjectReference{
 						Name: "service-class-name",
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.serviceClass.name":"service-class-name"}`,
+			json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.free":"true","spec.serviceClass.name":"service-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -170,13 +171,14 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 					CommonServicePlanSpec: CommonServicePlanSpec{
 						ExternalName: "external-plan-name",
 						ExternalID:   "external-id",
+						Free:         true,
 					},
 					ClusterServiceClassRef: ClusterObjectReference{
 						Name: "cluster-service-class-name",
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name"}`,
+			json: `{"name":"service-plan","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.free":"true"}`,
 		},
 	}
 	for _, tc := range cases {

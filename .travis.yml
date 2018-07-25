@@ -40,24 +40,9 @@ jobs:
           make verify-docs
         else
           echo "Running full build"
-          make verify build svcat build-integration build-e2e test
+          make verify build svcat build-integration build-e2e test-integration
         fi
       env: GO_VERSION=1.10
-    # Cross Build Check
-    - stage: test
-      script:
-      - |
-        if (( $DOCS_ONLY != 0 )); then
-          make images-all
-        fi
-      env: XBUILD_SERVER=true
-    - stage: test
-      script:
-      - |
-        if (( $DOCS_ONLY != 0 )); then
-          make svcat-all
-        fi
-      env: XBUILD_CLIENT=true
     # Doc Site svc-cat.io
     - stage: test
       script:

@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
 func getPlanStatusShort(status v1beta1.ClusterServicePlanStatus) string {
@@ -67,20 +68,20 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 }
 
 // WritePlanList prints a list of plans in the specified output format.
-func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []v1beta1.ClusterServiceClass) {
+func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []servicecatalog.Class) {
 	classNames := map[string]string{}
 	for _, class := range classes {
-		classNames[class.Name] = class.Spec.ExternalName
+		classNames[class.GetName()] = class.GetExternalName()
 	}
 	list := v1beta1.ClusterServicePlanList{
 		Items: plans,
 	}
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, list)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, list, 0)
-	case formatTable:
+	case FormatTable:
 		writePlanListTable(w, plans, classNames)
 	}
 }
@@ -89,11 +90,11 @@ func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServ
 func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan, class v1beta1.ClusterServiceClass) {
 
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, plan)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, plan, 0)
-	case formatTable:
+	case FormatTable:
 		classNames := map[string]string{}
 		classNames[class.Name] = class.Spec.ExternalName
 		writePlanListTable(w, []v1beta1.ClusterServicePlan{plan}, classNames)

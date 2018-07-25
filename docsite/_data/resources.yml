@@ -3,10 +3,12 @@ abstract: "Service Catalog Resources"
 landing_page: /docs/resources
 toc:
 - docs/resources.md
-- title: Broker
-  path: "#clusterservicebroker"
-- title: Class
-  path: "#clusterserviceclass"
+- title: Service Broker
+  path: "#service-brokers"
+- title: Service Class
+  path: "#service-classes"
+- title: Service Plans
+  path: "#service-plans"
 - title: Instance
   path: "#serviceinstance"
 - title: Instance Parameters

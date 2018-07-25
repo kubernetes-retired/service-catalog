@@ -66,11 +66,11 @@ func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceLi
 // WriteInstanceList prints a list of instances.
 func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.ServiceInstanceList) {
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, instanceList)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, instanceList, 0)
-	case formatTable:
+	case FormatTable:
 		writeInstanceListTable(w, instanceList)
 	}
 }
@@ -78,11 +78,11 @@ func WriteInstanceList(w io.Writer, outputFormat string, instanceList *v1beta1.S
 // WriteInstance prints a single instance
 func WriteInstance(w io.Writer, outputFormat string, instance v1beta1.ServiceInstance) {
 	switch outputFormat {
-	case "json":
+	case FormatJSON:
 		writeJSON(w, instance)
-	case "yaml":
+	case FormatYAML:
 		writeYAML(w, instance, 0)
-	case "table":
+	case FormatTable:
 		p := v1beta1.ServiceInstanceList{
 			Items: []v1beta1.ServiceInstance{instance},
 		}

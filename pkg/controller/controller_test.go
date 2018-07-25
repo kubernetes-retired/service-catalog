@@ -1588,6 +1588,15 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 			plans:   []string{"Goldengrove", "Queensgate"},
 			catalog: largeTestCatalog,
 		},
+		{
+			name: "filter free plans",
+			restrictions: &v1beta1.CatalogRestrictions{
+				ServicePlan: []string{"spec.free==true"},
+			},
+			classes: []string{"Arrax", "Balerion"},
+			plans:   []string{"Eastwatch-by-the-Sea", "OldOak", "Queensgate"},
+			catalog: largeTestCatalog,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
