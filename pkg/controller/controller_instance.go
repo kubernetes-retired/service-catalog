@@ -2063,12 +2063,18 @@ func (c *controller) innerPrepareProvisionRequest(instance *v1beta1.ServiceInsta
 	}
 
 	request := &osb.ProvisionRequest{
-		AcceptsIncomplete:   true,
-		InstanceID:          instance.Spec.ExternalID,
-		ServiceID:           classCommon.ExternalID,
-		PlanID:              planCommon.ExternalID,
-		Parameters:          rh.parameters,
-		OrganizationGUID:    c.getClusterID(),
+		AcceptsIncomplete: true,
+		InstanceID:        instance.Spec.ExternalID,
+		ServiceID:         classCommon.ExternalID,
+		PlanID:            planCommon.ExternalID,
+		Parameters:        rh.parameters,
+		// This field is DEPRECATED, but required to be sent by OSBAPI specification
+		// Consider using the context profile as defined in
+		// https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/profile.md#kubernetes-context-object
+		OrganizationGUID: c.getClusterID(),
+		// This field is DEPRECATED, but required to be sent by OSBAPI specification
+		// Consider using the context profile as defined in
+		// https://github.com/openservicebrokerapi/servicebroker/blob/v2.14/profile.md#kubernetes-context-object
 		SpaceGUID:           string(rh.ns.UID),
 		Context:             rh.requestContext,
 		OriginatingIdentity: rh.originatingIdentity,
