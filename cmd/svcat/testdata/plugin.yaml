@@ -62,7 +62,7 @@ tree:
   command: ./svcat completion
 - name: create
   use: create
-  shortDesc: Create an user-defined resource
+  shortDesc: Create a user-defined resource
   command: ./svcat create
   tree:
   - name: class
