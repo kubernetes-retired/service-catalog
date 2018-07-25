@@ -73,6 +73,6 @@ func (c *createCmd) Run() error {
 		return err
 	}
 
-	output.WriteCreatedResourceName(c.Output, createdClass.Name)
+	output.WriteClassDetails(c.Output, createdClass)
 	return nil
 }

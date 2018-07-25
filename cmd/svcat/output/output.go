@@ -58,11 +58,6 @@ func formatStatusFull(condition string, conditionStatus v1beta1.ConditionStatus,
 	return fmt.Sprintf("%s - %s @ %s", status, message, timestamp.UTC())
 }
 
-// WriteCreatedResourceName prints the name of a created resource
-func WriteCreatedResourceName(w io.Writer, resourceName string) {
-	fmt.Fprintf(w, "created %s\n", resourceName)
-}
-
 // WriteDeletedResourceName prints the name of a deleted resource
 func WriteDeletedResourceName(w io.Writer, resourceName string) {
 	fmt.Fprintf(w, "deleted %s\n", resourceName)
