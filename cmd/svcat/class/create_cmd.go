@@ -24,15 +24,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type createCmd struct {
+type CreateCmd struct {
 	*command.Context
-	name string
-	from string
+	Name string
+	From string
 }
 
 // NewCreateCmd builds a "svcat create class" command
 func NewCreateCmd(cxt *command.Context) *cobra.Command {
-	createCmd := &createCmd{Context: cxt}
+	createCmd := &CreateCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:   "class [NAME] --from [EXISTING_NAME]",
 		Short: "Copies an existing class into a new user-defined cluster-scoped class",
@@ -42,7 +42,7 @@ func NewCreateCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(createCmd),
 		RunE:    command.RunE(createCmd),
 	}
-	cmd.Flags().StringVarP(&createCmd.from, "from", "f", "",
+	cmd.Flags().StringVarP(&createCmd.From, "from", "f", "",
 		"Name from an existing class that will be copied (Required)",
 	)
 	cmd.MarkFlagRequired("from")
@@ -50,23 +50,23 @@ func NewCreateCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *createCmd) Validate(args []string) error {
+func (c *CreateCmd) Validate(args []string) error {
 	if len(args) <= 0 {
 		return fmt.Errorf("new class name should be provided")
 	}
 
-	c.name = args[0]
+	c.Name = args[0]
 
 	return nil
 }
 
-func (c *createCmd) Run() error {
-	class, err := c.App.RetrieveClassByName(c.from)
+func (c *CreateCmd) Run() error {
+	class, err := c.App.RetrieveClassByName(c.From)
 	if err != nil {
 		return err
 	}
 
-	class.Name = c.name
+	class.Name = c.Name
 
 	createdClass, err := c.App.CreateClass(class)
 	if err != nil {
