@@ -66,13 +66,13 @@ func (c *createCmd) Run() error {
 		return err
 	}
 
-	class.Spec.ExternalName = c.name
+	class.Name = c.name
 
 	createdClass, err := c.App.CreateClass(class)
 	if err != nil {
 		return err
 	}
 
-	output.WriteCreatedResourceName(c.Output, createdClass.Spec.ExternalName)
+	output.WriteCreatedResourceName(c.Output, createdClass.Name)
 	return nil
 }
