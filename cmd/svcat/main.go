@@ -37,7 +37,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions"
 	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util/kube"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
