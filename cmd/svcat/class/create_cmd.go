@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// CreateCmd contains the information needed to create a new class
 type CreateCmd struct {
 	*command.Context
 	Name string
@@ -50,6 +51,7 @@ func NewCreateCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
+// Validate checks that the required arguments have been provided
 func (c *CreateCmd) Validate(args []string) error {
 	if len(args) <= 0 {
 		return fmt.Errorf("new class name should be provided")
@@ -60,6 +62,7 @@ func (c *CreateCmd) Validate(args []string) error {
 	return nil
 }
 
+// Run calls out to the pkg lib to create the class and displays the output
 func (c *CreateCmd) Run() error {
 	class, err := c.App.RetrieveClassByName(c.From)
 	if err != nil {
