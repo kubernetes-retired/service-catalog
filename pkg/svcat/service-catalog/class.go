@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
@@ -62,6 +63,10 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 	if opts.Scope.Matches(NamespaceScope) {
 		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(v1.ListOptions{})
 		if err != nil {
+			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
+			if errors.IsNotFound(err) {
+				return classes, nil
+			}
 			return nil, fmt.Errorf("unable to list classes in %q (%s)", opts.Namespace, err)
 		}
 		for _, c := range sc.Items {
