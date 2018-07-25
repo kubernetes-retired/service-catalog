@@ -109,6 +109,19 @@ Plans:
   premium   Premium plan
 ```
 
+## Copies an exisitng class into a new user-defined class
+
+This copies an exisitng class specified by name into a new user-defined one with new specified name.
+```console
+$ svcat create class new-class --from user-provided-service
+  Name:          user-provided-service
+  Description:   A user provided service
+  UUID:          new-class
+  Status:        Active
+  Tags:
+  Broker:        ups-broker
+```
+
 ## Provision a service
 
 ```console
