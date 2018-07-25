@@ -44,7 +44,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
 	"github.com/kubernetes-incubator/service-catalog/pkg/openapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util/kube"
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
 )
 
