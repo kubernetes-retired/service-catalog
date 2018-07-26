@@ -1648,6 +1648,20 @@ func (fake *FakeSvcatClient) RetrieveClassByPlanReturns(result1 *apiv1beta1.Clus
 	}{result1, result2}
 }
 
+func (fake *FakeSvcatClient) RetrieveClassByPlanReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+	fake.RetrieveClassByPlanStub = nil
+	if fake.retrieveClassByPlanReturnsOnCall == nil {
+		fake.retrieveClassByPlanReturnsOnCall = make(map[int]struct {
+			result1 *apiv1beta1.ClusterServiceClass
+			result2 error
+		})
+	}
+	fake.retrieveClassByPlanReturnsOnCall[i] = struct {
+		result1 *apiv1beta1.ClusterServiceClass
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeSvcatClient) CreateClass(arg1 *apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceClass, error) {
 	fake.createClassMutex.Lock()
 	ret, specificReturn := fake.createClassReturnsOnCall[len(fake.createClassArgsForCall)]
