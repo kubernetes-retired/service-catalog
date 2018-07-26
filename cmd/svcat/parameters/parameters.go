@@ -45,7 +45,6 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 	variables := make(map[string]interface{})
 	for _, p := range params {
 		var newKeys []string
-		var subKey = ""
 
 		parts := strings.SplitN(p, "=", 2)
 		if len(parts) < 2 {
@@ -62,7 +61,6 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 			//check if params form is -p xxx.xx
 			newKeys = strings.Split(variable, ".")
 			variable = newKeys[0]
-			subKey = newKeys[1]
 		}
 
 		storedValue, ok := variables[variable]
@@ -75,10 +73,16 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		// if variable:map[somekey:somevalue] -> variable:map[somekey:somevalue newkey:newvalue]
 		// more logic/combinations TBD
 		if !ok {
-			if len(subKey) == 0 {
+			if len(newKeys) == 0 {
 				variables[variable] = value
 			} else {
-				variables[variable] = map[string]string{subKey: value}
+				for i := len(newKeys[1:]); i > 0; i-- {
+					if i == len(newKeys[1:]) {
+						variables[variable] = map[string]interface{}{newKeys[i]: value}
+					} else {
+						variables[variable] = map[string]interface{}{newKeys[i]: variables[variable]}
+					}
+				}
 			}
 		} else {
 			switch storedValType := storedValue.(type) {
@@ -86,10 +90,10 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 				variables[variable] = []string{storedValType, value}
 			case []string:
 				variables[variable] = append(storedValType, value)
-			case map[string]string:
-				if len(subKey) > 0 {
-					storedValType[subKey] = value
-				}
+				// case map[string]string:
+				// 	if len(subKey) > 0 {
+				// 		storedValType[subKey] = value
+				// 	}
 			}
 		}
 	}
