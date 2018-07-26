@@ -88,9 +88,9 @@ func TestParseVariableAssignments_DotParams(t *testing.T) {
 
 	want := map[string]interface{}{
 		"a": map[string]interface{}{
-			"b":map[string]interface{}{
-				"c":map[string]interface{}{
-					"d":"e"}}},
+			"b": map[string]interface{}{
+				"c": map[string]interface{}{
+					"d": "e"}}},
 	}
 
 	if !reflect.DeepEqual(want, got) {
