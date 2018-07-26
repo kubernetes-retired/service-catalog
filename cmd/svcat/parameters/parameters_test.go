@@ -78,6 +78,26 @@ func TestParseVariableAssignments_OneVariableThreeValues(t *testing.T) {
 	}
 }
 
+func TestParseVariableAssignments_DotParams(t *testing.T) {
+	params := []string{"a.b.c.d=e"}
+
+	got, err := ParseVariableAssignments(params)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]interface{}{
+		"a": map[string]interface{}{
+			"b":map[string]interface{}{
+				"c":map[string]interface{}{
+					"d":"e"}}},
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", "dotparams", want, got)
+	}
+}
+
 func TestParseKeyMaps(t *testing.T) {
 	testcases := []struct {
 		Name, Raw, MapName, Key string
