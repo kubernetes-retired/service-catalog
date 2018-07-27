@@ -77,11 +77,25 @@ func TestParseVariableAssignments_OneVariableThreeValues(t *testing.T) {
 		t.Fatalf("%s\nexpected:\n\t%v\ngot:\n\t%v\n", "one var three values", want, got)
 	}
 }
+
 func TestParseVariableAssignments_InvalidDotParams(t *testing.T) {
-	params := []string{"a.=e"}
-	_, err := ParseVariableAssignments(params)
-	if err == nil {
-		t.Fatal("should have failed due to invalid dot string")
+	testcases := []struct {
+		Name, Raw string
+	}{
+		{"missing right param", "a.=e"},
+		{"missing left param", ".a=e"},
+		{"double dots", "a..b=e"},
+		{"no params", ".="},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			params := []string{tc.Raw}
+
+			result, err := ParseVariableAssignments(params)
+			if err == nil {
+				t.Fatalf("expected parse to fail for %s but got %v", tc.Raw, result)
+			}
+		})
 	}
 }
 
