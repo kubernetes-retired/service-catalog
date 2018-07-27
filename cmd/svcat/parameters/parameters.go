@@ -38,9 +38,9 @@ func ParseVariableJSON(params string) (map[string]interface{}, error) {
 }
 
 // ParseVariableAssignments converts a string array of variable assignments
-// into a map of keys and values
-// Example:
-// [a=b c=abc1232=== d=banana d=pineapple] becomes map[a:b c:abc1232=== d:[banana pineapple]]
+// into a map of keys and values.
+// Examples:
+// [a=b c=abc1232=== d=X d=Y e.f.g=Z] --> map[a:b c:abc1232=== d:[X Y] e:map[f:map[g:Z]]]
 func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 	variables := make(map[string]interface{})
 	for _, p := range params {
