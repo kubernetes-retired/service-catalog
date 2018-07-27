@@ -85,9 +85,8 @@ func TestParseVariableAssignments_InvalidDotParams(t *testing.T) {
 	}
 }
 
-func TestParseVariableAssignments_DotParams(t *testing.T) {
+func TestParseVariableAssignments_ValidDotParams(t *testing.T) {
 	params := []string{"a.b.c.d=e"}
-	 
 	got, err := ParseVariableAssignments(params)
 	if err != nil {
 		t.Fatal(err)
@@ -105,9 +104,8 @@ func TestParseVariableAssignments_DotParams(t *testing.T) {
 	}
 }
 
-func TestParseVariableAssignments_DotParamsErr(t *testing.T) {
+func TestParseVariableAssignments_DotParamsTypeErr(t *testing.T) {
 	params := []string{"a.b.c.d=e", "a=x"}
-
 	_, err := ParseVariableAssignments(params)
 	if err == nil {
 		t.Fatal("should have failed due to map and string for same variable")

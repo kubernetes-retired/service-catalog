@@ -63,7 +63,7 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 			if r.MatchString(variable) == true {
 				dotKeys = strings.Split(variable, ".")
 				variable = dotKeys[0]
-			}else {
+			} else {
 				return nil, fmt.Errorf("invalid parameter (%s), must be in x.x format", variable)
 			}
 		}
