@@ -77,8 +77,8 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 				// last element in dot params will have value "value", the rest of map nested
 				// using remaining elements
 				// Ex: A.B.C = Z --> map[A:map[B:map[C:Z]]]
-				variables[variable] = map[string]interface{}{dotKeys[len(dotKeys[1:])]: value}
-				for i := len(dotKeys[1:]) - 1; i > 0; i-- {
+				variables[variable] = map[string]interface{}{dotKeys[len(dotKeys)-1]: value}
+				for i := len(dotKeys) - 2; i > 0; i-- {
 					variables[variable] = map[string]interface{}{dotKeys[i]: variables[variable]}
 				}
 			}
