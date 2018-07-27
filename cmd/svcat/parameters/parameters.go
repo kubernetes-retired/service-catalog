@@ -59,8 +59,13 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 
 		if strings.ContainsAny(variable, ".") {
 			//check if params form is -p xxx.xx
-			dotKeys = strings.Split(variable, ".")
-			variable = dotKeys[0]
+			r, _ := regexp.Compile(`[^\s\.]+\.[^\s\.]+(\.[^\s\.]+)*`)
+			if r.MatchString(variable) == true {
+				dotKeys = strings.Split(variable, ".")
+				variable = dotKeys[0]
+			}else {
+				return nil, fmt.Errorf("invalid parameter (%s), must be in x.x format", variable)
+			}
 		}
 
 		storedValue, ok := variables[variable]
