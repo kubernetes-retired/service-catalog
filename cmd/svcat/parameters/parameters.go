@@ -58,7 +58,7 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		value := strings.TrimSpace(parts[1])
 
 		if strings.ContainsAny(variable, ".") {
-			//check if params form is -p xxx.xx
+			//check if dot params form is correct: xxx.xx
 			r, _ := regexp.Compile(`[^\s\.]+\.[^\s\.]+(\.[^\s\.]+)*`)
 			if r.MatchString(variable) == true {
 				dotKeys = strings.Split(variable, ".")
@@ -69,23 +69,23 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		}
 
 		storedValue, ok := variables[variable]
-		// Logic to add new value to map variables:
-		// if variable DNE and not exploding params -> variable:value
-		// if variable DNE and exploding params -> variable: map[somekey:somevalue]
-		// Logic to add value to variables where variable already exists in variables:
-		// if variable:value -> variable:[old value, newvalue]
-		// if variable:[value1, value2] -> variable:[value1, value2, newvalue]
-
 		if !ok {
 			if len(dotKeys) == 0 {
 				variables[variable] = value
 			} else {
+				// evaluate dot params and build map
+				// last element in dot params will have value "value", the rest of map nested
+				// using remaining elements
+				// Ex: A.B.C = Z --> map[A:map[B:map[C:Z]]]
 				variables[variable] = map[string]interface{}{dotKeys[len(dotKeys[1:])]: value}
 				for i := len(dotKeys[1:]) - 1; i > 0; i-- {
 					variables[variable] = map[string]interface{}{dotKeys[i]: variables[variable]}
 				}
 			}
 		} else {
+			// if variable:value -> variable:[old value, newvalue]
+			// if variable:[value1, value2] -> variable:[value1, value2, newvalue]
+			// if map[variable[map[subvar:value]]] -> can't do anything, error
 			switch storedValType := storedValue.(type) {
 			case string:
 				variables[variable] = []string{storedValType, value}
