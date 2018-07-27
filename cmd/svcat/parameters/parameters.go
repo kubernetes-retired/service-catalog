@@ -80,12 +80,9 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 			if len(dotKeys) == 0 {
 				variables[variable] = value
 			} else {
-				for i := len(dotKeys[1:]); i > 0; i-- {
-					if i == len(dotKeys[1:]) {
-						variables[variable] = map[string]interface{}{dotKeys[i]: value}
-					} else {
-						variables[variable] = map[string]interface{}{dotKeys[i]: variables[variable]}
-					}
+				variables[variable] = map[string]interface{}{dotKeys[len(dotKeys[1:])]: value}
+				for i := len(dotKeys[1:]) - 1; i > 0; i-- {
+					variables[variable] = map[string]interface{}{dotKeys[i]: variables[variable]}
 				}
 			}
 		} else {
