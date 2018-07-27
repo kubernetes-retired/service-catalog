@@ -40,7 +40,10 @@ jobs:
           make verify-docs
         else
           echo "Running full build"
-          make verify build svcat build-integration build-e2e test-integration
+          # make sure code quality is good and proper
+          # generate the output binaries for server and client
+          # ensure the tests build
+          make verify build svcat build-integration build-e2e
         fi
       env: GO_VERSION=1.10
     # Doc Site svc-cat.io
