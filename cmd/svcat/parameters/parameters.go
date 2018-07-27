@@ -44,7 +44,7 @@ func ParseVariableJSON(params string) (map[string]interface{}, error) {
 func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 	variables := make(map[string]interface{})
 	for _, p := range params {
-		var newKeys []string
+		var dotKeys []string
 
 		parts := strings.SplitN(p, "=", 2)
 		if len(parts) < 2 {
@@ -59,8 +59,8 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 
 		if strings.ContainsAny(variable, ".") {
 			//check if params form is -p xxx.xx
-			newKeys = strings.Split(variable, ".")
-			variable = newKeys[0]
+			dotKeys = strings.Split(variable, ".")
+			variable = dotKeys[0]
 		}
 
 		storedValue, ok := variables[variable]
@@ -70,17 +70,16 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 		// Logic to add value to variables where variable already exists in variables:
 		// if variable:value -> variable:[old value, newvalue]
 		// if variable:[value1, value2] -> variable:[value1, value2, newvalue]
-		// if variable:map[somekey:somevalue] -> variable:map[somekey:somevalue newkey:newvalue]
-		// more logic/combinations TBD
+
 		if !ok {
-			if len(newKeys) == 0 {
+			if len(dotKeys) == 0 {
 				variables[variable] = value
 			} else {
-				for i := len(newKeys[1:]); i > 0; i-- {
-					if i == len(newKeys[1:]) {
-						variables[variable] = map[string]interface{}{newKeys[i]: value}
+				for i := len(dotKeys[1:]); i > 0; i-- {
+					if i == len(dotKeys[1:]) {
+						variables[variable] = map[string]interface{}{dotKeys[i]: value}
 					} else {
-						variables[variable] = map[string]interface{}{newKeys[i]: variables[variable]}
+						variables[variable] = map[string]interface{}{dotKeys[i]: variables[variable]}
 					}
 				}
 			}
@@ -90,11 +89,6 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 				variables[variable] = []string{storedValType, value}
 			case []string:
 				variables[variable] = append(storedValType, value)
-				// case map[string]string:
-				// 	if len(subKey) > 0 {
-				// 		storedValType[subKey] = value
-				// 	}
-			}
 		}
 	}
 
