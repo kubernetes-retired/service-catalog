@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 )
 
@@ -78,9 +77,8 @@ func TestDescribeCommand(t *testing.T) {
 			cxt := svcattest.NewContext(output, fakeApp)
 
 			// Initialize the command arguments
-			cmd := &getCmd{
-				Context:   cxt,
-				Formatted: command.NewFormatted(),
+			cmd := &describeCmd{
+				Context: cxt,
 			}
 			cmd.name = tc.brokerName
 
