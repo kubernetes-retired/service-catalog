@@ -89,6 +89,9 @@ func ParseVariableAssignments(params []string) (map[string]interface{}, error) {
 				variables[variable] = []string{storedValType, value}
 			case []string:
 				variables[variable] = append(storedValType, value)
+			case map[string]interface{}:
+				return nil, fmt.Errorf("(%s) already exists as an exploding param", variable)
+			}
 		}
 	}
 
