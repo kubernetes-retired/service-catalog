@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
+	"fmt"
 )
 
 type getCmd struct {
