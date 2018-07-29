@@ -54,8 +54,8 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 	t.SetHeader([]string{
 		"Name",
 		"Class",
-		"Description",
 		"Broker",
+		"Description",
 	})
 	for _, plan := range plans {
 		t.Append([]string{
