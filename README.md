@@ -59,6 +59,9 @@ Interested in contributing? Check out the [contribution guidelines](./CONTRIBUTI
 Also see the [developer's guide](./docs/devguide.md) for information on how to
 build and test the code.
 
+We have a mailing list available
+[here](https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog).
+
 We have weekly meetings - see
 [our SIG Readme](https://github.com/kubernetes/community/blob/master/sig-service-catalog/README.md#meetings)
 for details. For meeting agendas
