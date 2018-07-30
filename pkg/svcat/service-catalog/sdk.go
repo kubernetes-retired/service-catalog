@@ -55,6 +55,7 @@ type SvcatClient interface {
 	RetrieveClassByName(string) (*apiv1beta1.ClusterServiceClass, error)
 	RetrieveClassByID(string) (*apiv1beta1.ClusterServiceClass, error)
 	RetrieveClassByPlan(*apiv1beta1.ClusterServicePlan) (*apiv1beta1.ClusterServiceClass, error)
+	CreateClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceClass, error)
 
 	Deprovision(string, string) error
 	InstanceParentHierarchy(*apiv1beta1.ServiceInstance) (*apiv1beta1.ClusterServiceClass, *apiv1beta1.ClusterServicePlan, *apiv1beta1.ClusterServiceBroker, error)

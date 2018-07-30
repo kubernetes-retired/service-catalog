@@ -60,6 +60,20 @@ tree:
     Svcat shell completion\\nsource '$HOME/.svcat/svcat_completion.bash.inc'\\n\"
     >> $HOME/.bash_profile\n  source $HOME/.bash_profile"
   command: ./svcat completion
+- name: create
+  use: create
+  shortDesc: Create a user-defined resource
+  command: ./svcat create
+  tree:
+  - name: class
+    use: class [NAME] --from [EXISTING_NAME]
+    shortDesc: Copies an existing class into a new user-defined cluster-scoped class
+    example: '  svcat create class newclass --from mysqldb'
+    command: ./svcat create class
+    flags:
+    - name: from
+      shorthand: f
+      desc: Name from an existing class that will be copied (Required)
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service

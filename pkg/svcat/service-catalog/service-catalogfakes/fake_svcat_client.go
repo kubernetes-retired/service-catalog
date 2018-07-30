@@ -310,6 +310,19 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ClusterServiceClass
 		result2 error
 	}
+	CreateClassStub        func(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceClass, error)
+	createClassMutex       sync.RWMutex
+	createClassArgsForCall []struct {
+		arg1 *apiv1beta1.ClusterServiceClass
+	}
+	createClassReturns struct {
+		result1 *apiv1beta1.ClusterServiceClass
+		result2 error
+	}
+	createClassReturnsOnCall map[int]struct {
+		result1 *apiv1beta1.ClusterServiceClass
+		result2 error
+	}
 	DeprovisionStub        func(string, string) error
 	deprovisionMutex       sync.RWMutex
 	deprovisionArgsForCall []struct {
@@ -1644,6 +1657,57 @@ func (fake *FakeSvcatClient) RetrieveClassByPlanReturnsOnCall(i int, result1 *ap
 		})
 	}
 	fake.retrieveClassByPlanReturnsOnCall[i] = struct {
+		result1 *apiv1beta1.ClusterServiceClass
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) CreateClass(arg1 *apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceClass, error) {
+	fake.createClassMutex.Lock()
+	ret, specificReturn := fake.createClassReturnsOnCall[len(fake.createClassArgsForCall)]
+	fake.createClassArgsForCall = append(fake.createClassArgsForCall, struct {
+		arg1 *apiv1beta1.ClusterServiceClass
+	}{arg1})
+	fake.recordInvocation("CreateClass", []interface{}{arg1})
+	fake.createClassMutex.Unlock()
+	if fake.CreateClassStub != nil {
+		return fake.CreateClassStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.createClassReturns.result1, fake.createClassReturns.result2
+}
+
+func (fake *FakeSvcatClient) CreateClassCallCount() int {
+	fake.createClassMutex.RLock()
+	defer fake.createClassMutex.RUnlock()
+	return len(fake.createClassArgsForCall)
+}
+
+func (fake *FakeSvcatClient) CreateClassArgsForCall(i int) *apiv1beta1.ClusterServiceClass {
+	fake.createClassMutex.RLock()
+	defer fake.createClassMutex.RUnlock()
+	return fake.createClassArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) CreateClassReturns(result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+	fake.CreateClassStub = nil
+	fake.createClassReturns = struct {
+		result1 *apiv1beta1.ClusterServiceClass
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) CreateClassReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+	fake.CreateClassStub = nil
+	if fake.createClassReturnsOnCall == nil {
+		fake.createClassReturnsOnCall = make(map[int]struct {
+			result1 *apiv1beta1.ClusterServiceClass
+			result2 error
+		})
+	}
+	fake.createClassReturnsOnCall[i] = struct {
 		result1 *apiv1beta1.ClusterServiceClass
 		result2 error
 	}{result1, result2}

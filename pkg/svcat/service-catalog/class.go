@@ -116,3 +116,13 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 
 	return class, nil
 }
+
+// CreateClass returns new created class
+func (sdk *SDK) CreateClass(class *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
+	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(class)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create class (%s)", err)
+	}
+
+	return created, nil
+}
