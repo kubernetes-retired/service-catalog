@@ -564,6 +564,15 @@ func TestValidateServiceBinding(t *testing.T) {
 			}(),
 			valid: true,
 		},
+		{
+			name: "empty unbind status on update",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBinding()
+				b.Status.UnbindStatus = ""
+				return b
+			}(),
+			valid: false,
+		},
 	}
 
 	for _, tc := range cases {
