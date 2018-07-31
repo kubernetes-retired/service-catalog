@@ -37,11 +37,34 @@ Below are some common tasks made easy with svcat. The example output assumes tha
 
 ## Find brokers installed on the cluster
 
+This lists all brokers available in the current namespace and at the cluster scope.
+
 ```console
 $ svcat get brokers
-     NAME                                 URL                              STATUS
-+------------+-----------------------------------------------------------+--------+
-  ups-broker   http://ups-broker-ups-broker.ups-broker.svc.cluster.local   Ready
+         NAME          NAMESPACE                               URL                              STATUS
++--------------------+------------+-----------------------------------------------------------+--------+
+  minibroker                        http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+  myminibroker         myspace      http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+```
+
+Use the `--namespace` and `--all-namespaces` flags to control which namespace to view:
+
+```console
+$ svcat get brokers --namespace default
+         NAME          NAMESPACE                              URL                              STATUS
++--------------------+-----------+-----------------------------------------------------------+--------+
+  minibroker                       http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+  ups-broker           default     http://ups-broker-ups-broker.ups-broker.svc.cluster.local   Ready
+```
+
+You can view only cluster-scoped brokers with the `--scope` flag:
+
+```
+$ svcat get brokers --scope cluster
+         NAME          NAMESPACE                               URL                              STATUS
++-------------------+------------+-----------------------------------------------------------+--------+
+  minibroker                       http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+
 ```
 
 ## Trigger a sync of a broker's catalog

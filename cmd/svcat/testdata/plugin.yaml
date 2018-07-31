@@ -160,16 +160,23 @@ tree:
         present, defaults to table
   - name: brokers
     use: brokers [NAME]
-    shortDesc: List brokers, optionally filtered by name
+    shortDesc: List brokers, optionally filtered by name, scope or namespace
     example: |2-
         svcat get brokers
-        svcat get broker asb
+        svcat get brokers --scope=cluster
+        svcat get brokers --scope=all
+        svcat get broker minibroker
     command: ./svcat get brokers
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
   - name: classes
     use: classes [NAME]
     shortDesc: List classes, optionally filtered by name, scope or namespace
