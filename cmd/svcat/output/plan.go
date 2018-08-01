@@ -64,6 +64,8 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 			plan.Spec.Description,
 		})
 	}
+	t.SetVariableColumn(3)
+
 	t.Render()
 }
 

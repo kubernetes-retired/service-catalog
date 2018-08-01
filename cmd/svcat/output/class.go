@@ -33,11 +33,14 @@ func getClassStatusText(status v1beta1.ClusterServiceClassStatus) string {
 
 func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 	t := NewListTable(w)
+
 	t.SetHeader([]string{
 		"Name",
 		"Namespace",
 		"Description",
 	})
+	t.SetVariableColumn(3)
+
 	for _, class := range classes {
 		t.Append([]string{
 			class.GetExternalName(),
@@ -45,6 +48,7 @@ func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 			class.GetDescription(),
 		})
 	}
+
 	t.Render()
 }
 

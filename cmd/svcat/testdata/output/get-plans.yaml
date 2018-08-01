@@ -57,7 +57,8 @@ items:
     clusterServiceBrokerName: ups-broker
     clusterServiceClassRef:
       name: f1a80068-e366-494e-92d6-a0782337945b
-    description: Another sample plan description
+    description: Another sample plan description that's really really really really
+      really, kinda, wide
     externalID: 090b5eac-dfa4-49f3-827d-8bcaf3a5bd7c
     externalName: default
     free: true
