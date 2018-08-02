@@ -84,6 +84,7 @@ chart and their default values.
 | `rbacEnable` | If true, create & use RBAC resources | `true` |
 | `originatingIdentityEnabled` | Whether the OriginatingIdentity alpha feature should be enabled | `false` |
 | `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |
+| `namespacedServiceBrokerDisabled` | Whether or not alpha support for namespace scoped brokers is disabled | `false` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

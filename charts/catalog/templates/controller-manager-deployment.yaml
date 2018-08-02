@@ -81,9 +81,9 @@ spec:
         - --feature-gates
         - CatalogRestrictions=true
         {{- end }}
-        {{- if .Values.namespacedServiceBrokerEnabled }}
+        {{- if .Values.namespacedServiceBrokerDisabled }}
         - --feature-gates
-        - NamespacedServiceBroker=true
+        - NamespacedServiceBroker=false
         {{- end }}
         ports:
         - containerPort: 8444
