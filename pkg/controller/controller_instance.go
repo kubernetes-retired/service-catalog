@@ -958,12 +958,14 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		//
 		// The instance's Ready condition should already be False, so
 		// we just need to record an event.
-		s := fmt.Sprintf("Error polling last operation: %v", err)
-		glog.V(4).Info(pcb.Message(s))
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorPollingLastOperationReason, s)
+		reason := errorPollingLastOperationReason
+		message := fmt.Sprintf("Error polling last operation: %v", err)
+		glog.V(4).Info(pcb.Message(message))
+		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
 
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
-			return c.processServiceInstancePollingFailureRetryTimeout(instance, nil)
+			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
+			return c.processServiceInstancePollingFailureRetryTimeout(instance, readyCond)
 		}
 
 		return c.continuePollingServiceInstance(instance)
