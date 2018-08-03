@@ -32,7 +32,8 @@ func ClusterServicePlanFieldLabelConversionFunc(label, value string) (string, st
 	case "spec.externalID",
 		"spec.externalName",
 		"spec.clusterServiceBrokerName",
-		"spec.clusterServiceClassRef.name":
+		"spec.clusterServiceClassRef.name",
+		"metadata.name":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
@@ -46,7 +47,8 @@ func ServicePlanFieldLabelConversionFunc(label, value string) (string, string, e
 	case "spec.externalID",
 		"spec.externalName",
 		"spec.serviceBrokerName",
-		"spec.serviceClassRef.name":
+		"spec.serviceClassRef.name",
+		"metadata.name":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
@@ -59,7 +61,8 @@ func ServiceClassFieldLabelConversionFunc(label, value string) (string, string, 
 	switch label {
 	case "spec.externalID",
 		"spec.externalName",
-		"spec.serviceBrokerName":
+		"spec.serviceBrokerName",
+		"metadata.name":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
@@ -72,7 +75,8 @@ func ClusterServiceClassFieldLabelConversionFunc(label, value string) (string, s
 	switch label {
 	case "spec.externalID",
 		"spec.externalName",
-		"spec.clusterServiceBrokerName":
+		"spec.clusterServiceBrokerName",
+		"metadata.name":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
@@ -85,7 +89,8 @@ func ServiceInstanceFieldLabelConversionFunc(label, value string) (string, strin
 	switch label {
 	case "spec.externalID",
 		"spec.clusterServiceClassRef.name",
-		"spec.clusterServicePlanRef.name":
+		"spec.clusterServicePlanRef.name",
+		"metadata.name":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
@@ -96,7 +101,8 @@ func ServiceInstanceFieldLabelConversionFunc(label, value string) (string, strin
 // what it's given for the supported fields, and errors for unsupported.
 func ServiceBindingFieldLabelConversionFunc(label, value string) (string, string, error) {
 	switch label {
-	case "spec.externalID":
+	case "spec.externalID",
+		"metadata.name":
 		return label, value, nil
 	default:
 		return "", "", fmt.Errorf("field label not supported: %s", label)
