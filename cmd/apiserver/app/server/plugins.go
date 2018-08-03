@@ -24,7 +24,6 @@ import (
 
 	// Admission controllers
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/broker/authsarcheck"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/namespace/lifecycle"
 	siclifecycle "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/servicebindings/lifecycle"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/changevalidator"
 	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/defaultserviceplan"
@@ -32,7 +31,6 @@ import (
 
 // registerAllAdmissionPlugins registers all admission plugins
 func registerAllAdmissionPlugins(plugins *admission.Plugins) {
-	lifecycle.Register(plugins)
 	defaultserviceplan.Register(plugins)
 	siclifecycle.Register(plugins)
 	changevalidator.Register(plugins)
