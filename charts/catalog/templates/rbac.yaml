@@ -106,7 +106,7 @@ items:
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","serviceinstances/reference","servicebindings/status"]
     verbs:     ["update"]
-  {{- if .Values.namespacedServiceBrokerEnabled }}
+  {{- if not .Values.namespacedServiceBrokerDisabled }}
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["serviceclasses"]
     verbs:     ["get","list","watch","create","patch","update","delete"]
