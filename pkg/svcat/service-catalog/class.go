@@ -30,6 +30,14 @@ const (
 	FieldExternalClassName = "spec.externalName"
 )
 
+// CreateClassFromOptions allows to specify how a new class will be created
+type CreateClassFromOptions struct {
+	Name      string
+	Namespace string
+	From      string
+	Scope     Scope
+}
+
 // Class provides a unifying layer of cluster and namespace scoped class resources.
 type Class interface {
 
@@ -117,11 +125,55 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 	return class, nil
 }
 
-// CreateClass returns new created class
-func (sdk *SDK) CreateClass(class *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
-	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(class)
+// CreateClassFrom returns new created class
+func (sdk *SDK) CreateClassFrom(opts CreateClassFromOptions) (Class, error) {
+	fromClass, err := sdk.RetrieveClassByName(opts.From)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create class (%s)", err)
+		return nil, err
+	}
+
+	if opts.Scope.Matches(ClusterScope) {
+		fromClass.Name = opts.Name
+		return sdk.createClusterServiceClass(fromClass)
+	}
+
+	fromServiceClass := &v1beta1.ServiceClass{
+		ObjectMeta: v1.ObjectMeta{Name: opts.Name, Namespace: opts.Namespace},
+		Spec: v1beta1.ServiceClassSpec{
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				ExternalName:       fromClass.Spec.ExternalName,
+				ExternalID:         fromClass.Spec.ExternalID,
+				Description:        fromClass.Spec.Description,
+				Bindable:           fromClass.Spec.Bindable,
+				BindingRetrievable: fromClass.Spec.BindingRetrievable,
+				PlanUpdatable:      fromClass.Spec.PlanUpdatable,
+				ExternalMetadata:   fromClass.Spec.ExternalMetadata,
+				Tags:               fromClass.Spec.Tags,
+				Requires:           fromClass.Spec.Requires,
+			},
+		},
+		Status: v1beta1.ServiceClassStatus{
+			CommonServiceClassStatus: v1beta1.CommonServiceClassStatus{
+				RemovedFromBrokerCatalog: fromClass.Status.RemovedFromBrokerCatalog,
+			},
+		},
+	}
+	return sdk.createServiceClass(fromServiceClass)
+}
+
+func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
+	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(from)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create cluster service class (%s)", err)
+	}
+
+	return created, nil
+}
+
+func (sdk *SDK) createServiceClass(class *v1beta1.ServiceClass) (*v1beta1.ServiceClass, error) {
+	created, err := sdk.ServiceCatalog().ServiceClasses(class.GetNamespace()).Create(class)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create service class (%s)", err)
 	}
 
 	return created, nil

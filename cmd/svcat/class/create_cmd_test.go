@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package class_test
+package class
 
 import (
 	"bytes"
 
-	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -36,9 +35,11 @@ var _ = Describe("Create Command", func() {
 			cxt := &command.Context{}
 			cmd := NewCreateCmd(cxt)
 			Expect(*cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("class [NAME] --from [EXISTING_NAME]"))
+			Expect(cmd.Use).To(Equal("class [NAME] --from [EXISTING_NAME] [--namespace [NAMESPACE]|--cluster]"))
 			Expect(cmd.Short).To(ContainSubstring("Copies an existing class into a new user-defined cluster-scoped class"))
 			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb"))
+			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --cluster"))
+			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --namespace newnamespace"))
 			Expect(len(cmd.Aliases)).To(Equal(0))
 		})
 	})
@@ -64,8 +65,21 @@ var _ = Describe("Create Command", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+	Describe("Validate namespace is not provided to a cluster scoped class", func() {
+		It("errors if cluster flag and namespace are provided at the same time", func() {
+			cmd := CreateCmd{
+				Context:   nil,
+				Name:      "newclass",
+				From:      "",
+				Cluster:   true,
+				Namespace: "newnamespace",
+			}
+			err := cmd.Validate([]string{})
+			Expect(err).To(HaveOccurred())
+		})
+	})
 	Describe("Create", func() {
-		It("Calls the pkg/svcat libs Create method with the passed in variables and prints output to the user", func() {
+		It("Calls the pkg/svcat libs CreateClassFrom method with the passed in variables for a cluster class and prints output to the user", func() {
 			className := "newclass"
 			existingClassName := "existingclass"
 
@@ -79,21 +93,59 @@ var _ = Describe("Create Command", func() {
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.CreateClassReturns(classToReturn, nil)
+			fakeSDK.CreateClassFromReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
 				Context: svcattest.NewContext(outputBuffer, fakeApp),
 				Name:    className,
 				From:    existingClassName,
+				Cluster: true,
 			}
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
-			class := fakeSDK.CreateClassArgsForCall(0)
-			Expect(class.Name).To(Equal(className))
+			opts := fakeSDK.CreateClassFromArgsForCall(0)
+			Expect(opts.Name).To(Equal(className))
+			Expect(opts.From).To(Equal(existingClassName))
 
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(className))
+		})
+		It("Calls the pkg/svcat libs CreateClassFrom method with the passed in variables for a namespace class and prints output to the user", func() {
+			className := "newclass"
+			classNamespace := "newclass"
+			existingClassName := "existingclass"
+
+			classToReturn := &v1beta1.ClusterServiceClass{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      className,
+					Namespace: classNamespace,
+				},
+			}
+
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.CreateClassFromReturns(classToReturn, nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := CreateCmd{
+				Context:   svcattest.NewContext(outputBuffer, fakeApp),
+				Name:      className,
+				Namespace: classNamespace,
+				From:      existingClassName,
+				Cluster:   false,
+			}
+			err := cmd.Run()
+
+			Expect(err).NotTo(HaveOccurred())
+			opts := fakeSDK.CreateClassFromArgsForCall(0)
+			Expect(opts.Name).To(Equal(className))
+			Expect(opts.From).To(Equal(existingClassName))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring(className))
+			Expect(output).To(ContainSubstring(classNamespace))
 		})
 	})
 })
