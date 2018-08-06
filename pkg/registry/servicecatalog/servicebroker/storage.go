@@ -89,8 +89,7 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
 func toSelectableFields(broker *servicecatalog.ServiceBroker) fields.Set {
-	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&broker.ObjectMeta, true)
-	return generic.MergeFieldsSets(objectMetaFieldsSet, nil)
+	return generic.ObjectMetaFieldsSet(&broker.ObjectMeta, true)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.

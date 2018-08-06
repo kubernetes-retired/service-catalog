@@ -90,15 +90,9 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 func toSelectableFields(binding *servicecatalog.ServiceBinding) fields.Set {
 	// If you add a new selectable field, you also need to modify
 	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
-	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&binding.ObjectMeta, true)
-
 	specFieldSet := make(fields.Set, 1)
-
-	if binding.Spec.ExternalID != "" {
-		specFieldSet["spec.externalID"] = binding.Spec.ExternalID
-	}
-
-	return generic.MergeFieldsSets(objectMetaFieldsSet, specFieldSet)
+	specFieldSet["spec.externalID"] = binding.Spec.ExternalID
+	return generic.AddObjectMetaFieldsSet(specFieldSet, &binding.ObjectMeta, true)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
