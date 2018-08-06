@@ -23,6 +23,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/peterbourgon/mergemap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -184,4 +185,28 @@ func prepareInProgressPropertyParameters(kubeClient kubernetes.Interface, namesp
 	}
 
 	return parameters, parametersChecksum, rawParametersWithRedaction, err
+}
+
+// mergeParameters applies overrides on top of a set of default parameters.
+func mergeParameters(instParams *runtime.RawExtension, tmplParams *runtime.RawExtension) (*runtime.RawExtension, error) {
+	if tmplParams == nil {
+		return instParams, nil
+	}
+
+	if instParams == nil {
+		return tmplParams, nil
+	}
+
+	var instMap, tmplMap map[string]interface{}
+	json.Unmarshal(instParams.Raw, &instMap)
+	json.Unmarshal(tmplParams.Raw, &tmplMap)
+
+	merged := mergemap.Merge(instMap, tmplMap)
+
+	result, err := json.Marshal(merged)
+	if err != nil {
+		return nil, fmt.Errorf("could not merge the instance and template parameters: %s", err)
+	}
+
+	return &runtime.RawExtension{Raw: result}, nil
 }
