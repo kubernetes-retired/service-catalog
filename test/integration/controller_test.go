@@ -50,7 +50,6 @@ import (
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
@@ -751,7 +750,7 @@ func newControllerTestTestController(ct *controllerTest) (
 	fakeKubeClient.Unlock()
 
 	// create an sc client and running server
-	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
+	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
 	})
 
@@ -911,7 +910,7 @@ func newTestController(t *testing.T) (
 	fakeKubeClient.Unlock()
 
 	// create an sc client and running server
-	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, server.StorageTypeEtcd.String(), func() runtime.Object {
+	catalogClient, catalogClientConfig, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
 		return &servicecatalog.ClusterServiceBroker{}
 	})
 

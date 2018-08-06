@@ -38,7 +38,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
@@ -83,7 +82,6 @@ var _ = Describe("ensure that our storage types implement the appropriate interf
 
 		provider := StorageProvider{
 			DefaultNamespace: "test-default",
-			StorageType:      server.StorageTypeEtcd,
 			RESTClient:       nil,
 		}
 		configSource := serverstorage.NewResourceConfig()
