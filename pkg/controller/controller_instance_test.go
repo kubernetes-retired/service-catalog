@@ -781,6 +781,71 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	assertNumEvents(t, getRecordedEvents(testController), 0)
 }
 
+func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) {
+	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		ProvisionReaction: &fakeosb.ProvisionReaction{
+			Response: &osb.ProvisionResponse{},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sc := getTestClusterServiceClass()
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(sc)
+	sp := getTestClusterServicePlan()
+
+	// Setup default parameters on the plan
+	defaultProvParams := `{"secure": true}`
+	sp.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(defaultProvParams)}
+
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
+
+	instance := getTestServiceInstanceWithClusterRefs()
+
+	var scItems []v1beta1.ClusterServiceClass
+	scItems = append(scItems, *sc)
+	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
+	})
+
+	var spItems []v1beta1.ClusterServicePlan
+	spItems = append(spItems, *sp)
+	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
+	})
+
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	// Check that the default provisioning parameters defined on the plan is
+	// now on the service instance
+	updatedServiceInstance := assertUpdate(t, actions[0], instance)
+	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	}
+	gotParams := string(updateObject.Spec.Parameters.Raw)
+	if gotParams != defaultProvParams {
+		t.Fatalf("DefaultProvisioningParameters was not applied to the service instance during reconcile.\n\nWANT: %v\nGOT: %v",
+			defaultProvParams, gotParams)
+	}
+
+	// Check that the default parameters were saved on the status
+	updatedServiceInstance = assertUpdateStatus(t, actions[1], instance)
+	updateObject, ok = updatedServiceInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	}
+	gotParams = string(updateObject.Status.DefaultProvisionParameters.Raw)
+	if gotParams != defaultProvParams {
+		t.Fatalf("DefaultProvisioningParameters was not persisted to the service instance status during reconcile.\n\nWANT: %v\nGOT: %v",
+			defaultProvParams, gotParams)
+	}
+}
+
 // TestReconcileServiceInstanceResolvesReferences tests a simple successful
 // reconciliation and making sure that the ClusterServicePlanRef is correctly
 // resolved if the ClusterServiceClassRef is already set.

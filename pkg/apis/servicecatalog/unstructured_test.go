@@ -69,6 +69,15 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 			c.FuzzNoCustom(is)
 			is.DefaultProvisionParameters = nil
 		},
+		func(is *servicecatalog.CommonServicePlanSpec, c fuzz.Continue) {
+			c.FuzzNoCustom(is)
+			is.DefaultProvisionParameters = nil
+			is.ExternalMetadata = nil
+			is.ServiceBindingCreateParameterSchema = nil
+			is.ServiceBindingCreateResponseSchema = nil
+			is.ServiceInstanceCreateParameterSchema = nil
+			is.ServiceInstanceUpdateParameterSchema = nil
+		},
 		func(bs *servicecatalog.ServiceBindingSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(bs)
 			bs.ExternalID = string(uuid.NewUUID())

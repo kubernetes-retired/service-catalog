@@ -3107,12 +3107,18 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 							Format:      "",
 						},
 					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are the default parameters applied to this instance.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
 				},
 				Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 

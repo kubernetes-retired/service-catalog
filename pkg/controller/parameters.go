@@ -188,24 +188,32 @@ func prepareInProgressPropertyParameters(kubeClient kubernetes.Interface, namesp
 }
 
 // mergeParameters applies overrides on top of a set of default parameters.
-func mergeParameters(instParams *runtime.RawExtension, tmplParams *runtime.RawExtension) (*runtime.RawExtension, error) {
-	if tmplParams == nil {
-		return instParams, nil
+func mergeParameters(params *runtime.RawExtension, defaultParams *runtime.RawExtension) (*runtime.RawExtension, error) {
+	if defaultParams == nil || defaultParams.Raw == nil || string(defaultParams.Raw) == "" {
+		return params, nil
 	}
 
-	if instParams == nil {
-		return tmplParams, nil
+	if params == nil || params.Raw == nil || string(params.Raw) == "" {
+		return defaultParams, nil
 	}
 
-	var instMap, tmplMap map[string]interface{}
-	json.Unmarshal(instParams.Raw, &instMap)
-	json.Unmarshal(tmplParams.Raw, &tmplMap)
+	paramsMap := make(map[string]interface{})
+	err := json.Unmarshal(params.Raw, &paramsMap)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal parameters %v: %s", string(params.Raw), err)
+	}
 
-	merged := mergemap.Merge(instMap, tmplMap)
+	defaultParamsMap := make(map[string]interface{})
+	err = json.Unmarshal(defaultParams.Raw, &defaultParamsMap)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal default parameters %v: %s", string(defaultParams.Raw), err)
+	}
+
+	merged := mergemap.Merge(defaultParamsMap, paramsMap)
 
 	result, err := json.Marshal(merged)
 	if err != nil {
-		return nil, fmt.Errorf("could not merge the instance and template parameters: %s", err)
+		return nil, fmt.Errorf("could not merge parameters %v with %v: %s", string(params.Raw), string(defaultParams.Raw), err)
 	}
 
 	return &runtime.RawExtension{Raw: result}, nil

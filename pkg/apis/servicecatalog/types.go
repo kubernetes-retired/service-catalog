@@ -887,6 +887,10 @@ type ServiceInstanceStatus struct {
 	// DeprovisionStatus describes what has been done to deprovision the
 	// ServiceInstance.
 	DeprovisionStatus ServiceInstanceDeprovisionStatus
+
+	// DefaultProvisionParameters are the default parameters applied to this
+	// instance.
+	DefaultProvisionParameters *runtime.RawExtension
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.

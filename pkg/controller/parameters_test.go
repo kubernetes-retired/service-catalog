@@ -227,3 +227,62 @@ func TestGenerateChecksumOfParameters(t *testing.T) {
 		})
 	}
 }
+
+func TestMergeParameters(t *testing.T) {
+	testParams := `{"a":1,"d":{"e":5}}`
+	testcases := []struct {
+		name     string
+		params   *string
+		defaults *string
+		want     *string
+	}{
+		{name: "neither params or defaults defined", params: nil, defaults: nil, want: nil},
+		{name: "accept provided params when no defaults defined", params: stringPtr(testParams), defaults: nil, want: stringPtr(testParams)},
+		{name: "accept provided params when default is empty string", params: stringPtr(testParams), defaults: stringPtr(""), want: stringPtr(testParams)},
+		{name: "accept provided params when default is empty object", params: stringPtr(testParams), defaults: stringPtr("{}"), want: stringPtr(testParams)},
+		{name: "use default params when no params defined", params: nil, defaults: stringPtr(testParams), want: stringPtr(testParams)},
+		{name: "use default params when params is empty string", params: stringPtr(""), defaults: stringPtr(testParams), want: stringPtr(testParams)},
+		{name: "use default params when params is empty object", params: stringPtr("{}"), defaults: stringPtr(testParams), want: stringPtr(testParams)},
+		{name: "merge params with defaults", params: stringPtr(`{"b":2}`), defaults: stringPtr(testParams), want: stringPtr(`{"a":1,"b":2,"d":{"e":5}}`)},
+		{name: "merge params with defaults, override wins", params: stringPtr(`{"a":2}`), defaults: stringPtr(testParams), want: stringPtr(`{"a":2,"d":{"e":5}}`)},
+		{name: "merge params with defaults, nested merge", params: stringPtr(`{"d":{"e":2,"f":3}}`), defaults: stringPtr(testParams), want: stringPtr(`{"a":1,"d":{"e":2,"f":3}}`)},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			var rawParams, rawDefaults, wantParams *runtime.RawExtension
+			if tc.params != nil {
+				rawParams = &runtime.RawExtension{Raw: []byte(*tc.params)}
+			}
+			if tc.defaults != nil {
+				rawDefaults = &runtime.RawExtension{Raw: []byte(*tc.defaults)}
+			}
+			if tc.want != nil {
+				wantParams = &runtime.RawExtension{Raw: []byte(*tc.want)}
+			}
+
+			gotParams, err := mergeParameters(rawParams, rawDefaults)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// shenanigans so that it's easier to compare and print out the real values of the params
+			wantPretty := "nil"
+			if wantParams != nil {
+				wantPretty = string(wantParams.Raw)
+			}
+			gotPretty := "nil"
+			if gotParams != nil {
+				gotPretty = string(gotParams.Raw)
+			}
+			if wantPretty != gotPretty {
+				t.Fatalf("WANT:\t%v\nGOT:\t%v", wantPretty, gotPretty)
+			}
+		})
+	}
+}
+
+func stringPtr(val string) *string {
+	return &val
+}
