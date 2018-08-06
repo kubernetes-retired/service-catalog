@@ -1575,13 +1575,6 @@ func newServiceInstanceFailedCondition(status v1beta1.ConditionStatus, reason, m
 	return newServiceInstanceCondition(status, v1beta1.ServiceInstanceConditionFailed, reason, message)
 }
 
-// newServiceInstanceOrphanMitigationCondition is a helper function that returns
-// an OrphanMitigation condition with the given status, reason and message,
-// with its transition time set to now.
-func newServiceInstanceOrphanMitigationCondition(status v1beta1.ConditionStatus, reason, message string) *v1beta1.ServiceInstanceCondition {
-	return newServiceInstanceCondition(status, v1beta1.ServiceInstanceConditionOrphanMitigation, reason, message)
-}
-
 // removeServiceInstanceCondition removes a condition of a given type from an
 // instance's status if it exists.
 func removeServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
