@@ -9,6 +9,8 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   replicas: 1
+  strategy:
+    type: {{ .Values.deploymentStrategy }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}-controller-manager

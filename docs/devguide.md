@@ -470,6 +470,21 @@ If you choose third party resources storage, the helm chart will not launch an
 etcd server, but will instead instruct the API server to store all resources in
 the Kubernetes cluster as third party resources.
 
+### Deploy local canary
+For your convenience, you can use the following script quickly rebuild, push and
+deploy the canary image. There are a few assumptions about your environment and
+configuration in the script (for example, that you have persistent storage setup
+for etcd so that you don't lose data in between pushes). If the assumptions do
+not match your needs, we suggest copying the contents of that script and using
+it as a starting off point for your own custom deployment script.
+
+```console
+# The registry defaults to DockerHub with the same user name as the current user
+# Examples: quay.io/myuser/service-catalog/, anotherser/
+$ export REGISTRY="myuser/"
+$ ./contrib/hack/deploy-local-canary.sh
+```
+
 ## Dependency Management
 We use [dep](https://golang.github.io/dep) to manage our dependencies. We commit the resulting
 vendor directory to ensure repeatable builds and isolation from upstream source disruptions.
