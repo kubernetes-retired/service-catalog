@@ -189,6 +189,12 @@ our canary (master) builds, and tags using the following prefixes:
 * Previous canary builds: https://download.svcat.sh/cli/VERSION-GITDESCRIBE 
   where `GITDESCRIBE` is the result of calling `git describe --tags`, for example `v0.1.20-1-g203c8ad`.
 
+## MacOS with Homebrew
+
+```
+brew update
+brew install kubernetes-service-catalog-client
+```
 
 ## MacOS
 
