@@ -170,10 +170,10 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, rest.Storage) 
 				var class, plan string
 				if instance.Spec.ClusterServiceClassSpecified() && instance.Spec.ClusterServicePlanSpecified() {
 					class = fmt.Sprintf("ClusterServiceClass/%s", instance.Spec.GetSpecifiedClusterServiceClass())
-					plan = fmt.Sprintf("ClusterServicePlan/%s", instance.Spec.GetSpecifiedClusterServicePlan())
+					plan = instance.Spec.GetSpecifiedClusterServicePlan()
 				} else {
 					class = fmt.Sprintf("ServiceClass/%s", instance.Spec.GetSpecifiedServiceClass())
-					plan = fmt.Sprintf("ServicePlan/%s", instance.Spec.GetSpecifiedServicePlan())
+					plan = instance.Spec.GetSpecifiedServicePlan()
 				}
 
 				cells := []interface{}{
