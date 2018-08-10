@@ -2100,6 +2100,7 @@ func autoConvert_v1beta1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSp
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*servicecatalog.UserInfo)(unsafe.Pointer(in.UserInfo))
 	out.UpdateRequests = in.UpdateRequests
+	out.UserProvided = in.UserProvided
 	return nil
 }
 
@@ -2121,6 +2122,7 @@ func autoConvert_servicecatalog_ServiceInstanceSpec_To_v1beta1_ServiceInstanceSp
 	out.ExternalID = in.ExternalID
 	out.UserInfo = (*UserInfo)(unsafe.Pointer(in.UserInfo))
 	out.UpdateRequests = in.UpdateRequests
+	out.UserProvided = in.UserProvided
 	return nil
 }
 
@@ -2144,6 +2146,7 @@ func autoConvert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstance
 	out.ProvisionStatus = servicecatalog.ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = servicecatalog.ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.UserProvided = in.UserProvided
 	return nil
 }
 
@@ -2167,6 +2170,7 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstance
 	out.ProvisionStatus = ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.UserProvided = in.UserProvided
 	return nil
 }
 

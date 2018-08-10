@@ -50,6 +50,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 		classK8sName        string
 		planK8sName         string
 		expectedErrorReason string
+		userProvided        bool
 	}{
 		{
 			name:                "existent external class and plan name",
@@ -123,6 +124,11 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 			planK8sName:         "nothereplan",
 			expectedErrorReason: "ReferencesNonexistentServiceClass",
 		},
+		{
+			name:                "user provided service",
+			userProvided:        true,
+			expectedErrorReason: "",
+		},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -138,6 +144,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T)
 					i.Spec.PlanReference.ClusterServicePlanExternalID = tc.planExternalID
 					i.Spec.PlanReference.ClusterServiceClassName = tc.classK8sName
 					i.Spec.PlanReference.ClusterServicePlanName = tc.planK8sName
+					i.Spec.UserProvided = tc.userProvided
 					return i
 				}(),
 				skipVerifyingInstanceSuccess: tc.expectedErrorReason != "",
@@ -928,15 +935,14 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 // with/without retries.
 func TestCreateServiceInstanceWithRetries(t *testing.T) {
 	cases := []struct {
-		name                        string
-		setup                func(ct *controllerTest)
+		name  string
+		setup func(ct *controllerTest)
 	}{
 		{
 			name: "no retry",
 			setup: func(ct *controllerTest) {
 				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-					},
+					Response: &osb.ProvisionResponse{},
 				}
 			},
 		},
@@ -953,8 +959,7 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 							},
 						},
 						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-							},
+							Response: &osb.ProvisionResponse{},
 						},
 					}))
 			},
@@ -972,8 +977,7 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 							},
 						},
 						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-							},
+							Response: &osb.ProvisionResponse{},
 						},
 					}))
 			},
@@ -984,8 +988,8 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			ct := &controllerTest{
-				t:      t,
-				broker: getTestBroker(),
+				t:        t,
+				broker:   getTestBroker(),
 				instance: getTestInstance(),
 			}
 			ct.setup = tc.setup

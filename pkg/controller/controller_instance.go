@@ -528,6 +528,14 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
+	if instance.Spec.UserProvided {
+		glog.V(4).Info(pcb.Messagef("Provisioning a new User Provided ServiceInstance of %v", instance.Name))
+		upsDash := ""
+		instance.Status.InProgressProperties = inProgressProperties
+		instance.Status.UserProvided = true
+		//readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorProvisionCallFailedReason, "User provided instance successfully created")
+		return c.processProvisionSuccess(instance, &upsDash)
+	}
 
 	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
 		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationProvision, inProgressProperties)
@@ -729,6 +737,8 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			"Updating ServiceInstance of %s at ServiceBroker %q",
 			pretty.ServiceClassName(serviceClass), brokerName,
 		))
+	} else if instance.Spec.UserProvided {
+		return c.processUpdateServiceInstanceSuccess(instance)
 	}
 
 	c.setRetryBackoffRequired(instance)
@@ -1170,6 +1180,8 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool,
 		return c.resolveClusterReferences(instance)
 	} else if instance.Spec.ServiceClassSpecified() {
 		return c.resolveNamespacedReferences(instance)
+	} else if instance.Spec.UserProvided {
+		return false, nil
 	}
 
 	return false, stderrors.New(errorAmbiguousPlanReferenceScope)
@@ -1646,6 +1658,12 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) 
 			return nil, nil, err
 		}
 		return request, inProgressProperties, nil
+	} else if instance.Spec.UserProvided {
+		_, inProgressProperties, err := c.innerPrepareProvisionRequest(instance, v1beta1.CommonServiceClassSpec{}, v1beta1.CommonServicePlanSpec{})
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, inProgressProperties, nil
 	}
 
 	// If we're hitting this retun, it means we couldn't tell whether the class

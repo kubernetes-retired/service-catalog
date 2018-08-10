@@ -558,6 +558,41 @@ func TestWithNoPlanSucceedsWithMultiplePlansFromDifferentClasses(t *testing.T) {
 	}
 }
 
+func TestWithUPSWorks(t *testing.T) {
+	cases := []struct {
+		name         string
+		userProvided bool
+	}{
+		{"cluster external name", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeClient := newFakeServiceCatalogClientForTest(nil, newClusterServicePlans(0, false), "" /* do not use get */)
+			handler, informerFactory, err := newHandlerForTest(fakeClient)
+			if err != nil {
+				t.Errorf("unexpected error initializing handler: %v", err)
+			}
+			informerFactory.Start(wait.NeverStop)
+
+			instance := newServiceInstance("dummy")
+			instance.Spec.UserProvided = true
+
+			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+			if err != nil {
+				actions := ""
+				for _, action := range fakeClient.Actions() {
+					actions = actions + action.GetVerb() + ":" + action.GetResource().Resource + ":" + action.GetSubresource() + ", "
+				}
+				t.Errorf("unexpected error %q returned from admission handler: %v", err, actions)
+			}
+			if tc.userProvided != instance.Spec.UserProvided {
+				t.Errorf("UserProvided was not as expected: %+v actual %+v", tc.userProvided, instance.Spec.UserProvided)
+			}
+		})
+	}
+}
+
 // Compares expected and actual PlanReferences and reports with Errorf of any mismatch
 func assertPlanReference(t *testing.T, expected servicecatalog.PlanReference, actual servicecatalog.PlanReference) {
 	if expected != actual {

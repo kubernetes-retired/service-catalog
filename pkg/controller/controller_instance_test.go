@@ -6087,6 +6087,50 @@ func TestReconcileServiceInstanceUpdateMissingOrphanMitigation(t *testing.T) {
 
 }
 
+// TestReconcileServiceInstanceUserProvided tests provisioning a user provided service
+func TestReconcileServiceInstanceUserProvided(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, fakeosb.FakeClientConfiguration{})
+	addGetNamespaceReaction(fakeKubeClient)
+
+	instance := getTestServiceInstanceUserProvided()
+	if err := reconcileServiceInstance(t, testController, instance); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, "", "", instance)
+
+	// User provided services should never be in the provisioning
+	// in progress state, so we don't call
+	// assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction
+
+	// similarly, we should never talk to a broker
+	assertNumberOfBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
+
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+	// Since synchronous operation, must not make it into the polling queue.
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	// verify no kube resources created.
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	events := getRecordedEvents(testController)
+
+	expectedEvent := normalEventBuilder(successProvisionReason).msg(successProvisionMessage)
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func generateChecksumOfParametersOrFail(t *testing.T, params map[string]interface{}) string {
 	expectedParametersChecksum, err := generateChecksumOfParameters(params)
 	if err != nil {
@@ -6100,6 +6144,9 @@ func assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t *tes
 	if instance.Spec.ClusterServiceClassSpecified() {
 		planName = testClusterServicePlanName
 		planGUID = testClusterServicePlanGUID
+	} else if instance.Spec.UserProvided {
+		planName = ""
+		planGUID = ""
 	} else {
 		planName = testServicePlanName
 		planGUID = testServicePlanGUID

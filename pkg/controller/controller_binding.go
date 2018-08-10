@@ -18,6 +18,7 @@ package controller
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
 
@@ -276,6 +277,11 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 		}
 
 		prettyName = pretty.FromServiceInstanceOfServiceClassAtBrokerName(instance, serviceClass, brokerName)
+	} else if instance.Spec.UserProvided {
+		_, inProgressProperties, err = c.prepareBindRequest(binding, instance)
+		if err != nil {
+			return c.handleServiceBindingReconciliationError(binding, err)
+		}
 	}
 
 	if binding.Status.CurrentOperation == "" {
@@ -289,6 +295,41 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 		return nil
 	}
 
+	if instance.Spec.UserProvided {
+		glog.V(4).Info(pcb.Message("Adding/Updating UPS"))
+		parameters, _, _, err := prepareInProgressPropertyParameters(
+			c.kubeClient,
+			instance.Namespace,
+			instance.Spec.Parameters,
+			instance.Spec.ParametersFrom,
+		)
+		if err != nil {
+			return &operationError{
+				reason:  errorWithParameters,
+				message: err.Error(),
+			}
+		}
+		binding.Status.ExternalProperties = binding.Status.InProgressProperties
+		var creds map[string]interface{}
+		err = json.Unmarshal([]byte(parameters["credentials"].(string)), &creds)
+		err = c.injectServiceBinding(binding, creds)
+		if err != nil {
+			msg := fmt.Sprintf(`Error injecting bind result: %s`, err)
+			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorInjectingBindResultReason, msg)
+
+			if c.reconciliationRetryDurationExceeded(binding.Status.OperationStartTime) {
+				msg := "Stopping reconciliation retries, too much time has elapsed"
+				failedCond := newServiceBindingFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
+				return c.processBindFailure(binding, readyCond, failedCond, true)
+			}
+
+			// TODO: solve scenario where bind request successful, credential injection fails, later reconciliations have non-failing errors
+			// with Bind request. After retry duration, reconciler gives up but will not do orphan mitigation.
+			return c.processServiceBindingOperationError(binding, readyCond)
+		}
+
+		return c.processBindSuccess(binding)
+	}
 	response, err := brokerClient.Bind(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
@@ -408,6 +449,9 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonexistentServiceInstanceReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
+	if instance.Spec.UserProvided {
+		return c.processUnbindSuccess(binding)
+	}
 
 	if instance.Status.AsyncOpInProgress {
 		msg := fmt.Sprintf(
@@ -482,6 +526,13 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 	}
 
 	return c.processUnbindSuccess(binding)
+}
+
+// reconcileServiceBindingAddUPS is responsible for the creation
+// of bindings for user-provided-service instances that have no
+// broker
+func (c *controller) reconcileServiceBindingAddUPS(binding *v1beta1.ServiceBinding) error {
+	return nil
 }
 
 // isClusterServicePlanBindable returns whether the given ClusterServiceClass and ClusterServicePlan

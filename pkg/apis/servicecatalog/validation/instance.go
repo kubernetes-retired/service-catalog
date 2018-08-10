@@ -18,6 +18,7 @@ package validation
 
 import (
 	"fmt"
+
 	"github.com/ghodss/yaml"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
@@ -88,7 +89,9 @@ func validateServiceInstanceSpec(spec *sc.ServiceInstanceSpec, fldPath *field.Pa
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, validateObjectReferences(spec, fldPath)...)
-	allErrs = append(allErrs, validatePlanReference(&spec.PlanReference, fldPath)...)
+	if !spec.UserProvided {
+		allErrs = append(allErrs, validatePlanReference(&spec.PlanReference, fldPath)...)
+	}
 
 	if spec.ParametersFrom != nil {
 		allErrs = append(allErrs, validateParametersFromSource(spec.ParametersFrom, fldPath)...)
@@ -154,11 +157,11 @@ func validateServiceInstanceStatus(status *sc.ServiceInstanceStatus, fldPath *fi
 	}
 
 	if status.InProgressProperties != nil {
-		allErrs = append(allErrs, validateServiceInstancePropertiesState(status.InProgressProperties, fldPath.Child("inProgressProperties"), create)...)
+		allErrs = append(allErrs, validateServiceInstancePropertiesState(status.InProgressProperties, fldPath.Child("inProgressProperties"), create, status.UserProvided)...)
 	}
 
 	if status.ExternalProperties != nil {
-		allErrs = append(allErrs, validateServiceInstancePropertiesState(status.ExternalProperties, fldPath.Child("externalProperties"), create)...)
+		allErrs = append(allErrs, validateServiceInstancePropertiesState(status.ExternalProperties, fldPath.Child("externalProperties"), create, status.UserProvided)...)
 	}
 
 	if create {
@@ -174,34 +177,34 @@ func validateServiceInstanceStatus(status *sc.ServiceInstanceStatus, fldPath *fi
 	return allErrs
 }
 
-func validateServiceInstancePropertiesState(propertiesState *sc.ServiceInstancePropertiesState, fldPath *field.Path, create bool) field.ErrorList {
+func validateServiceInstancePropertiesState(propertiesState *sc.ServiceInstancePropertiesState, fldPath *field.Path, create bool, userProvided bool) field.ErrorList {
 	var errMsg string
 	allErrs := field.ErrorList{}
+	if !userProvided {
+		if propertiesState.ClusterServicePlanExternalName == "" && propertiesState.ServicePlanExternalName == "" {
+			errMsg = "clusterServicePlanExternalName or servicePlanExternalName is required"
+			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), errMsg))
+			allErrs = append(allErrs, field.Required(fldPath.Child("servicePlanExternalName"), errMsg))
+		}
 
-	if propertiesState.ClusterServicePlanExternalName == "" && propertiesState.ServicePlanExternalName == "" {
-		errMsg = "clusterServicePlanExternalName or servicePlanExternalName is required"
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalName"), errMsg))
-		allErrs = append(allErrs, field.Required(fldPath.Child("servicePlanExternalName"), errMsg))
+		if propertiesState.ClusterServicePlanExternalName != "" && propertiesState.ServicePlanExternalName != "" {
+			errMsg = "clusterServicePlanExternalName and servicePlanExternalName cannot both be set"
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), propertiesState.ClusterServicePlanExternalName, errMsg))
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("servicePlanExternalName"), propertiesState.ServicePlanExternalName, errMsg))
+		}
+
+		if propertiesState.ClusterServicePlanExternalID == "" && propertiesState.ServicePlanExternalID == "" {
+			errMsg = "clusterServicePlanExternalID or servicePlanExternalID is required"
+			allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), errMsg))
+			allErrs = append(allErrs, field.Required(fldPath.Child("servicePlanExternalID"), errMsg))
+		}
+
+		if propertiesState.ClusterServicePlanExternalID != "" && propertiesState.ServicePlanExternalID != "" {
+			errMsg = "clusterServicePlanExternalID and servicePlanExternalID cannot both be set"
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalID"), propertiesState.ClusterServicePlanExternalID, errMsg))
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("servicePlanExternalID"), propertiesState.ServicePlanExternalID, errMsg))
+		}
 	}
-
-	if propertiesState.ClusterServicePlanExternalName != "" && propertiesState.ServicePlanExternalName != "" {
-		errMsg = "clusterServicePlanExternalName and servicePlanExternalName cannot both be set"
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalName"), propertiesState.ClusterServicePlanExternalName, errMsg))
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("servicePlanExternalName"), propertiesState.ServicePlanExternalName, errMsg))
-	}
-
-	if propertiesState.ClusterServicePlanExternalID == "" && propertiesState.ServicePlanExternalID == "" {
-		errMsg = "clusterServicePlanExternalID or servicePlanExternalID is required"
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServicePlanExternalID"), errMsg))
-		allErrs = append(allErrs, field.Required(fldPath.Child("servicePlanExternalID"), errMsg))
-	}
-
-	if propertiesState.ClusterServicePlanExternalID != "" && propertiesState.ServicePlanExternalID != "" {
-		errMsg = "clusterServicePlanExternalID and servicePlanExternalID cannot both be set"
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServicePlanExternalID"), propertiesState.ClusterServicePlanExternalID, errMsg))
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("servicePlanExternalID"), propertiesState.ServicePlanExternalID, errMsg))
-	}
-
 	if propertiesState.Parameters == nil {
 		if propertiesState.ParametersChecksum != "" {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Child("parametersChecksum"), "parametersChecksum must be empty when there are no parameters"))
@@ -263,7 +266,7 @@ func validateServiceInstanceUpdate(instance *sc.ServiceInstance) field.ErrorList
 	} else if instance.Status.ReconciledGeneration > instance.Generation {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("status").Child("reconciledGeneration"), instance.Status.ReconciledGeneration, "reconciledGeneration must not be greater than generation"))
 	}
-	if instance.Status.CurrentOperation != "" {
+	if instance.Status.CurrentOperation != "" && !instance.Status.UserProvided {
 		if instance.Spec.ClusterServiceClassRef == nil && instance.Spec.ServiceClassRef == nil {
 			errMsg = "clusterServiceClassRef or serviceClassRef is required when currentOperation is present"
 			allErrs = append(allErrs, field.Required(field.NewPath("spec").Child("clusterServiceClassRef"), errMsg))

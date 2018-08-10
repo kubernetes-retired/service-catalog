@@ -829,6 +829,11 @@ type ServiceInstanceSpec struct {
 	// allows for parameters to be updated with any out-of-band changes that have
 	// been made to the secrets from which the parameters are sourced.
 	UpdateRequests int64
+
+	// UserProvided indicates this instance is a user provided service instance.
+	// If true, bind requests will return "credentials" from the instance's
+	// parameters.
+	UserProvided bool
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -891,6 +896,11 @@ type ServiceInstanceStatus struct {
 	// DefaultProvisionParameters are the default parameters applied to this
 	// instance.
 	DefaultProvisionParameters *runtime.RawExtension
+
+	// UserProvided indicates this instance is a user provided service instance.
+	// If true, bind requests will return "credentials" from the instance's
+	// parameters.
+	UserProvided bool
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.

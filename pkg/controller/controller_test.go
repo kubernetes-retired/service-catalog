@@ -761,6 +761,15 @@ func getTestServiceInstanceWithNamespacedRefs() *v1beta1.ServiceInstance {
 	return sc
 }
 
+func getTestServiceInstanceUserProvided() *v1beta1.ServiceInstance {
+	sc := getTestServiceInstance()
+	sc.Spec.ClusterServiceClassExternalName = ""
+	sc.Spec.ClusterServicePlanExternalName = ""
+	sc.Spec.ExternalID = ""
+	sc.Spec.UserProvided = true
+	return sc
+}
+
 func getTestServiceInstanceWithRefsAndExternalProperties() *v1beta1.ServiceInstance {
 	sc := getTestServiceInstanceWithClusterRefs()
 	sc.Status.ExternalProperties = &v1beta1.ServiceInstancePropertiesState{

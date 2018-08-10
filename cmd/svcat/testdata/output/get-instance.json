@@ -36,7 +36,8 @@
          }
       ],
       "externalID": "7e2c42f3-6d94-4409-bb15-7610d60af544",
-      "updateRequests": 0
+      "updateRequests": 0,
+      "userProvided": false
    },
    "status": {
       "conditions": [
@@ -67,6 +68,7 @@
          "parameterChecksum": "23ca85e0f9fc05340ea0a13ef945602cd5cdc3f52d763e750cb0ab0cb172a94f"
       },
       "provisionStatus": "",
-      "deprovisionStatus": "Required"
+      "deprovisionStatus": "Required",
+      "userProvided": false
    }
 }

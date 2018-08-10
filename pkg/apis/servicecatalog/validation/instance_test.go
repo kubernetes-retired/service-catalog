@@ -156,6 +156,22 @@ func validServiceInstanceWithInProgressDeprovision() *servicecatalog.ServiceInst
 	return instance
 }
 
+func validServiceInstanceUserProvided() *servicecatalog.ServiceInstance {
+	return &servicecatalog.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "test-instance",
+			Namespace:  "test-ns",
+			Generation: 1,
+		},
+		Spec: servicecatalog.ServiceInstanceSpec{
+			UserProvided: true,
+		},
+		Status: servicecatalog.ServiceInstanceStatus{
+			DeprovisionStatus: servicecatalog.ServiceInstanceDeprovisionStatusNotRequired,
+		},
+	}
+}
+
 func validServiceInstancePropertiesStateClusterPlan() *servicecatalog.ServiceInstancePropertiesState {
 	return &servicecatalog.ServiceInstancePropertiesState{
 		ClusterServicePlanExternalName: "plan-name",
@@ -887,6 +903,11 @@ func TestValidateServiceInstance(t *testing.T) {
 				return i
 			}(),
 			valid: false,
+		},
+		{
+			name:     "valid user provided instance",
+			instance: validServiceInstanceUserProvided(),
+			valid:    true,
 		},
 	}
 

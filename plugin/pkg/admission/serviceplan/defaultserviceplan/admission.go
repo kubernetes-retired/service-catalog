@@ -73,9 +73,9 @@ func (d *defaultServicePlan) Admit(a admission.Attributes) error {
 		return apierrors.NewBadRequest("Resource was marked with kind ServiceInstance but was unable to be converted")
 	}
 
-	// If the plan is specified, let it through and have the controller
-	// deal with finding the right plan, etc.
-	if instance.Spec.ClusterServicePlanSpecified() || instance.Spec.ServicePlanSpecified() {
+	// If the plan is specified or the instance is a user-provided-service,
+	// let it through and have the controller deal with finding the right plan, etc.
+	if instance.Spec.ClusterServicePlanSpecified() || instance.Spec.ServicePlanSpecified() || instance.Spec.UserProvided {
 		return nil
 	}
 

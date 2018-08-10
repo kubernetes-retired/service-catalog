@@ -918,6 +918,11 @@ type ServiceInstanceSpec struct {
 	// been made to the secrets from which the parameters are sourced.
 	// +optional
 	UpdateRequests int64 `json:"updateRequests"`
+
+	// UserProvided indicates this instance is a user provided service instance.
+	// If true, bind requests will return "credentials" from the instance's
+	// parameters.
+	UserProvided bool `json:"userProvided"`
 }
 
 // ServiceInstanceStatus represents the current status of an Instance.
@@ -980,6 +985,11 @@ type ServiceInstanceStatus struct {
 	// DefaultProvisionParameters are the default parameters applied to this
 	// instance.
 	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
+
+	// UserProvided indicates this instance is a user provided service instance.
+	// If true, bind requests will return "credentials" from the instance's
+	// parameters.
+	UserProvided bool `json:"userProvided"`
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.

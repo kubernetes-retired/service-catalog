@@ -3011,7 +3011,15 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 							Format:      "int64",
 						},
 					},
+					"userProvided": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UserProvided indicates this instance is a user provided service instance. If true, bind requests will return \"credentials\" from the instance's parameters.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
+				Required: []string{"userProvided"},
 			},
 		},
 		Dependencies: []string{
@@ -3125,8 +3133,15 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
+					"UserProvided": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UserProvided indicates this instance is a user provided service instance. If true, bind requests will return \"credentials\" from the instance's parameters.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus"},
+				Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus", "UserProvided"},
 			},
 		},
 		Dependencies: []string{
