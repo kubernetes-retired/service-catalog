@@ -107,8 +107,8 @@ spec:
         {{- end }}
       {{- if and (eq .Values.apiserver.storage.type "etcd") .Values.apiserver.storage.etcd.useEmbedded }}
       - name: etcd
-        image: quay.io/coreos/etcd:latest
-        imagePullPolicy: Always
+        image: {{ .Values.apiserver.storage.etcd.image }}
+        imagePullPolicy: {{ .Values.apiserver.storage.etcd.imagePullPolicy }}
         resources:
 {{ toYaml .Values.apiserver.storage.etcd.resources | indent 10 }}
         env:

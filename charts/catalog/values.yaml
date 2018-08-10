@@ -71,6 +71,11 @@ apiserver:
       useEmbedded: true
       # etcd URL(s); override this if NOT using embedded etcd
       servers: http://localhost:2379
+      # etcd image to use
+      image: quay.io/coreos/etcd:latest
+      # imagePullPolicy for the etcd; valid values are "IfNotPresent",
+      # "Never", and "Always"
+      imagePullPolicy: Always
       # etcd persistence options IF using embedded etcd
       persistence:
         enabled: false

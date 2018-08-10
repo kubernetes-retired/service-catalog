@@ -53,6 +53,8 @@ chart and their default values.
 | `apiserver.storage.type` | The storage backend to use; the only valid value is `etcd`, left for other storages support in future, e.g. `crd` | `etcd` |
 | `apiserver.storage.etcd.useEmbedded` | If storage type is `etcd`: Whether to embed an etcd container in the apiserver pod; THIS IS INADEQUATE FOR PRODUCTION USE! | `true` |
 | `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd. Only etcd v3 is supported. | `http://localhost:2379` |
+| `apiserver.storage.etcd.image` | etcd image to use | `quay.io/coreos/etcd:latest` |
+| `apiserver.storage.etcd.imagePullPolicy` | `imagePullPolicy` for etcd | `Always` |
 | `apiserver.storage.etcd.persistence.enabled` | Enable persistence using PVC | `false` |
 | `apiserver.storage.etcd.persistence.storageClass` | PVC Storage Class | `nil` (uses alpha storage class annotation) |
 | `apiserver.storage.etcd.persistence.accessMode` | PVC Access Mode | `ReadWriteOnce` |
