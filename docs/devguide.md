@@ -317,6 +317,14 @@ Counterfeiter by running `go get github.com/maxbrunsfeld/counterfeiter`.
 Then regenerate the fake with `counterfeiter ./pkg/svcat/service-catalog SvcatClient` and manually paste the boilerplate
 copyright comment into the the generated file.
 
+### FeatureGates
+Feature gates are a set of key=value pairs that describe experimental features
+and can be turned on or off by specifying the value when launching the Service
+Catalog executable (typically done in the Helm chart).  A new feature gate
+should be created when introducing new features that may break existing
+functionality or introduce instability.  See [FeatureGates](feature-gates.md)
+for more details.
+
 ## Documentation
 
 Our documentation site is located at [svc-cat.io](https://svc-cat.io). The content files are located

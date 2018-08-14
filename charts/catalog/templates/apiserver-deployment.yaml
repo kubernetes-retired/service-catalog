@@ -56,9 +56,9 @@ spec:
         {{- if not .Values.apiserver.auth.enabled }}
         - --disable-auth
         {{- end }}
-        {{- if .Values.originatingIdentityEnabled }}
+        {{- if not .Values.originatingIdentityEnabled }}
         - --feature-gates
-        - OriginatingIdentity=true
+        - OriginatingIdentity=false
         {{- end }}
         {{- if .Values.namespacedServiceBrokerDisabled }}
         - --feature-gates

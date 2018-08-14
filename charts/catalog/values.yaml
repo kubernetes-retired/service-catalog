@@ -161,7 +161,7 @@ controllerManager:
     limits:
       cpu: 100m
       memory: 30Mi
-# Whether the OriginatingIdentity alpha feature should be enabled
+# Whether the OriginatingIdentity feature should be enabled
 originatingIdentityEnabled: false
 # Whether the AsyncBindingOperations alpha feature should be enabled
 asyncBindingOperationsEnabled: false
