@@ -59,11 +59,11 @@ func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList)
 // WriteBindingList prints a list of bindings in the specified output format.
 func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.ServiceBindingList) {
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, bindingList)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, bindingList, 0)
-	case formatTable:
+	case FormatTable:
 		writeBindingListTable(w, bindingList)
 	}
 }
@@ -71,11 +71,11 @@ func WriteBindingList(w io.Writer, outputFormat string, bindingList *v1beta1.Ser
 // WriteBinding prints a single bindings in the specified output format.
 func WriteBinding(w io.Writer, outputFormat string, binding v1beta1.ServiceBinding) {
 	switch outputFormat {
-	case formatJSON:
+	case FormatJSON:
 		writeJSON(w, binding)
-	case formatYAML:
+	case FormatYAML:
 		writeYAML(w, binding, 0)
-	case formatTable:
+	case FormatTable:
 		l := v1beta1.ServiceBindingList{
 			Items: []v1beta1.ServiceBinding{binding},
 		}

@@ -37,11 +37,34 @@ Below are some common tasks made easy with svcat. The example output assumes tha
 
 ## Find brokers installed on the cluster
 
+This lists all brokers available in the current namespace and at the cluster scope.
+
 ```console
 $ svcat get brokers
-     NAME                                 URL                              STATUS
-+------------+-----------------------------------------------------------+--------+
-  ups-broker   http://ups-broker-ups-broker.ups-broker.svc.cluster.local   Ready
+         NAME          NAMESPACE                               URL                              STATUS
++--------------------+------------+-----------------------------------------------------------+--------+
+  minibroker                        http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+  myminibroker         myspace      http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+```
+
+Use the `--namespace` and `--all-namespaces` flags to control which namespace to view:
+
+```console
+$ svcat get brokers --namespace default
+         NAME          NAMESPACE                              URL                              STATUS
++--------------------+-----------+-----------------------------------------------------------+--------+
+  minibroker                       http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+  ups-broker           default     http://ups-broker-ups-broker.ups-broker.svc.cluster.local   Ready
+```
+
+You can view only cluster-scoped brokers with the `--scope` flag:
+
+```
+$ svcat get brokers --scope cluster
+         NAME          NAMESPACE                               URL                              STATUS
++-------------------+------------+-----------------------------------------------------------+--------+
+  minibroker                       http://minibroker-minibroker.minibroker.svc.cluster.local   Ready
+
 ```
 
 ## Trigger a sync of a broker's catalog
@@ -53,8 +76,38 @@ Successfully fetched catalog entries from the ups-broker broker
 
 ## List available service classes
 
+This lists all classes available in the current namespace and at the cluster scope.
 ```console
 $ svcat get classes
+                 NAME                  NAMESPACE           DESCRIPTION
++------------------------------------+------------+---------------------------+
+  user-provided-service                             A user provided service
+  user-provided-service-single-plan                 A user provided service
+  user-provided-service-with-schemas                A user provided service
+  mariadb                              minibroker   Helm Chart for mariadb
+  mongodb                              minibroker   Helm Chart for mongodb
+  mysql                                minibroker   Helm Chart for mysql
+  postgresql                           minibroker   Helm Chart for postgresql
+  redis                                minibroker   Helm Chart for redis
+```
+
+Use the `--namespace` and `--all-namespaces` flags to control which namespace to view:
+
+```
+$ svcat get classes --namespace minibroker
+     NAME      NAMESPACE           DESCRIPTION
++------------+------------+---------------------------+
+  mariadb      minibroker   Helm Chart for mariadb
+  mongodb      minibroker   Helm Chart for mongodb
+  mysql        minibroker   Helm Chart for mysql
+  postgresql   minibroker   Helm Chart for postgresql
+  redis        minibroker   Helm Chart for redis
+```
+
+You can view only cluster-scoped classes with the `--scope` flag:
+
+```
+$ svcat get classes --scope cluster
                 NAME                        DESCRIPTION                         UUID
 +-----------------------------------+-------------------------+--------------------------------------+
   user-provided-service               A user provided service   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
@@ -77,6 +130,19 @@ Plans:
 +---------+-------------------------+
   default   Sample plan description
   premium   Premium plan
+```
+
+## Copies an exisitng class into a new user-defined class
+
+This copies an exisitng class specified by name into a new user-defined one with new specified name.
+```console
+$ svcat create class new-class --from user-provided-service
+  Name:          user-provided-service
+  Description:   A user provided service
+  UUID:          new-class
+  Status:        Active
+  Tags:
+  Broker:        ups-broker
 ```
 
 ## Provision a service

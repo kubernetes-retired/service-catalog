@@ -165,7 +165,7 @@ spec:
 
 ### Service Instance Parameters
 
-Each `ServiceInstance` has a `paramters` field that you can add 
+Each `ServiceInstance` has a `parameters` field that you can add 
 metadata to. Service Catalog passes this metadata directly through to the
 service broker.
 

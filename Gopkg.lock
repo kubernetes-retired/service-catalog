@@ -831,6 +831,7 @@
     "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
+    "pkg/api/meta/table",
     "pkg/api/resource",
     "pkg/api/testing",
     "pkg/api/testing/fuzzer",
@@ -860,6 +861,7 @@
     "pkg/util/cache",
     "pkg/util/clock",
     "pkg/util/diff",
+    "pkg/util/duration",
     "pkg/util/errors",
     "pkg/util/framer",
     "pkg/util/intstr",
@@ -1219,10 +1221,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-<<<<<<< HEAD
-  inputs-digest = "1cf27edf2c8dd4bad7c5aa80f4bd5c7bec2652e61bfee5f4bd0f5a8eb9aba030"
-=======
-  inputs-digest = "c6f2e281de36024871c5aeb2047fba819603cd19607f668296df75fcb41614cf"
->>>>>>> 9af2f105... fetched upstream
+  inputs-digest = "18c14a2444b3d1edffdea1eba30f21a69343dd8331a58ce2b8899ccd7b25aa5c"
   solver-name = "gps-cdcl"
   solver-version = 1

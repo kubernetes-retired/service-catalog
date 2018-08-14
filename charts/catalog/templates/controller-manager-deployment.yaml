@@ -31,12 +31,7 @@ spec:
         image: {{ .Values.image }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         resources:
-          requests:
-            cpu: 100m
-            memory: 20Mi
-          limits:
-            cpu: 100m
-            memory: 30Mi
+{{ toYaml .Values.controllerManager.resources | indent 10 }}
         env:
         - name: K8S_NAMESPACE
           valueFrom:
@@ -86,9 +81,9 @@ spec:
         - --feature-gates
         - CatalogRestrictions=true
         {{- end }}
-        {{- if .Values.namespacedServiceBrokerEnabled }}
+        {{- if .Values.namespacedServiceBrokerDisabled }}
         - --feature-gates
-        - NamespacedServiceBroker=true
+        - NamespacedServiceBroker=false
         {{- end }}
         ports:
         - containerPort: 8444

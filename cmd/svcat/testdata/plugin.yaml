@@ -60,6 +60,20 @@ tree:
     Svcat shell completion\\nsource '$HOME/.svcat/svcat_completion.bash.inc'\\n\"
     >> $HOME/.bash_profile\n  source $HOME/.bash_profile"
   command: ./svcat completion
+- name: create
+  use: create
+  shortDesc: Create a user-defined resource
+  command: ./svcat create
+  tree:
+  - name: class
+    use: class [NAME] --from [EXISTING_NAME]
+    shortDesc: Copies an existing class into a new user-defined cluster-scoped class
+    example: '  svcat create class newclass --from mysqldb'
+    command: ./svcat create class
+    flags:
+    - name: from
+      shorthand: f
+      desc: Name from an existing class that will be copied (Required)
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service
@@ -146,21 +160,30 @@ tree:
         present, defaults to table
   - name: brokers
     use: brokers [NAME]
-    shortDesc: List brokers, optionally filtered by name
+    shortDesc: List brokers, optionally filtered by name, scope or namespace
     example: |2-
         svcat get brokers
-        svcat get broker asb
+        svcat get brokers --scope=cluster
+        svcat get brokers --scope=all
+        svcat get broker minibroker
     command: ./svcat get brokers
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
   - name: classes
     use: classes [NAME]
-    shortDesc: List classes, optionally filtered by name
+    shortDesc: List classes, optionally filtered by name, scope or namespace
     example: |2-
         svcat get classes
+        svcat get classes --scope cluster
+        svcat get classes --scope namespace --namespace dev
         svcat get class mysqldb
         svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
         svcat get classes --broker
@@ -169,10 +192,15 @@ tree:
     - name: broker
       shorthand: b
       desc: Filters the class's by a broker name.
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)

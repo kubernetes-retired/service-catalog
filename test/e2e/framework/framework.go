@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/kube"
+	"github.com/kubernetes-incubator/service-catalog/pkg/util/kube"
 )
 
 // Framework supports common operations used by e2e tests; it will keep a client & a namespace for you.

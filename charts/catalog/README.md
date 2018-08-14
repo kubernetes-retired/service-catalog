@@ -40,7 +40,7 @@ chart and their default values.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.26` |
+| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.29` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
 | `apiserver.nodeSelector` | A nodeSelector value to apply to the apiserver pods. If not specified, no nodeSelector will be applied | |
@@ -53,10 +53,13 @@ chart and their default values.
 | `apiserver.storage.type` | The storage backend to use; the only valid value is `etcd`, left for other storages support in future, e.g. `crd` | `etcd` |
 | `apiserver.storage.etcd.useEmbedded` | If storage type is `etcd`: Whether to embed an etcd container in the apiserver pod; THIS IS INADEQUATE FOR PRODUCTION USE! | `true` |
 | `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd. Only etcd v3 is supported. | `http://localhost:2379` |
+| `apiserver.storage.etcd.image` | etcd image to use | `quay.io/coreos/etcd:latest` |
+| `apiserver.storage.etcd.imagePullPolicy` | `imagePullPolicy` for etcd | `Always` |
 | `apiserver.storage.etcd.persistence.enabled` | Enable persistence using PVC | `false` |
 | `apiserver.storage.etcd.persistence.storageClass` | PVC Storage Class | `nil` (uses alpha storage class annotation) |
 | `apiserver.storage.etcd.persistence.accessMode` | PVC Access Mode | `ReadWriteOnce` |
 | `apiserver.storage.etcd.persistence.size` | PVC Storage Request | `4Gi` |
+| `apiserver.storage.etcd.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 30Mi}, limits: {cpu: 100m, memory: 40Mi}}` |
 | `apiserver.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `apiserver.auth.enabled` | Enable authentication and authorization | `true` |
 | `apiserver.audit.activated` | If true, enables the use of audit features via this chart. | `false` |
@@ -64,6 +67,7 @@ chart and their default values.
 | `apiserver.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
 | `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
+| `apiserver.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
 | `controllerManager.annotations` | Annotations for controllerManager pods | `{}` |
 | `controllerManager.nodeSelector` | A nodeSelector value to apply to the controllerManager pods. If not specified, no nodeSelector will be applied | |
 | `controllerManager.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
@@ -77,10 +81,12 @@ chart and their default values.
 | `controllerManager.serviceAccount` | Service account | `service-catalog-controller-manager` |
 | `controllerManager.apiserverSkipVerify` | Controls whether the API server's TLS verification should be skipped | `true` |
 | `controllerManager.enablePrometheusScrape` | Whether the controller will expose metrics on /metrics | `false` |
+| `controllerManager.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
 | `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator | `true` |
 | `rbacEnable` | If true, create & use RBAC resources | `true` |
 | `originatingIdentityEnabled` | Whether the OriginatingIdentity alpha feature should be enabled | `false` |
 | `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |
+| `namespacedServiceBrokerDisabled` | Whether or not alpha support for namespace scoped brokers is disabled | `false` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

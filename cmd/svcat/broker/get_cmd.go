@@ -19,34 +19,40 @@ package broker
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 type getCmd struct {
-	*command.Context
-	name         string
-	outputFormat string
-}
-
-func (c *getCmd) SetFormat(format string) {
-	c.outputFormat = format
+	*command.Namespaced
+	*command.Formatted
+	*command.Scoped
+	name string
 }
 
 // NewGetCmd builds a "svcat get brokers" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{
+		Namespaced: command.NewNamespaced(cxt),
+		Formatted:  command.NewFormatted(),
+		Scoped:     command.NewScoped(),
+	}
 	cmd := &cobra.Command{
 		Use:     "brokers [NAME]",
 		Aliases: []string{"broker", "brk"},
-		Short:   "List brokers, optionally filtered by name",
+		Short:   "List brokers, optionally filtered by name, scope or namespace",
 		Example: command.NormalizeExamples(`
   svcat get brokers
-  svcat get broker asb
+  svcat get brokers --scope=cluster
+  svcat get brokers --scope=all
+  svcat get broker minibroker
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
-	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddOutputFlags(cmd.Flags())
+	getCmd.AddScopedFlags(cmd.Flags(), true)
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -67,12 +73,16 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	brokers, err := c.App.RetrieveBrokers()
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+	brokers, err := c.App.RetrieveBrokers(opts)
 	if err != nil {
 		return err
 	}
 
-	output.WriteBrokerList(c.Output, c.outputFormat, brokers...)
+	output.WriteBrokerList(c.Output, c.OutputFormat, brokers...)
 	return nil
 }
 
@@ -82,6 +92,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteBroker(c.Output, c.outputFormat, *broker)
+	output.WriteBroker(c.Output, c.OutputFormat, *broker)
 	return nil
 }

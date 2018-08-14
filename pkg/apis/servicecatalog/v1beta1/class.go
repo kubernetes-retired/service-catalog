@@ -26,6 +26,16 @@ func (c *ServiceClass) GetName() string {
 	return c.Name
 }
 
+// GetNamespace for cluster-scoped classes always returns "".
+func (c *ClusterServiceClass) GetNamespace() string {
+	return ""
+}
+
+// GetNamespace returns the class's namespace.
+func (c *ServiceClass) GetNamespace() string {
+	return c.Namespace
+}
+
 // GetExternalName returns the class's external name.
 func (c *ClusterServiceClass) GetExternalName() string {
 	return c.Spec.ExternalName

@@ -35,14 +35,18 @@ var _ = Describe("Broker", func() {
 	var (
 		sdk          *SDK
 		svcCatClient *fake.Clientset
-		sb           *v1beta1.ClusterServiceBroker
-		sb2          *v1beta1.ClusterServiceBroker
+		csb          *v1beta1.ClusterServiceBroker
+		csb2         *v1beta1.ClusterServiceBroker
+		sb           *v1beta1.ServiceBroker
+		sb2          *v1beta1.ServiceBroker
 	)
 
 	BeforeEach(func() {
-		sb = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
-		sb2 = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
-		svcCatClient = fake.NewSimpleClientset(sb, sb2)
+		csb = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
+		csb2 = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
+		sb = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "default"}}
+		sb2 = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", Namespace: "ns2"}}
+		svcCatClient = fake.NewSimpleClientset(csb, csb2, sb, sb2)
 		sdk = &SDK{
 			ServiceCatalogClient: svcCatClient,
 		}
@@ -76,36 +80,75 @@ var _ = Describe("Broker", func() {
 		})
 	})
 	Describe("RetrieveBrokers", func() {
-		It("Calls the generated v1beta1 List method", func() {
-			brokers, err := sdk.RetrieveBrokers()
+		It("Calls the generated v1beta1 List methods", func() {
+			brokers, err := sdk.RetrieveBrokers(ScopeOptions{Scope: AllScope})
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(brokers).Should(ConsistOf(*sb, *sb2))
+			Expect(brokers).Should(ConsistOf(csb, csb2, sb, sb2))
+			actions := svcCatClient.Actions()
+			Expect(len(actions)).To(Equal(2))
 			Expect(svcCatClient.Actions()[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
+			Expect(svcCatClient.Actions()[1].Matches("list", "servicebrokers")).To(BeTrue())
 		})
-		It("Bubbles up errors", func() {
+		It("Filters by namespace scope", func() {
+			brokers, err := sdk.RetrieveBrokers(ScopeOptions{Scope: NamespaceScope, Namespace: "default"})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(brokers).Should(ConsistOf(sb))
+			actions := svcCatClient.Actions()
+			Expect(len(actions)).To(Equal(1))
+			Expect(actions[0].Matches("list", "servicebrokers")).To(BeTrue())
+		})
+		It("Filters by cluster scope", func() {
+			brokers, err := sdk.RetrieveBrokers(ScopeOptions{Scope: ClusterScope})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(brokers).Should(ConsistOf(csb, csb2))
+			actions := svcCatClient.Actions()
+			Expect(len(actions)).To(Equal(1))
+			Expect(actions[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
+		})
+		It("Bubbles up cluster-scoped errors", func() {
 			badClient := &fake.Clientset{}
 			errorMessage := "error retrieving list"
 			badClient.AddReactor("list", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
-			_, err := sdk.RetrieveBrokers()
+			_, err := sdk.RetrieveBrokers(ScopeOptions{Scope: AllScope})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			Expect(badClient.Actions()[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
+			actions := badClient.Actions()
+			Expect(len(actions)).To(Equal(1))
+			Expect(actions[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
+		})
+		It("Bubbles up namespace-scoped errors", func() {
+			badClient := &fake.Clientset{}
+			errorMessage := "error retrieving list"
+			badClient.AddReactor("list", "servicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+			_, err := sdk.RetrieveBrokers(ScopeOptions{Scope: AllScope})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring(errorMessage))
+			actions := badClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			Expect(actions[0].Matches("list", "clusterservicebrokers")).To(BeTrue())
+			Expect(actions[1].Matches("list", "servicebrokers")).To(BeTrue())
 		})
 	})
 	Describe("RetrieveBroker", func() {
 		It("Calls the generated v1beta1 List method with the passed in broker", func() {
-			broker, err := sdk.RetrieveBroker(sb.Name)
+			broker, err := sdk.RetrieveBroker(csb.Name)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(broker).To(Equal(sb))
+			Expect(broker).To(Equal(csb))
 			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("get", "clusterservicebrokers")).To(BeTrue())
-			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(sb.Name))
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(csb.Name))
 		})
 		It("Bubbles up errors", func() {
 			brokerName := "banana"
@@ -122,14 +165,14 @@ var _ = Describe("Broker", func() {
 	})
 	Describe("RetrieveBrokerByClass", func() {
 		It("Calls the generated v1beta1 List method with the passed in class's parent broker", func() {
-			sc := &v1beta1.ClusterServiceClass{Spec: v1beta1.ClusterServiceClassSpec{ClusterServiceBrokerName: sb.Name}}
+			sc := &v1beta1.ClusterServiceClass{Spec: v1beta1.ClusterServiceClassSpec{ClusterServiceBrokerName: csb.Name}}
 			broker, err := sdk.RetrieveBrokerByClass(sc)
 
 			Expect(broker).NotTo(BeNil())
 			Expect(err).NotTo(HaveOccurred())
 			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("get", "clusterservicebrokers")).To(BeTrue())
-			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(sb.Name))
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(csb.Name))
 		})
 
 		It("Bubbles up errors", func() {
@@ -182,13 +225,13 @@ var _ = Describe("Broker", func() {
 	})
 	Describe("Sync", func() {
 		It("Useds the generated v1beta1 Retrieve method to get the broker, and then updates it with a new RelistRequests", func() {
-			err := sdk.Sync(sb.Name, 3)
+			err := sdk.Sync(csb.Name, 3)
 			Expect(err).NotTo(HaveOccurred())
 
 			actions := svcCatClient.Actions()
 			Expect(len(actions) >= 2).To(BeTrue())
 			Expect(actions[0].Matches("get", "clusterservicebrokers")).To(BeTrue())
-			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(sb.Name))
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(csb.Name))
 
 			Expect(actions[1].Matches("update", "clusterservicebrokers")).To(BeTrue())
 			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ClusterServiceBroker).Spec.RelistRequests).Should(BeNumerically(">", 0))

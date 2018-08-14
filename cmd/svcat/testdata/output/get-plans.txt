@@ -1,7 +1,10 @@
-   NAME              CLASS                      DESCRIPTION               BROKER    
-+---------+--------------------------+--------------------------------+------------+
-  default   user-provided-service      Sample plan description          ups-broker  
-  premium   user-provided-service      Premium plan                     ups-broker  
-  default   another-provided-service   Another sample plan              ups-broker  
-                                       description                                  
-  premium   another-provided-service   Another premium plan             ups-broker  
+
+   NAME              CLASS                          DESCRIPTION                
++---------+--------------------------+----------------------------------------+
+  default   user-provided-service      Sample plan description                 
+  premium   user-provided-service      Premium plan                            
+  default   another-provided-service   Another sample plan description that's  
+                                       really really really really really,     
+                                       kinda, wide                             
+  premium   another-provided-service   Another premium plan                    
+

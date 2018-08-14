@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 )
 
@@ -61,21 +62,21 @@ func TestGetCommand(t *testing.T) {
 			name:         "get all existing bindings with json output format",
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
-			outputFormat: "json",
+			outputFormat: output.FormatJSON,
 			wantError:    false,
 		},
 		{
 			name:         "get all existing bindings with yaml output format",
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
-			outputFormat: "yaml",
+			outputFormat: output.FormatYAML,
 			wantError:    false,
 		},
 		{
 			name:         "get all existing bindings with table output format",
 			fakeBindings: []string{"myfirstbinding", "mysecondbinding"},
 			bindingName:  "",
-			outputFormat: "table",
+			outputFormat: output.FormatTable,
 			wantError:    false,
 		},
 		{
@@ -89,21 +90,21 @@ func TestGetCommand(t *testing.T) {
 			name:         "get existing binding with json output format",
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
-			outputFormat: "json",
+			outputFormat: output.FormatJSON,
 			wantError:    false,
 		},
 		{
 			name:         "get existing binding with yaml output format",
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
-			outputFormat: "yaml",
+			outputFormat: output.FormatYAML,
 			wantError:    false,
 		},
 		{
 			name:         "get existing binding with table output format",
 			fakeBindings: []string{"mybinding"},
 			bindingName:  "mybinding",
-			outputFormat: "table",
+			outputFormat: output.FormatTable,
 			wantError:    false,
 		},
 	}
@@ -132,10 +133,11 @@ func TestGetCommand(t *testing.T) {
 			// Initialize the command arguments
 			cmd := &getCmd{
 				Namespaced: command.NewNamespaced(cxt),
+				Formatted:  command.NewFormatted(),
 			}
 			cmd.Namespace = namespace
 			cmd.name = tc.bindingName
-			cmd.outputFormat = tc.outputFormat
+			cmd.OutputFormat = tc.outputFormat
 
 			err := cmd.Run()
 
