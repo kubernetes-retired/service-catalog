@@ -26,6 +26,16 @@ func (p *ServicePlan) GetName() string {
 	return p.Name
 }
 
+// GetNamespace for cluster-scoped plans always returns "".
+func (p *ClusterServicePlan) GetNamespace() string {
+	return ""
+}
+
+// GetNamespace returns the plan's namespace.
+func (p *ServicePlan) GetNamespace() string {
+	return p.Namespace
+}
+
 // GetExternalName returns the plan's external name.
 func (p *ClusterServicePlan) GetExternalName() string {
 	return p.Spec.ExternalName
@@ -44,4 +54,14 @@ func (p *ClusterServicePlan) GetDescription() string {
 // GetDescription returns the plan description.
 func (p *ServicePlan) GetDescription() string {
 	return p.Spec.Description
+}
+
+// GetClassID returns the class name from plan.
+func (p *ClusterServicePlan) GetClassID() string {
+	return p.Spec.ClusterServiceClassRef.Name
+}
+
+// GetClassID returns the class name from plan.
+func (p *ServicePlan) GetClassID() string {
+	return p.Spec.ServiceClassRef.Name
 }

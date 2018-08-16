@@ -35,7 +35,7 @@ func getPlanStatusShort(status v1beta1.ClusterServicePlanStatus) string {
 
 // ByAge implements sort.Interface for []Person based on
 // the Age field.
-type byClass []v1beta1.ClusterServicePlan
+type byClass []servicecatalog.Plan
 
 func (a byClass) Len() int {
 	return len(a)
@@ -44,10 +44,10 @@ func (a byClass) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 func (a byClass) Less(i, j int) bool {
-	return a[i].Spec.ClusterServiceClassRef.Name < a[j].Spec.ClusterServiceClassRef.Name
+	return a[i].GetClassID() < a[j].GetClassID()
 }
 
-func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNames map[string]string) {
+func writePlanListTable(w io.Writer, plans []servicecatalog.Plan, classNames map[string]string) {
 
 	sort.Sort(byClass(plans))
 
@@ -59,9 +59,9 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 	})
 	for _, plan := range plans {
 		t.Append([]string{
-			plan.Spec.ExternalName,
-			classNames[plan.Spec.ClusterServiceClassRef.Name],
-			plan.Spec.Description,
+			plan.GetExternalName(),
+			classNames[plan.GetClassID()],
+			plan.GetDescription(),
 		})
 	}
 	t.SetVariableColumn(3)
@@ -70,19 +70,16 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 }
 
 // WritePlanList prints a list of plans in the specified output format.
-func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServicePlan, classes []servicecatalog.Class) {
+func WritePlanList(w io.Writer, outputFormat string, plans []servicecatalog.Plan, classes []servicecatalog.Class) {
 	classNames := map[string]string{}
 	for _, class := range classes {
 		classNames[class.GetName()] = class.GetExternalName()
 	}
-	list := v1beta1.ClusterServicePlanList{
-		Items: plans,
-	}
 	switch outputFormat {
 	case FormatJSON:
-		writeJSON(w, list)
+		writeJSON(w, plans)
 	case FormatYAML:
-		writeYAML(w, list, 0)
+		writeYAML(w, plans, 0)
 	case FormatTable:
 		writePlanListTable(w, plans, classNames)
 	}
@@ -99,12 +96,12 @@ func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan
 	case FormatTable:
 		classNames := map[string]string{}
 		classNames[class.Name] = class.Spec.ExternalName
-		writePlanListTable(w, []v1beta1.ClusterServicePlan{plan}, classNames)
+		writePlanListTable(w, []servicecatalog.Plan{&plan}, classNames)
 	}
 }
 
 // WriteAssociatedPlans prints a list of plans associated with a class.
-func WriteAssociatedPlans(w io.Writer, plans []v1beta1.ClusterServicePlan) {
+func WriteAssociatedPlans(w io.Writer, plans []servicecatalog.Plan) {
 	fmt.Fprintln(w, "\nPlans:")
 	if len(plans) == 0 {
 		fmt.Fprintln(w, "No plans defined")
@@ -118,8 +115,8 @@ func WriteAssociatedPlans(w io.Writer, plans []v1beta1.ClusterServicePlan) {
 	})
 	for _, plan := range plans {
 		t.Append([]string{
-			plan.Spec.ExternalName,
-			plan.Spec.Description,
+			plan.GetExternalName(),
+			plan.GetDescription(),
 		})
 	}
 	t.Render()
