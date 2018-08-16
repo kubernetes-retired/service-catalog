@@ -115,8 +115,8 @@ type backoffEntry struct {
 type instanceOperationBackoff struct {
 	// lock to be used for accessing retry map
 	mutex       sync.RWMutex
-	instances   map[string]backoffEntry
-	rateLimiter workqueue.RateLimiter // used to calculate next retry time
+	instances   map[string]backoffEntry // Key is K8s metadata UID
+	rateLimiter workqueue.RateLimiter   // used to calculate next retry time, key is UID
 }
 
 // ServiceInstance handlers and control-loop
@@ -377,14 +377,9 @@ func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInst
 // purgeExpiredRetryEntries() or when the operation is successful.
 func (c *controller) setRetryBackoffRequired(instance *v1beta1.ServiceInstance) {
 	pcb := pretty.NewInstanceContextBuilder(instance)
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
-	if err != nil {
-		glog.Errorf(pcb.Messagef("Couldn't create a key for object %+v: %v", instance, err))
-		return
-	}
-
 	c.instanceOperationRetryQueue.mutex.Lock()
 	defer c.instanceOperationRetryQueue.mutex.Unlock()
+	key := string(instance.GetUID())
 	retryEntry, found := c.instanceOperationRetryQueue.instances[key]
 	if !found || retryEntry.generation != instance.Generation {
 		retryEntry.generation = instance.Generation
@@ -396,7 +391,7 @@ func (c *controller) setRetryBackoffRequired(instance *v1beta1.ServiceInstance) 
 	}
 	retryEntry.dirty = true
 	c.instanceOperationRetryQueue.instances[key] = retryEntry
-	glog.V(4).Info(pcb.Messagef("added %v generation %v to backoffBeforeRetrying map", key, instance.Generation))
+	glog.V(4).Info(pcb.Messagef("BrokerOpRetry: added %v (%v/%v) generation %v to backoffBeforeRetrying map", key, instance.GetNamespace(), instance.GetName(), instance.Generation))
 }
 
 // backoffAndRequeueIfRetrying returns true if this is a retry and a backoff
@@ -406,11 +401,7 @@ func (c *controller) setRetryBackoffRequired(instance *v1beta1.ServiceInstance) 
 // backoff delay.
 func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstance, operation string) bool {
 	pcb := pretty.NewInstanceContextBuilder(instance)
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
-	if err != nil {
-		glog.Errorf(pcb.Messagef("Couldn't create a key for object %+v: %v", instance, err))
-		return false
-	}
+	key := string(instance.GetUID())
 	delay := time.Millisecond * 0
 
 	// if there is a pending delay, calculate it and clear the dirty bit
@@ -430,14 +421,14 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 			retryEntry.calculatedRetryTime = time.Now().Add(c.instanceOperationRetryQueue.rateLimiter.When(key))
 			retryEntry.dirty = false
 			c.instanceOperationRetryQueue.instances[key] = retryEntry
-			glog.V(4).Infof(pcb.Messagef("generation %v retryTime calculated as %v", instance.Generation, retryEntry.calculatedRetryTime))
+			glog.V(4).Infof(pcb.Messagef("BrokerOpRetry: generation %v retryTime calculated as %v", instance.Generation, retryEntry.calculatedRetryTime))
 		}
 
 		now := time.Now()
 		delay = retryEntry.calculatedRetryTime.Sub(now)
 
 		if delay > 0 {
-			msg := fmt.Sprintf("Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
+			msg := fmt.Sprintf("BrokerOpRetry: Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
 			c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
 			glog.V(2).Info(pcb.Message(msg))
 
@@ -465,29 +456,25 @@ func (c *controller) purgeExpiredRetryEntries() {
 	purgedEntries := 0
 	for k, v := range c.instanceOperationRetryQueue.instances {
 		if v.calculatedRetryTime.Before(overDue) {
-			glog.V(5).Infof("removing %s from instanceOperationRetryQueue which had retry time of %v", k, v.calculatedRetryTime)
+			glog.V(5).Infof("BrokerOpRetry: removing %s from instanceOperationRetryQueue which had retry time of %v", k, v.calculatedRetryTime)
 			delete(c.instanceOperationRetryQueue.instances, k)
 			c.instanceOperationRetryQueue.rateLimiter.Forget(k)
 			purgedEntries++
 		}
 	}
-	glog.V(5).Infof("purged %v expired entries from instanceOperationRetryQueue.instances, number of entries remaining: %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
+	glog.V(5).Infof("BrokerOpRetry: purged %v expired entries from instanceOperationRetryQueue.instances, number of entries remaining: %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
 
 }
 
 // removeInstanceFromRetryMap removes the instance from the retry & ratelimter maps
 func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstance) {
 	pcb := pretty.NewInstanceContextBuilder(instance)
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(instance)
-	if err != nil {
-		glog.Errorf(pcb.Messagef("Couldn't create a key for object %+v: %v", instance, err))
-		return
-	}
+	key := string(instance.GetUID())
 	c.instanceOperationRetryQueue.mutex.Lock()
 	defer c.instanceOperationRetryQueue.mutex.Unlock()
 	delete(c.instanceOperationRetryQueue.instances, key)
 	c.instanceOperationRetryQueue.rateLimiter.Forget(key)
-	glog.V(4).Infof(pcb.Message("removed from instanceOperationRetryQueue"))
+	glog.V(4).Infof(pcb.Message("BrokerOpRetry: removed %v from instanceOperationRetryQueue"), key)
 }
 
 // reconcileServiceInstanceAdd is responsible for handling the provisioning
@@ -2305,6 +2292,7 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 	pcb := pretty.NewInstanceContextBuilder(instance)
 	glog.Info(pcb.Message("Cleared finalizer"))
 
+	c.removeInstanceFromRetryMap(instance)
 	return nil
 }
 
