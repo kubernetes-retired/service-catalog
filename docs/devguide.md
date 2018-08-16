@@ -326,31 +326,19 @@ functionality or introduce instability.  See [FeatureGates](feature-gates.md)
 for more details.
 
 When adding a FeatureGate to Helm charts, define the variable
-`fooEnabled` with a value of `false`.  In the API Server and Controller
-templates, add logic that enables the feature gate:
+`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/values.yaml).  In the [API Server](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/templates/controller-manager-deployment.yaml)
+templates, add the new FeatureGate:
 {% raw %}
 ```yaml
-    {{- if .Values.fooEnabled }}
     - --feature-gates
-    - Foo=true
-    {{- end }}
+    - Foo={{.Values.fooEnabled}}
 ```
 {% endraw %}
 
 When the feature has had enough testing and the community agrees to change the
-default to true, update `features.go` to set the default to true, update the
-`values.yaml` changing the default for feature foo to `true` and change the
-template logic like this:
-{% raw %}
-```yaml
-    {{- if not .Values.fooEnabled }}
-    - --feature-gates
-    - Foo=false
-    {{- end }}
-```
-{% endraw %}
-
-and update the [FeatureGates doc](feature-gates.md).
+default to true, update [features.go](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/features/features.go) and `values.yaml` changing the default for
+feature foo to `true`. And lastly update the appropriate information in the
+[FeatureGates doc](feature-gates.md).
 
 ## Documentation
 
