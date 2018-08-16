@@ -317,13 +317,40 @@ Counterfeiter by running `go get github.com/maxbrunsfeld/counterfeiter`.
 Then regenerate the fake with `counterfeiter ./pkg/svcat/service-catalog SvcatClient` and manually paste the boilerplate
 copyright comment into the the generated file.
 
-### FeatureGates
+## FeatureGates
 Feature gates are a set of key=value pairs that describe experimental features
 and can be turned on or off by specifying the value when launching the Service
 Catalog executable (typically done in the Helm chart).  A new feature gate
 should be created when introducing new features that may break existing
 functionality or introduce instability.  See [FeatureGates](feature-gates.md)
 for more details.
+
+When adding a FeatureGate to Helm charts, define the variable
+`fooEnabled` with a value of `false`.  In the API Server and Controller
+templates, add logic that enables the feature gate:
+{% raw %}
+```yaml
+    {{- if .Values.fooEnabled }}
+    - --feature-gates
+    - Foo=true
+    {{- end }}
+```
+{% endraw %}
+
+When the feature has had enough testing and the community agrees to change the
+default to true, update `features.go` to set the default to true, update the
+`values.yaml` changing the default for feature foo to `true` and change the
+template logic like this:
+{% raw %}
+```yaml
+    {{- if not .Values.fooEnabled }}
+    - --feature-gates
+    - Foo=false
+    {{- end }}
+```
+{% endraw %}
+
+and update the [FeatureGates doc](feature-gates.md).
 
 ## Documentation
 
