@@ -84,7 +84,7 @@ chart and their default values.
 | `controllerManager.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
 | `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator | `true` |
 | `rbacEnable` | If true, create & use RBAC resources | `true` |
-| `originatingIdentityEnabled` | Whether the OriginatingIdentity alpha feature should be enabled | `false` |
+| `originatingIdentityEnabled` | Whether the OriginatingIdentity feature should be enabled | `true` |
 | `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |
 | `namespacedServiceBrokerDisabled` | Whether or not alpha support for namespace scoped brokers is disabled | `false` |
 
