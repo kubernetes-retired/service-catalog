@@ -359,6 +359,7 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -482,6 +483,7 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -617,6 +619,7 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -799,6 +802,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -1654,6 +1658,7 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	events := getRecordedEvents(testController)
@@ -1728,6 +1733,7 @@ func TestReconcileServiceBindingWithServiceBindingFailure(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	events := getRecordedEvents(testController)
@@ -2189,6 +2195,7 @@ func TestReconcileBindingSuccessOnFinalRetry(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2314,6 +2321,7 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2500,6 +2508,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 		BindResource: &osb.BindResource{
 			AppGUID: strPtr(testNamespaceGUID),
 		},
+		Context: testContext,
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -2675,6 +2684,7 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 				BindResource: &osb.BindResource{
 					AppGUID: strPtr(testNamespaceGUID),
 				},
+				Context: testContext,
 			})
 
 			kubeActions := fakeKubeClient.Actions()
@@ -3102,6 +3112,7 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 			AppGUID: strPtr(testNamespaceGUID),
 		},
 		AcceptsIncomplete: true,
+		Context:           testContext,
 	})
 
 	// Kube actions
