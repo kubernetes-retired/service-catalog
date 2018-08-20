@@ -428,9 +428,9 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 		delay = retryEntry.calculatedRetryTime.Sub(now)
 
 		if delay > 0 {
-			msg := fmt.Sprintf("BrokerOpRetry: Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
+			msg := fmt.Sprintf("Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
 			c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
-			glog.V(2).Info(pcb.Message(msg))
+			glog.V(2).Info(pcb.Messagef("BrokerOpRetry: %s", msg))
 
 			// add back to worker queue to retry at the specified time
 			c.instanceAddAfter(instance, delay)
