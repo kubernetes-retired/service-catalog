@@ -1,0 +1,6 @@
+  Name:          user-provided-service    
+  Description:   A user provided service  
+  UUID:          new-class                
+  Status:        Active                   
+  Tags:                                   
+  Broker:        ups-broker               

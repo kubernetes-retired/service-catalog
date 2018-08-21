@@ -60,6 +60,20 @@ tree:
     Svcat shell completion\\nsource '$HOME/.svcat/svcat_completion.bash.inc'\\n\"
     >> $HOME/.bash_profile\n  source $HOME/.bash_profile"
   command: ./svcat completion
+- name: create
+  use: create
+  shortDesc: Create a user-defined resource
+  command: ./svcat create
+  tree:
+  - name: class
+    use: class [NAME] --from [EXISTING_NAME]
+    shortDesc: Copies an existing class into a new user-defined cluster-scoped class
+    example: '  svcat create class newclass --from mysqldb'
+    command: ./svcat create class
+    flags:
+    - name: from
+      shorthand: f
+      desc: Name from an existing class that will be copied (Required)
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service
@@ -146,29 +160,43 @@ tree:
         present, defaults to table
   - name: brokers
     use: brokers [NAME]
-    shortDesc: List brokers, optionally filtered by name
+    shortDesc: List brokers, optionally filtered by name, scope or namespace
     example: |2-
         svcat get brokers
-        svcat get broker asb
+        svcat get brokers --scope=cluster
+        svcat get brokers --scope=all
+        svcat get broker minibroker
     command: ./svcat get brokers
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
   - name: classes
     use: classes [NAME]
-    shortDesc: List classes, optionally filtered by name
+    shortDesc: List classes, optionally filtered by name, scope or namespace
     example: |2-
         svcat get classes
+        svcat get classes --scope cluster
+        svcat get classes --scope namespace --namespace dev
         svcat get class mysqldb
         svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
     command: ./svcat get classes
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
@@ -272,8 +300,36 @@ tree:
   example: '  svcat register mysqlbroker --url http://mysqlbroker.com'
   command: ./svcat register
   flags:
+  - name: basic-secret
+    desc: A secret containing basic auth (username/password) information to connect
+      to the broker
+  - name: bearer-secret
+    desc: A secret containing a bearer token to connect to the broker
+  - name: ca
+    desc: A file containing the CA certificate to connect to the broker
+  - name: class-restrictions
+    desc: A list of restrictions to apply to the classes allowed from the broker
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
+  - name: plan-restrictions
+    desc: A list of restrictions to apply to the plans allowed from the broker
+  - name: relist-behavior
+    desc: Behavior for relisting the broker's catalog. Valid options are manual or
+      duration. Defaults to duration with an interval of 15m.
+  - name: relist-duration
+    desc: 'Interval to refetch broker catalog when relist-behavior is set to duration,
+      specified in human readable format: 30s, 1m, 1h'
+  - name: skip-tls
+    desc: Disables TLS certificate verification when communicating with this broker.
+      This is strongly discouraged. You should use --ca instead.
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
   - name: url
     desc: The broker URL (Required)
+  - name: wait
+    desc: Wait until the operation completes.
 - name: sync
   use: sync
   shortDesc: Syncs service catalog for a service broker

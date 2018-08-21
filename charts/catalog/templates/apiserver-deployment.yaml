@@ -39,7 +39,7 @@ spec:
         - {{ .Values.apiserver.audit.logPath }}
         {{- end}}
         - --enable-admission-plugins
-        - "KubernetesNamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
+        - "NamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
         - --secure-port
         - "8443"
         - --storage-type
@@ -56,16 +56,19 @@ spec:
         {{- if not .Values.apiserver.auth.enabled }}
         - --disable-auth
         {{- end }}
-        {{- if .Values.originatingIdentityEnabled }}
         - --feature-gates
-        - OriginatingIdentity=true
-        {{- end }}
-        {{- if .Values.namespacedServiceBrokerEnabled }}
+        - OriginatingIdentity={{.Values.originatingIdentityEnabled}}
+        {{- if .Values.namespacedServiceBrokerDisabled }}
         - --feature-gates
-        - NamespacedServiceBroker=true
+        - NamespacedServiceBroker=false
         {{- end }}
         {{- if .Values.apiserver.serveOpenAPISpec }}
         - --serve-openapi-spec
+        {{- end }}
+        {{- if .Values.apiserver.storage.etcd.tls.enabled }}
+        - --etcd-cafile=/var/run/etcd-client/etcd-client-ca.crt
+        - --etcd-certfile=/var/run/etcd-client/etcd-client.crt
+        - --etcd-keyfile=/var/run/etcd-client/etcd-client.key
         {{- end }}
         ports:
         - containerPort: 8443
@@ -73,6 +76,11 @@ spec:
         - name: apiserver-cert
           mountPath: /var/run/kubernetes-service-catalog
           readOnly: true
+        {{- if .Values.apiserver.storage.etcd.tls.enabled }}
+        - name: etcd-client-cert
+          mountPath: /var/run/etcd-client
+          readOnly: true
+        {{- end }}
         {{- if .Values.apiserver.healthcheck.enabled }}
         readinessProbe:
           httpGet:
@@ -97,8 +105,8 @@ spec:
         {{- end }}
       {{- if and (eq .Values.apiserver.storage.type "etcd") .Values.apiserver.storage.etcd.useEmbedded }}
       - name: etcd
-        image: quay.io/coreos/etcd:latest
-        imagePullPolicy: Always
+        image: {{ .Values.apiserver.storage.etcd.image }}
+        imagePullPolicy: {{ .Values.apiserver.storage.etcd.imagePullPolicy }}
         resources:
 {{ toYaml .Values.apiserver.storage.etcd.resources | indent 10 }}
         env:
@@ -159,4 +167,9 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
+      {{- end }}
+      {{- if .Values.apiserver.storage.etcd.tls.enabled }}
+      - name: etcd-client-cert
+        secret:
+          secretName: {{ .Values.apiserver.storage.etcd.tls.clientCertSecretName }}
       {{- end }}

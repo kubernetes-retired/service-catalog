@@ -20,6 +20,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"strings"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/spf13/viper"
@@ -37,4 +39,28 @@ func NewContext(outputCapture io.Writer, fakeApp *svcat.App) *command.Context {
 		Output: outputCapture,
 		App:    fakeApp,
 	}
+}
+
+// OutputMatches compares expected output, optionally allowing for different line ordering.
+func OutputMatches(gotOutput string, wantOutput string, allowDifferentLineOrder bool) bool {
+	if !allowDifferentLineOrder {
+		return strings.Contains(gotOutput, wantOutput)
+	}
+
+	gotLines := strings.Split(gotOutput, "\n")
+	wantLines := strings.Split(wantOutput, "\n")
+
+	for _, wantLine := range wantLines {
+		found := false
+		for _, gotLine := range gotLines {
+			if strings.Contains(gotLine, wantLine) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }

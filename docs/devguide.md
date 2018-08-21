@@ -313,9 +313,32 @@ and to diff the changes in the golden file to ensure that the new output is corr
 ### Counterfeiter
 Certain tests use fakes generated with [Counterfeiter](http://github.com/maxbrunsfeld/counterfeiter). If you add a method
 to an interface (such as SvcatClient in pkg/svcat/service-catalog) you may need to regenerate the fake. You can install
-Counterfeiter by running `go get http://github.com/maxbrunsfeld/counterfeiter && go install http://github.com/maxbrunsfeld/countefeiter`.
-Then regenerate the fake with `counterfeiter ./path/to/dir/with/interface InterfaceName`. You may have to manually paste the boilerplate
-comment into the fakes.
+Counterfeiter by running `go get github.com/maxbrunsfeld/counterfeiter`.
+Then regenerate the fake with `counterfeiter ./pkg/svcat/service-catalog SvcatClient` and manually paste the boilerplate
+copyright comment into the the generated file.
+
+## FeatureGates
+Feature gates are a set of key=value pairs that describe experimental features
+and can be turned on or off by specifying the value when launching the Service
+Catalog executable (typically done in the Helm chart).  A new feature gate
+should be created when introducing new features that may break existing
+functionality or introduce instability.  See [FeatureGates](feature-gates.md)
+for more details.
+
+When adding a FeatureGate to Helm charts, define the variable
+`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/values.yaml).  In the [API Server](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/templates/controller-manager-deployment.yaml)
+templates, add the new FeatureGate:
+{% raw %}
+```yaml
+    - --feature-gates
+    - Foo={{.Values.fooEnabled}}
+```
+{% endraw %}
+
+When the feature has had enough testing and the community agrees to change the
+default to true, update [features.go](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/features/features.go) and `values.yaml` changing the default for
+feature foo to `true`. And lastly update the appropriate information in the
+[FeatureGates doc](feature-gates.md).
 
 ## Documentation
 

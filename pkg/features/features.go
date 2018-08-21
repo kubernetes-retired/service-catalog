@@ -82,9 +82,9 @@ func init() {
 // available throughout service catalog binaries.
 var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.FeatureSpec{
 	PodPreset:                  {Default: false, PreRelease: utilfeature.Alpha},
-	OriginatingIdentity:        {Default: false, PreRelease: utilfeature.Alpha},
+	OriginatingIdentity:        {Default: true, PreRelease: utilfeature.GA},
 	AsyncBindingOperations:     {Default: false, PreRelease: utilfeature.Alpha},
-	NamespacedServiceBroker:    {Default: false, PreRelease: utilfeature.Alpha},
+	NamespacedServiceBroker:    {Default: true, PreRelease: utilfeature.Alpha},
 	ResponseSchema:             {Default: false, PreRelease: utilfeature.Alpha},
 	UpdateDashboardURL:         {Default: false, PreRelease: utilfeature.Alpha},
 	OriginatingIdentityLocking: {Default: true, PreRelease: utilfeature.Alpha},

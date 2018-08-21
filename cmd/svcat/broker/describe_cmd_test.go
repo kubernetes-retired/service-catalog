@@ -77,7 +77,9 @@ func TestDescribeCommand(t *testing.T) {
 			cxt := svcattest.NewContext(output, fakeApp)
 
 			// Initialize the command arguments
-			cmd := &getCmd{Context: cxt}
+			cmd := &describeCmd{
+				Context: cxt,
+			}
 			cmd.name = tc.brokerName
 
 			err := cmd.Run()

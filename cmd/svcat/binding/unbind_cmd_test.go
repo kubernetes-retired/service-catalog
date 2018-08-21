@@ -217,32 +217,9 @@ func TestUnbindCommand(t *testing.T) {
 			if err != nil {
 				gotOutput += err.Error()
 			}
-			if !outputMatches(gotOutput, tc.wantOutput, tc.allowDiffOrder) {
+			if !svcattest.OutputMatches(gotOutput, tc.wantOutput, tc.allowDiffOrder) {
 				t.Errorf("unexpected output \n\nWANT:\n%q\n\nGOT:\n%q\n", tc.wantOutput, gotOutput)
 			}
 		})
 	}
-}
-
-func outputMatches(gotOutput string, wantOutput string, allowDifferentLineOrder bool) bool {
-	if !allowDifferentLineOrder {
-		return strings.Contains(gotOutput, wantOutput)
-	}
-
-	gotLines := strings.Split(gotOutput, "\n")
-	wantLines := strings.Split(wantOutput, "\n")
-
-	for _, wantLine := range wantLines {
-		found := false
-		for _, gotLine := range gotLines {
-			if strings.Contains(gotLine, wantLine) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
 }

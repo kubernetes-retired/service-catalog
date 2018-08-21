@@ -71,21 +71,21 @@ services and plans, however, can be effectively combined with Kubernetes RBAC
 and Service Catalog [Catalog Restrictions](catalog-restrictions.md) in order to provide more granular 
 control over service instance provisioning.
 
-## Enabling Namespace Scoped Broker Resources
+## Disabling Namespace Scoped Broker Resources
 
 Currently, namespace-scoped broker resources are an alpha-feature of Service 
-Catalog behind a feature flag. To start using these resources, you will need 
+Catalog that is on by default. To disable use of these resources, you will need 
 to pass an argument to the API Server when you install Service Catalog:
- `--feature-gates NamespacedServiceBroker=true`.
+ `--feature-gates NamespacedServiceBroker=false`.
 
-If you are using Helm, you can use the `namespacedServiceBrokerEnabled` setting
+If you are using Helm, you can use the `namespacedServiceBrokerDisabled` setting
  to control that flag:
 
 ```console
 helm install svc-cat/catalog \
    --name catalog \
    --namespace catalog \
-   --set namespacedServiceBrokerEnabled=true
+   --set namespacedServiceBrokerDisabled=true
 ```
 
 ## Using Namespace Scoped Broker Resources

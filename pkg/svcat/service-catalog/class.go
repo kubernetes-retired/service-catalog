@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
@@ -35,6 +36,9 @@ type Class interface {
 	// GetName returns the class's name.
 	GetName() string
 
+	// GetNamespace returns the class's namespace, or "" if it's cluster-scoped.
+	GetNamespace() string
+
 	// GetExternalName returns the class's external name.
 	GetExternalName() string
 
@@ -43,13 +47,35 @@ type Class interface {
 }
 
 // RetrieveClasses lists all classes defined in the cluster.
-func (sdk *SDK) RetrieveClasses() ([]v1beta1.ClusterServiceClass, error) {
-	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to list classes (%s)", err)
+func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
+	var classes []Class
+	if opts.Scope.Matches(ClusterScope) {
+		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("unable to list cluster-scoped classes (%s)", err)
+		}
+		for _, c := range csc.Items {
+			class := c
+			classes = append(classes, &class)
+		}
 	}
 
-	return classes.Items, nil
+	if opts.Scope.Matches(NamespaceScope) {
+		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(v1.ListOptions{})
+		if err != nil {
+			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
+			if errors.IsNotFound(err) {
+				return classes, nil
+			}
+			return nil, fmt.Errorf("unable to list classes in %q (%s)", opts.Namespace, err)
+		}
+		for _, c := range sc.Items {
+			class := c
+			classes = append(classes, &class)
+		}
+	}
+
+	return classes, nil
 }
 
 // RetrieveClassByName gets a class by its external name.
@@ -89,4 +115,14 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 	}
 
 	return class, nil
+}
+
+// CreateClass returns new created class
+func (sdk *SDK) CreateClass(class *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
+	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(class)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create class (%s)", err)
+	}
+
+	return created, nil
 }

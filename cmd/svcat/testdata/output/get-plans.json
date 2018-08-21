@@ -80,7 +80,7 @@
          "spec": {
             "externalName": "default",
             "externalID": "090b5eac-dfa4-49f3-827d-8bcaf3a5bd7c",
-            "description": "Another sample plan description",
+            "description": "Another sample plan description that's really really really really really, kinda, wide",
             "free": true,
             "clusterServiceBrokerName": "ups-broker",
             "clusterServiceClassRef": {

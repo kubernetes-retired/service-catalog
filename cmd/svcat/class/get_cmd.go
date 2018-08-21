@@ -20,30 +20,34 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 type getCmd struct {
-	*command.Context
+	*command.Namespaced
+	*command.Scoped
+	*command.Formatted
 	lookupByUUID bool
 	uuid         string
 	name         string
-	outputFormat string
-}
-
-func (c *getCmd) SetFormat(format string) {
-	c.outputFormat = format
 }
 
 // NewGetCmd builds a "svcat get classes" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{Context: cxt}
+	getCmd := &getCmd{
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+		Formatted:  command.NewFormatted(),
+	}
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
 		Aliases: []string{"class", "cl"},
-		Short:   "List classes, optionally filtered by name",
+		Short:   "List classes, optionally filtered by name, scope or namespace",
 		Example: command.NormalizeExamples(`
   svcat get classes
+  svcat get classes --scope cluster
+  svcat get classes --scope namespace --namespace dev
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
 `),
@@ -57,7 +61,9 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
 	)
-	command.AddOutputFlags(cmd.Flags())
+	getCmd.AddOutputFlags(cmd.Flags())
+	getCmd.AddNamespaceFlags(cmd.Flags(), true)
+	getCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -82,12 +88,16 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-	classes, err := c.App.RetrieveClasses()
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return err
 	}
 
-	output.WriteClassList(c.Output, c.outputFormat, classes...)
+	output.WriteClassList(c.Output, c.OutputFormat, classes...)
 	return nil
 }
 
@@ -104,6 +114,6 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WriteClass(c.Output, c.outputFormat, *class)
+	output.WriteClass(c.Output, c.OutputFormat, *class)
 	return nil
 }

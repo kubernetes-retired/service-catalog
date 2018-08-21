@@ -26,3 +26,4 @@ contrib/examples/consumer
 contrib/examples/vendor/*
 integration.test*
 debug.test*
+.cache
