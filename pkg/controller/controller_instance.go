@@ -525,6 +525,16 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		}
 		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
 		return nil
+	} else if instance.Status.DeprovisionStatus != v1beta1.ServiceInstanceDeprovisionStatusRequired {
+		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		instance, err = c.updateServiceInstanceStatus(instance)
+		if err != nil {
+			// There has been an update to the instance. Start reconciliation
+			// over with a fresh view of the instance.
+			return err
+		}
+		// instance was updated, we will to continue in the next iteration
+		return nil
 	}
 
 	var prettyClass string
