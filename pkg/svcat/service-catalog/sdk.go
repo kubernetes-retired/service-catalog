@@ -52,7 +52,7 @@ type SvcatClient interface {
 	Sync(string, int) error
 
 	RetrieveClasses(ScopeOptions) ([]Class, error)
-	RetrieveClassByName(string) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByName(string, ScopeOptions) (Class, error)
 	RetrieveClassByID(string) (*apiv1beta1.ClusterServiceClass, error)
 	RetrieveClassByPlan(*apiv1beta1.ClusterServicePlan) (*apiv1beta1.ClusterServiceClass, error)
 	CreateClassFrom(CreateClassFromOptions) (Class, error)

@@ -98,7 +98,7 @@ var _ = Describe("Class", func() {
 		})
 	})
 	Describe("RetrieveClassByName", func() {
-		It("Calls the generated v1beta1 List method with the passed in class", func() {
+		It("Calls the generated v1beta1 List method with the passed in class name", func() {
 			className := csc.Name
 			realClient := &fake.Clientset{}
 			realClient.AddReactor("list", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
@@ -107,13 +107,21 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: realClient,
 			}
-			class, err := sdk.RetrieveClassByName(className)
+
+			class, err := sdk.RetrieveClassByName(className, ScopeOptions{Scope: AllScope})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(class).To(Equal(csc))
 			actions := realClient.Actions()
 			Expect(actions[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[1].Matches("list", "serviceclasses")).To(BeTrue())
+
 			requirements := actions[0].(testing.ListActionImpl).GetListRestrictions().Fields.Requirements()
+			Expect(requirements).ShouldNot(BeEmpty())
+			Expect(requirements[0].Field).To(Equal("spec.externalName"))
+			Expect(requirements[0].Value).To(Equal(className))
+
+			requirements = actions[1].(testing.ListActionImpl).GetListRestrictions().Fields.Requirements()
 			Expect(requirements).ShouldNot(BeEmpty())
 			Expect(requirements[0].Field).To(Equal("spec.externalName"))
 			Expect(requirements[0].Value).To(Equal(className))
@@ -127,7 +135,7 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: emptyClient,
 			}
-			class, err := sdk.RetrieveClassByName(className)
+			class, err := sdk.RetrieveClassByName(className, ScopeOptions{Scope: AllScope})
 
 			Expect(class).To(BeNil())
 			Expect(err).To(HaveOccurred())
@@ -260,8 +268,8 @@ var _ = Describe("Class", func() {
 			classNamespace := "newnamespace"
 
 			realClient := &fake.Clientset{}
-			realClient.AddReactor("list", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
-				return true, &v1beta1.ClusterServiceClassList{Items: []v1beta1.ClusterServiceClass{*csc}}, nil
+			realClient.AddReactor("list", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, &v1beta1.ServiceClassList{Items: []v1beta1.ServiceClass{*sc}}, nil
 			})
 			realClient.AddReactor("create", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: className, Namespace: classNamespace}}, nil
@@ -276,7 +284,7 @@ var _ = Describe("Class", func() {
 			Expect(class.GetName()).To(Equal(className))
 			Expect(class.GetNamespace()).To(Equal(classNamespace))
 			actions := realClient.Actions()
-			Expect(actions[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].Matches("list", "serviceclasses")).To(BeTrue())
 			Expect(actions[1].Matches("create", "serviceclasses")).To(BeTrue())
 			objectFromRequest := actions[1].(testing.CreateActionImpl).Object.(*v1beta1.ServiceClass)
 			Expect(objectFromRequest.Name).To(Equal(className))
@@ -312,8 +320,8 @@ var _ = Describe("Class", func() {
 			errorMessage := "unable to create service class"
 
 			realClient := &fake.Clientset{}
-			realClient.AddReactor("list", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
-				return true, &v1beta1.ClusterServiceClassList{Items: []v1beta1.ClusterServiceClass{*csc}}, nil
+			realClient.AddReactor("list", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, &v1beta1.ServiceClassList{Items: []v1beta1.ServiceClass{*sc}}, nil
 			})
 			realClient.AddReactor("create", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, errors.New(errorMessage)
@@ -328,7 +336,7 @@ var _ = Describe("Class", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
 			actions := realClient.Actions()
-			Expect(actions[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].Matches("list", "serviceclasses")).To(BeTrue())
 			Expect(actions[1].Matches("create", "serviceclasses")).To(BeTrue())
 		})
 	})

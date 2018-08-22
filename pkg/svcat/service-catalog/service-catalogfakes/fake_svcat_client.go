@@ -274,17 +274,18 @@ type FakeSvcatClient struct {
 		result1 []servicecatalog.Class
 		result2 error
 	}
-	RetrieveClassByNameStub        func(string) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByNameStub        func(string, servicecatalog.ScopeOptions) (servicecatalog.Class, error)
 	retrieveClassByNameMutex       sync.RWMutex
 	retrieveClassByNameArgsForCall []struct {
 		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
 	retrieveClassByNameReturns struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}
 	retrieveClassByNameReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}
 	RetrieveClassByIDStub        func(string) (*apiv1beta1.ClusterServiceClass, error)
@@ -1521,16 +1522,17 @@ func (fake *FakeSvcatClient) RetrieveClassesReturnsOnCall(i int, result1 []servi
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByName(arg1 string) (*apiv1beta1.ClusterServiceClass, error) {
+func (fake *FakeSvcatClient) RetrieveClassByName(arg1 string, arg2 servicecatalog.ScopeOptions) (servicecatalog.Class, error) {
 	fake.retrieveClassByNameMutex.Lock()
 	ret, specificReturn := fake.retrieveClassByNameReturnsOnCall[len(fake.retrieveClassByNameArgsForCall)]
 	fake.retrieveClassByNameArgsForCall = append(fake.retrieveClassByNameArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("RetrieveClassByName", []interface{}{arg1})
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrieveClassByName", []interface{}{arg1, arg2})
 	fake.retrieveClassByNameMutex.Unlock()
 	if fake.RetrieveClassByNameStub != nil {
-		return fake.RetrieveClassByNameStub(arg1)
+		return fake.RetrieveClassByNameStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1544,30 +1546,30 @@ func (fake *FakeSvcatClient) RetrieveClassByNameCallCount() int {
 	return len(fake.retrieveClassByNameArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByNameArgsForCall(i int) string {
+func (fake *FakeSvcatClient) RetrieveClassByNameArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
 	fake.retrieveClassByNameMutex.RLock()
 	defer fake.retrieveClassByNameMutex.RUnlock()
-	return fake.retrieveClassByNameArgsForCall[i].arg1
+	return fake.retrieveClassByNameArgsForCall[i].arg1, fake.retrieveClassByNameArgsForCall[i].arg2
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByNameReturns(result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassByNameReturns(result1 servicecatalog.Class, result2 error) {
 	fake.RetrieveClassByNameStub = nil
 	fake.retrieveClassByNameReturns = struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByNameReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassByNameReturnsOnCall(i int, result1 servicecatalog.Class, result2 error) {
 	fake.RetrieveClassByNameStub = nil
 	if fake.retrieveClassByNameReturnsOnCall == nil {
 		fake.retrieveClassByNameReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServiceClass
+			result1 servicecatalog.Class
 			result2 error
 		})
 	}
 	fake.retrieveClassByNameReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }

@@ -33,9 +33,9 @@ const (
 // CreateClassFromOptions allows to specify how a new class will be created
 type CreateClassFromOptions struct {
 	Name      string
+	Scope     Scope
 	Namespace string
 	From      string
-	Scope     Scope
 }
 
 // Class provides a unifying layer of cluster and namespace scoped class resources.
@@ -87,21 +87,46 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 }
 
 // RetrieveClassByName gets a class by its external name.
-func (sdk *SDK) RetrieveClassByName(name string) (*v1beta1.ClusterServiceClass, error) {
-	opts := v1.ListOptions{
+func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, error) {
+	var searchResults []Class
+
+	lopts := v1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalClassName, name).String(),
 	}
-	searchResults, err := sdk.ServiceCatalog().ClusterServiceClasses().List(opts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+
+	if opts.Scope.Matches(ClusterScope) {
+		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(lopts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+		}
+
+		for _, c := range csc.Items {
+			class := c
+			searchResults = append(searchResults, &class)
+		}
 	}
-	if len(searchResults.Items) == 0 {
+
+	if opts.Scope.Matches(NamespaceScope) {
+		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(lopts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+		}
+
+		for _, c := range sc.Items {
+			class := c
+			searchResults = append(searchResults, &class)
+		}
+	}
+
+	if len(searchResults) > 1 {
+		return nil, fmt.Errorf("more than one matching class found for '%s' %d", name, len(searchResults))
+	}
+
+	if len(searchResults) == 0 {
 		return nil, fmt.Errorf("class '%s' not found", name)
 	}
-	if len(searchResults.Items) > 1 {
-		return nil, fmt.Errorf("more than one matching class found for '%s'", name)
-	}
-	return &searchResults.Items[0], nil
+
+	return searchResults[0], nil
 }
 
 // RetrieveClassByID gets a class by its UUID.
@@ -127,38 +152,21 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 
 // CreateClassFrom returns new created class
 func (sdk *SDK) CreateClassFrom(opts CreateClassFromOptions) (Class, error) {
-	fromClass, err := sdk.RetrieveClassByName(opts.From)
+	fromClass, err := sdk.RetrieveClassByName(opts.From, ScopeOptions{Scope: opts.Scope, Namespace: opts.Namespace})
 	if err != nil {
 		return nil, err
 	}
 
 	if opts.Scope.Matches(ClusterScope) {
-		fromClass.Name = opts.Name
-		return sdk.createClusterServiceClass(fromClass)
+		var class *v1beta1.ClusterServiceClass = fromClass.(*v1beta1.ClusterServiceClass)
+		class.Name = opts.Name
+		return sdk.createClusterServiceClass(class)
 	}
 
-	fromServiceClass := &v1beta1.ServiceClass{
-		ObjectMeta: v1.ObjectMeta{Name: opts.Name, Namespace: opts.Namespace},
-		Spec: v1beta1.ServiceClassSpec{
-			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-				ExternalName:       fromClass.Spec.ExternalName,
-				ExternalID:         fromClass.Spec.ExternalID,
-				Description:        fromClass.Spec.Description,
-				Bindable:           fromClass.Spec.Bindable,
-				BindingRetrievable: fromClass.Spec.BindingRetrievable,
-				PlanUpdatable:      fromClass.Spec.PlanUpdatable,
-				ExternalMetadata:   fromClass.Spec.ExternalMetadata,
-				Tags:               fromClass.Spec.Tags,
-				Requires:           fromClass.Spec.Requires,
-			},
-		},
-		Status: v1beta1.ServiceClassStatus{
-			CommonServiceClassStatus: v1beta1.CommonServiceClassStatus{
-				RemovedFromBrokerCatalog: fromClass.Status.RemovedFromBrokerCatalog,
-			},
-		},
-	}
-	return sdk.createServiceClass(fromServiceClass)
+	var class *v1beta1.ServiceClass = fromClass.(*v1beta1.ServiceClass)
+	class.Name = opts.Name
+	class.Namespace = opts.Namespace
+	return sdk.createServiceClass(class)
 }
 
 func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
