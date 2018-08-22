@@ -24,7 +24,9 @@ import (
 	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/tableconvertor"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -144,8 +146,28 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		CreateStrategy: serviceClassRESTStrategies,
 		UpdateStrategy: serviceClassRESTStrategies,
 		DeleteStrategy: serviceClassRESTStrategies,
-		Storage:        storageInterface,
-		DestroyFunc:    dFunc,
+
+		TableConvertor: tableconvertor.NewTableConvertor(
+			[]metav1beta1.TableColumnDefinition{
+				{Name: "Name", Type: "string", Format: "name"},
+				{Name: "External-Name", Type: "string"},
+				{Name: "Broker", Type: "string"},
+				{Name: "Age", Type: "string"},
+			},
+			func(obj runtime.Object, m metav1.Object, name, age string) ([]interface{}, error) {
+				class := obj.(*servicecatalog.ServiceClass)
+				cells := []interface{}{
+					name,
+					class.Spec.ExternalName,
+					class.Spec.ServiceBrokerName,
+					age,
+				}
+				return cells, nil
+			},
+		),
+
+		Storage:     storageInterface,
+		DestroyFunc: dFunc,
 	}
 
 	options := &generic.StoreOptions{RESTOptions: opts.EtcdOptions.RESTOptions, AttrFunc: GetAttrs}

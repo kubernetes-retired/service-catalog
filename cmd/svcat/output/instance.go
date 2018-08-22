@@ -21,6 +21,7 @@ import (
 	"io"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/olekukonko/tablewriter"
 )
 
 func getInstanceStatusCondition(status v1beta1.ServiceInstanceStatus) v1beta1.ServiceInstanceCondition {
@@ -38,6 +39,15 @@ func getInstanceStatusFull(status v1beta1.ServiceInstanceStatus) string {
 func getInstanceStatusShort(status v1beta1.ServiceInstanceStatus) string {
 	lastCond := getInstanceStatusCondition(status)
 	return formatStatusShort(string(lastCond.Type), lastCond.Status, lastCond.Reason)
+}
+
+func appendInstanceDashboardURL(status v1beta1.ServiceInstanceStatus, table *tablewriter.Table) {
+	if status.DashboardURL != nil {
+		dashboardURL := *status.DashboardURL
+		table.AppendBulk([][]string{
+			{"DashboardURL:", dashboardURL},
+		})
+	}
 }
 
 func writeInstanceListTable(w io.Writer, instanceList *v1beta1.ServiceInstanceList) {
@@ -133,6 +143,9 @@ func WriteInstanceDetails(w io.Writer, instance *v1beta1.ServiceInstance) {
 		{"Name:", instance.Name},
 		{"Namespace:", instance.Namespace},
 		{"Status:", getInstanceStatusFull(instance.Status)},
+	})
+	appendInstanceDashboardURL(instance.Status, t)
+	t.AppendBulk([][]string{
 		{"Class:", instance.Spec.GetSpecifiedClusterServiceClass()},
 		{"Plan:", instance.Spec.GetSpecifiedClusterServicePlan()},
 	})

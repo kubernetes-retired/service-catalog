@@ -18,6 +18,7 @@ package servicecatalog_test
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
@@ -192,8 +193,58 @@ var _ = Describe("Broker", func() {
 		It("creates a broker by calling the v1beta1 Create method with the passed in arguements", func() {
 			brokerName := "potato_broker"
 			url := "http://potato.com"
+			basicSecret := "potatobasicsecret"
+			caFile := "assets/ca"
+			namespace := "potatonamespace"
+			planRestrictions := []string{"potatoplana", "potatoplanb"}
+			relistBehavior := v1beta1.ServiceBrokerRelistBehaviorDuration
+			relistDuration := &metav1.Duration{Duration: 10 * time.Minute}
+			skipTLS := true
 
-			broker, err := sdk.Register(brokerName, url)
+			opts := &RegisterOptions{
+				BasicSecret:      basicSecret,
+				CAFile:           caFile,
+				Namespace:        namespace,
+				PlanRestrictions: planRestrictions,
+				RelistBehavior:   relistBehavior,
+				RelistDuration:   relistDuration,
+				SkipTLS:          skipTLS,
+			}
+			broker, err := sdk.Register(brokerName, url, opts)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).NotTo(BeNil())
+			Expect(broker.Name).To(Equal(brokerName))
+			Expect(broker.Spec.URL).To(Equal(url))
+			Expect(broker.Spec.CABundle).To(Equal([]byte("foo\n")))
+			Expect(broker.Spec.InsecureSkipTLSVerify).To(BeTrue())
+			Expect(broker.Spec.RelistBehavior).To(Equal(relistBehavior))
+			Expect(broker.Spec.RelistDuration).To(Equal(relistDuration))
+			Expect(broker.Spec.CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("create", "clusterservicebrokers")).To(BeTrue())
+			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceBroker)
+			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(brokerName))
+			Expect(objectFromRequest.Spec.URL).To(Equal(url))
+			Expect(objectFromRequest.Spec.AuthInfo.Basic.SecretRef.Name).To(Equal(basicSecret))
+			Expect(objectFromRequest.Spec.CABundle).To(Equal([]byte("foo\n")))
+			Expect(objectFromRequest.Spec.InsecureSkipTLSVerify).To(BeTrue())
+			Expect(objectFromRequest.Spec.RelistBehavior).To(Equal(relistBehavior))
+			Expect(objectFromRequest.Spec.RelistDuration).To(Equal(relistDuration))
+			Expect(objectFromRequest.Spec.CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
+		})
+		It("creates a broker with a bearer secret", func() {
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+			namespace := "potatonamespace"
+			bearerSecret := "potatobearersecret"
+			opts := &RegisterOptions{
+				Namespace:    namespace,
+				BearerSecret: bearerSecret,
+			}
+
+			broker, err := sdk.Register(brokerName, url, opts)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(broker).NotTo(BeNil())
@@ -205,6 +256,7 @@ var _ = Describe("Broker", func() {
 			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceBroker)
 			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(brokerName))
 			Expect(objectFromRequest.Spec.URL).To(Equal(url))
+			Expect(objectFromRequest.Spec.AuthInfo.Bearer.SecretRef.Name).To(Equal(bearerSecret))
 		})
 		It("Bubbles up errors", func() {
 			errorMessage := "error provisioning broker"
@@ -216,7 +268,7 @@ var _ = Describe("Broker", func() {
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			broker, err := sdk.Register(brokerName, url)
+			broker, err := sdk.Register(brokerName, url, &RegisterOptions{})
 
 			Expect(broker).To(BeNil())
 			Expect(err).To(HaveOccurred())

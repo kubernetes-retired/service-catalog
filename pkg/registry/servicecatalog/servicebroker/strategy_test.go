@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	sctestutil "github.com/kubernetes-incubator/service-catalog/test/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -83,7 +84,9 @@ func TestServiceBroker(t *testing.T) {
 	}
 
 	// Canonicalize the broker
-	serviceBrokerRESTStrategies.PrepareForCreate(nil, broker)
+	creatorUserName := "creator"
+	createContext := sctestutil.ContextWithUserName(creatorUserName)
+	serviceBrokerRESTStrategies.PrepareForCreate(createContext, broker)
 
 	if broker.Status.Conditions == nil {
 		t.Fatalf("Fresh servicebroker should have empty status")
@@ -115,9 +118,10 @@ func TestServiceBrokerUpdate(t *testing.T) {
 			shouldGenerationIncrement: true,
 		},
 	}
-
+	creatorUserName := "creator"
+	createContext := sctestutil.ContextWithUserName(creatorUserName)
 	for i := range cases {
-		serviceBrokerRESTStrategies.PrepareForUpdate(nil, cases[i].newer, cases[i].older)
+		serviceBrokerRESTStrategies.PrepareForUpdate(createContext, cases[i].newer, cases[i].older)
 
 		if cases[i].shouldGenerationIncrement {
 			if e, a := cases[i].older.Generation+1, cases[i].newer.Generation; e != a {
@@ -165,6 +169,8 @@ func TestServiceBrokerUpdateForRelistRequests(t *testing.T) {
 			expectedValue: 2,
 		},
 	}
+	creatorUserName := "creator"
+	createContext := sctestutil.ContextWithUserName(creatorUserName)
 	for _, tc := range cases {
 		oldBroker := serviceBrokerWithOldSpec()
 		oldBroker.Spec.RelistRequests = tc.oldValue
@@ -172,7 +178,7 @@ func TestServiceBrokerUpdateForRelistRequests(t *testing.T) {
 		newServiceBroker := serviceBrokerWithOldSpec()
 		newServiceBroker.Spec.RelistRequests = tc.newValue
 
-		serviceBrokerRESTStrategies.PrepareForUpdate(nil, newServiceBroker, oldBroker)
+		serviceBrokerRESTStrategies.PrepareForUpdate(createContext, newServiceBroker, oldBroker)
 
 		if e, a := tc.expectedValue, newServiceBroker.Spec.RelistRequests; e != a {
 			t.Errorf("%s: got unexpected RelistRequests: expected %v, got %v", tc.name, e, a)
