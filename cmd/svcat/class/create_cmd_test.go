@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,20 +36,19 @@ var _ = Describe("Create Command", func() {
 			cxt := &command.Context{}
 			cmd := NewCreateCmd(cxt)
 			Expect(*cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("class [NAME] --from [EXISTING_NAME] [--namespace [NAMESPACE]|--cluster]"))
+			Expect(cmd.Use).To(Equal("class [NAME] --from [EXISTING_NAME]"))
 			Expect(cmd.Short).To(ContainSubstring("Copies an existing class into a new user-defined cluster-scoped class"))
 			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb"))
-			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --cluster"))
-			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --namespace newnamespace"))
+			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --scope cluster"))
+			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace"))
 			Expect(len(cmd.Aliases)).To(Equal(0))
 		})
 	})
 	Describe("Validate name is provided", func() {
 		It("errors if a new class name is not provided", func() {
 			cmd := CreateCmd{
-				Context: nil,
-				Name:    "",
-				From:    "existingclass",
+				Name: "",
+				From: "existingclass",
 			}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
@@ -57,22 +57,8 @@ var _ = Describe("Create Command", func() {
 	Describe("Validate from is provided", func() {
 		It("errors if a existing class name is not provided using from", func() {
 			cmd := CreateCmd{
-				Context: nil,
-				Name:    "newclass",
-				From:    "",
-			}
-			err := cmd.Validate([]string{})
-			Expect(err).To(HaveOccurred())
-		})
-	})
-	Describe("Validate namespace is not provided to a cluster scoped class", func() {
-		It("errors if cluster flag and namespace are provided at the same time", func() {
-			cmd := CreateCmd{
-				Context:   nil,
-				Name:      "newclass",
-				From:      "",
-				Cluster:   true,
-				Namespace: "newnamespace",
+				Name: "newclass",
+				From: "",
 			}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
@@ -96,11 +82,12 @@ var _ = Describe("Create Command", func() {
 			fakeSDK.CreateClassFromReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
-				Context: svcattest.NewContext(outputBuffer, fakeApp),
-				Name:    className,
-				From:    existingClassName,
-				Cluster: true,
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+				Name:       className,
+				From:       existingClassName,
 			}
+			cmd.Scope = servicecatalog.ClusterScope
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
@@ -130,12 +117,13 @@ var _ = Describe("Create Command", func() {
 			fakeSDK.CreateClassFromReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
-				Context:   svcattest.NewContext(outputBuffer, fakeApp),
-				Name:      className,
-				Namespace: classNamespace,
-				From:      existingClassName,
-				Cluster:   false,
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+				Name:       className,
+				From:       existingClassName,
 			}
+			cmd.Scope = servicecatalog.NamespaceScope
+			cmd.Namespace = classNamespace
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
