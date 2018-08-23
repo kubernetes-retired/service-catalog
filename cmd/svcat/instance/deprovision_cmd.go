@@ -77,10 +77,10 @@ func (c *deprovisonCmd) deprovision() error {
 		fmt.Fprintln(c.Output, "Waiting for the instance to be deleted...")
 
 		var instance *v1beta1.ServiceInstance
-		instance, err = c.App.WaitForInstance(c.Namespace, c.instanceName, c.Interval, c.Timeout)
+		instance, err = c.App.WaitForInstanceToNotExist(c.Namespace, c.instanceName, c.Interval, c.Timeout)
 
 		// The instance failed to deprovision cleanly, dump out more information on why
-		if c.App.IsInstanceFailed(instance) {
+		if instance != nil && c.App.IsInstanceFailed(instance) {
 			output.WriteInstanceDetails(c.Output, instance)
 		}
 	}
