@@ -249,7 +249,7 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ClusterServiceBroker
 		result2 error
 	}
-	SyncStub        func(string, int) error
+	SyncStub        func(string, servicecatalog.ScopeOptions, int) error
 	syncMutex       sync.RWMutex
 	syncArgsForCall []struct {
 		arg1 string
@@ -1421,17 +1421,18 @@ func (fake *FakeSvcatClient) RegisterReturnsOnCall(i int, result1 *apiv1beta1.Cl
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) Sync(arg1 string, arg2 int) error {
+func (fake *FakeSvcatClient) Sync(arg1 string, arg2 servicecatalog.ScopeOptions, arg3 int) error {
 	fake.syncMutex.Lock()
 	ret, specificReturn := fake.syncReturnsOnCall[len(fake.syncArgsForCall)]
 	fake.syncArgsForCall = append(fake.syncArgsForCall, struct {
 		arg1 string
-		arg2 int
-	}{arg1, arg2})
-	fake.recordInvocation("Sync", []interface{}{arg1, arg2})
+		arg2 servicecatalog.ScopeOptions
+		arg3 int
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Sync", []interface{}{arg1, arg2, arg3})
 	fake.syncMutex.Unlock()
 	if fake.SyncStub != nil {
-		return fake.SyncStub(arg1, arg2)
+		return fake.SyncStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
