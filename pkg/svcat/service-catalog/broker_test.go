@@ -277,7 +277,7 @@ var _ = Describe("Broker", func() {
 	})
 	Describe("Sync", func() {
 		It("Useds the generated v1beta1 Retrieve method to get the broker, and then updates it with a new RelistRequests", func() {
-			err := sdk.Sync(csb.Name, 3)
+			err := sdk.Sync(csb.Name, &ScopeOptions{Scope: NamespaceScope, Namespace: "default"}, 3)
 			Expect(err).NotTo(HaveOccurred())
 
 			actions := svcCatClient.Actions()
