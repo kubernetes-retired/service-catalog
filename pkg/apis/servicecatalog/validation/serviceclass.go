@@ -31,12 +31,7 @@ const commonServiceClassNameMaxLength int = 63
 
 var commonServiceClassNameRegexp = regexp.MustCompile("^" + commonServiceClassNameFmt + "$")
 
-const guidFmt string = "[a-zA-Z0-9]([-a-zA-Z0-9.]*[a-zA-Z0-9])?"
 const guidMaxLength int = 63
-
-// guidRegexp is a loosened validation for
-// DNS1123 labels that allows uppercase characters.
-var guidRegexp = regexp.MustCompile("^" + guidFmt + "$")
 
 // validateCommonServiceClassName is the common validation function for
 // service class types.
@@ -64,8 +59,8 @@ func validateExternalID(value string) []string {
 	if len(value) > guidMaxLength {
 		errs = append(errs, utilvalidation.MaxLenError(guidMaxLength))
 	}
-	if !guidRegexp.MatchString(value) {
-		errs = append(errs, utilvalidation.RegexError(guidFmt, "my-name", "123-abc", "456-DEF"))
+	if len(value) == 0 {
+		errs = append(errs, utilvalidation.EmptyError())
 	}
 	return errs
 }
