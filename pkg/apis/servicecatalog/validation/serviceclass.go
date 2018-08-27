@@ -31,7 +31,7 @@ const commonServiceClassNameMaxLength int = 63
 
 var commonServiceClassNameRegexp = regexp.MustCompile("^" + commonServiceClassNameFmt + "$")
 
-const guidFmt string = "[a-zA-Z0-9]([-a-zA-Z0-9.]*[a-zA-Z0-9])?"
+const guidFmt string = "[a-zA-Z0-9]([-._a-zA-Z0-9]*[a-zA-Z0-9])?"
 const guidMaxLength int = 63
 
 // guidRegexp is a loosened validation for

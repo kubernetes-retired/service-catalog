@@ -53,7 +53,7 @@ func TestValidateClusterServiceClass(t *testing.T) {
 			valid:        true,
 		},
 		{
-			name: "valid serviceClass - uppercase in GUID",
+			name: "valid serviceClass - uppercase in ExternalID",
 			serviceClass: func() *servicecatalog.ClusterServiceClass {
 				s := validClusterServiceClass()
 				s.Spec.ExternalID = "40D-0983-1b89"
@@ -62,10 +62,19 @@ func TestValidateClusterServiceClass(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid serviceClass - period in GUID",
+			name: "valid serviceClass - period in ExternalID",
 			serviceClass: func() *servicecatalog.ClusterServiceClass {
 				s := validClusterServiceClass()
 				s.Spec.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a.plan-name"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "valid serviceClass - underscore in ExternalID",
+			serviceClass: func() *servicecatalog.ClusterServiceClass {
+				s := validClusterServiceClass()
+				s.Spec.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a_plan-name"
 				return s
 			}(),
 			valid: true,
@@ -203,7 +212,7 @@ func TestValidateServiceClass(t *testing.T) {
 			valid:        true,
 		},
 		{
-			name: "valid serviceClass - uppercase in GUID",
+			name: "valid serviceClass - uppercase in ExternalID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
 				s.Spec.ExternalID = "40D-0983-1b89"
@@ -212,10 +221,19 @@ func TestValidateServiceClass(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "valid serviceClass - period in GUID",
+			name: "valid serviceClass - period in ExternalID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
 				s.Spec.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a.plan-name"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "valid serviceClass - underscore in ExternalID",
+			serviceClass: func() *servicecatalog.ServiceClass {
+				s := validServiceClass()
+				s.Spec.ExternalID = "4315f5e1-0139-4ecf-9706-9df0aff33e5a_plan-name"
 				return s
 			}(),
 			valid: true,
@@ -239,7 +257,7 @@ func TestValidateServiceClass(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "invalid serviceClass - missing guid",
+			name: "invalid serviceClass - missing ExternalID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
 				s.Spec.ExternalID = ""
@@ -248,7 +266,7 @@ func TestValidateServiceClass(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "invalid serviceClass - invalid guid",
+			name: "invalid serviceClass - invalid ExternalID",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
 				s.Spec.ExternalID = "1234-4354a\\%-49b"
