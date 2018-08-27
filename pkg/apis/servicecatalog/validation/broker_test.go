@@ -519,13 +519,14 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := ValidateClusterServiceBroker(tc.broker)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			return
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateClusterServiceBroker(tc.broker)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		})
 	}
 
 	updateCases := []struct {
@@ -626,13 +627,14 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 		},
 	}
 	for _, tc := range updateCases {
-		errs := ValidateClusterServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateClusterServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		})
 	}
 }
 
@@ -945,13 +947,14 @@ func TestValidateServiceBroker(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := ValidateServiceBroker(tc.broker)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateServiceBroker(tc.broker)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		})
 	}
 
 	updateCases := []struct {
@@ -1058,12 +1061,13 @@ func TestValidateServiceBroker(t *testing.T) {
 		},
 	}
 	for _, tc := range updateCases {
-		errs := ValidateServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		})
 	}
 }
