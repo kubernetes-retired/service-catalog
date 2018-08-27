@@ -262,8 +262,8 @@ func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(i
 }
 
 func autoConvert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(in *servicecatalog.CatalogRestrictions, out *CatalogRestrictions, s conversion.Scope) error {
-	out.ServicePlan = *(*[]string)(unsafe.Pointer(&in.ServicePlan))
 	out.ServiceClass = *(*[]string)(unsafe.Pointer(&in.ServiceClass))
+	out.ServicePlan = *(*[]string)(unsafe.Pointer(&in.ServicePlan))
 	return nil
 }
 
