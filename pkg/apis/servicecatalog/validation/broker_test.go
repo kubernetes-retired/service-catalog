@@ -402,7 +402,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
 							ServiceClass: []string{
 								"name==foobar",
-								"externalName in (foobar, bazboof, wizzbang)",
+								"spec.externalName in (foobar, bazboof, wizzbang)",
 							},
 						},
 					},
@@ -423,6 +423,26 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
 							ServiceClass: []string{
 								"invalid restriction",
+							},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid clusterservicebroker - catalogRequirements.serviceClass - invalid property",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServiceClass: []string{
+								"spec.invalidProperty==foobar",
 							},
 						},
 					},
@@ -463,7 +483,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
 							ServicePlan: []string{
 								"name==foobar",
-								"externalName in (foobar, bazboof, wizzbang)",
+								"spec.externalName in (foobar, bazboof, wizzbang)",
 							},
 						},
 					},
@@ -492,6 +512,26 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			valid: false,
 		},
 		{
+			name: "invalid clusterservicebroker - catalogRequirements.servicePlan - invalid property",
+			broker: &servicecatalog.ClusterServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ClusterServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
+						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
+							ServicePlan: []string{
+								"spec.invalidProperty notin (foo, bar)",
+							},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
 			name: "valid clusterservicebroker - catalogRequirements with serviceClass and servicePlan",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
@@ -503,12 +543,12 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
 						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
 							ServiceClass: []string{
-								"name==barfoobar",
-								"externalName in (barfoobar, batbazboof, batwizzbang)",
+								"name=barfoobar",
+								"spec.externalName in (barfoobar, batbazboof, batwizzbang)",
 							},
 							ServicePlan: []string{
 								"name==foobar",
-								"externalName in (foobar, bazboof, wizzbang)",
+								"spec.externalName in (foobar, bazboof, wizzbang)",
 							},
 						},
 					},
