@@ -222,7 +222,7 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		if err != nil {
 			commonErrs = append(commonErrs,
 				field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
-					spec.CatalogRestrictions.ServiceClass, err.Error()))
+					spec.CatalogRestrictions.ServicePlan, err.Error()))
 		}
 	}
 
