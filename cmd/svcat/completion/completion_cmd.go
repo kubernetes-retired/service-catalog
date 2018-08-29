@@ -50,7 +50,11 @@ brew install bash-completion
 printf "\n# Bash completion support\nsource $(brew --prefix)/etc/bash_completion\n" >> $HOME/.bash_profile
 source $HOME/.bash_profile
 
+<<<<<<< HEAD
 # Load the svcat completion code for the specified shell (bash or zsh)
+=======
+# Load the svcat completion code for for the specified shell (bash or zsh)
+>>>>>>> 9af2f105... fetched upstream
 source <(svcat completion bash)
 
 # Write bash completion code to a file and source if from .bash_profile

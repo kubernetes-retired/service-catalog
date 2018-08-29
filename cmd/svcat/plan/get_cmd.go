@@ -33,10 +33,11 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
-
-	classFilter string
-	classUUID   string
-	className   string
+	broker       string
+	
+  classFilter  string
+	classUUID    string
+	className    string
 }
 
 // NewGetCmd builds a "svcat get plans" command
@@ -58,6 +59,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan --class CLASS_NAME PLAN_NAME
   svcat get plans --uuid --class CLASS_UUID
   svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+  svcat get plans --broker BROKER_NAME
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -75,6 +77,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"c",
 		"",
 		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.broker,
+		"broker",
+		"b",
+		"",
+		"Filter the plans by a broker name",
 	)
 	getCmd.AddOutputFlags(cmd.Flags())
 	return cmd
@@ -115,14 +124,20 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
-
+  
 	// Retrieve the classes as well because plans don't have the external class name
 	// TODO: When we implement ns-scoped support for get plans, we need to pass in the current namespace
 	classOpts := servicecatalog.ScopeOptions{
 		Scope: servicecatalog.AllScope,
 	}
+  
+  filterOpts := servicecatalog.FilterOptions{
+		ClassName: c.className,
+		Broker:    c.broker,
+	}
 	classes, err := c.App.RetrieveClasses(classOpts)
-	if err != nil {
+	
+  if err != nil {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
 
@@ -136,9 +151,6 @@ func (c *getCmd) getAll() error {
 					break
 				}
 			}
-		}
-		opts = &servicecatalog.FilterOptions{
-			ClassID: c.classUUID,
 		}
 	}
 

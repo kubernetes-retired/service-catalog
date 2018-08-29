@@ -22,6 +22,9 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"github.com/spf13/cobra"
+	"fmt"
 )
 
 type getCmd struct {
@@ -31,6 +34,7 @@ type getCmd struct {
 	lookupByUUID bool
 	uuid         string
 	name         string
+	broker       string
 }
 
 // NewGetCmd builds a "svcat get classes" command
@@ -50,6 +54,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get classes --scope namespace --namespace dev
   svcat get class mysqldb
   svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
+  svcat get classes --broker 
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -60,6 +65,14 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"u",
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
+	)
+
+	cmd.Flags().StringVarP(
+		&getCmd.broker,
+		"broker",
+		"b",
+		"",
+		"Filters the classes by a broker name.",
 	)
 	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
@@ -75,6 +88,10 @@ func (c *getCmd) Validate(args []string) error {
 			c.name = args[0]
 		}
 	}
+	// Just for now while I get PR reviewed
+	if c.uuid != "" && c.broker != "" {
+		return fmt.Errorf("currently not supported")
+	}
 
 	return nil
 }
@@ -88,10 +105,16 @@ func (c *getCmd) Run() error {
 }
 
 func (c *getCmd) getAll() error {
+
 	opts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
 	}
+  classes, err := c.App.RetrieveClasses(opts)
+  
+  filterOpts := servicecatalog.FilterOptions{
+    Broker: c.broker,
+  }
 	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
 		return err

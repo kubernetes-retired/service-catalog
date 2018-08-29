@@ -23,7 +23,8 @@ import (
 
 // FilterOptions allows for optional filtering fields to be passed to `Retrieve` methods.
 type FilterOptions struct {
-	ClassID string
+	ClassName string
+	Broker    string
 }
 
 // RegisterOptions allows for passing of optional fields to the broker Register method.

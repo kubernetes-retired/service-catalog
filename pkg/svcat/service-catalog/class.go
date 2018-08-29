@@ -28,6 +28,9 @@ import (
 const (
 	// FieldExternalClassName is the jsonpath to a class's external name.
 	FieldExternalClassName = "spec.externalName"
+
+	// FieldClusterServiceBrokerName is the json path to a classes associated broker
+	FieldClusterServiceBrokerName = "spec.clusterServiceBrokerName"
 )
 
 // Class provides a unifying layer of cluster and namespace scoped class resources.
@@ -47,8 +50,22 @@ type Class interface {
 }
 
 // RetrieveClasses lists all classes defined in the cluster.
-func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
-	var classes []Class
+func (sdk *SDK) RetrieveClasses(opts ScopeOptions, filter FilterOptions) ([]Class, error) {
+  var classes []Class
+	brokerSelector := fields.Everything()
+	classNameSelector := fields.Everything()
+	if opts.Broker != "" {
+		brokerSelector = fields.OneTermEqualSelector(FieldClusterServiceBrokerName, opts.Broker)
+	}
+	if opts.ClassName != "" {
+		classNameSelector = fields.OneTermEqualSelector(FieldExternalClassName, opts.ClassName)
+	}
+	selectors := v1.ListOptions{
+		FieldSelector: fields.AndSelectors(brokerSelector, classNameSelector).String(),
+  }
+	classes, err := sdk.ServiceCatalog().ClusterServiceClasses().List(selectors)
+ }
+  
 	if opts.Scope.Matches(ClusterScope) {
 		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
 		if err != nil {
@@ -58,8 +75,7 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 			class := c
 			classes = append(classes, &class)
 		}
-	}
-
+  
 	if opts.Scope.Matches(NamespaceScope) {
 		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(v1.ListOptions{})
 		if err != nil {
@@ -74,7 +90,7 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 			classes = append(classes, &class)
 		}
 	}
-
+  
 	return classes, nil
 }
 

@@ -36,6 +36,7 @@ func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 
 	t.SetHeader([]string{
 		"Name",
+		"Broker",
 		"Namespace",
 		"Description",
 	})

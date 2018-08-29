@@ -55,6 +55,7 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 	t.SetHeader([]string{
 		"Name",
 		"Class",
+		"Broker",
 		"Description",
 	})
 	for _, plan := range plans {
@@ -62,6 +63,7 @@ func writePlanListTable(w io.Writer, plans []v1beta1.ClusterServicePlan, classNa
 			plan.Spec.ExternalName,
 			classNames[plan.Spec.ClusterServiceClassRef.Name],
 			plan.Spec.Description,
+			plan.Spec.ClusterServiceBrokerName,
 		})
 	}
 	t.SetVariableColumn(3)

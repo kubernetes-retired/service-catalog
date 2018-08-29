@@ -1,3 +1,4 @@
+
    NAME              CLASS                          DESCRIPTION                
 +---------+--------------------------+----------------------------------------+
   default   user-provided-service      Sample plan description                 
@@ -6,3 +7,4 @@
                                        really really really really really,     
                                        kinda, wide                             
   premium   another-provided-service   Another premium plan                    
+

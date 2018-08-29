@@ -55,7 +55,7 @@ var _ = Describe("Class", func() {
 
 	Describe("RetrieveClasses", func() {
 		It("Calls the generated v1beta1 List methods", func() {
-			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope})
+      classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope}, &FilterOptions{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(classes).Should(ConsistOf(csc, csc2, sc, sc2))
@@ -90,6 +90,7 @@ var _ = Describe("Class", func() {
 				ServiceCatalogClient: badClient,
 			}
 
+			_, err := sdk.RetrieveClasses(&FilterOptions{})
 			_, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope})
 
 			Expect(err).To(HaveOccurred())
