@@ -55,7 +55,11 @@ func (c *controller) clusterServiceClassDelete(obj interface{}) {
 // reconciliation loop for ClusterServiceClass. ClusterServiceClasses are primarily
 // reconciled in a separate flow when a ClusterServiceBroker is reconciled.
 func (c *controller) reconcileClusterServiceClassKey(key string) error {
+<<<<<<< HEAD
 	class, err := c.clusterServiceClassLister.Get(key)
+=======
+	clusterserviceclass, err := c.clusterServiceClassLister.Get(key)
+>>>>>>> 8aa3b4652ff5ba8a525793d13d3768b3fd4b15e1
 	if errors.IsNotFound(err) {
 		glog.Infof("ClusterServiceClass %q: Not doing work because it has been deleted", key)
 		return nil
@@ -65,7 +69,11 @@ func (c *controller) reconcileClusterServiceClassKey(key string) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	return c.reconcileClusterServiceClass(class)
+=======
+	return c.reconcileClusterServiceClass(clusterserviceclass)
+>>>>>>> 8aa3b4652ff5ba8a525793d13d3768b3fd4b15e1
 }
 
 func (c *controller) reconcileClusterServiceClass(serviceClass *v1beta1.ClusterServiceClass) error {
