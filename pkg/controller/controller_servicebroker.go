@@ -82,7 +82,7 @@ func (c *controller) serviceBrokerDelete(obj interface{}) {
 // returns true unless the broker has a ready condition with status true and
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true, or if the broker's RelistBehavior is set to Manual.
-func shouldReconcileServiceBroker(broker *v1beta1.ServiceBroker, now time.Time) bool {
+func shouldReconcileServiceBroker(broker *v1beta1.ServiceBroker, now time.Time, defaultRelistInterval time.Duration) bool {
 	// ERIK TODO: This should get refactored out into a shared method because it
 	// only relies on Common components.
 	pcb := pretty.NewServiceBrokerContextBuilder(broker)
@@ -113,14 +113,13 @@ func shouldReconcileServiceBroker(broker *v1beta1.ServiceBroker, now time.Time) 
 					return false
 				}
 
-				if broker.Spec.RelistDuration == nil {
-					glog.Error(pcb.Message("Unable to process because RelistBehavior is set to Duration with a nil RelistDuration value"))
-					return false
-				}
-
 				// By default, the broker should relist if it has been longer than the
 				// RelistDuration since the last time we fetched the Catalog
-				duration := broker.Spec.RelistDuration.Duration
+				duration := defaultRelistInterval
+				if broker.Spec.RelistDuration != nil {
+					duration = broker.Spec.RelistDuration.Duration
+				}
+
 				intervalPassed := true
 				if broker.Status.LastCatalogRetrievalTime != nil {
 					intervalPassed = now.After(broker.Status.LastCatalogRetrievalTime.Time.Add(duration))
@@ -171,7 +170,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
 	// elapsed, do not reconcile it.
-	if !shouldReconcileServiceBroker(broker, time.Now()) {
+	if !shouldReconcileServiceBroker(broker, time.Now(), c.brokerRelistInterval) {
 		return nil
 	}
 
