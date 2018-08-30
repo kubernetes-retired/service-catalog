@@ -18,9 +18,12 @@ package filter
 
 import (
 	"fmt"
+	"regexp"
 
 	"k8s.io/apimachinery/pkg/labels"
 )
+
+var conditionalsRegex = regexp.MustCompile("=|==|!=| in | notin ")
 
 // CreatePredicate creates the Predicate that will be used to
 // test if acceptance is allowed for service classes.
@@ -46,4 +49,11 @@ func CreatePredicate(restrictions []string) (Predicate, error) {
 // ConvertToSelector converts Predicate to a labels.Selector
 func ConvertToSelector(p Predicate) (labels.Selector, error) {
 	return labels.Parse(p.String())
+}
+
+// ExtractProperty extracts the property from the given restriction
+// E.g., for the restriction "spec.externalName=foo", the function
+// returns "spec.externalName"
+func ExtractProperty(restriction string) string {
+	return conditionalsRegex.Split(restriction, 2)[0]
 }
