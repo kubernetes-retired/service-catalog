@@ -196,24 +196,26 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		var ltt *time.Time
-		if len(tc.broker.Status.Conditions) != 0 {
-			ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			var ltt *time.Time
+			if len(tc.broker.Status.Conditions) != 0 {
+				ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
+			}
 
-		if tc.broker.Spec.RelistDuration != nil {
-			interval := tc.broker.Spec.RelistDuration.Duration
-			lastRelistTime := tc.broker.Status.LastCatalogRetrievalTime
-			t.Logf("%v: now: %v, interval: %v, last transition time: %v, last relist time: %v", tc.name, tc.now, interval, ltt, lastRelistTime)
-		} else {
-			t.Logf("broker.Spec.RelistDuration set to nil")
-		}
+			if tc.broker.Spec.RelistDuration != nil {
+				interval := tc.broker.Spec.RelistDuration.Duration
+				lastRelistTime := tc.broker.Status.LastCatalogRetrievalTime
+				t.Logf("now: %v, interval: %v, last transition time: %v, last relist time: %v", tc.now, interval, ltt, lastRelistTime)
+			} else {
+				t.Logf("broker.Spec.RelistDuration set to nil")
+			}
 
-		actual := shouldReconcileClusterServiceBroker(tc.broker, tc.now, 24*time.Hour)
+			actual := shouldReconcileClusterServiceBroker(tc.broker, tc.now, 24*time.Hour)
 
-		if e, a := tc.reconcile, actual; e != a {
-			t.Errorf("%v: unexpected result: %s", tc.name, expectedGot(e, a))
-		}
+			if e, a := tc.reconcile, actual; e != a {
+				t.Errorf("unexpected result: %s", expectedGot(e, a))
+			}
+		})
 	}
 }
 
