@@ -88,6 +88,11 @@ tree:
       -1 to wait indefinitely.'
   - name: wait
     desc: Wait until the operation completes.
+- name: deregister
+  use: deregister NAME
+  shortDesc: Deregisters an existing broker with service catalog
+  example: '  svcat deregister mysqlbroker'
+  command: ./svcat deregister
 - name: describe
   use: describe
   shortDesc: Show details of a specific resource

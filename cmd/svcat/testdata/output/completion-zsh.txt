@@ -522,6 +522,28 @@ _svcat_deprovision()
     noun_aliases=()
 }
 
+_svcat_deregister()
+{
+    last_command="svcat_deregister"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--context=")
+    flags+=("--kubeconfig=")
+    flags+=("--logtostderr")
+    flags+=("--v=")
+    two_word_flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _svcat_describe_binding()
 {
     last_command="svcat_describe_binding"
@@ -1170,6 +1192,7 @@ _svcat_root_command()
     commands+=("completion")
     commands+=("create")
     commands+=("deprovision")
+    commands+=("deregister")
     commands+=("describe")
     commands+=("get")
     commands+=("install")
