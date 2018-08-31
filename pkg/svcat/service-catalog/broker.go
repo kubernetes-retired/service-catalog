@@ -98,6 +98,16 @@ func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, erro
 	return broker, nil
 }
 
+// RetrieveNamespacedBroker gets a set of broker by its name.
+func (sdk *SDK) RetrieveNamespacedBroker(namespace string, name string) (*v1beta1.ServiceBroker, error) {
+	broker, err := sdk.ServiceCatalog().ServiceBrokers(namespace).Get(name, v1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get broker '%s' (%s)", name, err)
+	}
+
+	return broker, nil
+}
+
 // RetrieveBrokerByClass gets the parent broker of a class.
 func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 ) (*v1beta1.ClusterServiceBroker, error) {
@@ -166,26 +176,55 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions) (
 	return result, nil
 }
 
-// Sync or relist a broker to refresh its catalog metadata.
-func (sdk *SDK) Sync(name string, retries int) error {
-	for j := 0; j < retries; j++ {
-		catalog, err := sdk.RetrieveBroker(name)
-		if err != nil {
-			return err
+// Sync or relist a broker to refresh its broker metadata.
+func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
+	success := false
+
+	for j := 0; j < retries && !success; j++ {
+
+		if scopeOpts.Scope.Matches(NamespaceScope) {
+			namespace := scopeOpts.Namespace
+			broker, err := sdk.RetrieveNamespacedBroker(namespace, name)
+			if err == nil {
+				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
+
+				_, err = sdk.ServiceCatalog().ServiceBrokers(namespace).Update(broker)
+				if err == nil {
+					success = true
+					fmt.Printf("synced servicebroker (%s) in name space (%s)\n", name, scopeOpts.Namespace)
+				}
+				if err != nil && !apierrors.IsConflict(err) {
+					return fmt.Errorf("could not sync service broker (%s)", err)
+				}
+			}
 		}
 
-		catalog.Spec.RelistRequests = catalog.Spec.RelistRequests + 1
+		if scopeOpts.Scope.Matches(ClusterScope) {
+			broker, err := sdk.RetrieveBroker(name)
+			if err == nil {
+				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
-		_, err = sdk.ServiceCatalog().ClusterServiceBrokers().Update(catalog)
-		if err == nil {
-			return nil
+				_, err = sdk.ServiceCatalog().ClusterServiceBrokers().Update(broker)
+				if err == nil {
+					success = true
+					fmt.Printf("synced clusterservicebroker (%s)\n", name)
+				}
+				if err != nil && !apierrors.IsConflict(err) {
+					return fmt.Errorf("could not sync service broker (%s)", err)
+				}
+			}
 		}
-		if !apierrors.IsConflict(err) {
-			return fmt.Errorf("could not sync service broker (%s)", err)
+		// success to update, no need to retry again
+		if success {
+			break
 		}
 	}
 
-	return fmt.Errorf("could not sync service broker after %d tries", retries)
+	if !success {
+		return fmt.Errorf("could not sync service broker %s", name)
+	}
+
+	return nil
 }
 
 // WaitForBroker waits for the specified broker to be Ready or Failed

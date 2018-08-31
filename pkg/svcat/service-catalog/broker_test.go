@@ -317,8 +317,8 @@ var _ = Describe("Broker", func() {
 		})
 	})
 	Describe("Sync", func() {
-		It("Useds the generated v1beta1 Retrieve method to get the broker, and then updates it with a new RelistRequests", func() {
-			err := sdk.Sync(csb.Name, 3)
+		It("Uses the generated v1beta1 Retrieve method to get the broker, and then updates it with a new RelistRequests", func() {
+			err := sdk.Sync(csb.Name, ScopeOptions{Scope: ClusterScope}, 3)
 			Expect(err).NotTo(HaveOccurred())
 
 			actions := svcCatClient.Actions()
@@ -328,6 +328,14 @@ var _ = Describe("Broker", func() {
 
 			Expect(actions[1].Matches("update", "clusterservicebrokers")).To(BeTrue())
 			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ClusterServiceBroker).Spec.RelistRequests).Should(BeNumerically(">", 0))
+		})
+		It("Uses the generated v1beta1 Retrieve method to get the broker with namespace", func() {
+			sdk.Sync(csb.Name, ScopeOptions{Scope: NamespaceScope, Namespace: "namespace"}, 3)
+
+			actions := svcCatClient.Actions()
+			Expect(len(actions) >= 1).To(BeTrue())
+			Expect(actions[0].Matches("get", "servicebrokers")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(csb.Name))
 		})
 	})
 	Describe("WaitForBroker", func() {

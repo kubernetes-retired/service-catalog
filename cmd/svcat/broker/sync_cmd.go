@@ -20,17 +20,22 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 type syncCmd struct {
-	*command.Context
+	*command.Namespaced
+	*command.Scoped
 	name string
 }
 
 // NewSyncCmd builds a "svcat sync broker" command
 func NewSyncCmd(cxt *command.Context) *cobra.Command {
-	syncCmd := &syncCmd{Context: cxt}
+	syncCmd := &syncCmd{
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+	}
 	rootCmd := &cobra.Command{
 		Use:     "broker NAME",
 		Short:   "Syncs service catalog for a service broker",
@@ -38,6 +43,8 @@ func NewSyncCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(syncCmd),
 		RunE:    command.RunE(syncCmd),
 	}
+	syncCmd.AddScopedFlags(rootCmd.Flags(), false)
+	syncCmd.AddNamespaceFlags(rootCmd.Flags(), false)
 	return rootCmd
 }
 
@@ -54,8 +61,13 @@ func (c *syncCmd) Run() error {
 }
 
 func (c *syncCmd) sync() error {
+	scopeOpts := servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	}
+
 	const retries = 3
-	err := c.App.Sync(c.name, retries)
+	err := c.App.Sync(c.name, scopeOpts, retries)
 	if err != nil {
 		return err
 	}
