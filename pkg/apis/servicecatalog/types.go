@@ -155,9 +155,9 @@ type CommonServiceBrokerSpec struct {
 //   spec.clusterServiceClass.name - the value set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
-	ServicePlan []string
-	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
 	ServiceClass []string
+	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
+	ServicePlan []string
 }
 
 // ClusterServiceBrokerSpec represents a description of a Broker.
