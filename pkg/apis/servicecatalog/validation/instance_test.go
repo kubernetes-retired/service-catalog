@@ -894,9 +894,9 @@ func TestValidateServiceInstance(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := internalValidateServiceInstance(tc.instance, tc.create)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -974,9 +974,9 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 
 			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -1020,9 +1020,9 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 
 			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -1128,9 +1128,9 @@ func TestInternalValidateServiceInstanceUpdateAllowedForClusterPlanChange(t *tes
 
 			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -1236,9 +1236,9 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 
 			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -1423,14 +1423,14 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 
 			errs := ValidateServiceInstanceStatusUpdate(new, old)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 			if !tc.valid {
 				for _, err := range errs {
 					if !strings.Contains(err.Detail, tc.err) {
-						t.Errorf("%v: Error %q did not contain expected message %q", tc.name, err.Detail, tc.err)
+						t.Errorf("Error %q did not contain expected message %q", err.Detail, tc.err)
 					}
 				}
 			}
@@ -1476,14 +1476,14 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 
 			errs := ValidateServiceInstanceStatusUpdate(new, old)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 			if !tc.valid {
 				for _, err := range errs {
 					if !strings.Contains(err.Detail, tc.err) {
-						t.Errorf("%v: Error %q did not contain expected message %q", tc.name, err.Detail, tc.err)
+						t.Errorf("Error %q did not contain expected message %q", err.Detail, tc.err)
 					}
 				}
 			}
@@ -1612,9 +1612,9 @@ func TestValidateServiceInstanceReferencesUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := ValidateServiceInstanceReferencesUpdate(tc.new, tc.old)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -1664,7 +1664,7 @@ func TestValidateClusterOrNamespacedPlanReference(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Fatalf(`TestValidateClusterOrNamespacedPlanReference: did not find expected error "%s" in errors: %v`, expectedErr, errs)
+				t.Fatalf(`did not find expected error "%s" in errors: %v`, expectedErr, errs)
 			}
 		})
 	}
@@ -1924,7 +1924,7 @@ func TestValidatePlanReference(t *testing.T) {
 			errs := validatePlanReference(&tc.ref, field.NewPath("spec"))
 			if len(errs) != 0 {
 				if tc.valid {
-					t.Errorf("%v: unexpected error: %v", tc.name, errs)
+					t.Errorf("unexpected error: %v", errs)
 				}
 				found := false
 				for _, e := range errs {
@@ -1933,10 +1933,10 @@ func TestValidatePlanReference(t *testing.T) {
 					}
 				}
 				if !found {
-					t.Errorf("%v: did not find expected error %q in errors: %v", tc.name, tc.expectedError, errs)
+					t.Errorf("did not find expected error %q in errors: %v", tc.expectedError, errs)
 				}
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -2025,7 +2025,7 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 			errs := validatePlanReferenceUpdate(&tc.old, &tc.new, field.NewPath("spec"))
 			if len(errs) != 0 {
 				if tc.valid {
-					t.Errorf("%v: unexpected error: %v", tc.name, errs)
+					t.Errorf("unexpected error: %v", errs)
 				}
 				found := false
 				for _, e := range errs {
@@ -2034,10 +2034,10 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 					}
 				}
 				if !found {
-					t.Errorf("%v: did not find expected error %q in errors: %v", tc.name, tc.expectedError, errs)
+					t.Errorf("did not find expected error %q in errors: %v", tc.expectedError, errs)
 				}
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}

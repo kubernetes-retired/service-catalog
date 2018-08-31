@@ -571,9 +571,9 @@ func TestValidateServiceBinding(t *testing.T) {
 			errs := internalValidateServiceBinding(tc.binding, tc.create)
 			errs = append(errs, validateServiceBindingStatus(&tc.binding.Status, field.NewPath("status"), false)...)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -632,9 +632,9 @@ func TestInternalValidateServiceBindingUpdateAllowed(t *testing.T) {
 
 			errs := internalValidateServiceBindingUpdateAllowed(newBinding, oldBinding)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}

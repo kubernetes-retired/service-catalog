@@ -202,9 +202,9 @@ func TestValidateClusterServicePlan(t *testing.T) {
 			errs := ValidateClusterServicePlan(tc.clusterServicePlan)
 			t.Log(errs)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -360,9 +360,9 @@ func TestValidateServicePlan(t *testing.T) {
 			errs := ValidateServicePlan(tc.servicePlan)
 			t.Log(errs)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -409,9 +409,9 @@ func TestValidateClusterServicePlanUpdate(t *testing.T) {
 			errs := ValidateClusterServicePlanUpdate(tc.new, tc.old)
 			t.Log(errs)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -458,9 +458,9 @@ func TestValidateServicePlanUpdate(t *testing.T) {
 			errs := ValidateServicePlanUpdate(tc.new, tc.old)
 			t.Log(errs)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}

@@ -522,9 +522,9 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := ValidateClusterServiceBroker(tc.broker)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -630,9 +630,9 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := ValidateClusterServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -950,9 +950,9 @@ func TestValidateServiceBroker(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := ValidateServiceBroker(tc.broker)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
@@ -1064,9 +1064,9 @@ func TestValidateServiceBroker(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := ValidateServiceBrokerUpdate(tc.newBroker, tc.oldBroker)
 			if len(errs) != 0 && tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
-				t.Errorf("%v: unexpected success", tc.name)
+				t.Error("unexpected success")
 			}
 		})
 	}
