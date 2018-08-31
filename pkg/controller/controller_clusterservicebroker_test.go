@@ -173,15 +173,28 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 			reconcile: true,
 		},
 		{
-			name: "ready, duration behavior, nil duration",
+			name: "ready, duration behavior, nil duration, interval not elapsed",
 			broker: func() *v1beta1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
+				t := metav1.NewTime(time.Now().Add(-23 * time.Hour))
+				broker := getTestClusterServiceBrokerWithStatusAndTime(v1beta1.ConditionTrue, t, t)
 				broker.Spec.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorDuration
 				broker.Spec.RelistDuration = nil
 				return broker
 			}(),
 			now:       time.Now(),
 			reconcile: false,
+		},
+		{
+			name: "ready, duration behavior, nil duration, interval elapsed",
+			broker: func() *v1beta1.ClusterServiceBroker {
+				t := metav1.NewTime(time.Now().Add(-25 * time.Hour))
+				broker := getTestClusterServiceBrokerWithStatusAndTime(v1beta1.ConditionTrue, t, t)
+				broker.Spec.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorDuration
+				broker.Spec.RelistDuration = nil
+				return broker
+			}(),
+			now:       time.Now(),
+			reconcile: true,
 		},
 		{
 			name: "ready, manual behavior",
