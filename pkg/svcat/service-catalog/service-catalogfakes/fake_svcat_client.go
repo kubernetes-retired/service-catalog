@@ -261,6 +261,21 @@ type FakeSvcatClient struct {
 	syncReturnsOnCall map[int]struct {
 		result1 error
 	}
+	WaitForBrokerStub        func(string, time.Duration, *time.Duration) (servicecatalog.Broker, error)
+	waitForBrokerMutex       sync.RWMutex
+	waitForBrokerArgsForCall []struct {
+		arg1 string
+		arg2 time.Duration
+		arg3 *time.Duration
+	}
+	waitForBrokerReturns struct {
+		result1 servicecatalog.Broker
+		result2 error
+	}
+	waitForBrokerReturnsOnCall map[int]struct {
+		result1 servicecatalog.Broker
+		result2 error
+	}
 	RetrieveClassesStub        func(servicecatalog.ScopeOptions) ([]servicecatalog.Class, error)
 	retrieveClassesMutex       sync.RWMutex
 	retrieveClassesArgsForCall []struct {
@@ -1455,6 +1470,59 @@ func (fake *FakeSvcatClient) SyncReturnsOnCall(i int, result1 error) {
 	fake.syncReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeSvcatClient) WaitForBroker(arg1 string, arg2 time.Duration, arg3 *time.Duration) (servicecatalog.Broker, error) {
+	fake.waitForBrokerMutex.Lock()
+	ret, specificReturn := fake.waitForBrokerReturnsOnCall[len(fake.waitForBrokerArgsForCall)]
+	fake.waitForBrokerArgsForCall = append(fake.waitForBrokerArgsForCall, struct {
+		arg1 string
+		arg2 time.Duration
+		arg3 *time.Duration
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("WaitForBroker", []interface{}{arg1, arg2, arg3})
+	fake.waitForBrokerMutex.Unlock()
+	if fake.WaitForBrokerStub != nil {
+		return fake.WaitForBrokerStub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.waitForBrokerReturns.result1, fake.waitForBrokerReturns.result2
+}
+
+func (fake *FakeSvcatClient) WaitForBrokerCallCount() int {
+	fake.waitForBrokerMutex.RLock()
+	defer fake.waitForBrokerMutex.RUnlock()
+	return len(fake.waitForBrokerArgsForCall)
+}
+
+func (fake *FakeSvcatClient) WaitForBrokerArgsForCall(i int) (string, time.Duration, *time.Duration) {
+	fake.waitForBrokerMutex.RLock()
+	defer fake.waitForBrokerMutex.RUnlock()
+	return fake.waitForBrokerArgsForCall[i].arg1, fake.waitForBrokerArgsForCall[i].arg2, fake.waitForBrokerArgsForCall[i].arg3
+}
+
+func (fake *FakeSvcatClient) WaitForBrokerReturns(result1 servicecatalog.Broker, result2 error) {
+	fake.WaitForBrokerStub = nil
+	fake.waitForBrokerReturns = struct {
+		result1 servicecatalog.Broker
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) WaitForBrokerReturnsOnCall(i int, result1 servicecatalog.Broker, result2 error) {
+	fake.WaitForBrokerStub = nil
+	if fake.waitForBrokerReturnsOnCall == nil {
+		fake.waitForBrokerReturnsOnCall = make(map[int]struct {
+			result1 servicecatalog.Broker
+			result2 error
+		})
+	}
+	fake.waitForBrokerReturnsOnCall[i] = struct {
+		result1 servicecatalog.Broker
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeSvcatClient) RetrieveClasses(arg1 servicecatalog.ScopeOptions) ([]servicecatalog.Class, error) {
@@ -2672,6 +2740,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.registerMutex.RUnlock()
 	fake.syncMutex.RLock()
 	defer fake.syncMutex.RUnlock()
+	fake.waitForBrokerMutex.RLock()
+	defer fake.waitForBrokerMutex.RUnlock()
 	fake.retrieveClassesMutex.RLock()
 	defer fake.retrieveClassesMutex.RUnlock()
 	fake.retrieveClassByNameMutex.RLock()
@@ -2680,6 +2750,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.retrieveClassByIDMutex.RUnlock()
 	fake.retrieveClassByPlanMutex.RLock()
 	defer fake.retrieveClassByPlanMutex.RUnlock()
+	fake.createClassMutex.RLock()
+	defer fake.createClassMutex.RUnlock()
 	fake.deprovisionMutex.RLock()
 	defer fake.deprovisionMutex.RUnlock()
 	fake.instanceParentHierarchyMutex.RLock()
