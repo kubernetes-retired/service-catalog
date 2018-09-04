@@ -649,6 +649,7 @@ func apihandler(w http.ResponseWriter, r *http.Request) {
 		match = filepath.Join("core", coreMatch[1])
 	}
 
+	match = strings.Replace(match, "?", "_", -1) // windows doesn't allow '?' in filenames
 	relpath, err := url.PathUnescape(match)
 	if err != nil {
 		w.WriteHeader(500)
