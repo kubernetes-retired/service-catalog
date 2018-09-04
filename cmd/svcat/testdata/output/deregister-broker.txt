@@ -1,0 +1,1 @@
+Successfully removed broker "ups-broker"
