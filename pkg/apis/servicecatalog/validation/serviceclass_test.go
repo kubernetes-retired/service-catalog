@@ -163,13 +163,14 @@ func TestValidateClusterServiceClass(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := ValidateClusterServiceClass(tc.serviceClass)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateClusterServiceClass(tc.serviceClass)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
 
@@ -313,12 +314,13 @@ func TestValidateServiceClass(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := ValidateServiceClass(tc.serviceClass)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateServiceClass(tc.serviceClass)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
