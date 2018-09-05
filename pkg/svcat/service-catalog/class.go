@@ -109,7 +109,12 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 	if opts.Scope.Matches(NamespaceScope) {
 		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(lopts)
 		if err != nil {
-			return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
+			if errors.IsNotFound(err) {
+				sc = &v1beta1.ServiceClassList{}
+			} else {
+				return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+			}
 		}
 
 		for _, c := range sc.Items {
