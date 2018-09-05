@@ -68,6 +68,6 @@ func (c *DeregisterCmd) Deregister() error {
 		return err
 	}
 
-	fmt.Fprintf(c.Context.Output, "Successfully removed broker %q", c.BrokerName)
+	fmt.Fprintf(c.Context.Output, "Successfully removed broker %q\n", c.BrokerName)
 	return nil
 }

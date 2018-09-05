@@ -17,11 +17,14 @@ limitations under the License.
 package validation
 
 import (
+	"fmt"
+
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
 )
 
@@ -88,7 +91,7 @@ func validateClusterServiceBrokerSpec(spec *sc.ClusterServiceBrokerSpec, fldPath
 		}
 	}
 
-	commonErrs := validateCommonServiceBrokerSpec(&spec.CommonServiceBrokerSpec, fldPath)
+	commonErrs := validateCommonServiceBrokerSpec(&spec.CommonServiceBrokerSpec, fldPath, true)
 
 	if len(commonErrs) != 0 {
 		allErrs = append(allErrs, commonErrs...)
@@ -150,7 +153,7 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 		}
 	}
 
-	commonErrs := validateCommonServiceBrokerSpec(&spec.CommonServiceBrokerSpec, fldPath)
+	commonErrs := validateCommonServiceBrokerSpec(&spec.CommonServiceBrokerSpec, fldPath, false)
 
 	if len(commonErrs) != 0 {
 		allErrs = append(allErrs, commonErrs...)
@@ -159,7 +162,7 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 	return allErrs
 }
 
-func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *field.Path) field.ErrorList {
+func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *field.Path, isClusterServiceBroker bool) field.ErrorList {
 	commonErrs := field.ErrorList{}
 
 	if "" == spec.URL {
@@ -205,8 +208,6 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		}
 	}
 
-	// TODO: could validate if the fields being selected are on the approve list, but this will require breaking
-	// apart the label selector.
 	if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServiceClass) > 0 {
 		// confirm that the restrictions can turn into a predicate.
 		_, err := filter.CreatePredicate(spec.CatalogRestrictions.ServiceClass)
@@ -214,6 +215,16 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 			commonErrs = append(commonErrs,
 				field.Invalid(fldPath.Child("catalogRestrictions", "serviceClass"),
 					spec.CatalogRestrictions.ServiceClass, err.Error()))
+		} else {
+			for _, restriction := range spec.CatalogRestrictions.ServiceClass {
+				p := filter.ExtractProperty(restriction)
+				if !isClusterServiceBroker && !v1beta1.IsValidServiceClassProperty(p) ||
+					isClusterServiceBroker && !v1beta1.IsValidClusterServiceClassProperty(p) {
+					commonErrs = append(commonErrs,
+						field.Invalid(fldPath.Child("catalogRestrictions", "serviceClass"),
+							spec.CatalogRestrictions.ServiceClass, fmt.Sprintf("Invalid property: %s", p)))
+				}
+			}
 		}
 	}
 	if spec.CatalogRestrictions != nil && len(spec.CatalogRestrictions.ServicePlan) > 0 {
@@ -222,7 +233,17 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		if err != nil {
 			commonErrs = append(commonErrs,
 				field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
-					spec.CatalogRestrictions.ServiceClass, err.Error()))
+					spec.CatalogRestrictions.ServicePlan, err.Error()))
+		} else {
+			for _, restriction := range spec.CatalogRestrictions.ServicePlan {
+				p := filter.ExtractProperty(restriction)
+				if !isClusterServiceBroker && !v1beta1.IsValidServicePlanProperty(p) ||
+					isClusterServiceBroker && !v1beta1.IsValidClusterServicePlanProperty(p) {
+					commonErrs = append(commonErrs,
+						field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
+							spec.CatalogRestrictions.ServicePlan, fmt.Sprintf("Invalid property: %s", p)))
+				}
+			}
 		}
 	}
 

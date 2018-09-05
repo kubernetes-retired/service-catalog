@@ -187,6 +187,7 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get broker (yaml)", cmd: "get broker ups-broker -o yaml", golden: "output/get-broker.yaml"},
 		{name: "describe broker", cmd: "describe broker ups-broker", golden: "output/describe-broker.txt"},
 		{name: "register broker", cmd: "register ups-broker --url http://upsbroker.com", golden: "output/register-broker.txt"},
+		{name: "deregister broker", cmd: "deregister ups-broker", golden: "output/deregister-broker.txt"},
 
 		{name: "list all classes", cmd: "get classes", golden: "output/get-classes.txt"},
 		{name: "list all classes (json)", cmd: "get classes -o json", golden: "output/get-classes.json"},
@@ -649,6 +650,7 @@ func apihandler(w http.ResponseWriter, r *http.Request) {
 		match = filepath.Join("core", coreMatch[1])
 	}
 
+	match = strings.Replace(match, "?", "_", -1) // windows doesn't allow '?' in filenames
 	relpath, err := url.PathUnescape(match)
 	if err != nil {
 		w.WriteHeader(500)

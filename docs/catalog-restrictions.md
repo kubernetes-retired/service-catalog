@@ -62,21 +62,24 @@ subset of properties on service class and service plan resources. The following
 
 `ClusterServiceClass` allowed property names:
 
-| Property Key    | Description    |
+| Property Key    | Description   | 
+| -------------   | ------------- |
 | name |  This key will match the ClusterServiceClass.Name property |
 | spec.externalName | This key will match the ClusterServiceClass.Spec.ExternalName property |
 | spec.externalID | This key will match the ClusterServiceClass.Spec.ExternalID property |
 
 `ServiceClass` allowed property names:
 
-| Property Key    | Description    |
+| Property Key    | Description  |
+| ------------    | ------------ |
 | name |  This key will match the ServiceClass.Name |
 | spec.externalName | This key will match the ServiceClass.Spec.ExternalName property |
 | spec.externalID | This key will match the ServiceClass.Spec.ExternalID property |
 
 `ClusterServicePlan` allowed property names:
 
-| Property Key    | Description    |
+| Property Key    | Description  |
+| ------------    | ------------ |
 | name | This key will match the ClusterServicePlan.Name |
 | spec.externalName | This key will match the ClusterServicePlan.Spec.ExternalName property |
 | spec.externalID | This key will match the ClusterServicePlan.Spec.ExternalID property |
@@ -85,7 +88,8 @@ subset of properties on service class and service plan resources. The following
 
 `ServicePlan` allowed property names:
 
-| Property Key    | Description    |
+| Property Key    | Description  |
+| ------------    | ------------ |
 | name | This key will match the ServicePlan.Name property |
 | spec.externalName | This key will match the ServicePlan.Spec.ExternalName property |
 | spec.externalID | This key will match the ServicePlan.Spec.ExternalID property |
