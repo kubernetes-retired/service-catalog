@@ -38,7 +38,7 @@ const (
 func (sdk *SDK) RetrieveInstances(ns, classFilter, planFilter string) (*v1beta1.ServiceInstanceList, error) {
 	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(v1.ListOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to list instances in %s (%s)", ns, err)
+		return nil, errors.Wrapf(err, "unable to list instances in %s", ns)
 	}
 
 	if classFilter == "" && planFilter == "" {
@@ -258,9 +258,6 @@ func (sdk *SDK) WaitForInstance(ns, name string, interval time.Duration, timeout
 		func() (bool, error) {
 			instance, err = sdk.RetrieveInstance(ns, name)
 			if nil != err {
-				if apierrors.IsNotFound(errors.Cause(err)) {
-					return true, nil
-				}
 				return false, err
 			}
 
