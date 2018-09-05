@@ -1,0 +1,23 @@
+[
+   {
+      "metadata": {
+         "name": "ac9694d9-7ea2-af93-467b-860647926d52",
+         "namespace": "default",
+         "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/serviceplans/ac9694d9-7ea2-af93-467b-860647926d52",
+         "uid": "0242ac11-11e7-f711-aa44-7b3d01900005",
+         "resourceVersion": "4",
+         "creationTimestamp": "2018-09-04T23:11:31Z"
+      },
+      "spec": {
+         "externalName": "user-provided-namespace-plan",
+         "externalID": "ac9694d9-7ea2-af93-467b-860647926d52",
+         "description": "Sample namespace plan description",
+         "free": true,
+         "serviceBrokerName": "namespace-ups-broker",
+         "serviceClassRef": {}
+      },
+      "status": {
+         "removedFromBrokerCatalog": false
+      }
+   }
+]

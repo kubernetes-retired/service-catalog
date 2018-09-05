@@ -54,17 +54,19 @@ func writePlanListTable(w io.Writer, plans []servicecatalog.Plan, classNames map
 	t := NewListTable(w)
 	t.SetHeader([]string{
 		"Name",
+		"Namespace",
 		"Class",
 		"Description",
 	})
 	for _, plan := range plans {
 		t.Append([]string{
 			plan.GetExternalName(),
+			plan.GetNamespace(),
 			classNames[plan.GetClassID()],
 			plan.GetDescription(),
 		})
 	}
-	t.SetVariableColumn(3)
+	t.SetVariableColumn(4)
 
 	t.Render()
 }
