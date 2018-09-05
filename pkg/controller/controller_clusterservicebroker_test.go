@@ -173,15 +173,28 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 			reconcile: true,
 		},
 		{
-			name: "ready, duration behavior, nil duration",
+			name: "ready, duration behavior, nil duration, interval not elapsed",
 			broker: func() *v1beta1.ClusterServiceBroker {
-				broker := getTestClusterServiceBrokerWithStatus(v1beta1.ConditionTrue)
+				t := metav1.NewTime(time.Now().Add(-23 * time.Hour))
+				broker := getTestClusterServiceBrokerWithStatusAndTime(v1beta1.ConditionTrue, t, t)
 				broker.Spec.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorDuration
 				broker.Spec.RelistDuration = nil
 				return broker
 			}(),
 			now:       time.Now(),
 			reconcile: false,
+		},
+		{
+			name: "ready, duration behavior, nil duration, interval elapsed",
+			broker: func() *v1beta1.ClusterServiceBroker {
+				t := metav1.NewTime(time.Now().Add(-25 * time.Hour))
+				broker := getTestClusterServiceBrokerWithStatusAndTime(v1beta1.ConditionTrue, t, t)
+				broker.Spec.RelistBehavior = v1beta1.ServiceBrokerRelistBehaviorDuration
+				broker.Spec.RelistDuration = nil
+				return broker
+			}(),
+			now:       time.Now(),
+			reconcile: true,
 		},
 		{
 			name: "ready, manual behavior",
@@ -196,24 +209,26 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		var ltt *time.Time
-		if len(tc.broker.Status.Conditions) != 0 {
-			ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			var ltt *time.Time
+			if len(tc.broker.Status.Conditions) != 0 {
+				ltt = &tc.broker.Status.Conditions[0].LastTransitionTime.Time
+			}
 
-		if tc.broker.Spec.RelistDuration != nil {
-			interval := tc.broker.Spec.RelistDuration.Duration
-			lastRelistTime := tc.broker.Status.LastCatalogRetrievalTime
-			t.Logf("%v: now: %v, interval: %v, last transition time: %v, last relist time: %v", tc.name, tc.now, interval, ltt, lastRelistTime)
-		} else {
-			t.Logf("broker.Spec.RelistDuration set to nil")
-		}
+			if tc.broker.Spec.RelistDuration != nil {
+				interval := tc.broker.Spec.RelistDuration.Duration
+				lastRelistTime := tc.broker.Status.LastCatalogRetrievalTime
+				t.Logf("now: %v, interval: %v, last transition time: %v, last relist time: %v", tc.now, interval, ltt, lastRelistTime)
+			} else {
+				t.Logf("broker.Spec.RelistDuration set to nil")
+			}
 
-		actual := shouldReconcileClusterServiceBroker(tc.broker, tc.now, 24*time.Hour)
+			actual := shouldReconcileClusterServiceBroker(tc.broker, tc.now, 24*time.Hour)
 
-		if e, a := tc.reconcile, actual; e != a {
-			t.Errorf("%v: unexpected result: %s", tc.name, expectedGot(e, a))
-		}
+			if e, a := tc.reconcile, actual; e != a {
+				t.Errorf("unexpected result: %s", expectedGot(e, a))
+			}
+		})
 	}
 }
 
