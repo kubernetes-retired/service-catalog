@@ -232,9 +232,11 @@ tree:
       desc: If present, specify the plan used as a filter for this request
   - name: plans
     use: plans [NAME]
-    shortDesc: List plans, optionally filtered by name or class
+    shortDesc: List plans, optionally filtered by name, class, scope or namespace
     example: |2-
         svcat get plans
+        svcat get plans --scope cluster
+        svcat get plans --scope namespace --namespace dev
         svcat get plan PLAN_NAME
         svcat get plan CLASS_NAME/PLAN_NAME
         svcat get plan --uuid PLAN_UUID
@@ -244,6 +246,9 @@ tree:
         svcat get plan --uuid --class CLASS_UUID PLAN_UUID
     command: ./svcat get plans
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: class
       shorthand: c
       desc: Filter plans based on class. When --uuid is specified, the class name
@@ -252,6 +257,8 @@ tree:
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
