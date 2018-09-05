@@ -1,0 +1,9 @@
+{
+  "kind": "ServicePlanList",
+  "apiVersion": "servicecatalog.k8s.io/v1beta1",
+  "metadata": {
+    "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/serviceplans",
+    "resourceVersion": "114"
+  },
+  "items": []
+}
