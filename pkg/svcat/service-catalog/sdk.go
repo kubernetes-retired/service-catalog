@@ -69,6 +69,7 @@ type SvcatClient interface {
 	RetrieveInstancesByPlan(*apiv1beta1.ClusterServicePlan) ([]apiv1beta1.ServiceInstance, error)
 	TouchInstance(string, string, int) error
 	WaitForInstance(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
+	WaitForInstanceToNotExist(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
 
 	RetrievePlans(RetrievePlanOptions) ([]Plan, error)
 	RetrievePlanByName(string) (*apiv1beta1.ClusterServicePlan, error)

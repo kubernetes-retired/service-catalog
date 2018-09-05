@@ -495,6 +495,22 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ServiceInstance
 		result2 error
 	}
+	WaitForInstanceToNotExistStub        func(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
+	waitForInstanceToNotExistMutex       sync.RWMutex
+	waitForInstanceToNotExistArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 time.Duration
+		arg4 *time.Duration
+	}
+	waitForInstanceToNotExistReturns struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}
+	waitForInstanceToNotExistReturnsOnCall map[int]struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}
 	RetrievePlansStub        func(servicecatalog.RetrievePlanOptions) ([]servicecatalog.Plan, error)
 	retrievePlansMutex       sync.RWMutex
 	retrievePlansArgsForCall []struct {
@@ -2282,6 +2298,26 @@ func (fake *FakeSvcatClient) TouchInstanceReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeSvcatClient) WaitForInstanceToNotExist(arg1 string, arg2 string, arg3 time.Duration, arg4 *time.Duration) (*apiv1beta1.ServiceInstance, error) {
+	fake.waitForInstanceToNotExistMutex.Lock()
+	ret, specificReturn := fake.waitForInstanceToNotExistReturnsOnCall[len(fake.waitForInstanceToNotExistArgsForCall)]
+	fake.waitForInstanceToNotExistArgsForCall = append(fake.waitForInstanceToNotExistArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 time.Duration
+		arg4 *time.Duration
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("WaitForInstanceToNotExist", []interface{}{arg1, arg2, arg3, arg4})
+	fake.waitForInstanceToNotExistMutex.Unlock()
+	if fake.WaitForInstanceToNotExistStub != nil {
+		return fake.WaitForInstanceToNotExistStub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.waitForInstanceToNotExistReturns.result1, fake.waitForInstanceToNotExistReturns.result2
+}
+
 func (fake *FakeSvcatClient) WaitForInstance(arg1 string, arg2 string, arg3 time.Duration, arg4 *time.Duration) (*apiv1beta1.ServiceInstance, error) {
 	fake.waitForInstanceMutex.Lock()
 	ret, specificReturn := fake.waitForInstanceReturnsOnCall[len(fake.waitForInstanceArgsForCall)]
@@ -2702,6 +2738,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.retrieveInstancesByPlanMutex.RUnlock()
 	fake.touchInstanceMutex.RLock()
 	defer fake.touchInstanceMutex.RUnlock()
+	fake.waitForInstanceToNotExistMutex.RLock()
+	defer fake.waitForInstanceToNotExistMutex.RUnlock()
 	fake.waitForInstanceMutex.RLock()
 	defer fake.waitForInstanceMutex.RUnlock()
 	fake.retrievePlansMutex.RLock()
