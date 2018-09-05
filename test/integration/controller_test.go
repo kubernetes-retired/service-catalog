@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	sctestutil "github.com/kubernetes-incubator/service-catalog/test/util"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -230,8 +231,8 @@ func verifyUsernameInLastBrokerAction(t *testing.T, osbClient *fakeosb.FakeClien
 // as part of originating identity included in broker requests.
 func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	// Enable the OriginatingIdentity feature
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+	prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, true)
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 	createChangeUsernameFunc := func(username string) func(*controllerTest) {
 		return func(ct *controllerTest) {

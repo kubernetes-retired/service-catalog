@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	sctestutil "github.com/kubernetes-incubator/service-catalog/test/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,8 +83,10 @@ func TestClusterServiceBroker(t *testing.T) {
 		},
 	}
 
+	creatorUserName := "creator"
+	createContext := sctestutil.ContextWithUserName(creatorUserName)
 	// Canonicalize the broker
-	clusterServiceBrokerRESTStrategies.PrepareForCreate(nil, broker)
+	clusterServiceBrokerRESTStrategies.PrepareForCreate(createContext, broker)
 
 	if broker.Status.Conditions == nil {
 		t.Fatalf("Fresh clusterservicebroker should have empty status")
@@ -115,9 +118,10 @@ func TestClusterServiceBrokerUpdate(t *testing.T) {
 			shouldGenerationIncrement: true,
 		},
 	}
-
+	creatorUserName := "creator"
+	createContext := sctestutil.ContextWithUserName(creatorUserName)
 	for i := range cases {
-		clusterServiceBrokerRESTStrategies.PrepareForUpdate(nil, cases[i].newer, cases[i].older)
+		clusterServiceBrokerRESTStrategies.PrepareForUpdate(createContext, cases[i].newer, cases[i].older)
 
 		if cases[i].shouldGenerationIncrement {
 			if e, a := cases[i].older.Generation+1, cases[i].newer.Generation; e != a {
@@ -171,8 +175,9 @@ func TestClusterServiceBrokerUpdateForRelistRequests(t *testing.T) {
 
 		newClusterServiceBroker := clusterServiceBrokerWithOldSpec()
 		newClusterServiceBroker.Spec.RelistRequests = tc.newValue
-
-		clusterServiceBrokerRESTStrategies.PrepareForUpdate(nil, newClusterServiceBroker, oldBroker)
+		creatorUserName := "creator"
+		createContext := sctestutil.ContextWithUserName(creatorUserName)
+		clusterServiceBrokerRESTStrategies.PrepareForUpdate(createContext, newClusterServiceBroker, oldBroker)
 
 		if e, a := tc.expectedValue, newClusterServiceBroker.Spec.RelistRequests; e != a {
 			t.Errorf("%s: got unexpected RelistRequests: expected %v, got %v", tc.name, e, a)

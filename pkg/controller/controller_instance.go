@@ -428,9 +428,9 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 		delay = retryEntry.calculatedRetryTime.Sub(now)
 
 		if delay > 0 {
-			msg := fmt.Sprintf("BrokerOpRetry: Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
+			msg := fmt.Sprintf("Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
 			c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
-			glog.V(2).Info(pcb.Message(msg))
+			glog.V(2).Info(pcb.Messagef("BrokerOpRetry: %s", msg))
 
 			// add back to worker queue to retry at the specified time
 			c.instanceAddAfter(instance, delay)
@@ -524,6 +524,16 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			return err
 		}
 		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+		return nil
+	} else if instance.Status.DeprovisionStatus != v1beta1.ServiceInstanceDeprovisionStatusRequired {
+		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+		instance, err = c.updateServiceInstanceStatus(instance)
+		if err != nil {
+			// There has been an update to the instance. Start reconciliation
+			// over with a fresh view of the instance.
+			return err
+		}
+		// instance was updated, we will to continue in the next iteration
 		return nil
 	}
 

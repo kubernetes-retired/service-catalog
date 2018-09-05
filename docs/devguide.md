@@ -317,6 +317,29 @@ Counterfeiter by running `go get github.com/maxbrunsfeld/counterfeiter`.
 Then regenerate the fake with `counterfeiter ./pkg/svcat/service-catalog SvcatClient` and manually paste the boilerplate
 copyright comment into the the generated file.
 
+## FeatureGates
+Feature gates are a set of key=value pairs that describe experimental features
+and can be turned on or off by specifying the value when launching the Service
+Catalog executable (typically done in the Helm chart).  A new feature gate
+should be created when introducing new features that may break existing
+functionality or introduce instability.  See [FeatureGates](feature-gates.md)
+for more details.
+
+When adding a FeatureGate to Helm charts, define the variable
+`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/values.yaml).  In the [API Server](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/templates/controller-manager-deployment.yaml)
+templates, add the new FeatureGate:
+{% raw %}
+```yaml
+    - --feature-gates
+    - Foo={{.Values.fooEnabled}}
+```
+{% endraw %}
+
+When the feature has had enough testing and the community agrees to change the
+default to true, update [features.go](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/features/features.go) and `values.yaml` changing the default for
+feature foo to `true`. And lastly update the appropriate information in the
+[FeatureGates doc](feature-gates.md).
+
 ## Documentation
 
 Our documentation site is located at [svc-cat.io](https://svc-cat.io). The content files are located

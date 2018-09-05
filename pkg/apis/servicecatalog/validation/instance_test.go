@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -890,13 +891,14 @@ func TestValidateServiceInstance(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := internalValidateServiceInstance(tc.instance, tc.create)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := internalValidateServiceInstance(tc.instance, tc.create)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
 
@@ -934,93 +936,95 @@ func TestInternalValidateServiceInstanceUpdateAllowed(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		oldInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: clusterServiceClassExternalName,
-					ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+		t.Run(tc.name, func(t *testing.T) {
+			oldInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
 				},
-			},
-		}
-		oldInstance.Generation = 1
-		if tc.onGoingOperation {
-			oldInstance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
-		}
-
-		newInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: clusterServiceClassExternalName,
-					ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ClusterServiceClassExternalName: clusterServiceClassExternalName,
+						ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+					},
 				},
-			},
-		}
-		if tc.specChange {
-			newInstance.Generation = oldInstance.Generation + 1
-		} else {
-			newInstance.Generation = oldInstance.Generation
-		}
+			}
+			oldInstance.Generation = 1
+			if tc.onGoingOperation {
+				oldInstance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
+			}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+			newInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ClusterServiceClassExternalName: clusterServiceClassExternalName,
+						ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+					},
+				},
+			}
+			if tc.specChange {
+				newInstance.Generation = oldInstance.Generation + 1
+			} else {
+				newInstance.Generation = oldInstance.Generation
+			}
+
+			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 
 	for _, tc := range cases {
-		oldInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ServiceClassExternalName: serviceClassExternalName,
-					ServicePlanExternalName:  servicePlanExternalName,
+		t.Run(tc.name, func(t *testing.T) {
+			oldInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
 				},
-			},
-		}
-		oldInstance.Generation = 1
-		if tc.onGoingOperation {
-			oldInstance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
-		}
-
-		newInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ServiceClassExternalName: serviceClassExternalName,
-					ServicePlanExternalName:  servicePlanExternalName,
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ServiceClassExternalName: serviceClassExternalName,
+						ServicePlanExternalName:  servicePlanExternalName,
+					},
 				},
-			},
-		}
-		if tc.specChange {
-			newInstance.Generation = oldInstance.Generation + 1
-		} else {
-			newInstance.Generation = oldInstance.Generation
-		}
+			}
+			oldInstance.Generation = 1
+			if tc.onGoingOperation {
+				oldInstance.Status.CurrentOperation = servicecatalog.ServiceInstanceOperationProvision
+			}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+			newInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ServiceClassExternalName: serviceClassExternalName,
+						ServicePlanExternalName:  servicePlanExternalName,
+					},
+				},
+			}
+			if tc.specChange {
+				newInstance.Generation = oldInstance.Generation + 1
+			} else {
+				newInstance.Generation = oldInstance.Generation
+			}
+
+			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
 
@@ -1097,37 +1101,38 @@ func TestInternalValidateServiceInstanceUpdateAllowedForClusterPlanChange(t *tes
 	}
 
 	for _, tc := range cases {
-		oldInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference:          tc.oldPlan,
-				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
-				ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
-			},
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			oldInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference:          tc.oldPlan,
+					ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
+					ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
+				},
+			}
 
-		newInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference:          tc.newPlan,
-				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
-				ClusterServicePlanRef:  tc.newPlanRef,
-			},
-		}
+			newInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference:          tc.newPlan,
+					ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
+					ClusterServicePlanRef:  tc.newPlanRef,
+				},
+			}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
 
@@ -1204,37 +1209,38 @@ func TestInternalValidateServiceInstanceUpdateAllowedForPlanChange(t *testing.T)
 	}
 
 	for _, tc := range cases {
-		oldInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference:   tc.oldPlan,
-				ServiceClassRef: &servicecatalog.LocalObjectReference{},
-				ServicePlanRef:  &servicecatalog.LocalObjectReference{},
-			},
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			oldInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference:   tc.oldPlan,
+					ServiceClassRef: &servicecatalog.LocalObjectReference{},
+					ServicePlanRef:  &servicecatalog.LocalObjectReference{},
+				},
+			}
 
-		newInstance := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-instance",
-				Namespace: "test-ns",
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference:   tc.newPlan,
-				ServiceClassRef: &servicecatalog.LocalObjectReference{},
-				ServicePlanRef:  tc.newPlanRef,
-			},
-		}
+			newInstance := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instance",
+					Namespace: "test-ns",
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference:   tc.newPlan,
+					ServiceClassRef: &servicecatalog.LocalObjectReference{},
+					ServicePlanRef:  tc.newPlanRef,
+				},
+			}
 
-		errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+			errs := internalValidateServiceInstanceUpdateAllowed(newInstance, oldInstance)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
 
@@ -1379,107 +1385,109 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		old := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "test-instance",
-				Namespace:  "test-ns",
-				Generation: 2,
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: clusterServiceClassExternalName,
-					ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+		t.Run(tc.name, func(t *testing.T) {
+			old := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-instance",
+					Namespace:  "test-ns",
+					Generation: 2,
 				},
-				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
-				ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
-			},
-			Status: *tc.old,
-		}
-		old.Status.ReconciledGeneration = 1
-		new := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "test-instance",
-				Namespace:  "test-ns",
-				Generation: 2,
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: clusterServiceClassExternalName,
-					ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ClusterServiceClassExternalName: clusterServiceClassExternalName,
+						ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+					},
+					ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
+					ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
 				},
-				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
-				ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
-			},
-			Status: *tc.new,
-		}
-		new.Status.ReconciledGeneration = 1
+				Status: *tc.old,
+			}
+			old.Status.ReconciledGeneration = 1
+			new := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-instance",
+					Namespace:  "test-ns",
+					Generation: 2,
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ClusterServiceClassExternalName: clusterServiceClassExternalName,
+						ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+					},
+					ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
+					ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
+				},
+				Status: *tc.new,
+			}
+			new.Status.ReconciledGeneration = 1
 
-		errs := ValidateServiceInstanceStatusUpdate(new, old)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
-		if !tc.valid {
-			for _, err := range errs {
-				if !strings.Contains(err.Detail, tc.err) {
-					t.Errorf("%v: Error %q did not contain expected message %q", tc.name, err.Detail, tc.err)
+			errs := ValidateServiceInstanceStatusUpdate(new, old)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+			if !tc.valid {
+				for _, err := range errs {
+					if !strings.Contains(err.Detail, tc.err) {
+						t.Errorf("Error %q did not contain expected message %q", err.Detail, tc.err)
+					}
 				}
 			}
-		}
+		})
 	}
 
 	for _, tc := range cases {
-		old := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "test-instance",
-				Namespace:  "test-ns",
-				Generation: 2,
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ServiceClassExternalName: serviceClassExternalName,
-					ServicePlanExternalName:  servicePlanExternalName,
+		t.Run(tc.name, func(t *testing.T) {
+			old := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-instance",
+					Namespace:  "test-ns",
+					Generation: 2,
 				},
-				ServiceClassRef: &servicecatalog.LocalObjectReference{},
-				ServicePlanRef:  &servicecatalog.LocalObjectReference{},
-			},
-			Status: *tc.old,
-		}
-		old.Status.ReconciledGeneration = 1
-		new := &servicecatalog.ServiceInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       "test-instance",
-				Namespace:  "test-ns",
-				Generation: 2,
-			},
-			Spec: servicecatalog.ServiceInstanceSpec{
-				PlanReference: servicecatalog.PlanReference{
-					ClusterServiceClassExternalName: clusterServiceClassExternalName,
-					ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ServiceClassExternalName: serviceClassExternalName,
+						ServicePlanExternalName:  servicePlanExternalName,
+					},
+					ServiceClassRef: &servicecatalog.LocalObjectReference{},
+					ServicePlanRef:  &servicecatalog.LocalObjectReference{},
 				},
-				ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
-				ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
-			},
-			Status: *tc.new,
-		}
-		new.Status.ReconciledGeneration = 1
+				Status: *tc.old,
+			}
+			old.Status.ReconciledGeneration = 1
+			new := &servicecatalog.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "test-instance",
+					Namespace:  "test-ns",
+					Generation: 2,
+				},
+				Spec: servicecatalog.ServiceInstanceSpec{
+					PlanReference: servicecatalog.PlanReference{
+						ClusterServiceClassExternalName: clusterServiceClassExternalName,
+						ClusterServicePlanExternalName:  clusterServicePlanExternalName,
+					},
+					ClusterServiceClassRef: &servicecatalog.ClusterObjectReference{},
+					ClusterServicePlanRef:  &servicecatalog.ClusterObjectReference{},
+				},
+				Status: *tc.new,
+			}
+			new.Status.ReconciledGeneration = 1
 
-		errs := ValidateServiceInstanceStatusUpdate(new, old)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
-		if !tc.valid {
-			for _, err := range errs {
-				if !strings.Contains(err.Detail, tc.err) {
-					t.Errorf("%v: Error %q did not contain expected message %q", tc.name, err.Detail, tc.err)
+			errs := ValidateServiceInstanceStatusUpdate(new, old)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+			if !tc.valid {
+				for _, err := range errs {
+					if !strings.Contains(err.Detail, tc.err) {
+						t.Errorf("Error %q did not contain expected message %q", err.Detail, tc.err)
+					}
 				}
 			}
-		}
+		})
 	}
 }
 
@@ -1601,13 +1609,14 @@ func TestValidateServiceInstanceReferencesUpdate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		errs := ValidateServiceInstanceReferencesUpdate(tc.new, tc.old)
-		if len(errs) != 0 && tc.valid {
-			t.Errorf("%v: unexpected error: %v", tc.name, errs)
-			continue
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			errs := ValidateServiceInstanceReferencesUpdate(tc.new, tc.old)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("unexpected error: %v", errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
+			}
+		})
 	}
 }
 
@@ -1624,33 +1633,40 @@ func TestValidateClusterOrNamespacedPlanReference(t *testing.T) {
 	}
 
 	// Test permutations of cluster & plan fields set, these should never be valid
-	cases := []servicecatalog.PlanReference{}
+	type testcase struct {
+		name string
+		ref  servicecatalog.PlanReference
+	}
+
+	cases := []testcase{}
 	for _, c := range cFields {
 		for _, p := range pFields {
 			pref := servicecatalog.PlanReference{}
 			elem := reflect.ValueOf(&pref).Elem()
 			elem.FieldByName(c).SetString("foo")
 			elem.FieldByName(p).SetString("bar")
-			cases = append(cases, pref)
+			cases = append(cases, testcase{fmt.Sprintf("%s-%s", c, p), pref})
 		}
 	}
 
-	for _, testPlanRef := range cases {
-		expectedErr := "instances can only refer to a cluster or namespaced class or plan type, but not both"
-		errs := validatePlanReference(&testPlanRef, field.NewPath("spec"))
-		if len(errs) == 0 {
-			t.Fatalf(`Expected error "%s", but no error was found`, expectedErr)
-		}
-
-		found := false
-		for _, e := range errs {
-			if strings.Contains(e.Error(), expectedErr) {
-				found = true
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			expectedErr := "instances can only refer to a cluster or namespaced class or plan type, but not both"
+			errs := validatePlanReference(&tc.ref, field.NewPath("spec"))
+			if len(errs) == 0 {
+				t.Fatalf(`Expected error "%s", but no error was found`, expectedErr)
 			}
-		}
-		if !found {
-			t.Fatalf(`TestValidateClusterOrNamespacedPlanReference: did not find expected error "%s" in errors: %v`, expectedErr, errs)
-		}
+
+			found := false
+			for _, e := range errs {
+				if strings.Contains(e.Error(), expectedErr) {
+					found = true
+				}
+			}
+			if !found {
+				t.Fatalf(`did not find expected error "%s" in errors: %v`, expectedErr, errs)
+			}
+		})
 	}
 }
 
@@ -1904,25 +1920,25 @@ func TestValidatePlanReference(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		errs := validatePlanReference(&tc.ref, field.NewPath("spec"))
-		if len(errs) != 0 {
-			if tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
-				continue
-			}
-			found := false
-			for _, e := range errs {
-				if strings.Contains(e.Error(), tc.expectedError) {
-					found = true
+		t.Run(tc.name, func(t *testing.T) {
+			errs := validatePlanReference(&tc.ref, field.NewPath("spec"))
+			if len(errs) != 0 {
+				if tc.valid {
+					t.Errorf("unexpected error: %v", errs)
 				}
+				found := false
+				for _, e := range errs {
+					if strings.Contains(e.Error(), tc.expectedError) {
+						found = true
+					}
+				}
+				if !found {
+					t.Errorf("did not find expected error %q in errors: %v", tc.expectedError, errs)
+				}
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
 			}
-			if !found {
-				t.Errorf("%v: did not find expected error %q in errors: %v", tc.name, tc.expectedError, errs)
-				continue
-			}
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		})
 	}
 }
 
@@ -2005,24 +2021,24 @@ func TestValidatePlanReferenceUpdate(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		errs := validatePlanReferenceUpdate(&tc.old, &tc.new, field.NewPath("spec"))
-		if len(errs) != 0 {
-			if tc.valid {
-				t.Errorf("%v: unexpected error: %v", tc.name, errs)
-				continue
-			}
-			found := false
-			for _, e := range errs {
-				if strings.Contains(e.Error(), tc.expectedError) {
-					found = true
+		t.Run(tc.name, func(t *testing.T) {
+			errs := validatePlanReferenceUpdate(&tc.old, &tc.new, field.NewPath("spec"))
+			if len(errs) != 0 {
+				if tc.valid {
+					t.Errorf("unexpected error: %v", errs)
 				}
+				found := false
+				for _, e := range errs {
+					if strings.Contains(e.Error(), tc.expectedError) {
+						found = true
+					}
+				}
+				if !found {
+					t.Errorf("did not find expected error %q in errors: %v", tc.expectedError, errs)
+				}
+			} else if len(errs) == 0 && !tc.valid {
+				t.Error("unexpected success")
 			}
-			if !found {
-				t.Errorf("%v: did not find expected error %q in errors: %v", tc.name, tc.expectedError, errs)
-				continue
-			}
-		} else if len(errs) == 0 && !tc.valid {
-			t.Errorf("%v: unexpected success", tc.name)
-		}
+		})
 	}
 }

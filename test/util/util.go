@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -26,9 +27,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apiserver/pkg/authentication/user"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1beta1servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // WaitForBrokerCondition waits for the status of the named broker to contain
@@ -381,4 +386,26 @@ func AssertServiceInstanceConditionFalseOrAbsent(t *testing.T, instance *v1beta1
 			}
 		}
 	}
+}
+
+// EnableOriginatingIdentity enables the OriginatingIdentity feature gate.  Returns
+// the prior state of the gate.
+func EnableOriginatingIdentity(t *testing.T, enabled bool) (previousState bool) {
+	prevOrigIdentEnablement := utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity)
+	if prevOrigIdentEnablement != enabled {
+		err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, enabled))
+		if err != nil {
+			t.Fatalf("Failed to enable originating identity feature: %v", err)
+		}
+	}
+	return prevOrigIdentEnablement
+}
+
+// ContextWithUserName creates a Context with the specified userName
+func ContextWithUserName(userName string) context.Context {
+	ctx := genericapirequest.NewContext()
+	userInfo := &user.DefaultInfo{
+		Name: userName,
+	}
+	return genericapirequest.WithUser(ctx, userInfo)
 }
