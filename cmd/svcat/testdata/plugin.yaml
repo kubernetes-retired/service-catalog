@@ -383,6 +383,50 @@ tree:
   name: register
   shortDesc: Registers a new broker with service catalog
   use: register NAME --url URL
+- command: ./svcat set
+  name: set
+  shortDesc: Configure a specific resource
+  tree:
+  - command: ./svcat set instance
+    example: |2-
+        svcat set instance wordpress-mysql-instance --plan free
+        svcat set instance wordpress-mysql-instance --plan free -s mysecret[dbparams]
+        svcat set instance secure-instance --plan secureDB --params-json '{
+          "encrypt" : true,
+          "firewallRules" : [
+              {
+                  "name": "AllowSome",
+                  "startIPAddress": "75.70.113.50",
+                  "endIPAddress" : "75.70.113.131"
+              }
+          ]
+        }'
+    flags:
+    - desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+        1h'
+      name: interval
+    - desc: 'Additional parameter to use when updating the service instance, format:
+        NAME=VALUE. Cannot be combined with --params-json, Sensitive information should
+        be placed in a secret and specified with --secret'
+      name: param
+      shorthand: p
+    - desc: Additional parameters to use when updating the service instance, provided
+        as a JSON object. Cannot be combined with --param
+      name: params-json
+    - desc: The plan name (Required)
+      name: plan
+    - desc: 'Additional parameter, whose value is stored in a secret, to use when
+        updating the service instance, format: SECRET[KEY]'
+      name: secret
+    - desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h.
+        Specify -1 to wait indefinitely.'
+      name: timeout
+    - desc: Wait until the operation completes.
+      name: wait
+    name: instance
+    shortDesc: Configure a provisioned service instance
+    use: instance NAME [flags]
+  use: set
 - command: ./svcat sync
   name: sync
   shortDesc: Syncs service catalog for a service broker

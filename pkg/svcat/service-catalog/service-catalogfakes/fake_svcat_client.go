@@ -482,6 +482,23 @@ type FakeSvcatClient struct {
 		result1 []apiv1beta1.ServiceInstance
 		result2 error
 	}
+	UpdateInstanceStub        func(string, string, string, interface{}, map[string]string) (*apiv1beta1.ServiceInstance, error)
+	updateInstanceMutex       sync.RWMutex
+	updateInstanceArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 string
+		arg4 interface{}
+		arg5 map[string]string
+	}
+	updateInstanceReturns struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}
+	updateInstanceReturnsOnCall map[int]struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}
 	TouchInstanceStub        func(string, string, int) error
 	touchInstanceMutex       sync.RWMutex
 	touchInstanceArgsForCall []struct {
@@ -2337,6 +2354,61 @@ func (fake *FakeSvcatClient) RetrieveInstancesByPlanReturnsOnCall(i int, result1
 	}{result1, result2}
 }
 
+func (fake *FakeSvcatClient) UpdateInstance(arg1 string, arg2 string, arg3 string, arg4 interface{}, arg5 map[string]string) (*apiv1beta1.ServiceInstance, error) {
+	fake.updateInstanceMutex.Lock()
+	ret, specificReturn := fake.updateInstanceReturnsOnCall[len(fake.updateInstanceArgsForCall)]
+	fake.updateInstanceArgsForCall = append(fake.updateInstanceArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 string
+		arg4 interface{}
+		arg5 map[string]string
+	}{arg1, arg2, arg3, arg4, arg5})
+	fake.recordInvocation("UpdateInstance", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.updateInstanceMutex.Unlock()
+	if fake.UpdateInstanceStub != nil {
+		return fake.UpdateInstanceStub(arg1, arg2, arg3, arg4, arg5)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.updateInstanceReturns.result1, fake.updateInstanceReturns.result2
+}
+
+func (fake *FakeSvcatClient) UpdateInstanceCallCount() int {
+	fake.updateInstanceMutex.RLock()
+	defer fake.updateInstanceMutex.RUnlock()
+	return len(fake.updateInstanceArgsForCall)
+}
+
+func (fake *FakeSvcatClient) UpdateInstanceArgsForCall(i int) (string, string, string, interface{}, map[string]string) {
+	fake.updateInstanceMutex.RLock()
+	defer fake.updateInstanceMutex.RUnlock()
+	return fake.updateInstanceArgsForCall[i].arg1, fake.updateInstanceArgsForCall[i].arg2, fake.updateInstanceArgsForCall[i].arg3, fake.updateInstanceArgsForCall[i].arg4, fake.updateInstanceArgsForCall[i].arg5
+}
+
+func (fake *FakeSvcatClient) UpdateInstanceReturns(result1 *apiv1beta1.ServiceInstance, result2 error) {
+	fake.UpdateInstanceStub = nil
+	fake.updateInstanceReturns = struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) UpdateInstanceReturnsOnCall(i int, result1 *apiv1beta1.ServiceInstance, result2 error) {
+	fake.UpdateInstanceStub = nil
+	if fake.updateInstanceReturnsOnCall == nil {
+		fake.updateInstanceReturnsOnCall = make(map[int]struct {
+			result1 *apiv1beta1.ServiceInstance
+			result2 error
+		})
+	}
+	fake.updateInstanceReturnsOnCall[i] = struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeSvcatClient) TouchInstance(arg1 string, arg2 string, arg3 int) error {
 	fake.touchInstanceMutex.Lock()
 	ret, specificReturn := fake.touchInstanceReturnsOnCall[len(fake.touchInstanceArgsForCall)]
@@ -2920,6 +2992,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.retrieveInstancesMutex.RUnlock()
 	fake.retrieveInstancesByPlanMutex.RLock()
 	defer fake.retrieveInstancesByPlanMutex.RUnlock()
+	fake.updateInstanceMutex.RLock()
+	defer fake.updateInstanceMutex.RUnlock()
 	fake.touchInstanceMutex.RLock()
 	defer fake.touchInstanceMutex.RUnlock()
 	fake.waitForInstanceMutex.RLock()
