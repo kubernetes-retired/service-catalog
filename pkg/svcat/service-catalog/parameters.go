@@ -37,6 +37,8 @@ func BuildParameters(params interface{}) *runtime.RawExtension {
 	return &runtime.RawExtension{Raw: paramsJSON}
 }
 
+// BuildParametersFromInstance unmarshalls a rawExtension retrieved from the ServiceCatalog API,
+// so that it can be used by commands
 func BuildParametersFromInstance(rawExtension *runtime.RawExtension) interface{} {
 	var unmarshaledJSON interface{}
 	raw := rawExtension.Raw
@@ -72,6 +74,8 @@ func BuildParametersFrom(secrets map[string]string) []v1beta1.ParametersFromSour
 	return params
 }
 
+// BuildMapFromInstanceSecretRefs converts secret refs retrieved from the ServiceCatalog API to a map of secrets names to secret keys,
+// so that it can be used by commands
 func BuildMapFromInstanceSecretRefs(params []v1beta1.ParametersFromSource) map[string]string {
 	secrets := make(map[string]string, 0)
 	for _, param := range params {
