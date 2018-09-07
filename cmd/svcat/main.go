@@ -119,6 +119,7 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 
 	cmd.AddCommand(newCreateCmd(cxt))
 	cmd.AddCommand(newGetCmd(cxt))
+	cmd.AddCommand(newSetCmd(cxt))
 	cmd.AddCommand(newDescribeCmd(cxt))
 	cmd.AddCommand(broker.NewRegisterCmd(cxt))
 	cmd.AddCommand(broker.NewDeregisterCmd(cxt))
@@ -169,6 +170,16 @@ func newGetCmd(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(class.NewGetCmd(cxt))
 	cmd.AddCommand(instance.NewGetCmd(cxt))
 	cmd.AddCommand(plan.NewGetCmd(cxt))
+
+	return cmd
+}
+
+func newSetCmd(cxt *command.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set",
+		Short: "Configure a specific resource",
+	}
+	cmd.AddCommand(instance.NewSetCmd(cxt))
 
 	return cmd
 }

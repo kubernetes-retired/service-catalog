@@ -198,6 +198,27 @@ func (sdk *SDK) Deprovision(namespace, instanceName string) error {
 	return nil
 }
 
+// UpdateInstance updates an instance of a service class and plan.
+func (sdk *SDK) UpdateInstance(namespace, instanceName, planName string,
+	params interface{}, secrets map[string]string) (*v1beta1.ServiceInstance, error) {
+
+	inst, err := sdk.RetrieveInstance(namespace, instanceName)
+	if err != nil {
+		return nil, err
+	}
+
+	inst.Spec.PlanReference.ClusterServicePlanExternalName = planName
+	inst.Spec.Parameters = BuildParameters(params)
+	inst.Spec.ParametersFrom = BuildParametersFrom(secrets)
+	inst.Spec.UpdateRequests = inst.Spec.UpdateRequests + 1
+
+	result, err := sdk.ServiceCatalog().ServiceInstances(namespace).Update(inst)
+	if err != nil {
+		return nil, fmt.Errorf("update instance request failed (%s)", err)
+	}
+	return result, nil
+}
+
 // TouchInstance increments the updateRequests field on an instance to make
 // service process it again (might be an update, delete, or noop)
 func (sdk *SDK) TouchInstance(ns, name string, retries int) error {

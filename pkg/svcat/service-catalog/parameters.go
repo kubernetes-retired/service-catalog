@@ -37,6 +37,22 @@ func BuildParameters(params interface{}) *runtime.RawExtension {
 	return &runtime.RawExtension{Raw: paramsJSON}
 }
 
+func BuildParametersFromInstance(rawExtension *runtime.RawExtension) interface{} {
+	var unmarshaledJSON interface{}
+	raw := rawExtension.Raw
+	if raw == nil {
+		raw = []byte{}
+	}
+	err := json.Unmarshal(raw, &unmarshaledJSON)
+	if err != nil {
+		// This should never be hit because unmarshaling is pretty safe
+		// I'd rather throw a panic then force handling of an error that I don't think is possible.
+		panic(fmt.Errorf("unable to unmarshal parameters %v (%s)", raw, err))
+	}
+
+	return unmarshaledJSON
+}
+
 // BuildParametersFrom converts a map of secrets names to secret keys to the
 // type consumed by the ServiceCatalog API.
 func BuildParametersFrom(secrets map[string]string) []v1beta1.ParametersFromSource {
@@ -54,4 +70,13 @@ func BuildParametersFrom(secrets map[string]string) []v1beta1.ParametersFromSour
 	}
 
 	return params
+}
+
+func BuildMapFromInstanceSecretRefs(params []v1beta1.ParametersFromSource) map[string]string {
+	secrets := make(map[string]string, 0)
+	for _, param := range params {
+		secrets[param.SecretKeyRef.Name] = param.SecretKeyRef.Key
+	}
+
+	return secrets
 }
