@@ -301,7 +301,7 @@ TestPollServiceInstanceLastOperationSuccess.
 ### Golden Files
 The svcat tests rely on "[golden files](https://medium.com/@povilasve/go-advanced-tips-tricks-a872503ac859#a196)",
 a pattern used in the Go standard library, for testing command output. The expected
-output is stored in a file in the testdata directory, `cmd/svcat/testdata`, and
+output is stored in a file in the testdata directory, `cmd/svcat/testdata`, 
 and then the test's output is compared against the "golden output" stored
 in that file. It helps avoid putting hard coded strings in the tests themselves.
 
