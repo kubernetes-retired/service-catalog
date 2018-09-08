@@ -83,7 +83,7 @@ var _ = Describe("Instances", func() {
 			Expect(status).To(BeFalse())
 		})
 	})
-	Describe("RetrieveInstancees", func() {
+	Describe("RetrieveInstances", func() {
 		It("Calls the generated v1beta1 List method with the specified namespace", func() {
 			namespace := si.Namespace
 
@@ -227,7 +227,7 @@ var _ = Describe("Instances", func() {
 			Expect(actions[0].(testing.ListActionImpl).GetListRestrictions().Fields.Matches(opts)).To(BeTrue())
 		})
 	})
-	Describe("UpdateInstance", func() {
+	Describe("TouchInstance", func() {
 		It("Properly increments the update requests field", func() {
 			namespace := "cherry_namespace"
 			instanceName := "cherry"
@@ -283,6 +283,85 @@ var _ = Describe("Instances", func() {
 			Expect(obj.Name).To(Equal(instanceName))
 			// obj.Spec.UpdateRequests is an int64, so compare it to an int64
 			Expect(obj.Spec.UpdateRequests).To(Equal(int64(1)))
+		})
+	})
+	Describe("UpdateInstance", func() {
+		It("Calls the v1beta1 Update method with the passed in arguments", func() {
+			namespace := "cherry_namespace"
+			instanceName := "cherry"
+			externalID := "cherry-external-id"
+			className := "cherry_class"
+			planName := "cherry_plan"
+			params := make(map[string]string)
+			params["foo"] = "bar"
+			secrets := make(map[string]string)
+			secrets["username"] = "admin"
+			secrets["password"] = "abc123"
+
+			_, err := sdk.Provision(namespace, instanceName, externalID, className, planName, params, secrets)
+			Expect(err).To(BeNil())
+			// once for the provision request
+			actions := svcCatClient.Actions()
+			Expect(len(actions)).To(Equal(1))
+
+			newPlanName := "apple_plan"
+			newParams := make(map[string]string)
+			newParams["bar"] = "baz"
+
+			_, err = sdk.UpdateInstance(namespace, instanceName, newPlanName, newParams, secrets)
+			Expect(err).To(BeNil())
+			// verify that the get and the update happened
+			actions = svcCatClient.Actions()
+			// once for the get = 2
+			// once for the update = 3
+			Expect(len(actions)).To(Equal(3))
+			getAction := actions[1]
+			updateAction := actions[2]
+			Expect(getAction.Matches("get", "serviceinstances")).To(BeTrue())
+			Expect(updateAction.Matches("update", "serviceinstances")).To(BeTrue())
+
+			// verify the details of the get
+			get, ok := getAction.(testing.GetActionImpl)
+			Expect(ok).To(BeTrue())
+			Expect(get.Name).To(Equal(instanceName))
+			Expect(get.Namespace).To(Equal(namespace))
+
+			// verify the details of the update
+			update, ok := updateAction.(testing.UpdateActionImpl)
+			Expect(ok).To(BeTrue())
+			Expect(update.Namespace).To(Equal(namespace))
+			obj, ok := update.Object.(*v1beta1.ServiceInstance)
+			Expect(ok).To(BeTrue())
+			Expect(obj.Name).To(Equal(instanceName))
+			Expect(obj.Spec.PlanReference.ClusterServiceClassExternalName).To(Equal(className))
+			Expect(obj.Spec.PlanReference.ClusterServicePlanExternalName).To(Equal(newPlanName))
+			Expect(obj.Spec.Parameters.Raw).To(Equal([]byte("{\"bar\":\"baz\"}")))
+			param := BuildParametersFrom(secrets)
+			Expect(obj.Spec.ParametersFrom).Should(ConsistOf(param))
+			Expect(obj.Spec.ExternalID).To(Equal(externalID))
+			// obj.Spec.UpdateRequests is an int64, so compare it to an int64
+			Expect(obj.Spec.UpdateRequests).To(Equal(int64(1)))
+		})
+		It("Bubbles up errors", func() {
+			errorMessage := "error retrieving instance"
+			namespace := "cherry_namespace"
+			instanceName := "cherry"
+			planName := "cherry_plan"
+			params := make(map[string]string)
+			params["foo"] = "bar"
+			secrets := make(map[string]string)
+			secrets["username"] = "admin"
+			secrets["password"] = "abc123"
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("update", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			service, err := sdk.UpdateInstance(namespace, instanceName, planName, params, secrets)
+			Expect(service).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
 		})
 	})
 	Describe("InstanceParentHierarchy", func() {
@@ -522,23 +601,12 @@ var _ = Describe("Instances", func() {
 			Expect(objectFromRequest.Spec.PlanReference.ClusterServiceClassExternalName).To(Equal(className))
 			Expect(objectFromRequest.Spec.PlanReference.ClusterServicePlanExternalName).To(Equal(planName))
 			Expect(objectFromRequest.Spec.Parameters.Raw).To(Equal([]byte("{\"foo\":\"bar\"}")))
-			param := v1beta1.ParametersFromSource{
-				SecretKeyRef: &v1beta1.SecretKeyReference{
-					Name: "username",
-					Key:  "admin",
-				},
-			}
-			param2 := v1beta1.ParametersFromSource{
-				SecretKeyRef: &v1beta1.SecretKeyReference{
-					Name: "password",
-					Key:  "abc123",
-				},
-			}
-			Expect(objectFromRequest.Spec.ParametersFrom).Should(ConsistOf(param, param2))
+			param := BuildParametersFrom(secrets)
+			Expect(objectFromRequest.Spec.ParametersFrom).Should(ConsistOf(param))
 			Expect(objectFromRequest.Spec.ExternalID).To(Equal(externalID))
 		})
 		It("Bubbles up errors", func() {
-			errorMessage := "error retrieving list"
+			errorMessage := "error retrieving instance"
 			namespace := "cherry_namespace"
 			instanceName := "cherry"
 			className := "cherry_class"
