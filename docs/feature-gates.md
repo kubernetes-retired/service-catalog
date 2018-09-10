@@ -29,6 +29,7 @@ different Service Catalog.
 | `OriginatingIdentityLocking` | `true` | Alpha | v0.1.14 | |
 | `PodPreset` | `false` | Alpha | v0.1.6 | |
 | `ResponseSchema` | `false` | Alpha | v0.1.12 | |
+| `ServicePlanDefaults` | `false` | Alpha | v0.1.32 | |
 | `UpdateDashboardURL` | `false` | Alpha | v0.1.13 | |
 
 
@@ -91,6 +92,9 @@ for updating while we are still processing the current spec.
 
 - `ResponseSchema`:  Enables the storage of the binding response schema in
 ServicePlans
+
+- `ServicePlanDefaults`: Enables applying default values to service instances
+and bindings
 
 - `UpdateDashboardURL`:  Enables the update of DashboardURL in response to
 update service instance requests to brokers.

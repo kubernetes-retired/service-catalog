@@ -510,14 +510,16 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		return nil
 	}
 
-	// Apply default provisioning parameters, this must be done after we've resolved the class and plan
-	modified, err = c.applyDefaultProvisioningParameters(instance)
-	if err != nil {
-		return err
-	}
-	if modified {
-		// the instance was updated with new parameters, so we need to continue in the next iteration
-		return nil
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ServicePlanDefaults) {
+		// Apply default provisioning parameters, this must be done after we've resolved the class and plan
+		modified, err = c.applyDefaultProvisioningParameters(instance)
+		if err != nil {
+			return err
+		}
+		if modified {
+			// the instance was updated with new parameters, so we need to continue in the next iteration
+			return nil
+		}
 	}
 
 	glog.V(4).Info(pcb.Message("Processing adding event"))

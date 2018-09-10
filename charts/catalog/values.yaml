@@ -167,3 +167,5 @@ originatingIdentityEnabled: true
 asyncBindingOperationsEnabled: false
 # Whether the NamespacedServiceBroker alpha feature should be disabled
 namespacedServiceBrokerDisabled: false
+# Whether the ServicePlanDefaults alpha feature should be enabled
+servicePlanDefaultsEnabled: false
