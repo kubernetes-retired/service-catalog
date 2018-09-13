@@ -44,27 +44,17 @@ var _ = Describe("Create Command", func() {
 			Expect(len(cmd.Aliases)).To(Equal(0))
 		})
 	})
-	Describe("Validate name is provided", func() {
-		It("errors if a new class name is not provided", func() {
+	Describe("Validate", func() {
+		It("errors if no argument is provided", func() {
 			cmd := CreateCmd{
 				Name: "",
-				From: "existingclass",
+				From: "class",
 			}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("Validate from is provided", func() {
-		It("errors if a existing class name is not provided using from", func() {
-			cmd := CreateCmd{
-				Name: "newclass",
-				From: "",
-			}
-			err := cmd.Validate([]string{})
-			Expect(err).To(HaveOccurred())
-		})
-	})
-	Describe("Create", func() {
+	Describe("Run", func() {
 		It("Calls the pkg/svcat libs CreateClassFrom method with the passed in variables for a cluster class and prints output to the user", func() {
 			className := "newclass"
 			existingClassName := "existingclass"
@@ -100,10 +90,10 @@ var _ = Describe("Create Command", func() {
 		})
 		It("Calls the pkg/svcat libs CreateClassFrom method with the passed in variables for a namespace class and prints output to the user", func() {
 			className := "newclass"
-			classNamespace := "newclass"
+			classNamespace := "default"
 			existingClassName := "existingclass"
 
-			classToReturn := &v1beta1.ClusterServiceClass{
+			classToReturn := &v1beta1.ServiceClass{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      className,
 					Namespace: classNamespace,
