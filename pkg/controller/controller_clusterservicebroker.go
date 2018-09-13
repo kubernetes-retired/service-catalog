@@ -94,60 +94,14 @@ func (c *controller) clusterServiceBrokerDelete(obj interface{}) {
 // the controller's broker relist interval has not elapsed since the broker's
 // ready condition became true, or if the broker's RelistBehavior is set to Manual.
 func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, now time.Time, defaultRelistInterval time.Duration) bool {
-	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
-	if broker.Status.ReconciledGeneration != broker.Generation {
-		// If the spec has changed, we should reconcile the broker.
-		return true
-	}
-	if broker.DeletionTimestamp != nil || len(broker.Status.Conditions) == 0 {
-		// If the deletion timestamp is set or the broker has no status
-		// conditions, we should reconcile it.
-		return true
-	}
-
-	// find the ready condition in the broker's status
-	for _, condition := range broker.Status.Conditions {
-		if condition.Type == v1beta1.ServiceBrokerConditionReady {
-			// The broker has a ready condition
-
-			if condition.Status == v1beta1.ConditionTrue {
-
-				// The broker's ready condition has status true, meaning that
-				// at some point, we successfully listed the broker's catalog.
-				if broker.Spec.RelistBehavior == v1beta1.ServiceBrokerRelistBehaviorManual {
-					// If a broker is configured with RelistBehaviorManual, it should
-					// ignore the Duration and only relist based on spec changes
-
-					glog.V(10).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
-					return false
-				}
-
-				// By default, the broker should relist if it has been longer than the
-				// RelistDuration since the last time we fetched the Catalog
-				duration := defaultRelistInterval
-
-				if broker.Spec.RelistDuration != nil {
-					duration = broker.Spec.RelistDuration.Duration
-				}
-
-				intervalPassed := true
-				if broker.Status.LastCatalogRetrievalTime != nil {
-					intervalPassed = now.After(broker.Status.LastCatalogRetrievalTime.Time.Add(duration))
-				}
-				if intervalPassed == false {
-					glog.V(10).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
-				}
-				return intervalPassed
-			}
-
-			// The broker's ready condition wasn't true; we should try to re-
-			// list the broker.
-			return true
-		}
-	}
-
-	// The broker didn't have a ready condition; we should reconcile it.
-	return true
+	return shouldReconcileServiceBrokerCommon(
+		pretty.NewClusterServiceBrokerContextBuilder(broker),
+		&broker.ObjectMeta,
+		&broker.Spec.CommonServiceBrokerSpec,
+		&broker.Status.CommonServiceBrokerStatus,
+		now,
+		defaultRelistInterval,
+	)
 }
 
 func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
