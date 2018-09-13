@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog_test
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -44,7 +45,17 @@ var _ = Describe("Broker", func() {
 
 	BeforeEach(func() {
 		csb = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
+		csb.Status.Conditions = append(csb.Status.Conditions,
+			v1beta1.ServiceBrokerCondition{
+				Type:   v1beta1.ServiceBrokerConditionReady,
+				Status: v1beta1.ConditionTrue,
+			})
 		csb2 = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
+		csb2.Status.Conditions = append(csb2.Status.Conditions,
+			v1beta1.ServiceBrokerCondition{
+				Type:   v1beta1.ServiceBrokerConditionFailed,
+				Status: v1beta1.ConditionTrue,
+			})
 		sb = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "default"}}
 		sb2 = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", Namespace: "ns2"}}
 		svcCatClient = fake.NewSimpleClientset(csb, csb2, sb, sb2)
@@ -53,6 +64,16 @@ var _ = Describe("Broker", func() {
 		}
 	})
 
+	Describe("BrokerHasStatus", func() {
+		It("returns true if the provided broker has the provided status", func() {
+			hasStatus := sdk.BrokerHasStatus(csb, v1beta1.ServiceBrokerConditionReady)
+			Expect(hasStatus).To(BeTrue())
+		})
+		It("returns false if the provided broker does not have the provided status marked true", func() {
+			hasStatus := sdk.BrokerHasStatus(csb2, v1beta1.ServiceBrokerConditionReady)
+			Expect(hasStatus).To(BeFalse())
+		})
+	})
 	Describe("Deregister", func() {
 		It("deletes a broker by calling the v1beta1 Delete method with the passed in arguement", func() {
 			brokerName := "foobar"
@@ -78,6 +99,26 @@ var _ = Describe("Broker", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
+		})
+	})
+	Describe("IsBrokerFailed", func() {
+		It("returns true if the broker is in the failed status", func() {
+			status := sdk.IsBrokerFailed(csb2)
+			Expect(status).To(BeTrue())
+		})
+		It("returns false if the broker is not in the failed status", func() {
+			status := sdk.IsBrokerFailed(csb)
+			Expect(status).To(BeFalse())
+		})
+	})
+	Describe("IsBrokerReady", func() {
+		It("returns true if the broker is in the ready status", func() {
+			status := sdk.IsBrokerReady(csb)
+			Expect(status).To(BeTrue())
+		})
+		It("returns false if the broker is not in the ready status", func() {
+			status := sdk.IsBrokerReady(csb2)
+			Expect(status).To(BeFalse())
 		})
 	})
 	Describe("RetrieveBrokers", func() {
@@ -287,6 +328,107 @@ var _ = Describe("Broker", func() {
 
 			Expect(actions[1].Matches("update", "clusterservicebrokers")).To(BeTrue())
 			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ClusterServiceBroker).Spec.RelistRequests).Should(BeNumerically(">", 0))
+		})
+	})
+	Describe("WaitForBroker", func() {
+		var (
+			counter        int
+			interval       time.Duration
+			notReady       v1beta1.ServiceBrokerCondition
+			notReadyBroker *v1beta1.ClusterServiceBroker
+			timeout        time.Duration
+			waitClient     *fake.Clientset
+		)
+		BeforeEach(func() {
+			counter = 0
+			interval = 100 * time.Millisecond
+			notReady = v1beta1.ServiceBrokerCondition{Type: v1beta1.ServiceBrokerConditionReady, Status: v1beta1.ConditionFalse}
+			notReadyBroker = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: csb.Name}}
+			notReadyBroker.Status.Conditions = []v1beta1.ServiceBrokerCondition{notReady}
+			timeout = 1 * time.Second
+			waitClient = &fake.Clientset{}
+
+			waitClient.AddReactor("get", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				counter++
+				return true, notReadyBroker, nil
+			})
+			sdk.ServiceCatalogClient = waitClient
+		})
+
+		It("waits until the broker is ready to return", func() {
+			waitClient.PrependReactor("get", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				if counter > 5 {
+					return true, csb, nil
+				}
+				return false, nil, nil
+			})
+
+			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).To(Equal(csb))
+			actions := waitClient.Actions()
+			Expect(len(actions)).Should(BeNumerically(">", 1))
+			for _, v := range actions {
+				Expect(v.Matches("get", "clusterservicebrokers")).To(BeTrue())
+				Expect(v.(testing.GetActionImpl).Name).To(Equal(csb.Name))
+			}
+		})
+		It("waits until the broker is failed to return", func() {
+			failedBroker := &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: csb.Name}}
+			failed := v1beta1.ServiceBrokerCondition{Type: v1beta1.ServiceBrokerConditionFailed, Status: v1beta1.ConditionTrue}
+			failedBroker.Status.Conditions = []v1beta1.ServiceBrokerCondition{failed}
+			waitClient.PrependReactor("get", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				if counter > 5 {
+					return true, failedBroker, nil
+				}
+				return false, nil, nil
+			})
+
+			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).To(Equal(failedBroker))
+			actions := waitClient.Actions()
+			Expect(len(actions)).Should(BeNumerically(">", 1))
+			for _, v := range actions {
+				Expect(v.Matches("get", "clusterservicebrokers")).To(BeTrue())
+				Expect(v.(testing.GetActionImpl).Name).To(Equal(csb.Name))
+			}
+		})
+		It("times out if the broker never becomes ready or failed", func() {
+			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("timed out"))
+			Expect(broker).To(Equal(notReadyBroker))
+			actions := waitClient.Actions()
+			Expect(len(actions)).Should(BeNumerically(">", 1))
+			for _, v := range actions {
+				Expect(v.Matches("get", "clusterservicebrokers")).To(BeTrue())
+				Expect(v.(testing.GetActionImpl).Name).To(Equal(csb.Name))
+			}
+		})
+		It("bubbles up errors", func() {
+			errorMessage := "backend exploded"
+			waitClient.PrependReactor("get", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				if counter > 5 {
+					return true, nil, errors.New(errorMessage)
+				}
+				return false, nil, nil
+			})
+
+			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+			Expect(broker).To(BeNil())
+			actions := waitClient.Actions()
+			Expect(len(actions)).Should(BeNumerically(">", 1))
+			for _, v := range actions {
+				Expect(v.Matches("get", "clusterservicebrokers")).To(BeTrue())
+				Expect(v.(testing.GetActionImpl).Name).To(Equal(csb.Name))
+			}
+
 		})
 	})
 })
