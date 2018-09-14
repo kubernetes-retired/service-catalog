@@ -23,6 +23,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/peterbourgon/mergemap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -184,4 +185,36 @@ func prepareInProgressPropertyParameters(kubeClient kubernetes.Interface, namesp
 	}
 
 	return parameters, parametersChecksum, rawParametersWithRedaction, err
+}
+
+// mergeParameters applies overrides on top of a set of default parameters.
+func mergeParameters(params *runtime.RawExtension, defaultParams *runtime.RawExtension) (*runtime.RawExtension, error) {
+	if defaultParams == nil || defaultParams.Raw == nil || string(defaultParams.Raw) == "" {
+		return params, nil
+	}
+
+	if params == nil || params.Raw == nil || string(params.Raw) == "" {
+		return defaultParams, nil
+	}
+
+	paramsMap := make(map[string]interface{})
+	err := json.Unmarshal(params.Raw, &paramsMap)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal parameters %v: %s", string(params.Raw), err)
+	}
+
+	defaultParamsMap := make(map[string]interface{})
+	err = json.Unmarshal(defaultParams.Raw, &defaultParamsMap)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal default parameters %v: %s", string(defaultParams.Raw), err)
+	}
+
+	merged := mergemap.Merge(defaultParamsMap, paramsMap)
+
+	result, err := json.Marshal(merged)
+	if err != nil {
+		return nil, fmt.Errorf("could not merge parameters %v with %v: %s", string(params.Raw), string(defaultParams.Raw), err)
+	}
+
+	return &runtime.RawExtension{Raw: result}, nil
 }

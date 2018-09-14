@@ -40,6 +40,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -507,6 +508,18 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	if modified {
 		// resolveReferences has updated the instance, so we need to continue in the next iteration
 		return nil
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ServicePlanDefaults) {
+		// Apply default provisioning parameters, this must be done after we've resolved the class and plan
+		modified, err = c.applyDefaultProvisioningParameters(instance)
+		if err != nil {
+			return err
+		}
+		if modified {
+			// the instance was updated with new parameters, so we need to continue in the next iteration
+			return nil
+		}
 	}
 
 	glog.V(4).Info(pcb.Message("Processing adding event"))
@@ -1507,6 +1520,70 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 	return instance, nil
 }
 
+// applyDefaultProvisioningParameters applies any default provisioning parameters for an instance.
+// If parameter defaults were applied, and the instance status was successfully updated, the method returns true
+// If either can not be resolved, returns an error and sets the InstanceCondition
+// with the appropriate error message.
+func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (bool, error) {
+	// The default parameters are only applied once (though we may revisit that decision in the future depending on how
+	// we want to handle plan changes).
+	if instance.Status.DefaultProvisionParameters != nil {
+		return false, nil
+	}
+
+	defaultParams, err := c.getDefaultProvisioningParameters(instance)
+	if err != nil {
+		return false, err
+	}
+
+	finalParams, err := mergeParameters(instance.Spec.Parameters, defaultParams)
+	if err != nil {
+		return false, err
+	}
+
+	if instance.Spec.Parameters == finalParams {
+		return false, nil
+	}
+
+	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
+	glog.V(4).Info(pcb.Message("Applying default provisioning parameters"))
+
+	instance.Spec.Parameters = finalParams
+	_, err = c.updateServiceInstanceWithRetries(instance, func(conflictedInstance *v1beta1.ServiceInstance) {
+		conflictedInstance.Spec.Parameters = finalParams
+	})
+	if err != nil {
+		s := fmt.Sprintf("error updating service instance to apply default parameters: %s", err)
+		glog.Warning(pcb.Message(s))
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorWithParameters, s)
+		return false, fmt.Errorf(s)
+	}
+
+	instance.Status.DefaultProvisionParameters = defaultParams
+	_, err = c.updateServiceInstanceStatus(instance)
+	return true, err
+}
+
+func (c *controller) getDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (*runtime.RawExtension, error) {
+	if instance.Spec.ClusterServicePlanSpecified() {
+		plan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
+		if err != nil {
+			return nil, err
+		}
+		return plan.Spec.DefaultProvisionParameters, nil
+	}
+
+	if instance.Spec.ServicePlanSpecified() {
+		plan, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
+		if err != nil {
+			return nil, err
+		}
+		return plan.Spec.DefaultProvisionParameters, nil
+	}
+
+	return nil, fmt.Errorf("invalid plan reference %v", instance.Spec.PlanReference)
+}
+
 func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) (*osb.ProvisionRequest, *v1beta1.ServiceInstancePropertiesState, error) {
 	if instance.Spec.ClusterServiceClassSpecified() {
 		serviceClass, servicePlan, _, _, err := c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
@@ -1679,6 +1756,51 @@ func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceIn
 	// The UpdateReferences method ignores status changes.
 	// Restore status that might have changed locally to be able to update it later.
 	updatedInstance.Status = status
+	return updatedInstance, err
+}
+
+// updateServiceInstanceWithRetries updates the instance
+// and automatically retries if a 409 Conflict error is
+// returned by the API server.
+// If a conflict occurs, the provided conflictResolutionFunc is called
+// so that the conflict can be resolved. There is no default universal safe
+// conflict resolution logic, so conflictResolutionFunc must always be provided.
+func (c *controller) updateServiceInstanceWithRetries(
+	instance *v1beta1.ServiceInstance,
+	conflictResolutionFunc func(*v1beta1.ServiceInstance)) (*v1beta1.ServiceInstance, error) {
+
+	pcb := pretty.NewInstanceContextBuilder(instance)
+
+	const interval = 100 * time.Millisecond
+	const timeout = 10 * time.Second
+	var updatedInstance *v1beta1.ServiceInstance
+
+	instanceToUpdate := instance
+	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		glog.V(4).Info(pcb.Message("Updating instance"))
+		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).Update(instanceToUpdate)
+		if err != nil {
+			if !errors.IsConflict(err) {
+				return false, err
+			}
+			glog.V(4).Info(pcb.Message("Couldn't update instance because the resource was stale"))
+			// Fetch a fresh instance to resolve the update conflict and retry
+			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+			conflictResolutionFunc(instanceToUpdate)
+			return false, nil
+		}
+
+		updatedInstance = upd
+		return true, nil
+	})
+
+	if err != nil {
+		glog.Errorf(pcb.Messagef("Failed to update instance: %v", err))
+	}
+
 	return updatedInstance, err
 }
 
