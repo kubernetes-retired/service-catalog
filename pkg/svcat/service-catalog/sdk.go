@@ -69,7 +69,6 @@ type SvcatClient interface {
 	RetrieveInstances(string, string, string) (*apiv1beta1.ServiceInstanceList, error)
 	RetrieveInstancesByPlan(Plan) ([]apiv1beta1.ServiceInstance, error)
 	UpdateInstance(string, string, string, interface{}, map[string]string) (*apiv1beta1.ServiceInstance, error)
-	TouchInstance(string, string, int) error
 	WaitForInstance(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
 	WaitForInstanceToNotExist(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
 

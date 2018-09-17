@@ -219,31 +219,6 @@ func (sdk *SDK) UpdateInstance(namespace, instanceName, planName string,
 	return result, nil
 }
 
-// TouchInstance increments the updateRequests field on an instance to make
-// service process it again (might be an update, delete, or noop)
-func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
-	for j := 0; j < retries; j++ {
-		inst, err := sdk.RetrieveInstance(ns, name)
-		if err != nil {
-			return err
-		}
-
-		inst.Spec.UpdateRequests = inst.Spec.UpdateRequests + 1
-
-		_, err = sdk.ServiceCatalog().ServiceInstances(ns).Update(inst)
-		if err == nil {
-			return nil
-		}
-		// if we didn't get a conflict, no idea what happened
-		if !apierrors.IsConflict(err) {
-			return fmt.Errorf("could not touch instance (%s)", err)
-		}
-	}
-
-	// conflict after `retries` tries
-	return fmt.Errorf("could not sync service broker after %d tries", retries)
-}
-
 // WaitForInstanceToNotExist waits for the specified instance to no longer exist.
 func (sdk *SDK) WaitForInstanceToNotExist(ns, name string, interval time.Duration, timeout *time.Duration) (instance *v1beta1.ServiceInstance, err error) {
 	if timeout == nil {
