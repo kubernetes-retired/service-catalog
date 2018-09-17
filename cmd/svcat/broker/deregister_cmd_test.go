@@ -26,11 +26,12 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
 )
 
 var _ = Describe("Deregister Command", func() {
 	Describe("NewDeregisterCmd", func() {
-		It("Builds and returns a cobra command", func() {
+		It("Builds and returns a cobra command with the correct flags", func() {
 			cxt := &command.Context{}
 			cmd := NewDeregisterCmd(cxt)
 			Expect(*cmd).NotTo(BeNil())
@@ -38,6 +39,13 @@ var _ = Describe("Deregister Command", func() {
 			Expect(cmd.Short).To(ContainSubstring("Deregisters an existing broker with service catalog"))
 			Expect(cmd.Example).To(ContainSubstring("svcat deregister mysqlbroker"))
 			Expect(len(cmd.Aliases)).To(Equal(0))
+
+			waitFlag := cmd.Flags().Lookup("wait")
+			Expect(waitFlag).NotTo(BeNil())
+			timeoutFlag := cmd.Flags().Lookup("timeout")
+			Expect(timeoutFlag).NotTo(BeNil())
+			intervalFlag := cmd.Flags().Lookup("interval")
+			Expect(intervalFlag).NotTo(BeNil())
 		})
 	})
 	Describe("Validate", func() {
@@ -60,10 +68,13 @@ var _ = Describe("Deregister Command", func() {
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
 			fakeSDK.DeregisterReturns(nil)
 			fakeApp.SvcatClient = fakeSDK
+			cxt := svcattest.NewContext(outputBuffer, fakeApp)
 			cmd := DeregisterCmd{
-				Context:    svcattest.NewContext(outputBuffer, fakeApp),
 				BrokerName: brokerName,
+				Context:    cxt,
+				Namespaced: command.NewNamespaced(cxt),
 			}
+			cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
 			err := cmd.Deregister()
 
 			Expect(err).NotTo(HaveOccurred())

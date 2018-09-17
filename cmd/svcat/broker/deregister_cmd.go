@@ -25,6 +25,9 @@ import (
 
 // DeregisterCmd contains the info needed to delete a broker
 type DeregisterCmd struct {
+	*command.Namespaced
+	*command.Waitable
+
 	BrokerName string
 	Context    *command.Context
 }
@@ -32,7 +35,9 @@ type DeregisterCmd struct {
 // NewDeregisterCmd builds a "svcat deregister" command
 func NewDeregisterCmd(cxt *command.Context) *cobra.Command {
 	deregisterCmd := &DeregisterCmd{
-		Context: cxt,
+		Context:    cxt,
+		Namespaced: command.NewNamespaced(cxt),
+		Waitable:   command.NewWaitable(),
 	}
 	cmd := &cobra.Command{
 		Use:   "deregister NAME",
@@ -43,6 +48,8 @@ func NewDeregisterCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(deregisterCmd),
 		RunE:    command.RunE(deregisterCmd),
 	}
+	deregisterCmd.AddNamespaceFlags(cmd.Flags(), false)
+	deregisterCmd.AddWaitFlags(cmd)
 	return cmd
 }
 
