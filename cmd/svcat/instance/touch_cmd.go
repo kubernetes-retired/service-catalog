@@ -20,9 +20,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type touchInstanceCmd struct {
@@ -58,27 +56,6 @@ func (c *touchInstanceCmd) Validate(args []string) error {
 }
 
 func (c *touchInstanceCmd) Run() error {
-	instance, err := c.App.RetrieveInstance(c.Namespace, c.name)
-	if err != nil {
-		return nil
-	}
-
-	planName := instance.Spec.PlanReference.ClusterServicePlanExternalName
-	params := servicecatalog.BuildParametersFromInstance(instance.Spec.Parameters)
-	secrets := servicecatalog.BuildMapFromInstanceSecretRefs(instance.Spec.ParametersFrom)
-
 	const retries = 3
-	for j := 0; j < retries; j++ {
-		c.App.UpdateInstance(c.Namespace, c.name, planName, params, secrets)
-		if err == nil {
-			return nil
-		}
-		// if we didn't get a conflict, no idea what happened
-		if !apierrors.IsConflict(err) {
-			return fmt.Errorf("could not touch instance (%s)", err)
-		}
-	}
-
-	// conflict after `retries` tries
-	return fmt.Errorf("could not sync service broker after %d tries", retries)
+	return c.App.TouchInstance(c.Namespace, c.name, retries)
 }
