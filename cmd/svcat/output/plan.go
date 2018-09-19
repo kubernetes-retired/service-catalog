@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
@@ -88,7 +87,7 @@ func WritePlanList(w io.Writer, outputFormat string, plans []servicecatalog.Plan
 }
 
 // WritePlan prints a single plan in the specified output format.
-func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan, class v1beta1.ClusterServiceClass) {
+func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class v1beta1.ClusterServiceClass) {
 
 	switch outputFormat {
 	case FormatJSON:
@@ -98,7 +97,7 @@ func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan
 	case FormatTable:
 		classNames := map[string]string{}
 		classNames[class.Name] = class.Spec.ExternalName
-		writePlanListTable(w, []servicecatalog.Plan{&plan}, classNames)
+		writePlanListTable(w, []servicecatalog.Plan{plan}, classNames)
 	}
 }
 
@@ -137,39 +136,41 @@ func WriteParentPlan(w io.Writer, plan *v1beta1.ClusterServicePlan) {
 }
 
 // WritePlanDetails prints details for a single plan.
-func WritePlanDetails(w io.Writer, plan *v1beta1.ClusterServicePlan, class *v1beta1.ClusterServiceClass) {
+func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.ClusterServiceClass) {
 	t := NewDetailsTable(w)
 
 	t.AppendBulk([][]string{
-		{"Name:", plan.Spec.ExternalName},
-		{"Description:", plan.Spec.Description},
-		{"UUID:", string(plan.Name)},
-		{"Status:", getPlanStatusShort(plan.Status)},
-		{"Free:", strconv.FormatBool(plan.Spec.Free)},
-		{"Class:", class.Spec.ExternalName},
+		{"Name:", plan.GetExternalName()},
+		{"Description:", plan.GetDescription()},
+		//		{"UUID:", string(plan.Name)},
+		//		{"Status:", getPlanStatusShort(plan.Status)},
+		//		{"Free:", strconv.FormatBool(plan.Spec.Free)},
+		//		{"Class:", class.Spec.ExternalName},
 	})
 
 	t.Render()
 }
 
 // WritePlanSchemas prints the schemas for a single plan.
-func WritePlanSchemas(w io.Writer, plan *v1beta1.ClusterServicePlan) {
-	instanceCreateSchema := plan.Spec.ServiceInstanceCreateParameterSchema
-	instanceUpdateSchema := plan.Spec.ServiceInstanceUpdateParameterSchema
-	bindingCreateSchema := plan.Spec.ServiceBindingCreateParameterSchema
+func WritePlanSchemas(w io.Writer, plan servicecatalog.Plan) {
+	/*
+		instanceCreateSchema := plan.Spec.ServiceInstanceCreateParameterSchema
+		instanceUpdateSchema := plan.Spec.ServiceInstanceUpdateParameterSchema
+		bindingCreateSchema := plan.Spec.ServiceBindingCreateParameterSchema
 
-	if instanceCreateSchema != nil {
-		fmt.Fprintln(w, "\nInstance Create Parameter Schema:")
-		writeYAML(w, instanceCreateSchema, 2)
-	}
+		if instanceCreateSchema != nil {
+			fmt.Fprintln(w, "\nInstance Create Parameter Schema:")
+			writeYAML(w, instanceCreateSchema, 2)
+		}
 
-	if instanceUpdateSchema != nil {
-		fmt.Fprintln(w, "\nInstance Update Parameter Schema:")
-		writeYAML(w, instanceUpdateSchema, 2)
-	}
+		if instanceUpdateSchema != nil {
+			fmt.Fprintln(w, "\nInstance Update Parameter Schema:")
+			writeYAML(w, instanceUpdateSchema, 2)
+		}
 
-	if bindingCreateSchema != nil {
-		fmt.Fprintln(w, "\nBinding Create Parameter Schema:")
-		writeYAML(w, bindingCreateSchema, 2)
-	}
+		if bindingCreateSchema != nil {
+			fmt.Fprintln(w, "\nBinding Create Parameter Schema:")
+			writeYAML(w, bindingCreateSchema, 2)
+		}
+	*/
 }

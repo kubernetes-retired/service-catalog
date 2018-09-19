@@ -89,7 +89,8 @@ func (c *describeCmd) describe() error {
 
 	output.WriteClassDetails(c.Output, class)
 
-	plans, err := c.App.RetrievePlans(servicecatalog.RetrievePlanOptions{Scope: servicecatalog.AllScope, ClassID: class.Name})
+	opts := servicecatalog.ScopeOptions{Scope: servicecatalog.AllScope}
+	plans, err := c.App.RetrievePlans(class.Name, opts)
 	if err != nil {
 		return err
 	}

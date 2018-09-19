@@ -225,7 +225,7 @@ var _ = Describe("Get Plans Command", func() {
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
-			scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
+			_, scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
 			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 				Namespace: "default",
 				Scope:     servicecatalog.NamespaceScope,
@@ -256,7 +256,7 @@ var _ = Describe("Get Plans Command", func() {
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
-			scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
+			_, scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
 			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 				Namespace: "",
 				Scope:     servicecatalog.NamespaceScope,
@@ -288,7 +288,7 @@ var _ = Describe("Get Plans Command", func() {
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
-			scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
+			_, scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
 			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 				Namespace: "default",
 				Scope:     servicecatalog.AllScope,

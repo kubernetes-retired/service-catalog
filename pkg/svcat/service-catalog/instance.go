@@ -86,10 +86,9 @@ func (sdk *SDK) RetrieveInstanceByBinding(b *v1beta1.ServiceBinding,
 }
 
 // RetrieveInstancesByPlan retrieves all instances of a plan.
-func (sdk *SDK) RetrieveInstancesByPlan(plan *v1beta1.ClusterServicePlan,
-) ([]v1beta1.ServiceInstance, error) {
+func (sdk *SDK) RetrieveInstancesByPlan(plan Plan) ([]v1beta1.ServiceInstance, error) {
 	planOpts := v1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(FieldServicePlanRef, plan.Name).String(),
+		FieldSelector: fields.OneTermEqualSelector(FieldServicePlanRef, plan.GetName()).String(),
 	}
 	instances, err := sdk.ServiceCatalog().ServiceInstances("").List(planOpts)
 	if err != nil {

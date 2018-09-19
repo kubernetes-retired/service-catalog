@@ -22,7 +22,6 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
@@ -132,7 +131,8 @@ func (c *getCmd) getAll() error {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}
 
-	opts := servicecatalog.RetrievePlanOptions{
+	var classID string
+	opts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
 	}
@@ -146,10 +146,10 @@ func (c *getCmd) getAll() error {
 				}
 			}
 		}
-		opts.ClassID = c.classUUID
+		classID = c.classUUID
 	}
 
-	plans, err := c.App.RetrievePlans(opts)
+	plans, err := c.App.RetrievePlans(classID, opts)
 	if err != nil {
 		return fmt.Errorf("unable to list plans (%s)", err)
 	}
@@ -159,29 +159,35 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	var plan *v1beta1.ClusterServicePlan
+	var plan servicecatalog.Plan
 	var err error
+
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+
 	switch {
 	case c.lookupByUUID:
-		plan, err = c.App.RetrievePlanByID(c.uuid)
+		plan, err = c.App.RetrievePlanByID(c.uuid, opts)
 
 	case c.className != "":
-		plan, err = c.App.RetrievePlanByClassAndPlanNames(c.className, c.name)
+		plan, err = c.App.RetrievePlanByClassAndName(c.className, c.name, opts)
 
 	default:
-		plan, err = c.App.RetrievePlanByName(c.name)
+		plan, err = c.App.RetrievePlanByName(c.name, opts)
 
 	}
 	if err != nil {
 		return err
 	}
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := c.App.RetrieveClassByID(plan.Spec.ClusterServiceClassRef.Name)
+	class, err := c.App.RetrieveClassByID(plan.GetClassID())
 	if err != nil {
 		return err
 	}
 
-	output.WritePlan(c.Output, c.OutputFormat, *plan, *class)
+	output.WritePlan(c.Output, c.OutputFormat, plan, *class)
 
 	return nil
 }
