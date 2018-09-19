@@ -42,6 +42,18 @@ var _ = Describe("Create Command", func() {
 			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --scope cluster"))
 			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace"))
 			Expect(len(cmd.Aliases)).To(Equal(0))
+
+			fromFlag := cmd.Flags().Lookup("from")
+			Expect(fromFlag).NotTo(BeNil())
+			Expect(fromFlag.Usage).To(ContainSubstring("Name from an existing class that will be copied (Required)"))
+
+			scopeFlag := cmd.Flags().Lookup("scope")
+			Expect(scopeFlag).NotTo(BeNil())
+			Expect(scopeFlag.Usage).To(ContainSubstring("Limit the results to a particular scope"))
+
+			namespaceFlag := cmd.Flags().Lookup("namespace")
+			Expect(namespaceFlag).NotTo(BeNil())
+			Expect(namespaceFlag.Usage).To(ContainSubstring("If present, the namespace scope for this request"))
 		})
 	})
 	Describe("Validate", func() {
