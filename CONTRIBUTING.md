@@ -4,6 +4,18 @@ This document should concisely express the project development status,
 methodology, and contribution process.  As the community makes progress, we
 should keep this document in sync with reality.
 
+# Claiming an Issue
+
+We use the [standard k8's labels](https://github.com/kubernetes/community/blob/master/contributors/devel/help-wanted.md)
+[good first issue][good-first-issue] and [help wanted][help-wanted]
+to indicate issues that are ideal for new contributors.
+
+Once you have found an issue that you'd like to work on, comment on it with
+"#dibs", or "I would like to work on this". If someone else said that they would
+like to work on it, but there's no open PR and it's been more than 2 weeks,
+comment with "@kubernetes-incubator/maintainers-service-catalog Is it okay if I
+take this?" and a maintainer will help out.
+
 ## Submitting a Pull Request (PR)
 
 The following outlines the general rules we follow:
@@ -18,7 +30,7 @@ include as many testcases, within reason, to cover any variants of use of the
 feature.
 - All PRs must have appropriate documentation. New features should be
   described, and an example of use provided.
-- PR authors will need to have CLA on-file with the Linux Foundation before 
+- PR authors will need to have CLA on-file with the Linux Foundation before
 the PR will be merged.
 See Kubernete's [contributing guidelines](https://github.com/kubernetes/kubernetes/blob/master/CONTRIBUTING.md) for more information.
 
@@ -42,3 +54,6 @@ project, adding or altering a file within the `docs` directory.
 
 We'll update this space as we begin developing code with relevant dev
 information.
+
+[help-wanted]: https://github.com/kubernetes-incubator/service-catalog/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22
+[good-first-issue]: https://github.com/kubernetes-incubator/service-catalog/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+
