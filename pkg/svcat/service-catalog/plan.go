@@ -131,14 +131,14 @@ func (sdk *SDK) RetrievePlanByID(uuid string) (*v1beta1.ClusterServicePlan, erro
 // RetrievePlanByClassAndPlanNames gets a plan by its class/plan name combination.
 func (sdk *SDK) RetrievePlanByClassAndPlanNames(className, planName string,
 ) (*v1beta1.ClusterServicePlan, error) {
-	class, err := sdk.RetrieveClassByName(className)
+	class, err := sdk.RetrieveClassByName(className, ScopeOptions{Scope: ClusterScope})
 	if err != nil {
 		return nil, err
 	}
 
 	planOpts := v1.ListOptions{
 		FieldSelector: fields.AndSelectors(
-			fields.OneTermEqualSelector(FieldServiceClassRef, class.Name),
+			fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName()),
 			fields.OneTermEqualSelector(FieldExternalPlanName, planName),
 		).String(),
 	}

@@ -1,0 +1,3 @@
+                NAME                 NAMESPACE         DESCRIPTION        
++----------------------------------+-----------+-------------------------+
+  user-provided-namespaced-service   default     A user provided service  

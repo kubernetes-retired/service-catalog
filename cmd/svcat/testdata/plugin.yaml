@@ -68,12 +68,20 @@ tree:
   - name: class
     use: class [NAME] --from [EXISTING_NAME]
     shortDesc: Copies an existing class into a new user-defined cluster-scoped class
-    example: '  svcat create class newclass --from mysqldb'
+    example: |2-
+        svcat create class newclass --from mysqldb
+        svcat create class newclass --from mysqldb --scope cluster
+        svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace
     command: ./svcat create class
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
     - name: from
       shorthand: f
       desc: Name from an existing class that will be copied (Required)
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service
