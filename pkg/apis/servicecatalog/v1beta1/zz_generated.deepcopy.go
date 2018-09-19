@@ -746,6 +746,15 @@ func (in *CommonServicePlanSpec) DeepCopyInto(out *CommonServicePlanSpec) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	if in.DefaultProvisionParameters != nil {
+		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(runtime.RawExtension)
+			(*in).DeepCopyInto(*out)
+		}
+	}
 	return
 }
 
@@ -1678,6 +1687,15 @@ func (in *ServiceInstanceStatus) DeepCopyInto(out *ServiceInstanceStatus) {
 			*out = nil
 		} else {
 			*out = new(ServiceInstancePropertiesState)
+			(*in).DeepCopyInto(*out)
+		}
+	}
+	if in.DefaultProvisionParameters != nil {
+		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(runtime.RawExtension)
 			(*in).DeepCopyInto(*out)
 		}
 	}

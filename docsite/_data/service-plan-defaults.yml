@@ -1,0 +1,11 @@
+bigheader: "Defaults"
+abstract: "Service Plan Defaults"
+landing_page: /docs/service-plan-defaults
+toc:
+- docs/service-plan-defaults.md
+- title: Enable Service Plan Defaults
+  path: "#enable-service-plan-defaults"
+- title: Define Default Provision Parameters
+  path: "#define-default-provision-parameters"
+- title: Provision a service instance with default parameters
+  path: "#provision-a-service-instance-with-default-parameters"

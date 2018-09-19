@@ -139,6 +139,17 @@ func (c *RegisterCmd) Run() error {
 		return err
 	}
 
+	if c.Wait {
+		fmt.Fprintln(c.Output, "Waiting for the broker to be registered...")
+		finalBroker, err := c.Context.App.WaitForBroker(c.BrokerName, c.Interval, c.Timeout)
+		if err == nil {
+			broker = finalBroker.(*v1beta1.ClusterServiceBroker)
+		}
+
+		output.WriteBrokerDetails(c.Output, broker)
+		return err
+	}
+
 	output.WriteBrokerDetails(c.Context.Output, broker)
 	return nil
 }

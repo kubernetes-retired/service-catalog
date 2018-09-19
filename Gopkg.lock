@@ -515,6 +515,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/peterbourgon/mergemap"
+  packages = ["."]
+  revision = "e21c03b7a721e413718d2703181ead350d3c9d6f"
+
+[[projects]]
+  branch = "master"
   name = "github.com/pivotal-cf/brokerapi"
   packages = [
     ".",
@@ -534,8 +540,8 @@
     "v2/fake",
     "v2/generator"
   ]
-  revision = "dca737037ce636eb282e84e3a1c7479c9692e884"
-  version = "0.0.10"
+  revision = "9cc214e88d00504888af633376c9462e0ab2bd8b"
+  version = "0.0.11"
 
 [[projects]]
   name = "github.com/prometheus/client_golang"
@@ -825,7 +831,6 @@
   version = "kubernetes-1.11.0"
 
 [[projects]]
-  branch = "release-1.11"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -884,6 +889,7 @@
     "third_party/forked/golang/reflect"
   ]
   revision = "103fd098999dc9c0c88536f5c9ad2e5da39373ae"
+  version = "kubernetes-1.11.0"
 
 [[projects]]
   name = "k8s.io/apiserver"
@@ -1155,7 +1161,6 @@
   version = "kubernetes-1.11.0"
 
 [[projects]]
-  branch = "release-1.11"
   name = "k8s.io/code-generator"
   packages = [
     "cmd/client-gen",
@@ -1184,6 +1189,7 @@
     "pkg/util"
   ]
   revision = "6702109cc68eb6fe6350b83e14407c8d7309fd1a"
+  version = "kubernetes-1.11.0"
 
 [[projects]]
   branch = "master"
@@ -1221,6 +1227,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "18c14a2444b3d1edffdea1eba30f21a69343dd8331a58ce2b8899ccd7b25aa5c"
+  inputs-digest = "6ca2c9f169a4f33d2fb9f8c58227d0da9b6e5d9c624a870efa0207226c1c1e27"
   solver-name = "gps-cdcl"
   solver-version = 1

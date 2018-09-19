@@ -271,6 +271,20 @@ func (c *client) validateAlphaAPIMethodsAllowed() error {
 	return nil
 }
 
+// drainReader reads and discards the remaining data in reader (for example
+// response body data) For HTTP this ensures that the http connection
+// could be reused for another request if the keepalive is enabled.
+// see https://gist.github.com/mholt/eba0f2cc96658be0f717#gistcomment-2605879
+// Not certain this is really needed here for the Broker vs a http server
+// but seems safe and worth including at this point
+func drainReader(reader io.Reader) error {
+	if reader == nil {
+		return nil
+	}
+	_, drainError := io.Copy(ioutil.Discard, io.LimitReader(reader, 4096))
+	return drainError
+}
+
 // internal message body types
 
 type asyncSuccessResponseBody struct {

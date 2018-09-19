@@ -634,6 +634,12 @@ type CommonServicePlanSpec struct {
 	// broker's response, which allows clients to see what the credentials
 	// will look like even before the binding operation is performed.
 	ServiceBindingCreateResponseSchema *runtime.RawExtension `json:"serviceBindingCreateResponseSchema,omitempty"`
+
+	// DefaultProvisionParameters are default parameters passed to the broker
+	// when an instance of this plan is provisioned. Any parameters defined on
+	// the instance are merged with these defaults, with instance-defined
+	// parameters taking precedence over defaults.
+	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
 }
 
 // ClusterServicePlanSpec represents details about a ClusterServicePlan.
@@ -970,6 +976,10 @@ type ServiceInstanceStatus struct {
 	// DeprovisionStatus describes what has been done to deprovision the
 	// ServiceInstance.
 	DeprovisionStatus ServiceInstanceDeprovisionStatus `json:"deprovisionStatus"`
+
+	// DefaultProvisionParameters are the default parameters applied to this
+	// instance.
+	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.

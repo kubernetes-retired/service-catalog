@@ -19,10 +19,14 @@ package servicecatalog
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // Broker provides a unifying layer of cluster and namespace scoped broker resources.
@@ -70,7 +74,7 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 		sb, err := sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).List(v1.ListOptions{})
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return brokers, nil
 			}
 			return nil, fmt.Errorf("unable to list brokers in %q (%s)", opts.Namespace, err)
@@ -88,7 +92,7 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, error) {
 	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(name, v1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to get broker '%s' (%s)", name, err)
+		return nil, errors.Wrapf(err, "unable to get broker '%s'", name)
 	}
 
 	return broker, nil
@@ -176,10 +180,54 @@ func (sdk *SDK) Sync(name string, retries int) error {
 		if err == nil {
 			return nil
 		}
-		if !errors.IsConflict(err) {
+		if !apierrors.IsConflict(err) {
 			return fmt.Errorf("could not sync service broker (%s)", err)
 		}
 	}
 
 	return fmt.Errorf("could not sync service broker after %d tries", retries)
+}
+
+// WaitForBroker waits for the specified broker to be Ready or Failed
+func (sdk *SDK) WaitForBroker(name string, interval time.Duration, timeout *time.Duration) (broker Broker, err error) {
+	if timeout == nil {
+		notimeout := time.Duration(math.MaxInt64)
+		timeout = &notimeout
+	}
+	err = wait.PollImmediate(interval, *timeout,
+		func() (bool, error) {
+			broker, err = sdk.RetrieveBroker(name)
+			if err != nil {
+				if apierrors.IsNotFound(errors.Cause(err)) {
+					err = nil
+				}
+				return false, err
+			}
+
+			isDone := sdk.IsBrokerReady(broker) || sdk.IsBrokerFailed(broker)
+			return isDone, nil
+		})
+	return broker, err
+}
+
+// IsBrokerReady returns if the broker is in the Ready status.
+func (sdk *SDK) IsBrokerReady(broker Broker) bool {
+	return sdk.BrokerHasStatus(broker, v1beta1.ServiceBrokerConditionReady)
+}
+
+// IsBrokerFailed returns if the broker is in the Failed status.
+func (sdk *SDK) IsBrokerFailed(broker Broker) bool {
+	return sdk.BrokerHasStatus(broker, v1beta1.ServiceBrokerConditionFailed)
+}
+
+// BrokerHasStatus returns if the broker is in the specified status.
+func (sdk *SDK) BrokerHasStatus(broker Broker, status v1beta1.ServiceBrokerConditionType) bool {
+	for _, cond := range broker.GetStatus().Conditions {
+		if cond.Type == status &&
+			cond.Status == v1beta1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
 }

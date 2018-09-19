@@ -197,6 +197,22 @@ func TestServiceInstanceFieldLabelConversionFunc(t *testing.T) {
 			success:  true,
 		},
 		{
+			name:     "spec.serviceClassRef.name works",
+			inLabel:  "spec.serviceClassRef.name",
+			inValue:  "someref",
+			outLabel: "spec.serviceClassRef.name",
+			outValue: "someref",
+			success:  true,
+		},
+		{
+			name:     "spec.servicePlanRef.name works",
+			inLabel:  "spec.servicePlanRef.name",
+			inValue:  "someref",
+			outLabel: "spec.servicePlanRef.name",
+			outValue: "someref",
+			success:  true,
+		},
+		{
 			name:     "spec.externalID works",
 			inLabel:  "spec.externalID",
 			inValue:  "externalid",
