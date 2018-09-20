@@ -52,6 +52,16 @@ type Class interface {
 
 	// GetDescription returns the class description.
 	GetDescription() string
+
+	// GetSpec returns the spec.
+	GetSpec() v1beta1.CommonServiceClassSpec
+
+	// GetServiceBroker returns the name of the service
+	// broker for the class.
+	GetServiceBroker() string
+
+	// GetStatusText returns the status of the class.
+	GetStatusText() string
 }
 
 // RetrieveClasses lists all classes defined in the cluster.

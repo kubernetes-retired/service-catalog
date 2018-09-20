@@ -24,13 +24,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
-func getClassStatusText(status v1beta1.ClusterServiceClassStatus) string {
-	if status.RemovedFromBrokerCatalog {
-		return statusDeprecated
-	}
-	return statusActive
-}
-
 func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 	t := NewListTable(w)
 
@@ -77,15 +70,24 @@ func WriteClass(w io.Writer, outputFormat string, class servicecatalog.Class) {
 }
 
 // WriteClassDetails prints details for a single class.
-func WriteClassDetails(w io.Writer, class *v1beta1.ClusterServiceClass) {
+func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
+	scope := ""
+	if class.GetNamespace() != "" {
+		scope = "namespace"
+	} else {
+		scope = "cluster"
+	}
+	spec := class.GetSpec()
 	t := NewDetailsTable(w)
 	t.AppendBulk([][]string{
-		{"Name:", class.Spec.ExternalName},
-		{"Description:", class.Spec.Description},
-		{"UUID:", string(class.Name)},
-		{"Status:", getClassStatusText(class.Status)},
-		{"Tags:", strings.Join(class.Spec.Tags, ", ")},
-		{"Broker:", class.Spec.ClusterServiceBrokerName},
+		{"Name:", spec.ExternalName},
+		{"Description:", spec.Description},
+		{"UUID:", string(class.GetName())},
+		{"Status:", class.GetStatusText()},
+		{"Tags:", strings.Join(spec.Tags, ", ")},
+		{"Broker:", class.GetServiceBroker()},
+		{"Scope:", scope},
+		{"Namespace:", string(class.GetNamespace())},
 	})
 	t.Render()
 }

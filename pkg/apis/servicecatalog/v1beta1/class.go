@@ -16,6 +16,11 @@ limitations under the License.
 
 package v1beta1
 
+const (
+	statusActive     = "Active"
+	statusDeprecated = "Deprecated"
+)
+
 // GetName returns the class's name.
 func (c *ClusterServiceClass) GetName() string {
 	return c.Name
@@ -54,4 +59,40 @@ func (c *ClusterServiceClass) GetDescription() string {
 // GetDescription returns the class description.
 func (c *ServiceClass) GetDescription() string {
 	return c.Spec.Description
+}
+
+// GetSpec returns the spec for the class.
+func (c *ServiceClass) GetSpec() CommonServiceClassSpec {
+	return c.Spec.CommonServiceClassSpec
+}
+
+// GetSpec returns the spec for the class.
+func (c *ClusterServiceClass) GetSpec() CommonServiceClassSpec {
+	return c.Spec.CommonServiceClassSpec
+}
+
+// GetServiceBroker returns the name of the service broker for the class.
+func (c *ServiceClass) GetServiceBroker() string {
+	return c.Spec.ServiceBrokerName
+}
+
+// GetServiceBroker returns the name of the service broker for the class.
+func (c *ClusterServiceClass) GetServiceBroker() string {
+	return c.Spec.ClusterServiceBrokerName
+}
+
+// GetStatusText returns the sttaus of the class.
+func (c *ServiceClass) GetStatusText() string {
+	if c.Status.RemovedFromBrokerCatalog {
+		return statusDeprecated
+	}
+	return statusActive
+}
+
+// GetStatusText returns the sttaus of the class.
+func (c *ClusterServiceClass) GetStatusText() string {
+	if c.Status.RemovedFromBrokerCatalog {
+		return statusDeprecated
+	}
+	return statusActive
 }
