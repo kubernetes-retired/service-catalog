@@ -210,3 +210,13 @@ func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
 
 	return nil, fmt.Errorf("unable to get plan by uuid '%s'", uuid)
 }
+
+// CreatePlan creates a new plan.
+func (sdk *SDK) CreatePlan(plan *v1beta1.ClusterServicePlan,
+) (*v1beta1.ClusterServicePlan, error) {
+	newPlan, err := sdk.ServiceCatalog().ClusterServicePlans().Create(plan)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create a plan: %v", err)
+	}
+	return newPlan, nil
+}

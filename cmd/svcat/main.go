@@ -154,6 +154,7 @@ func newCreateCmd(cxt *command.Context) *cobra.Command {
 		Short: "Create a user-defined resource",
 	}
 	cmd.AddCommand(class.NewCreateCmd(cxt))
+	cmd.AddCommand(plan.NewCreateCmd(cxt))
 
 	return cmd
 }
