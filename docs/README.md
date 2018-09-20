@@ -33,6 +33,7 @@ Afterward, see the topics below.
 
 - [Using Namespaced Broker Resources](./namespaced-broker-resources.md)
 - [Filtering Broker Catalogs](./catalog-restrictions.md)
+- [Setting Defaults for Service Instances](./service-plan-defaults.md)
 
 ## Request for Comments
 

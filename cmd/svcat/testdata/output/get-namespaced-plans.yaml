@@ -1,0 +1,16 @@
+- metadata:
+    creationTimestamp: 2018-09-04T23:11:31Z
+    name: ac9694d9-7ea2-af93-467b-860647926d52
+    namespace: default
+    resourceVersion: "4"
+    selfLink: /apis/servicecatalog.k8s.io/v1beta1/serviceplans/ac9694d9-7ea2-af93-467b-860647926d52
+    uid: 0242ac11-11e7-f711-aa44-7b3d01900005
+  spec:
+    description: Sample namespace plan description
+    externalID: ac9694d9-7ea2-af93-467b-860647926d52
+    externalName: user-provided-namespace-plan
+    free: true
+    serviceBrokerName: namespace-ups-broker
+    serviceClassRef: {}
+  status:
+    removedFromBrokerCatalog: false

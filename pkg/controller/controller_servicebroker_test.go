@@ -20,14 +20,26 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientgotesting "k8s.io/client-go/testing"
 )
+
+// NOTE: This only tests a single test case. Others are tested in TestShouldReconcileClusterServiceBroker.
+func TestShouldReconcileServiceBroker(t *testing.T) {
+	broker := getTestClusterServiceBroker()
+	broker.Spec.RelistDuration = &metav1.Duration{Duration: 3 * time.Minute}
+
+	if !shouldReconcileClusterServiceBroker(broker, time.Now(), 24*time.Hour) {
+		t.Error("expected true, bot got false")
+	}
+}
 
 func TestReconcileServiceClassFromServiceBrokerCatalog(t *testing.T) {
 	updatedClass := func() *v1beta1.ServiceClass {

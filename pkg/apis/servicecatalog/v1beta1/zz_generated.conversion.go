@@ -262,8 +262,8 @@ func Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(i
 }
 
 func autoConvert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(in *servicecatalog.CatalogRestrictions, out *CatalogRestrictions, s conversion.Scope) error {
-	out.ServicePlan = *(*[]string)(unsafe.Pointer(&in.ServicePlan))
 	out.ServiceClass = *(*[]string)(unsafe.Pointer(&in.ServiceClass))
+	out.ServicePlan = *(*[]string)(unsafe.Pointer(&in.ServicePlan))
 	return nil
 }
 
@@ -797,6 +797,7 @@ func autoConvert_v1beta1_CommonServicePlanSpec_To_servicecatalog_CommonServicePl
 	out.ServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceUpdateParameterSchema))
 	out.ServiceBindingCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateParameterSchema))
 	out.ServiceBindingCreateResponseSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateResponseSchema))
+	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
 	return nil
 }
 
@@ -816,6 +817,7 @@ func autoConvert_servicecatalog_CommonServicePlanSpec_To_v1beta1_CommonServicePl
 	out.ServiceInstanceUpdateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceInstanceUpdateParameterSchema))
 	out.ServiceBindingCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateParameterSchema))
 	out.ServiceBindingCreateResponseSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateResponseSchema))
+	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
 	return nil
 }
 
@@ -1646,6 +1648,7 @@ func autoConvert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstance
 	out.ExternalProperties = (*servicecatalog.ServiceInstancePropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.ProvisionStatus = servicecatalog.ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = servicecatalog.ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
+	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
 	return nil
 }
 
@@ -1668,6 +1671,7 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstance
 	out.ExternalProperties = (*ServiceInstancePropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.ProvisionStatus = ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
+	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
 	return nil
 }
 

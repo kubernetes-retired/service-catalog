@@ -21,24 +21,31 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 // CreateCmd contains the information needed to create a new class
 type CreateCmd struct {
-	*command.Context
+	*command.Namespaced
+	*command.Scoped
 	Name string
 	From string
 }
 
 // NewCreateCmd builds a "svcat create class" command
 func NewCreateCmd(cxt *command.Context) *cobra.Command {
-	createCmd := &CreateCmd{Context: cxt}
+	createCmd := &CreateCmd{
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+	}
 	cmd := &cobra.Command{
 		Use:   "class [NAME] --from [EXISTING_NAME]",
 		Short: "Copies an existing class into a new user-defined cluster-scoped class",
 		Example: command.NormalizeExamples(`
   svcat create class newclass --from mysqldb
+  svcat create class newclass --from mysqldb --scope cluster
+  svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace
 `),
 		PreRunE: command.PreRunE(createCmd),
 		RunE:    command.RunE(createCmd),
@@ -47,7 +54,8 @@ func NewCreateCmd(cxt *command.Context) *cobra.Command {
 		"Name from an existing class that will be copied (Required)",
 	)
 	cmd.MarkFlagRequired("from")
-
+	createCmd.AddNamespaceFlags(cmd.Flags(), true)
+	createCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -64,18 +72,18 @@ func (c *CreateCmd) Validate(args []string) error {
 
 // Run calls out to the pkg lib to create the class and displays the output
 func (c *CreateCmd) Run() error {
-	class, err := c.App.RetrieveClassByName(c.From)
+	opts := servicecatalog.CreateClassFromOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+		Name:      c.Name,
+		From:      c.From,
+	}
+
+	createdClass, err := c.App.CreateClassFrom(opts)
 	if err != nil {
 		return err
 	}
 
-	class.Name = c.Name
-
-	createdClass, err := c.App.CreateClass(class)
-	if err != nil {
-		return err
-	}
-
-	output.WriteClassDetails(c.Output, createdClass)
+	output.WriteClassList(c.Output, output.FormatTable, createdClass)
 	return nil
 }

@@ -59,4 +59,5 @@ tocs:
   - resources
   - namespaced-broker-resources
   - catalog-restrictions
+  - service-plan-defaults
   - docs-home # fallthrough, leave this last

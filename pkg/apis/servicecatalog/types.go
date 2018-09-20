@@ -155,9 +155,9 @@ type CommonServiceBrokerSpec struct {
 //   spec.clusterServiceClass.name - the value set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name
 type CatalogRestrictions struct {
 	// ServiceClass represents a selector for plans, used to filter catalog re-lists.
-	ServicePlan []string
-	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
 	ServiceClass []string
+	// ServicePlan represents a selector for classes, used to filter catalog re-lists.
+	ServicePlan []string
 }
 
 // ClusterServiceBrokerSpec represents a description of a Broker.
@@ -576,6 +576,12 @@ type CommonServicePlanSpec struct {
 	// broker's response, which allows clients to see what the credentials
 	// will look like even before the binding operation is performed.
 	ServiceBindingCreateResponseSchema *runtime.RawExtension
+
+	// DefaultProvisionParameters are default parameters passed to the broker
+	// when an instance of this plan is provisioned. Any parameters defined on
+	// the instance are merged with these defaults, with instance-defined
+	// parameters taking precedence over defaults.
+	DefaultProvisionParameters *runtime.RawExtension
 }
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan
@@ -881,6 +887,10 @@ type ServiceInstanceStatus struct {
 	// DeprovisionStatus describes what has been done to deprovision the
 	// ServiceInstance.
 	DeprovisionStatus ServiceInstanceDeprovisionStatus
+
+	// DefaultProvisionParameters are the default parameters applied to this
+	// instance.
+	DefaultProvisionParameters *runtime.RawExtension
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.

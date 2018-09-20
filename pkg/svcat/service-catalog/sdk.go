@@ -50,12 +50,13 @@ type SvcatClient interface {
 	RetrieveBrokerByClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
 	Register(string, string, *RegisterOptions) (*apiv1beta1.ClusterServiceBroker, error)
 	Sync(string, int) error
+	WaitForBroker(string, time.Duration, *time.Duration) (Broker, error)
 
 	RetrieveClasses(ScopeOptions) ([]Class, error)
-	RetrieveClassByName(string) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByName(string, ScopeOptions) (Class, error)
 	RetrieveClassByID(string) (*apiv1beta1.ClusterServiceClass, error)
 	RetrieveClassByPlan(*apiv1beta1.ClusterServicePlan) (*apiv1beta1.ClusterServiceClass, error)
-	CreateClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceClass, error)
+	CreateClassFrom(CreateClassFromOptions) (Class, error)
 
 	Deprovision(string, string) error
 	InstanceParentHierarchy(*apiv1beta1.ServiceInstance) (*apiv1beta1.ClusterServiceClass, *apiv1beta1.ClusterServicePlan, *apiv1beta1.ClusterServiceBroker, error)
@@ -69,11 +70,11 @@ type SvcatClient interface {
 	RetrieveInstancesByPlan(*apiv1beta1.ClusterServicePlan) ([]apiv1beta1.ServiceInstance, error)
 	TouchInstance(string, string, int) error
 	WaitForInstance(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
+	WaitForInstanceToNotExist(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceInstance, error)
 
-	RetrievePlans(*FilterOptions) ([]apiv1beta1.ClusterServicePlan, error)
+	RetrievePlans(RetrievePlanOptions) ([]Plan, error)
 	RetrievePlanByName(string) (*apiv1beta1.ClusterServicePlan, error)
 	RetrievePlanByID(string) (*apiv1beta1.ClusterServicePlan, error)
-	RetrievePlansByClass(*apiv1beta1.ClusterServiceClass) ([]apiv1beta1.ClusterServicePlan, error)
 	RetrievePlanByClassAndPlanNames(string, string) (*apiv1beta1.ClusterServicePlan, error)
 
 	RetrieveSecretByBinding(*apiv1beta1.ServiceBinding) (*apicorev1.Secret, error)

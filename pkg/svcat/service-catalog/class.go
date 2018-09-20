@@ -30,6 +30,14 @@ const (
 	FieldExternalClassName = "spec.externalName"
 )
 
+// CreateClassFromOptions allows to specify how a new class will be created
+type CreateClassFromOptions struct {
+	Name      string
+	Scope     Scope
+	Namespace string
+	From      string
+}
+
 // Class provides a unifying layer of cluster and namespace scoped class resources.
 type Class interface {
 
@@ -79,21 +87,51 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 }
 
 // RetrieveClassByName gets a class by its external name.
-func (sdk *SDK) RetrieveClassByName(name string) (*v1beta1.ClusterServiceClass, error) {
-	opts := v1.ListOptions{
+func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, error) {
+	var searchResults []Class
+
+	lopts := v1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalClassName, name).String(),
 	}
-	searchResults, err := sdk.ServiceCatalog().ClusterServiceClasses().List(opts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+
+	if opts.Scope.Matches(ClusterScope) {
+		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(lopts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+		}
+
+		for _, c := range csc.Items {
+			class := c
+			searchResults = append(searchResults, &class)
+		}
 	}
-	if len(searchResults.Items) == 0 {
+
+	if opts.Scope.Matches(NamespaceScope) {
+		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(lopts)
+		if err != nil {
+			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
+			if errors.IsNotFound(err) {
+				sc = &v1beta1.ServiceClassList{}
+			} else {
+				return nil, fmt.Errorf("unable to search classes by name (%s)", err)
+			}
+		}
+
+		for _, c := range sc.Items {
+			class := c
+			searchResults = append(searchResults, &class)
+		}
+	}
+
+	if len(searchResults) > 1 {
+		return nil, fmt.Errorf("more than one matching class found for '%s' %d", name, len(searchResults))
+	}
+
+	if len(searchResults) == 0 {
 		return nil, fmt.Errorf("class '%s' not found", name)
 	}
-	if len(searchResults.Items) > 1 {
-		return nil, fmt.Errorf("more than one matching class found for '%s'", name)
-	}
-	return &searchResults.Items[0], nil
+
+	return searchResults[0], nil
 }
 
 // RetrieveClassByID gets a class by its UUID.
@@ -117,11 +155,38 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 	return class, nil
 }
 
-// CreateClass returns new created class
-func (sdk *SDK) CreateClass(class *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
-	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(class)
+// CreateClassFrom returns new created class
+func (sdk *SDK) CreateClassFrom(opts CreateClassFromOptions) (Class, error) {
+	fromClass, err := sdk.RetrieveClassByName(opts.From, ScopeOptions{Scope: opts.Scope, Namespace: opts.Namespace})
 	if err != nil {
-		return nil, fmt.Errorf("unable to create class (%s)", err)
+		return nil, err
+	}
+
+	if opts.Scope.Matches(ClusterScope) {
+		var class *v1beta1.ClusterServiceClass = fromClass.(*v1beta1.ClusterServiceClass)
+		class.Name = opts.Name
+		return sdk.createClusterServiceClass(class)
+	}
+
+	var class *v1beta1.ServiceClass = fromClass.(*v1beta1.ServiceClass)
+	class.Name = opts.Name
+	class.Namespace = opts.Namespace
+	return sdk.createServiceClass(class)
+}
+
+func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
+	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(from)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create cluster service class (%s)", err)
+	}
+
+	return created, nil
+}
+
+func (sdk *SDK) createServiceClass(class *v1beta1.ServiceClass) (*v1beta1.ServiceClass, error) {
+	created, err := sdk.ServiceCatalog().ServiceClasses(class.GetNamespace()).Create(class)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create service class (%s)", err)
 	}
 
 	return created, nil

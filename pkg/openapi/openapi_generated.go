@@ -1159,6 +1159,12 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref common.Re
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this plan is provisioned. Any parameters defined on the instance are merged with these defaults, with instance-defined parameters taking precedence over defaults.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
 					"clusterServiceBrokerName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterServiceBrokerName is the name of the ClusterServiceBroker that offers this ClusterServicePlan.",
@@ -1490,6 +1496,12 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanSpec(ref common.Ref
 					"serviceBindingCreateResponseSchema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this plan is provisioned. Any parameters defined on the instance are merged with these defaults, with instance-defined parameters taking precedence over defaults.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
@@ -3107,12 +3119,18 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 							Format:      "",
 						},
 					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are the default parameters applied to this instance.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
 				},
 				Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -3281,6 +3299,12 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref common.Reference
 					"serviceBindingCreateResponseSchema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+						},
+					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this plan is provisioned. Any parameters defined on the instance are merged with these defaults, with instance-defined parameters taking precedence over defaults.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},

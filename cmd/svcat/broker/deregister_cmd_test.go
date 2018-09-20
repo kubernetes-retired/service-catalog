@@ -71,7 +71,7 @@ var _ = Describe("Deregister Command", func() {
 			Expect(returnedName).To(Equal(brokerName))
 
 			output := outputBuffer.String()
-			Expect(output).To(Equal("Successfully removed broker \"foobarbroker\""))
+			Expect(output).To(Equal("Successfully removed broker \"foobarbroker\"\n"))
 		})
 	})
 })

@@ -33,7 +33,7 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 # Either the tag name, e.g. v1.2.3 or the commit hash for untagged commits, e.g. abc123
-VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
+VERSION       ?= $(shell git describe --tags --always --abbrev=7 --dirty)
 # Either the tag name, e.g. v1.2.3 or a combination of the closest tag combined with the commit hash, e.g. v1.2.3-2-gabc123
 TAG_VERSION   ?= $(shell git describe --tags --abbrev=7 --dirty)
 BUILD_LDFLAGS  = $(shell build/version.sh $(ROOT) $(SC_PKG))
@@ -181,12 +181,15 @@ $(BINDIR)/e2e.test: .init
 $(BINDIR):
 	mkdir -p $@
 
-.scBuildImage: build/build-image/Dockerfile
+.scBuildImage: build/build-image/Dockerfile $$(shell sh -c "docker inspect scbuildimage" > /dev/null 2>&1 || echo .forceIt)
 	mkdir -p .cache
 	mkdir -p .pkg
 	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
 	  docker build -t scbuildimage -f - .
 	touch $@
+
+# Just a dummy target that will force anything dependent on it to rebuild
+.forceIt:
 
 # Util targets
 ##############
