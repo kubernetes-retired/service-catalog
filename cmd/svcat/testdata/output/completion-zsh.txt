@@ -473,11 +473,39 @@ _svcat_create_class()
     noun_aliases=()
 }
 
+_svcat_create_plan()
+{
+    last_command="svcat_create_plan"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--from=")
+    two_word_flags+=("-f")
+    local_nonpersistent_flags+=("--from=")
+    flags+=("--context=")
+    flags+=("--kubeconfig=")
+    flags+=("--logtostderr")
+    flags+=("--v=")
+    two_word_flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_flag+=("--from=")
+    must_have_one_flag+=("-f")
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _svcat_create()
 {
     last_command="svcat_create"
     commands=()
     commands+=("class")
+    commands+=("plan")
 
     flags=()
     two_word_flags=()

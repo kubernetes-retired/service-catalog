@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -37,6 +38,21 @@ const (
 	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
 	FieldServiceClassRef = "spec.serviceClassRef.name"
 )
+
+// RetrievePlanOptions allows to specify which plans will be retrieved
+type RetrievePlanOptions struct {
+	ClassID   string
+	Namespace string
+	Scope     Scope
+}
+
+// CreatePlanFromOptions allows specifying what options to use for creating a plan.
+type CreatePlanFromOptions struct {
+	Name      string
+	Scope     Scope
+	Namespace string
+	From      string
+}
 
 // Plan provides a unifying layer of cluster and namespace scoped plan resources.
 type Plan interface {
@@ -212,11 +228,40 @@ func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
 }
 
 // CreatePlan creates a new plan.
-func (sdk *SDK) CreatePlan(plan *v1beta1.ClusterServicePlan,
-) (*v1beta1.ClusterServicePlan, error) {
-	newPlan, err := sdk.ServiceCatalog().ClusterServicePlans().Create(plan)
+func (sdk *SDK) CreatePlan(opts CreatePlanFromOptions,
+) (Plan, error) {
+	fromPlan, err := sdk.RetrievePlanByName(opts.Name, ScopeOptions{
+		Scope:     opts.Scope,
+		Namespace: opts.Namespace,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to create a plan: %v", err)
+		return nil, err
 	}
-	return newPlan, nil
+	if opts.Scope.Matches(NamespaceScope) {
+		var plan = fromPlan.(*v1beta1.ServicePlan)
+		plan.Name = opts.Name
+		plan.Namespace = opts.Namespace
+		return sdk.createServicePlan(plan)
+	}
+	var plan = fromPlan.(*v1beta1.ClusterServicePlan)
+	plan.Name = opts.Name
+	return sdk.createClusterServicePlan(plan)
+}
+
+func (sdk *SDK) createClusterServicePlan(fromPlan *v1beta1.ClusterServicePlan,
+) (*v1beta1.ClusterServicePlan, error) {
+	created, err := sdk.ServiceCatalog().ClusterServicePlans().Create(fromPlan)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+func (sdk *SDK) createServicePlan(fromPlan *v1beta1.ServicePlan,
+) (*v1beta1.ServicePlan, error) {
+	created, err := sdk.ServiceCatalog().ServicePlans(fromPlan.GetNamespace()).Create(fromPlan)
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
 }

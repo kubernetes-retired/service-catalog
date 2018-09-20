@@ -19,14 +19,16 @@ package plan
 import (
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
 )
 
 // CreateCmd contains the information needed to create a new plan.
 type CreateCmd struct {
-	*command.Context
+	*command.Namespaced
+	*command.Scoped
 	Name string
 	From string
 }
@@ -34,7 +36,8 @@ type CreateCmd struct {
 // NewCreatedCmd builds a "svcat create plan" command.
 func NewCreateCmd(ctx *command.Context) *cobra.Command {
 	createCmd := &CreateCmd{
-		Context: ctx,
+		Namespaced: command.NewNamespaced(ctx),
+		Scoped:     command.NewScoped(),
 	}
 
 	cmd := &cobra.Command{
@@ -42,6 +45,8 @@ func NewCreateCmd(ctx *command.Context) *cobra.Command {
 		Short: "Copies an existing plan into a new user-defined cluster-scoped plan",
 		Example: command.NormalizeExamples(`
 svcat create plan newplan --from mysqldb
+svcat create class newclass --from mysqldb --scope cluster
+  svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace
 `),
 		PreRunE: command.PreRunE(createCmd),
 		RunE:    command.RunE(createCmd),
@@ -50,6 +55,8 @@ svcat create plan newplan --from mysqldb
 		"Name of an existing class that will be copied (Required)",
 	)
 	cmd.MarkFlagRequired("from")
+	createCmd.Namespaced.AddNamespaceFlags(cmd.Flags(), true)
+	createCmd.Scoped.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
@@ -64,20 +71,14 @@ func (c *CreateCmd) Validate(args []string) error {
 
 // Run calls the pkg lib to create a plan and displays the output.
 func (c *CreateCmd) Run() error {
-	var err error
-	plan, err := c.App.RetrievePlanByName(c.From)
-	if err != nil {
-		return err
+	opts := servicecatalog.CreatePlanFromOptions{
+		Name:      c.Name,
+		From:      c.From,
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
 	}
-	plan.Name = c.Name
-	createdPlan, err := c.App.CreatePlan(plan)
-	if err != nil {
-		return err
-	}
-	class, err := c.App.RetrieveClassByPlan(createdPlan)
-	if err != nil {
-		return err
-	}
-	output.WritePlanDetails(c.Output, createdPlan, class)
+	createdPlan, err := c.App.CreatePlan(opts)
+	fmt.Print(createdPlan, err)
+	// output.WritePlanList()
 	return nil
 }

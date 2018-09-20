@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -117,13 +119,14 @@ func (c *describeCmd) describe() error {
 		return err
 	}
 
+	csp := plan.(*v1beta1.ClusterServicePlan)
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := c.App.RetrieveClassByPlan(plan)
+	class, err := c.App.RetrieveClassByPlan(csp)
 	if err != nil {
 		return err
 	}
 
-	output.WritePlanDetails(c.Output, plan, class)
+	output.WritePlanDetails(c.Output, csp, class)
 
 	output.WriteDefaultProvisionParameters(c.Output, plan)
 
@@ -134,7 +137,7 @@ func (c *describeCmd) describe() error {
 	output.WriteAssociatedInstances(c.Output, instances)
 
 	if c.showSchemas {
-		output.WritePlanSchemas(c.Output, plan)
+		output.WritePlanSchemas(c.Output, csp)
 	}
 
 	return nil
