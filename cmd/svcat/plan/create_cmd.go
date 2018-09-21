@@ -42,17 +42,17 @@ func NewCreateCmd(ctx *command.Context) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "plan [NAME] --from [EXISTING_NAME]",
-		Short: "Copies an existing plan into a new user-defined cluster-scoped plan",
+		Short: "Copies an existing plan into a new user-defined cluster-scoped or namespace-scoped plan",
 		Example: command.NormalizeExamples(`
 svcat create plan newplan --from mysqldb
-svcat create class newclass --from mysqldb --scope cluster
-  svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace
+svcat create plan newplan --from mysqldb --scope cluster
+  svcat create plan newplan --from mysqldb --scope namespace --namespace newnamespace
 `),
 		PreRunE: command.PreRunE(createCmd),
 		RunE:    command.RunE(createCmd),
 	}
 	cmd.Flags().StringVarP(&createCmd.From, "from", "f", "",
-		"Name of an existing class that will be copied (Required)",
+		"Name of an existing plan that will be copied (Required)",
 	)
 	cmd.MarkFlagRequired("from")
 	createCmd.Namespaced.AddNamespaceFlags(cmd.Flags(), true)
@@ -63,7 +63,7 @@ svcat create class newclass --from mysqldb --scope cluster
 // Validate checks that the required arguments have been passed.
 func (c *CreateCmd) Validate(args []string) error {
 	if len(args) <= 0 {
-		return fmt.Errorf("new class name should be provided")
+		return fmt.Errorf("new plan name should be provided")
 	}
 	c.Name = args[0]
 	return nil
