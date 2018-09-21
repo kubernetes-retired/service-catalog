@@ -33,7 +33,7 @@ type CreateCmd struct {
 	From string
 }
 
-// NewCreatedCmd builds a "svcat create plan" command.
+// NewCreateCmd builds a "svcat create plan" command.
 func NewCreateCmd(ctx *command.Context) *cobra.Command {
 	createCmd := &CreateCmd{
 		Namespaced: command.NewNamespaced(ctx),
