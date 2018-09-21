@@ -19,6 +19,8 @@ package plan
 import (
 	"fmt"
 
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
@@ -78,7 +80,14 @@ func (c *CreateCmd) Run() error {
 		Scope:     c.Scope,
 	}
 	createdPlan, err := c.App.CreatePlan(opts)
-	fmt.Print(createdPlan, err)
-	// output.WritePlanList()
+	if err != nil {
+		return err
+	}
+	className := createdPlan.GetClassID()
+	class, err := c.App.RetrieveClassByName(className, servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	})
+	output.WritePlanDetails(c.Output, createdPlan, class)
 	return nil
 }

@@ -88,7 +88,7 @@ func WritePlanList(w io.Writer, outputFormat string, plans []servicecatalog.Plan
 }
 
 // WritePlan prints a single plan in the specified output format.
-func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class v1beta1.ClusterServiceClass) {
+func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class servicecatalog.Class) {
 
 	switch outputFormat {
 	case FormatJSON:
@@ -97,7 +97,7 @@ func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class
 		writeYAML(w, plan, 0)
 	case FormatTable:
 		classNames := map[string]string{}
-		classNames[class.Name] = class.Spec.ExternalName
+		classNames[class.GetExternalName()] = class.GetExternalName()
 		writePlanListTable(w, []servicecatalog.Plan{plan}, classNames)
 	}
 }
@@ -125,28 +125,28 @@ func WriteAssociatedPlans(w io.Writer, plans []servicecatalog.Plan) {
 }
 
 // WriteParentPlan prints identifying information for a parent class.
-func WriteParentPlan(w io.Writer, plan *v1beta1.ClusterServicePlan) {
+func WriteParentPlan(w io.Writer, plan servicecatalog.Plan) {
 	fmt.Fprintln(w, "\nPlan:")
 	t := NewDetailsTable(w)
 	t.AppendBulk([][]string{
-		{"Name:", plan.Spec.ExternalName},
-		{"UUID:", string(plan.Name)},
-		{"Status:", getPlanStatusShort(plan.Status)},
+		{"Name:", plan.GetExternalName()},
+		{"UUID:", string(plan.GetName())},
+		{"Status:", string(plan.GetStatus())},
 	})
 	t.Render()
 }
 
 // WritePlanDetails prints details for a single plan.
-func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.ClusterServiceClass) {
+func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class servicecatalog.Class) {
 	t := NewDetailsTable(w)
 
 	t.AppendBulk([][]string{
 		{"Name:", plan.GetExternalName()},
 		{"Description:", plan.GetDescription()},
 		{"UUID:", string(plan.GetName())},
-		{"Status:", plan.GetShortStatus()},
-		{"Free:", strconv.FormatBool(plan.GetFree())},
-		{"Class:", class.Spec.ExternalName},
+		{"Status:", string(plan.GetStatus())},
+		{"Free:", strconv.FormatBool(plan.GetSpec().Free)},
+		{"Class:", class.GetExternalName()},
 	})
 
 	t.Render()
@@ -164,9 +164,10 @@ func WriteDefaultProvisionParameters(w io.Writer, plan servicecatalog.Plan) {
 
 // WritePlanSchemas prints the schemas for a single plan.
 func WritePlanSchemas(w io.Writer, plan servicecatalog.Plan) {
-	instanceCreateSchema := plan.GetInstanceCreateSchema()
-	instanceUpdateSchema := plan.GetInstanceUpdateSchema()
-	bindingCreateSchema := plan.GetBindingCreateSchema()
+	spec := plan.GetSpec()
+	instanceCreateSchema := spec.ServiceInstanceCreateParameterSchema
+	instanceUpdateSchema := spec.ServiceInstanceUpdateParameterSchema
+	bindingCreateSchema := spec.ServiceBindingCreateParameterSchema
 
 	if instanceCreateSchema != nil {
 		fmt.Fprintln(w, "\nInstance Create Parameter Schema:")

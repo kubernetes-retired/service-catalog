@@ -25,7 +25,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -78,17 +77,11 @@ type Plan interface {
 	// GetClassID returns the plan's class name.
 	GetClassID() string
 
-	// GetInstanceCreateSchema returns the instance create schema from plan.
-	GetInstanceCreateSchema() *runtime.RawExtension
+	// GetStatus returns the plan's status.
+	GetStatus() string
 
-	// GetInstanceUpdateSchema returns the instance update schema from plan.
-	GetInstanceUpdateSchema() *runtime.RawExtension
-
-	// GetBindingCreateSchema returns the instance create schema from plan.
-	GetBindingCreateSchema() *runtime.RawExtension
-
-	// GetDefaultProvisionParameters returns the default provision parameters from plan.
-	GetDefaultProvisionParameters() *runtime.RawExtension
+	// GetSpec returns the plan's spec.
+	GetSpec() v1beta1.CommonServicePlanSpec
 }
 
 // RetrievePlans lists all plans defined in the cluster.
