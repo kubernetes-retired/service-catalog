@@ -76,12 +76,17 @@ func (c *describeCmd) Run() error {
 }
 
 func (c *describeCmd) describe() error {
-	var class *v1beta1.ClusterServiceClass
+	var class servicecatalog.Class
 	var err error
 	if c.lookupByUUID {
 		class, err = c.App.RetrieveClassByID(c.uuid)
 	} else {
-		retrieved, retErr := c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{Scope: servicecatalog.ClusterScope})
+		retrieved, retErr := c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{
+			Scope: servicecatalog.ClusterScope,
+		})
+		if retErr != nil {
+			return retErr
+		}
 		class = retrieved.(*v1beta1.ClusterServiceClass)
 		err = retErr
 	}
@@ -91,7 +96,10 @@ func (c *describeCmd) describe() error {
 
 	output.WriteClassDetails(c.Output, class)
 
-	plans, err := c.App.RetrievePlans(servicecatalog.RetrievePlanOptions{Scope: servicecatalog.AllScope, ClassID: class.Name})
+	plans, err := c.App.RetrievePlans(servicecatalog.RetrievePlanOptions{
+		Scope:   servicecatalog.AllScope,
+		ClassID: class.GetName(),
+	})
 	if err != nil {
 		return err
 	}

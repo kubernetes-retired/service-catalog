@@ -26,9 +26,8 @@ import (
 func getScope(class servicecatalog.Class) string {
 	if class.GetNamespace() != "" {
 		return servicecatalog.NamespaceScope
-	} else {
-		return servicecatalog.ClusterScope
 	}
+	return servicecatalog.ClusterScope
 }
 
 func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
