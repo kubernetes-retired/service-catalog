@@ -20,9 +20,16 @@ import (
 	"io"
 	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
+
+func getScope(class servicecatalog.Class) string {
+	if class.GetNamespace() != "" {
+		return servicecatalog.NamespaceScope
+	} else {
+		return servicecatalog.ClusterScope
+	}
+}
 
 func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 	t := NewListTable(w)
@@ -71,12 +78,7 @@ func WriteClass(w io.Writer, outputFormat string, class servicecatalog.Class) {
 
 // WriteClassDetails prints details for a single class.
 func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
-	scope := ""
-	if class.GetNamespace() != "" {
-		scope = "namespace"
-	} else {
-		scope = "cluster"
-	}
+	scope := getScope(class)
 	spec := class.GetSpec()
 	t := NewDetailsTable(w)
 	t.AppendBulk([][]string{
@@ -87,7 +89,9 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 		{"Tags:", strings.Join(spec.Tags, ", ")},
 		{"Broker:", class.GetServiceBroker()},
 		{"Scope:", scope},
-		{"Namespace:", string(class.GetNamespace())},
 	})
+	if class.GetNamespace() != "" {
+		t.Append([]string{"Namespace:", string(class.GetNamespace())})
+	}
 	t.Render()
 }

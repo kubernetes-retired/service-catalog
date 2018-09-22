@@ -4,6 +4,7 @@
   Status:        Active                                
   Tags:                                                
   Broker:        ups-broker                            
+  Scope:         cluster                               
 
 Plans:
    NAME           DESCRIPTION        
