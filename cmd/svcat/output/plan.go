@@ -97,7 +97,7 @@ func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class
 		writeYAML(w, plan, 0)
 	case FormatTable:
 		classNames := map[string]string{}
-		classNames[class.GetExternalName()] = class.GetExternalName()
+		classNames[class.GetName()] = class.GetExternalName()
 		writePlanListTable(w, []servicecatalog.Plan{plan}, classNames)
 	}
 }

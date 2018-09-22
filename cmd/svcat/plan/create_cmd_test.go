@@ -17,9 +17,18 @@ limitations under the License.
 package plan
 
 import (
+	"bytes"
+
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Create command", func() {
@@ -60,7 +69,79 @@ var _ = Describe("Create command", func() {
 		})
 	})
 	Describe("Run()", func() {
+		It("Calls the CreatePlan method with the input for a cluster class and prints output", func() {
+			planName := "newplan"
+			existingPlanName := "existingplan"
 
+			planToReturn := &v1beta1.ClusterServicePlan{
+				ObjectMeta: v1.ObjectMeta{
+					Name: planName,
+				},
+			}
+
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.CreatePlanReturns(planToReturn, nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := CreateCmd{
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+				Name:       planName,
+				From:       existingPlanName,
+			}
+			cmd.Scope = servicecatalog.ClusterScope
+			err := cmd.Run()
+
+			Expect(err).NotTo(HaveOccurred())
+			opts := fakeSDK.CreatePlanArgsForCall(0)
+			Expect(opts.Name).To(Equal(planName))
+			Expect(opts.From).To(Equal(existingPlanName))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring(planName))
+		})
+		It("Calls the CreatePlan method with input for a namespace class and prints output", func() {
+			planName := "newplan"
+			planNamespace := "test-ns"
+			existingPlanName := "existingplan"
+
+			planToReturn := &v1beta1.ServicePlan{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      planName,
+					Namespace: planNamespace,
+				},
+			}
+
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.CreateClassFromReturns(planToReturn, nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := CreateCmd{
+				Namespaced: &command.Namespaced{
+					Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped: command.NewScoped(),
+				Name:   planName,
+				From:   existingPlanName,
+			}
+			cmd.Scope = servicecatalog.NamespaceScope
+			cmd.Namespace = planNamespace
+			err := cmd.Run()
+
+			Expect(err).NotTo(HaveOccurred())
+			opts := fakeSDK.CreatePlanArgsForCall(0)
+			Expect(opts.Name).To(Equal(planName))
+			Expect(opts.From).To(Equal(existingPlanName))
+			Expect(opts.Scope).To(Equal(servicecatalog.NamespaceScope))
+			Expect(opts.Namespace).To(Equal(planNamespace))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring(planName))
+			Expect(output).To(ContainSubstring(planNamespace))
+		})
 	})
 
 })
