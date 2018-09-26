@@ -78,7 +78,24 @@ tree:
       shorthand: f
       desc: Name from an existing class that will be copied (Required)
     - name: scope
-      desc: 'Limit the command to a particular scope: cluster or namespace'
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
+  - name: plan
+    use: plan [NAME] --from [EXISTING_NAME]
+    shortDesc: Copies an existing plan into a new user-defined cluster-scoped plan
+    example: |2-
+        svcat create plan newplan --from mysqldb
+        svcat create class newclass --from mysqldb --scope cluster
+          svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace
+    command: ./svcat create plan
+    flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
+    - name: from
+      shorthand: f
+      desc: Name of an existing class that will be copied (Required)
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service

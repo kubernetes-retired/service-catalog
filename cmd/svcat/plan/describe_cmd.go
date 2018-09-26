@@ -118,7 +118,8 @@ func (c *describeCmd) describe() error {
 	if err != nil {
 		return err
 	}
-
+	// TODO: This convert will be removed and implemented properly in
+	// https://github.com/kubernetes-incubator/service-catalog/issues/2216
 	csp := plan.(*v1beta1.ClusterServicePlan)
 	// Retrieve the class as well because plans don't have the external class name
 	class, err := c.App.RetrieveClassByPlan(csp)

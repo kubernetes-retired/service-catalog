@@ -241,18 +241,18 @@ func (sdk *SDK) CreatePlan(opts CreatePlanFromOptions,
 	return sdk.createClusterServicePlan(plan)
 }
 
-func (sdk *SDK) createClusterServicePlan(fromPlan *v1beta1.ClusterServicePlan,
+func (sdk *SDK) createClusterServicePlan(plan *v1beta1.ClusterServicePlan,
 ) (*v1beta1.ClusterServicePlan, error) {
-	created, err := sdk.ServiceCatalog().ClusterServicePlans().Create(fromPlan)
+	created, err := sdk.ServiceCatalog().ClusterServicePlans().Create(plan)
 	if err != nil {
 		return nil, err
 	}
 	return created, nil
 }
 
-func (sdk *SDK) createServicePlan(fromPlan *v1beta1.ServicePlan,
+func (sdk *SDK) createServicePlan(plan *v1beta1.ServicePlan,
 ) (*v1beta1.ServicePlan, error) {
-	created, err := sdk.ServiceCatalog().ServicePlans(fromPlan.GetNamespace()).Create(fromPlan)
+	created, err := sdk.ServiceCatalog().ServicePlans(plan.GetNamespace()).Create(plan)
 	if err != nil {
 		return nil, err
 	}

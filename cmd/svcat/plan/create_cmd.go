@@ -57,8 +57,8 @@ svcat create plan newplan --from mysqldb --scope cluster
 		"Name of an existing plan that will be copied (Required)",
 	)
 	cmd.MarkFlagRequired("from")
-	createCmd.Namespaced.AddNamespaceFlags(cmd.Flags(), true)
-	createCmd.Scoped.AddScopedFlags(cmd.Flags(), true)
+	createCmd.Namespaced.AddNamespaceFlags(cmd.Flags(), false)
+	createCmd.Scoped.AddScopedFlags(cmd.Flags(), false)
 	return cmd
 }
 
@@ -84,10 +84,7 @@ func (c *CreateCmd) Run() error {
 		return err
 	}
 	className := createdPlan.GetClassID()
-	class, err := c.App.RetrieveClassByName(className, servicecatalog.ScopeOptions{
-		Scope:     c.Scope,
-		Namespace: c.Namespace,
-	})
+	class, err := c.App.RetrieveClassByID(className)
 	output.WritePlanDetails(c.Output, createdPlan, class)
 	return nil
 }
