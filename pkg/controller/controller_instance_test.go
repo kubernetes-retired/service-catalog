@@ -179,21 +179,14 @@ func TestReconcileServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 	}
 }
 
-// TestReconcileServiceInstanceWithAuthError tests reconcileInstance when Kube Client
-// fails to locate the broker authentication secret.
-func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
+// TestReconcileServiceInstanceWithNotExistingBroker tests reconcileInstance
+// when the BrokerClientManager instance does not contain client for the broker.
+func TestReconcileServiceInstanceWithNotExistingBroker(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, noFakeActions())
 
-	broker := getTestClusterServiceBroker()
-	broker.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
-		Basic: &v1beta1.ClusterBasicAuthConfig{
-			SecretRef: &v1beta1.ObjectReference{
-				Namespace: "does_not_exist",
-				Name:      "auth-name",
-			},
-		},
-	}
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(broker)
+	// the broker does not exists
+	testController.brokerClientManager.RemoveBrokerClient(NewClusterServiceBrokerKey(getTestClusterServiceBroker().Name))
+
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
@@ -217,22 +210,14 @@ func TestReconcileServiceInstanceWithAuthError(t *testing.T) {
 
 	// There should only be one action that says it failed fetching auth credentials.
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorAuthCredentialsReason, instance)
-
-	// verify one kube action occurred
-	kubeActions := fakeKubeClient.Actions()
-	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
-		{verb: "get", resourceName: "secrets", checkType: checkGetActionType},
-	}); err != nil {
-		t.Fatal(err)
-	}
+	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorNonexistentClusterServiceBrokerReason, instance)
 
 	// verify that one event was emitted
 	events := getRecordedEvents(testController)
-	expectedEvent := warningEventBuilder(errorAuthCredentialsReason).msgf(
-		"Error getting broker auth credentials for broker %q:",
+	expectedEvent := warningEventBuilder(errorNonexistentClusterServiceBrokerReason).msgf(
+		"The instance references a non-existent broker %q",
 		"test-clusterservicebroker",
-	).msg("no secret defined")
+	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}

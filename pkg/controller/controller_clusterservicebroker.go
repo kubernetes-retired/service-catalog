@@ -33,6 +33,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 // the Message strings have a terminating period and space so they can
@@ -107,8 +108,12 @@ func shouldReconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker, n
 func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 	broker, err := c.clusterServiceBrokerLister.Get(key)
 	pcb := pretty.NewContextBuilder(pretty.ClusterServiceBroker, "", key, "")
+
+	glog.V(4).Info(pcb.Message("Processing service broker"))
+
 	if errors.IsNotFound(err) {
 		glog.Info(pcb.Message("Not doing work because it has been deleted"))
+		c.brokerClientManager.RemoveBrokerClient(NewClusterServiceBrokerKey(key))
 		return nil
 	}
 	if err != nil {
@@ -119,12 +124,44 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 	return c.reconcileClusterServiceBroker(broker)
 }
 
+func (c *controller) updateClusterServiceBrokerClient(broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
+	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
+	glog.V(4).Info(pcb.Message("Updating broker client"))
+	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
+	if err != nil {
+		s := fmt.Sprintf("Error getting broker auth credentials: %s", err)
+		glog.Info(pcb.Message(s))
+		c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
+		if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
+			return nil, err
+		}
+		return nil, err
+	}
+	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
+	brokerClient, err := c.brokerClientManager.UpdateBrokerClient(NewClusterServiceBrokerKey(broker.Name), clientConfig)
+	if err != nil {
+		s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
+		glog.Info(pcb.Message(s))
+		c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
+		if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
+			return nil, err
+		}
+		return nil, err
+	}
+	return brokerClient, nil
+}
+
 // reconcileClusterServiceBroker is the control-loop that reconciles a Broker. An
 // error is returned to indicate that the binding has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker) error {
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 	glog.V(4).Infof(pcb.Message("Processing"))
+
+	brokerClient, err := c.updateClusterServiceBrokerClient(broker)
+	if err != nil {
+		return err
+	}
 
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
@@ -135,31 +172,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	}
 
 	if broker.DeletionTimestamp == nil { // Add or update
-		authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
-		if err != nil {
-			s := fmt.Sprintf("Error getting broker auth credentials: %s", err)
-			glog.Info(pcb.Message(s))
-			c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
-				return err
-			}
-			return err
-		}
-
-		clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
-
-		glog.V(4).Info(pcb.Messagef("Creating client, URL: %v", broker.Spec.URL))
-		brokerClient, err := c.brokerClientCreateFunc(clientConfig)
-		if err != nil {
-			s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
-			glog.Info(pcb.Message(s))
-			c.recorder.Event(broker, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-			if err := c.updateClusterServiceBrokerCondition(broker, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse, errorFetchingCatalogReason, errorFetchingCatalogMessage+s); err != nil {
-				return err
-			}
-			return err
-		}
-
 		glog.V(4).Info(pcb.Message("Processing adding/update event"))
 
 		// get the broker's catalog
