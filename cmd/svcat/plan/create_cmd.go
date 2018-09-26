@@ -73,7 +73,7 @@ func (c *CreateCmd) Validate(args []string) error {
 
 // Run calls the pkg lib to create a plan and displays the output.
 func (c *CreateCmd) Run() error {
-	opts := servicecatalog.CreatePlanFromOptions{
+	opts := servicecatalog.CreatePlanOptions{
 		Name:      c.Name,
 		From:      c.From,
 		Namespace: c.Namespace,

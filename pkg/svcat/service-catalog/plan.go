@@ -45,8 +45,8 @@ type RetrievePlanOptions struct {
 	Scope     Scope
 }
 
-// CreatePlanFromOptions allows specifying what options to use for creating a plan.
-type CreatePlanFromOptions struct {
+// CreatePlanOptions allows specifying what options to use for creating a plan.
+type CreatePlanOptions struct {
 	Name      string
 	Scope     Scope
 	Namespace string
@@ -221,7 +221,7 @@ func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
 }
 
 // CreatePlan creates a new plan.
-func (sdk *SDK) CreatePlan(opts CreatePlanFromOptions,
+func (sdk *SDK) CreatePlan(opts CreatePlanOptions,
 ) (Plan, error) {
 	fromPlan, err := sdk.RetrievePlanByName(opts.Name, ScopeOptions{
 		Scope:     opts.Scope,
