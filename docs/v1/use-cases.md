@@ -165,7 +165,7 @@ TODO: How to deal with name conflicts for {broker, service}.
   service properly.
 * As an Application Operator I should be able to see what Service Instances my applications are
   bound to.
-* As an Application Operator I should be able to pass paramters when binding to a Service
+* As an Application Operator I should be able to pass parameters when binding to a Service
   ServiceInstance so that I may indicate what type of binding my application needs.
   (e.g. credential type, admin binding, ro binding, rw binding)
 
