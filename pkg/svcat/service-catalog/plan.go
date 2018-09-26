@@ -117,17 +117,16 @@ func (sdk *SDK) RetrievePlanByName(name string, opts ScopeOptions) (Plan, error)
 }
 
 // RetrievePlanByClassAndName gets a plan by its external name and class name combination.
-func (sdk *SDK) RetrievePlanByClassAndName(name, className string, opts ScopeOptions) (Plan, error) {
-	// TODO: By now we will only be retrieving Cluster Scoped classes
-	class, err := sdk.RetrieveClassByName(className)
+func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts ScopeOptions) (Plan, error) {
+	class, err := sdk.RetrieveClassByName(className, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	listOpts := v1.ListOptions{
 		FieldSelector: fields.AndSelectors(
-			fields.OneTermEqualSelector(FieldServiceClassRef, class.Name),
-			fields.OneTermEqualSelector(FieldExternalPlanName, name),
+			fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName()),
+			fields.OneTermEqualSelector(FieldExternalPlanName, planName),
 		).String(),
 	}
 

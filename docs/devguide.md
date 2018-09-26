@@ -151,9 +151,9 @@ Building outside the container is possible, but not officially supported.
 To build the service-catalog client, `svcat`:
 
     $ make svcat
-    
+
 The svcat cli binary is located at `bin/svcat/svcat`.
-    
+
 To install `svcat` to your $GOPATH/bin directory:
 
     $ make svcat-install
@@ -221,7 +221,7 @@ server. Since service-catalog can run aggregated, this is done by giving
 the same kubeconfig.
 
     $ KUBECONFIG=~/.kube/config SERVICECATALOGCONFIG=~/.kube/config make test-e2e
-    
+
 Once built, the binary can also be run directly. Some example output is included below.
 
 ```console
@@ -293,21 +293,21 @@ TestPollServiceInstanceLastOperationSuccess.
 ### Golden Files
 The svcat tests rely on "[golden files](https://medium.com/@povilasve/go-advanced-tips-tricks-a872503ac859#a196)",
 a pattern used in the Go standard library, for testing command output. The expected
-output is stored in a file in the testdata directory, `cmd/svcat/testdata`, and 
+output is stored in a file in the testdata directory, `cmd/svcat/testdata`, and
 and then the test's output is compared against the "golden output" stored
 in that file. It helps avoid putting hard coded strings in the tests themselves.
- 
+
 You do not edit the golden files by hand. When you need to update the golden
 files, run `make test-update-goldenfiles` or `go test ./cmd/svcat/... -update`,
 and the golden files are updated automatically with the results of the test run.
 
-For new tests, first you need to manually create the empty golden file into the destination 
+For new tests, first you need to manually create the empty golden file into the destination
 directory specified in your test, e.g. `touch cmd/svcat/testdata/mygoldenfile.txt`
-before updating the golden files. This only manages the contents of the golden files, 
+before updating the golden files. This only manages the contents of the golden files,
 but doesn't create or delete them.
 
 Keep in mind that golden files help catch errors when the output unexpectedly changes.
-It's up to you to judge when you should run the tests with -update, 
+It's up to you to judge when you should run the tests with -update,
 and to diff the changes in the golden file to ensure that the new output is correct.
 
 ### Counterfeiter
@@ -420,8 +420,8 @@ These are targets for the service-catalog client, `svcat`:
 * `make svcat` builds for the current dev's platform.
 * `make svcat-publish` compiles everything and uploads the binaries.
 
-The same tags are used for both client and server. The cli uses the format that 
-always includes a tag, so that it's clear which release you are "closest" to, 
+The same tags are used for both client and server. The cli uses the format that
+always includes a tag, so that it's clear which release you are "closest" to,
 e.g. v1.2.3 for official releases and v1.2.3-2-gabc123 for untagged commits.
 
 ### Deploying Releases
@@ -429,10 +429,10 @@ e.g. v1.2.3 for official releases and v1.2.3-2-gabc123 for untagged commits.
 * Merge to master - A docker image for the server is pushed to [quay.io/kubernetes-service-catalog/service-catalog](http://quay.io/kubernetes-service-catalog/service-catalog),
   tagged with the abbreviated commit hash. Nothing is deployed for the client, `svcat`.
 * Tag a commit on master with vX.Y.Z - A docker image for the server is pushed,
-  tagged with the version, e.g. vX.Y.Z. The client binaries are published to 
+  tagged with the version, e.g. vX.Y.Z. The client binaries are published to
   https://download.svcat.sh/cli/latest/OS/ARCH/svcat and https://download.svcat.sh/cli/VERSION/OS/ARCH/svcat.
 
-The idea behind "latest" link is that we can provide a permanent link to the most recent stable release of `svcat`. 
+The idea behind "latest" link is that we can provide a permanent link to the most recent stable release of `svcat`.
 If someone wants to install a unreleased version, they must build it locally.
 
 ----
@@ -470,6 +470,21 @@ If you choose third party resources storage, the helm chart will not launch an
 etcd server, but will instead instruct the API server to store all resources in
 the Kubernetes cluster as third party resources.
 
+### Deploy local canary
+For your convenience, you can use the following script quickly rebuild, push and
+deploy the canary image. There are a few assumptions about your environment and
+configuration in the script (for example, that you have persistent storage setup
+for etcd so that you don't lose data in between pushes). If the assumptions do
+not match your needs, we suggest copying the contents of that script and using
+it as a starting off point for your own custom deployment script.
+
+```console
+# The registry defaults to DockerHub with the same user name as the current user
+# Examples: quay.io/myuser/service-catalog/, another-user/
+$ export REGISTRY="myuser/"
+$ ./contrib/hack/deploy-local-canary.sh
+```
+
 ## Dependency Management
 We use [dep](https://golang.github.io/dep) to manage our dependencies. We commit the resulting
 vendor directory to ensure repeatable builds and isolation from upstream source disruptions.
@@ -479,8 +494,8 @@ changing dependencies.
 * Gopkg.toml - the dep manifest, this is intended to be hand-edited and contains a set of
 constraints and other rules for dep to apply when selecting appropriate versions of dependencies.
 * Gopkg.lock - the dep lockfile, do not edit because it is a generated file.
-* vendor/ - the source of all of our dependencies. Commit changes to this directory in a 
-separate commit from any other changes (including to the Gopkg files) so that it's easier to 
+* vendor/ - the source of all of our dependencies. Commit changes to this directory in a
+separate commit from any other changes (including to the Gopkg files) so that it's easier to
 review your pull request.
 
 If you use VS Code, we recommend installing the [dep extension](https://marketplace.visualstudio.com/items?itemName=carolynvs.dep).
@@ -507,5 +522,5 @@ Gopkg.toml already, add a constraint for it and set the version.
 
 ## Demo walkthrough
 
-Check out the [walkthrough](./walkthrough.md) to get started with 
+Check out the [walkthrough](./walkthrough.md) to get started with
 installation and a self-guided demo.

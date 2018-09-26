@@ -57,7 +57,7 @@ var (
 		[]string{"error"},
 	)
 
-	// eventHandlingTime is a histogram recording how long a operation took
+	// eventHandlingTime is a histogram recording how long an operation took
 	eventHandlingTimeSummary = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
 			Namespace:  promNamespace,

@@ -2006,6 +2006,12 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 
 	if c, ok := testController.(*controller); ok {
 		c.setClusterID(testClusterID)
+		c.brokerClientManager.clients[NewClusterServiceBrokerKey(getTestClusterServiceBroker().Name)] = clientWithConfig{
+			OSBClient: fakeOSBClient,
+		}
+		c.brokerClientManager.clients[NewServiceBrokerKey(getTestServiceBroker().Namespace, getTestServiceBroker().Name)] = clientWithConfig{
+			OSBClient: fakeOSBClient,
+		}
 	}
 
 	if err != nil {

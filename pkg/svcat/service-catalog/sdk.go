@@ -53,10 +53,10 @@ type SvcatClient interface {
 	WaitForBroker(string, time.Duration, *time.Duration) (Broker, error)
 
 	RetrieveClasses(ScopeOptions) ([]Class, error)
-	RetrieveClassByName(string) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByName(string, ScopeOptions) (Class, error)
 	RetrieveClassByID(string) (*apiv1beta1.ClusterServiceClass, error)
 	RetrieveClassByPlan(Plan) (*apiv1beta1.ClusterServiceClass, error)
-	CreateClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceClass, error)
+	CreateClassFrom(CreateClassFromOptions) (Class, error)
 
 	Deprovision(string, string) error
 	InstanceParentHierarchy(*apiv1beta1.ServiceInstance) (*apiv1beta1.ClusterServiceClass, *apiv1beta1.ClusterServicePlan, *apiv1beta1.ClusterServiceBroker, error)

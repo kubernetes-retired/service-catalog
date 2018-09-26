@@ -81,7 +81,9 @@ func (c *describeCmd) describe() error {
 	if c.lookupByUUID {
 		class, err = c.App.RetrieveClassByID(c.uuid)
 	} else {
-		class, err = c.App.RetrieveClassByName(c.name)
+		retrieved, retErr := c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{Scope: servicecatalog.ClusterScope})
+		class = retrieved.(*v1beta1.ClusterServiceClass)
+		err = retErr
 	}
 	if err != nil {
 		return err

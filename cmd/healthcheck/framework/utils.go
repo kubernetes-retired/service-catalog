@@ -94,7 +94,7 @@ func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 	return c.CoreV1().Namespaces().Delete(namespace, nil)
 }
 
-// WaitForEndpoint waits for 'defaultTimeout' interval for an enpoint to be available
+// WaitForEndpoint waits for 'defaultTimeout' interval for an endpoint to be available
 func WaitForEndpoint(c kubernetes.Interface, namespace, name string) error {
 	return wait.PollImmediate(poll, defaultTimeout, endpointAvailable(c, namespace, name))
 }
