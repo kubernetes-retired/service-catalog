@@ -142,8 +142,15 @@ tree:
     example: |2-
         svcat describe plan standard800
         svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
+        svcat describe plan PLAN_NAME --scope cluster
+        svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME
     command: ./svcat describe plan
     flags:
+    - name: all-namespaces
+      desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace or all'
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
     - name: uuid

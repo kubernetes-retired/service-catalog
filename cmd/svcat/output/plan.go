@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
@@ -142,10 +143,10 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 	t.AppendBulk([][]string{
 		{"Name:", plan.GetExternalName()},
 		{"Description:", plan.GetDescription()},
-		//		{"UUID:", string(plan.Name)},
-		//		{"Status:", getPlanStatusShort(plan.Status)},
-		//		{"Free:", strconv.FormatBool(plan.Spec.Free)},
-		//		{"Class:", class.Spec.ExternalName},
+		{"UUID:", string(plan.GetName())},
+		{"Status:", plan.GetShortStatus()},
+		{"Free:", strconv.FormatBool(plan.GetFree())},
+		{"Class:", class.Spec.ExternalName},
 	})
 
 	t.Render()
@@ -153,24 +154,22 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 
 // WritePlanSchemas prints the schemas for a single plan.
 func WritePlanSchemas(w io.Writer, plan servicecatalog.Plan) {
-	/*
-		instanceCreateSchema := plan.Spec.ServiceInstanceCreateParameterSchema
-		instanceUpdateSchema := plan.Spec.ServiceInstanceUpdateParameterSchema
-		bindingCreateSchema := plan.Spec.ServiceBindingCreateParameterSchema
+	instanceCreateSchema := plan.GetInstanceCreateSchema()
+	instanceUpdateSchema := plan.GetInstanceUpdateSchema()
+	bindingCreateSchema := plan.GetBindingCreateSchema()
 
-		if instanceCreateSchema != nil {
-			fmt.Fprintln(w, "\nInstance Create Parameter Schema:")
-			writeYAML(w, instanceCreateSchema, 2)
-		}
+	if instanceCreateSchema != nil {
+		fmt.Fprintln(w, "\nInstance Create Parameter Schema:")
+		writeYAML(w, instanceCreateSchema, 2)
+	}
 
-		if instanceUpdateSchema != nil {
-			fmt.Fprintln(w, "\nInstance Update Parameter Schema:")
-			writeYAML(w, instanceUpdateSchema, 2)
-		}
+	if instanceUpdateSchema != nil {
+		fmt.Fprintln(w, "\nInstance Update Parameter Schema:")
+		writeYAML(w, instanceUpdateSchema, 2)
+	}
 
-		if bindingCreateSchema != nil {
-			fmt.Fprintln(w, "\nBinding Create Parameter Schema:")
-			writeYAML(w, bindingCreateSchema, 2)
-		}
-	*/
+	if bindingCreateSchema != nil {
+		fmt.Fprintln(w, "\nBinding Create Parameter Schema:")
+		writeYAML(w, bindingCreateSchema, 2)
+	}
 }

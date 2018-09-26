@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -39,6 +40,9 @@ type Plan interface {
 	// GetName returns the plan's name.
 	GetName() string
 
+	// GetShortStatus returns the plan's status.
+	GetShortStatus() string
+
 	// GetNamespace returns the plan's namespace, or "" if it's cluster-scoped.
 	GetNamespace() string
 
@@ -48,8 +52,20 @@ type Plan interface {
 	// GetDescription returns the plan description.
 	GetDescription() string
 
+	// GetFree returns if the plan is free.
+	GetFree() bool
+
 	// GetClassID returns the plan's class name.
 	GetClassID() string
+
+	// GetInstanceCreateSchema returns the instance create schema from plan.
+	GetInstanceCreateSchema() *runtime.RawExtension
+
+	// GetInstanceUpdateSchema returns the instance update schema from plan.
+	GetInstanceUpdateSchema() *runtime.RawExtension
+
+	// GetBindingCreateSchema returns the instance create schema from plan.
+	GetBindingCreateSchema() *runtime.RawExtension
 }
 
 // RetrievePlans lists all plans defined in the cluster.

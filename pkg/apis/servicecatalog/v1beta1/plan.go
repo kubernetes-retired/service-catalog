@@ -16,6 +16,10 @@ limitations under the License.
 
 package v1beta1
 
+import (
+	"k8s.io/apimachinery/pkg/runtime"
+)
+
 // GetName returns the plan's name.
 func (p *ClusterServicePlan) GetName() string {
 	return p.Name
@@ -34,6 +38,22 @@ func (p *ClusterServicePlan) GetNamespace() string {
 // GetNamespace returns the plan's namespace.
 func (p *ServicePlan) GetNamespace() string {
 	return p.Namespace
+}
+
+// GetShortStatus returns the plan's status.
+func (p *ClusterServicePlan) GetShortStatus() string {
+	if p.Status.RemovedFromBrokerCatalog {
+		return "Deprecated"
+	}
+	return "Active"
+}
+
+// GetShortStatus returns the plan's status.
+func (p *ServicePlan) GetShortStatus() string {
+	if p.Status.RemovedFromBrokerCatalog {
+		return "Deprecated"
+	}
+	return "Active"
 }
 
 // GetExternalName returns the plan's external name.
@@ -56,6 +76,16 @@ func (p *ServicePlan) GetDescription() string {
 	return p.Spec.Description
 }
 
+// GetFree returns if the plan is free.
+func (p *ClusterServicePlan) GetFree() bool {
+	return p.Spec.Free
+}
+
+// GetFree returns if the plan is free.
+func (p *ServicePlan) GetFree() bool {
+	return p.Spec.Free
+}
+
 // GetClassID returns the class name from plan.
 func (p *ClusterServicePlan) GetClassID() string {
 	return p.Spec.ClusterServiceClassRef.Name
@@ -64,4 +94,34 @@ func (p *ClusterServicePlan) GetClassID() string {
 // GetClassID returns the class name from plan.
 func (p *ServicePlan) GetClassID() string {
 	return p.Spec.ServiceClassRef.Name
+}
+
+// GetInstanceCreateSchema returns the instance create schema from plan.
+func (p *ClusterServicePlan) GetInstanceCreateSchema() *runtime.RawExtension {
+	return p.Spec.ServiceInstanceCreateParameterSchema
+}
+
+// GetInstanceCreateSchema returns the instance create schema from plan.
+func (p *ServicePlan) GetInstanceCreateSchema() *runtime.RawExtension {
+	return p.Spec.ServiceInstanceCreateParameterSchema
+}
+
+// GetInstanceUpdateSchema returns the instance update schema from plan.
+func (p *ClusterServicePlan) GetInstanceUpdateSchema() *runtime.RawExtension {
+	return p.Spec.ServiceInstanceUpdateParameterSchema
+}
+
+// GetInstanceUpdateSchema returns the instance update schema from plan.
+func (p *ServicePlan) GetInstanceUpdateSchema() *runtime.RawExtension {
+	return p.Spec.ServiceInstanceUpdateParameterSchema
+}
+
+// GetBindingCreateSchema returns the instance create schema from plan.
+func (p *ClusterServicePlan) GetBindingCreateSchema() *runtime.RawExtension {
+	return p.Spec.ServiceBindingCreateParameterSchema
+}
+
+// GetBindingCreateSchema returns the instance create schema from plan.
+func (p *ServicePlan) GetBindingCreateSchema() *runtime.RawExtension {
+	return p.Spec.ServiceBindingCreateParameterSchema
 }
