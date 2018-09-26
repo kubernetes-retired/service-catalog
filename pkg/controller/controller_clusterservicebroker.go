@@ -109,7 +109,7 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 	broker, err := c.clusterServiceBrokerLister.Get(key)
 	pcb := pretty.NewContextBuilder(pretty.ClusterServiceBroker, "", key, "")
 
-	glog.V(4).Info(pcb.Message(fmt.Sprintf("Processing service broker %s", key)))
+	glog.V(4).Info(pcb.Message("Processing service broker"))
 
 	if errors.IsNotFound(err) {
 		glog.Info(pcb.Message("Not doing work because it has been deleted"))
