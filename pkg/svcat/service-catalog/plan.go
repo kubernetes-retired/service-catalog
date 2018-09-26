@@ -130,7 +130,7 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 		).String(),
 	}
 
-	ss := []string{class.Name, name}
+	ss := []string{class.GetName(), planName}
 	return sdk.retrieveSinglePlanByListOptions(strings.Join(ss, "/"), opts, listOpts)
 }
 
