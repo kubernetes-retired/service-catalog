@@ -88,7 +88,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			SecureServingOptions:                   genericoptions.NewSecureServingOptions(),
 		},
 	}
-	// set defaults, these will be overriden by user specified flags
+	// set defaults, these will be overridden by user specified flags
 	s.SecureServingOptions.BindPort = defaultPort
 	s.SecureServingOptions.ServerCert.CertDirectory = certDirectory
 	s.LeaderElection.LeaderElect = true
