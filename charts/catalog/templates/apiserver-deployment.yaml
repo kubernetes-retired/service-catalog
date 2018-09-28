@@ -44,12 +44,8 @@ spec:
         - "NamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck"
         - --secure-port
         - "8443"
-        - --storage-type
-        - {{ .Values.apiserver.storage.type }}
-        {{- if eq .Values.apiserver.storage.type "etcd" }}
         - --etcd-servers
         - {{ .Values.apiserver.storage.etcd.servers }}
-        {{- end }}
         - -v
         - "{{ .Values.apiserver.verbosity }}"
         {{- if .Values.apiserver.tls.requestHeaderCA }}
