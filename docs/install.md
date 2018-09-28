@@ -143,15 +143,23 @@ Like in-cluster DNS, many installation methods should enable RBAC for you.
 
 ### Minikube
 
-If you are using Minikube (v0.25+), start your cluster with this command:
+When using Minikube v0.25 or older, you must run Minikube with RBAC explicitly
+enabled:
 
-```console
-minikube start ----bootstrapper=kubeadm --extra-config=apiserver.authorization-mode=RBAC
+```
+minikube start --extra-config=apiserver.Authorization.Mode=RBAC
 ```
 
-If you are using a more recent version of minikube, kubeadm with RBAC is the
-default and you may not need to specify the other flags depending on your
-minikube configuration.
+When using Minikube v0.26+, run the following command:
+
+```
+minikube start
+```
+
+With Minikube v0.26+, do not specify `--extra-config`. The
+flag has since been changed to `--extra-config=apiserver.authorization-mode` and
+the Minikube now uses RBAC by default. Specifying the older flag may cause the
+start command to hang.
 
 ### `hack/local-cluster-up.sh`
 
