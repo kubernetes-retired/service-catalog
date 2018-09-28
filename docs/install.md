@@ -158,7 +158,7 @@ minikube start
 
 With Minikube v0.26+, do not specify `--extra-config`. The
 flag has since been changed to `--extra-config=apiserver.authorization-mode` and
-the Minikube now uses RBAC by default. Specifying the older flag may cause the
+Minikube now uses RBAC by default. Specifying the older flag may cause the
 start command to hang.
 
 ### `hack/local-cluster-up.sh`
