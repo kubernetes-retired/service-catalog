@@ -184,8 +184,8 @@ $(BINDIR):
 .scBuildImage: build/build-image/Dockerfile $$(shell sh -c "docker inspect scbuildimage" > /dev/null 2>&1 || echo .forceIt)
 	mkdir -p .cache
 	mkdir -p .pkg
-	sed "s/GO_VERSION/$(GO_VERSION)/g" < build/build-image/Dockerfile | \
-	  docker build -t scbuildimage -f - .
+	sed -i "s/GO_VERSION/$(GO_VERSION)/g" build/build-image/Dockerfile
+	docker build -t scbuildimage -f build/build-image/Dockerfile .
 	touch $@
 
 # Just a dummy target that will force anything dependent on it to rebuild
