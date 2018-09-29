@@ -92,7 +92,6 @@ func NewController(
 	controller := &controller{
 		kubeClient:                  kubeClient,
 		serviceCatalogClient:        serviceCatalogClient,
-		brokerClientCreateFunc:      brokerClientCreateFunc,
 		brokerRelistInterval:        brokerRelistInterval,
 		OSBAPIPreferredVersion:      osbAPIPreferredVersion,
 		recorder:                    recorder,
@@ -109,6 +108,7 @@ func NewController(
 		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
 		clusterIDConfigMapName:      clusterIDConfigMapName,
 		clusterIDConfigMapNamespace: clusterIDConfigMapNamespace,
+		brokerClientManager:         NewBrokerClientManager(brokerClientCreateFunc),
 	}
 
 	controller.clusterServiceBrokerLister = clusterServiceBrokerInformer.Lister()
@@ -184,7 +184,6 @@ type Controller interface {
 type controller struct {
 	kubeClient                  kubernetes.Interface
 	serviceCatalogClient        servicecatalogclientset.ServicecatalogV1beta1Interface
-	brokerClientCreateFunc      osb.CreateFunc
 	clusterServiceBrokerLister  listers.ClusterServiceBrokerLister
 	serviceBrokerLister         listers.ServiceBrokerLister
 	clusterServiceClassLister   listers.ClusterServiceClassLister
@@ -223,6 +222,8 @@ type controller struct {
 	// readers passing the clusterID to a broker.
 	clusterIDLock               sync.RWMutex
 	instanceOperationRetryQueue instanceOperationBackoff
+	// BrokerClientManager holds all OSB clients for brokers.
+	brokerClientManager *BrokerClientManager
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -461,7 +462,6 @@ func (c *controller) getServiceClassPlanAndServiceBroker(instance *v1beta1.Servi
 // places so this method fetches the Service Class and creates
 // a brokerClient to use for that method given an ServiceInstance.
 func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, string, osb.Client, error) {
-	pcb := pretty.NewInstanceContextBuilder(instance)
 	serviceClass, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		return nil, "", nil, &operationError{
@@ -485,20 +485,16 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 
 	}
 
-	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
-	if err != nil {
+	brokerClient, found := c.brokerClientManager.BrokerClient(NewClusterServiceBrokerKey(serviceClass.Spec.ClusterServiceBrokerName))
+	if !found {
 		return nil, "", nil, &operationError{
-			reason: errorAuthCredentialsReason,
+			reason: errorNonexistentClusterServiceBrokerReason,
 			message: fmt.Sprintf(
-				"Error getting broker auth credentials for broker %q: %s",
-				broker.Name, err,
+				"The instance references a broker %q which has no OSB client created",
+				serviceClass.Spec.ClusterServiceBrokerName,
 			),
 		}
 	}
-
-	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
-	glog.V(4).Info(pcb.Messagef("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
-	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -510,7 +506,6 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 // places so this method fetches the Service Class and creates
 // a brokerClient to use for that method given a ServiceInstance.
 func (c *controller) getServiceClassAndServiceBroker(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceClass, string, osb.Client, error) {
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
 	serviceClass, err := c.serviceClassLister.ServiceClasses(instance.Namespace).Get(instance.Spec.ServiceClassRef.Name)
 	if err != nil {
 		return nil, "", nil, &operationError{
@@ -534,20 +529,16 @@ func (c *controller) getServiceClassAndServiceBroker(instance *v1beta1.ServiceIn
 
 	}
 
-	authConfig, err := getAuthCredentialsFromServiceBroker(c.kubeClient, broker)
-	if err != nil {
+	brokerClient, found := c.brokerClientManager.BrokerClient(NewServiceBrokerKey(instance.Namespace, serviceClass.Spec.ServiceBrokerName))
+	if !found {
 		return nil, "", nil, &operationError{
-			reason: errorAuthCredentialsReason,
+			reason: errorNonexistentClusterServiceBrokerReason,
 			message: fmt.Sprintf(
-				"Error getting broker auth credentials for broker %q: %s",
-				broker.Name, err,
+				"The instance references a broker %q which has no OSB client created",
+				serviceClass.Spec.ServiceBrokerName,
 			),
 		}
 	}
-
-	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
-	glog.V(4).Info(pcb.Messagef("Creating client for ServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
-	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -671,28 +662,11 @@ func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceI
 			return nil, err
 		}
 
-		pcb := pretty.NewInstanceContextBuilder(instance)
-		authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
-		if err != nil {
-			s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-			glog.Warning(pcb.Message(s))
-			c.updateServiceBindingCondition(
-				binding,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
-				errorAuthCredentialsReason,
-				"Error getting auth credentials. "+s,
-			)
-			c.recorder.Event(binding, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-			return nil, err
-		}
+		var found bool
+		brokerClient, found = c.brokerClientManager.BrokerClient(NewClusterServiceBrokerKey(broker.Name))
 
-		clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
-
-		glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
-		brokerClient, err = c.brokerClientCreateFunc(clientConfig)
-		if err != nil {
-			return nil, err
+		if !found {
+			return nil, fmt.Errorf("OSB client not found for the broker %s", broker.Name)
 		}
 
 	} else if instance.Spec.ServiceClassSpecified() {
@@ -707,28 +681,11 @@ func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceI
 			return nil, err
 		}
 
-		pcb := pretty.NewInstanceContextBuilder(instance)
-		authConfig, err := getAuthCredentialsFromServiceBroker(c.kubeClient, broker)
-		if err != nil {
-			s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-			glog.Warning(pcb.Message(s))
-			c.updateServiceBindingCondition(
-				binding,
-				v1beta1.ServiceBindingConditionReady,
-				v1beta1.ConditionFalse,
-				errorAuthCredentialsReason,
-				"Error getting auth credentials. "+s,
-			)
-			c.recorder.Event(binding, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-			return nil, err
-		}
+		var found bool
+		brokerClient, found = c.brokerClientManager.BrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name))
 
-		clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
-
-		glog.V(4).Infof("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
-		brokerClient, err = c.brokerClientCreateFunc(clientConfig)
-		if err != nil {
-			return nil, err
+		if !found {
+			return nil, fmt.Errorf("OSB client not found for the broker %s", broker.Name)
 		}
 	}
 
