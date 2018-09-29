@@ -18,7 +18,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,63 +27,18 @@ import (
 	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
 )
 
-type errUnsupportedStorageType struct {
-	t StorageType
-}
-
-func (e errUnsupportedStorageType) Error() string {
-	return fmt.Sprintf("unsupported storage type %s", e.t)
-}
-
-// StorageType represents the type of storage a storage interface should use
-type StorageType string
-
-// StorageTypeFromString converts s to a valid StorageType. Returns StorageType("") and a non-nil
-// error if s names an invalid or unsupported storage type
-func StorageTypeFromString(s string) (StorageType, error) {
-	switch s {
-	case StorageTypeEtcd.String():
-		return StorageTypeEtcd, nil
-	default:
-		return StorageType(""), errUnsupportedStorageType{t: StorageType(s)}
-	}
-}
-
-func (s StorageType) String() string {
-	return string(s)
-}
-
-const (
-	// StorageTypeEtcd indicates a storage interface should use etcd
-	StorageTypeEtcd StorageType = "etcd"
-)
-
 // Options is the extension of a generic.RESTOptions struct, complete with service-catalog
 // specific things
 type Options struct {
 	EtcdOptions etcd.Options
-	storageType StorageType
 }
 
 // NewOptions returns a new Options with the given parameters
 func NewOptions(
 	etcdOpts etcd.Options,
-	sType StorageType,
 ) *Options {
 	return &Options{
 		EtcdOptions: etcdOpts,
-		storageType: sType,
-	}
-}
-
-// StorageType returns the storage type the rest server should use, or an error if an unsupported
-// storage type is indicated
-func (o Options) StorageType() (StorageType, error) {
-	switch o.storageType {
-	case StorageTypeEtcd:
-		return o.storageType, nil
-	default:
-		return StorageType(""), errUnsupportedStorageType{t: o.storageType}
 	}
 }
 
@@ -98,17 +52,9 @@ func (o Options) ResourcePrefix() string {
 // by combining the namespace in the context with the given prefix
 func (o Options) KeyRootFunc() func(context.Context) string {
 	prefix := o.ResourcePrefix()
-	sType, err := o.StorageType()
-	if err != nil {
-		return nil
+	return func(ctx context.Context) string {
+		return registry.NamespaceKeyRootFunc(ctx, prefix)
 	}
-	if sType == StorageTypeEtcd {
-		return func(ctx context.Context) string {
-			return registry.NamespaceKeyRootFunc(ctx, prefix)
-		}
-	}
-	// This should never happen, catch for potential bugs
-	panic("Unexpected storage type: " + sType)
 }
 
 // KeyFunc returns the appropriate key function for the storage type in o.
@@ -116,19 +62,12 @@ func (o Options) KeyRootFunc() func(context.Context) string {
 // by combining the namespace in the context with the given prefix
 func (o Options) KeyFunc(namespaced bool) func(context.Context, string) (string, error) {
 	prefix := o.ResourcePrefix()
-	sType, err := o.StorageType()
-	if err != nil {
-		return nil
-	}
-	if sType == StorageTypeEtcd {
-		return func(ctx context.Context, name string) (string, error) {
-			if namespaced {
-				return registry.NamespaceKeyFunc(ctx, prefix, name)
-			}
-			return registry.NoNamespaceKeyFunc(ctx, prefix, name)
+	return func(ctx context.Context, name string) (string, error) {
+		if namespaced {
+			return registry.NamespaceKeyFunc(ctx, prefix, name)
 		}
+		return registry.NoNamespaceKeyFunc(ctx, prefix, name)
 	}
-	panic("Unexpected storage type: " + o.storageType)
 }
 
 // GetStorage returns the storage from the given parameters
@@ -140,17 +79,14 @@ func (o Options) GetStorage(
 	getAttrsFunc storage.AttrFunc,
 	trigger storage.TriggerPublisherFunc,
 ) (storage.Interface, factory.DestroyFunc) {
-	if o.storageType == StorageTypeEtcd {
-		etcdRESTOpts := o.EtcdOptions.RESTOptions
-		return etcdRESTOpts.Decorator(
-			etcdRESTOpts.StorageConfig,
-			objectType,
-			resourcePrefix,
-			nil, /* keyFunc for decorator -- looks to be unused everywhere */
-			newListFunc,
-			getAttrsFunc,
-			trigger,
-		)
-	}
-	panic("Unexpected storage type: " + o.storageType)
+	etcdRESTOpts := o.EtcdOptions.RESTOptions
+	return etcdRESTOpts.Decorator(
+		etcdRESTOpts.StorageConfig,
+		objectType,
+		resourcePrefix,
+		nil, /* keyFunc for decorator -- looks to be unused everywhere */
+		newListFunc,
+		getAttrsFunc,
+		trigger,
+	)
 }

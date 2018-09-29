@@ -61,7 +61,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		h, err := NewHealthCheck(options)
 		if err != nil {
-			glog.Errorf("Error initialzing: %v", err)
+			glog.Errorf("Error initializing: %v", err)
 			os.Exit(1)
 		}
 
@@ -425,7 +425,7 @@ func (h *HealthCheck) initBrokerAttributes(s *HealthCheckServer) error {
 	return nil
 }
 
-// setError creates a new error using msg and param for the formated message.
+// setError creates a new error using msg and param for the formatted message.
 // The message is logged and the HealthCheck error state is set and returned.
 // This function attempts to log the location of the caller (file name & line
 // number) so as to maintain context of where the error occured

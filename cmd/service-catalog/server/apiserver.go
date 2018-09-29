@@ -32,7 +32,7 @@ func NewAPIServer() *hyperkube.Server {
 		SimpleUsage:     "apiserver",
 		Long:            "The main API entrypoint and interface to the storage system.  The API server is also the focal point for all authorization decisions.",
 		Run: func(_ *hyperkube.Server, args []string, stopCh <-chan struct{}) error {
-			return server.Run(s, stopCh)
+			return server.RunServer(s, stopCh)
 		},
 		RespectsStopCh: true,
 	}

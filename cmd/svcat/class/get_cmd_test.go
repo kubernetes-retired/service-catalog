@@ -35,6 +35,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	k8stesting "k8s.io/client-go/testing"
+
+	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 )
 
 func TestListClasses(t *testing.T) {

@@ -222,46 +222,6 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 	})
 }
 
-// TestCreateServiceInstanceWithAuthError tests creating a SerivceInstance when
-// the secret containing the broker authorization info cannot be found.
-func TestCreateServiceInstanceWithAuthError(t *testing.T) {
-	ct := &controllerTest{
-		t: t,
-		broker: func() *v1beta1.ClusterServiceBroker {
-			b := getTestBroker()
-			b.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
-				Basic: &v1beta1.ClusterBasicAuthConfig{
-					SecretRef: &v1beta1.ObjectReference{
-						Namespace: testNamespace,
-						Name:      "secret-name",
-					},
-				},
-			}
-			return b
-		}(),
-		instance:                     getTestInstance(),
-		skipVerifyingInstanceSuccess: true,
-		preCreateBroker: func(ct *controllerTest) {
-			prependGetSecretReaction(ct.kubeClient, "secret-name", map[string][]byte{
-				"username": []byte("user"),
-				"password": []byte("pass"),
-			})
-		},
-		preCreateInstance: func(ct *controllerTest) {
-			prependGetSecretNotFoundReaction(ct.kubeClient)
-		},
-	}
-	ct.run(func(ct *controllerTest) {
-		if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, v1beta1.ServiceInstanceCondition{
-			Type:   v1beta1.ServiceInstanceConditionReady,
-			Status: v1beta1.ConditionFalse,
-			Reason: "ErrorGettingAuthCredentials",
-		}); err != nil {
-			t.Fatalf("error waiting for instance reconciliation to fail: %v", err)
-		}
-	})
-}
-
 // TestCreateServiceInstanceWithParameters tests creating a ServiceInstance
 // with parameters.
 func TestCreateServiceInstanceWithParameters(t *testing.T) {
