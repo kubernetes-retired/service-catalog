@@ -966,6 +966,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 		reason := errorPollingLastOperationReason
 		message := fmt.Sprintf("Error polling last operation: %v", err)
+		glog.V(4).Info(pcb.Message(message))
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
 
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
