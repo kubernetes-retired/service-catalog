@@ -27,7 +27,7 @@ cid: community
                   <a href="https://github.com/kubernetes-incubator/service-catalog"><img src="/images/github-logo.png" alt="GitHub" width="150"></a>
                   <p>
                     <a href="https://github.com/kubernetes-incubator/service-catalog">GitHub</a><br/>
-                    <a href="https://github.com/kubernetes-incubator/service-catalog/blob/master/docs/devguide.md">Developer Guide</a><br/>
+                    <a href="/docs/devguide/">Developer Guide</a><br/>
                     <a href="https://github.com/kubernetes-incubator/service-catalog/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">Issues that Need Help</a><br/>
                   </p>
               </div>
