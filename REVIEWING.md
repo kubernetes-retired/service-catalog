@@ -5,24 +5,21 @@ pull requests (PRs). It is intended to outline the lightweight process that
 we’ll use for now. It’s assumed that we’ll operate on good faith for now in
 situations for which process is not specified.
 
-PRs may only be merged after the following criteria are met:
+PRs are automatically merged after the following criteria are met:
 
-1. It has been 'LGTM'-ed by 2 different reviewers
-1. It has all appropriate corresponding documentation and testcases
-1. The master build is passing. Do not merge a PR unless it is fixing the broken build.
+1. It has the `lgtm` label applied. This label is automatically removed when
+    the commits in the PR are modified. It can be added with `/lgtm` and removed
+    with `/lgtm cancel`.
+1. It has the `approved` label applied. This label is "sticky" and remains
+    even after subsequent changes are made to the commits in the PR. It can be
+    added with `/approve` and removed with `/approve cancel`.
+1. The CI checks are all passing.
 
-## LGTMs
+## Holds
 
-When a reviewer deems a PR good enough to merge, they should add a comment to the PR
-thread that simply reads 'LGTM'. If they do not deem it ready for merge,
-they should add comments -- either inline or on the PR thread -- that indicate
-changes they believe should be made before merge.
-
-## Vetoing
-
-If a reviewer decides that a PR should not be merged in its current state,
-even if it has 2 'LGTM' approvals from others, they should mark that PR with
-`do-not-merge` label.
+If a PR should not be merged in its current state,
+even once it has the `lgtm` and `approved` labels from others, mark that PR with
+`do-not-merge/hold` label using the `/hold` command.
 
 This label should only be used by a reviewer when that person believes there
 is a fundamental problem with the PR. The reviewer should summarize that problem
