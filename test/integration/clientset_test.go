@@ -27,7 +27,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	// our versioned types
@@ -64,10 +63,6 @@ const (
 `
 )
 
-var storageTypes = []server.StorageType{
-	server.StorageTypeEtcd,
-}
-
 // Used for testing binding parameters
 type bpStruct struct {
 	Foo string   `json:"foo"`
@@ -76,27 +71,17 @@ type bpStruct struct {
 
 // TestGroupVersion is trivial.
 func TestGroupVersion(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ClusterServiceBroker{}
-			})
-			defer shutdownServer()
-			if err := testGroupVersion(client); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%q test failed", sType)
-		}
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
+		return &servicecatalog.ClusterServiceBroker{}
+	})
+	defer shutdownServer()
+	if err := testGroupVersion(client); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestEtcdHealthCheckerSuccess(t *testing.T) {
 	serverConfig := NewTestServerConfig()
-	serverConfig.storageType = server.StorageTypeEtcd
 	_, clientconfig, shutdownServer := withConfigGetFreshApiserverAndClient(t, serverConfig)
 	t.Log(clientconfig.Host)
 	tr := &http.Transport{
@@ -135,22 +120,12 @@ func testGroupVersion(client servicecatalogclient.Interface) error {
 // TestNoName checks that all creates fail for objects that have no
 // name given.
 func TestNoName(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ClusterServiceBroker{}
-			})
-			defer shutdownServer()
-			if err := testNoName(client); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%q test failed", sType)
-		}
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
+		return &servicecatalog.ClusterServiceBroker{}
+	})
+	defer shutdownServer()
+	if err := testNoName(client); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -189,25 +164,16 @@ func testNoName(client servicecatalogclient.Interface) error {
 // TestClusterServiceBrokerClient exercises the ClusterServiceBroker client.
 func TestClusterServiceBrokerClient(t *testing.T) {
 	const name = "test-broker"
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ClusterServiceBroker{}
-			})
-			defer shutdownServer()
-			if err := testClusterServiceBrokerClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%q test failed", sType)
-		}
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
+		return &servicecatalog.ClusterServiceBroker{}
+	})
+	defer shutdownServer()
+	if err := testClusterServiceBrokerClient(client, name); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func testClusterServiceBrokerClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+func testClusterServiceBrokerClient(client servicecatalogclient.Interface, name string) error {
 	brokerClient := client.Servicecatalog().ClusterServiceBrokers()
 	broker := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -360,34 +326,27 @@ func testClusterServiceBrokerClient(sType server.StorageType, client servicecata
 		return fmt.Errorf("broker should be deleted (%v)", brokerDeleted)
 	}
 	return nil
-} // TestNamespacedServiceBrokerClient exercises the namespaced ServiceBroker client.
+}
+
+// TestNamespacedServiceBrokerClient exercises the namespaced ServiceBroker client.
 func TestNamespacedServiceBrokerClient(t *testing.T) {
 	const name = "test-broker"
 	const namespace = "test-namespace"
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			resetFeaturesFunc, err := enableNamespacedResources()
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer resetFeaturesFunc()
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ClusterServiceBroker{}
-			})
-			defer shutdownServer()
-			if err := testNamespacedServiceBrokerClient(sType, client, namespace, name); err != nil {
-				t.Fatal(err)
-			}
-		}
+	resetFeaturesFunc, err := enableNamespacedResources()
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%q test failed", sType)
-		}
+	defer resetFeaturesFunc()
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
+		return &servicecatalog.ClusterServiceBroker{}
+	})
+	defer shutdownServer()
+	if err := testNamespacedServiceBrokerClient(client, namespace, name); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func testNamespacedServiceBrokerClient(sType server.StorageType, client servicecatalogclient.Interface, namespace, name string) error {
+func testNamespacedServiceBrokerClient(client servicecatalogclient.Interface, namespace, name string) error {
 	brokerClient := client.Servicecatalog().ServiceBrokers(namespace)
 	broker := &v1beta1.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -550,18 +509,17 @@ func testNamespacedServiceBrokerClient(sType server.StorageType, client servicec
 // TestClusterServiceClassClient exercises the ClusterServiceClass client.
 func TestClusterServiceClassClient(t *testing.T) {
 	const name = "test-serviceclass"
-	sType := server.StorageTypeEtcd
-	client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
 		return &servicecatalog.ClusterServiceClass{}
 	})
 	defer shutdownServer()
 
-	if err := testClusterServiceClassClient(sType, client, name); err != nil {
+	if err := testClusterServiceClassClient(client, name); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func testClusterServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+func testClusterServiceClassClient(client servicecatalogclient.Interface, name string) error {
 	serviceClassClient := client.Servicecatalog().ClusterServiceClasses()
 
 	serviceClass := &v1beta1.ClusterServiceClass{
@@ -760,18 +718,17 @@ func TestNamespacedServiceClassClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer resetFeaturesFunc()
-	sType := server.StorageTypeEtcd
-	client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
 		return &servicecatalog.ServiceClass{}
 	})
 	defer shutdownServer()
 
-	if err := testNamespacedServiceClassClient(sType, client, namespace, name); err != nil {
+	if err := testNamespacedServiceClassClient(client, namespace, name); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func testNamespacedServiceClassClient(sType server.StorageType, client servicecatalogclient.Interface, namespace, name string) error {
+func testNamespacedServiceClassClient(client servicecatalogclient.Interface, namespace, name string) error {
 	serviceClassClient := client.Servicecatalog().ServiceClasses(namespace)
 
 	serviceClass := &v1beta1.ServiceClass{
@@ -973,18 +930,17 @@ func testNamespacedServiceClassClient(sType server.StorageType, client serviceca
 // TestClusterServicePlanClient exercises the ClusterServicePlan client.
 func TestClusterServicePlanClient(t *testing.T) {
 	const name = "test-serviceplan"
-	sType := server.StorageTypeEtcd
-	client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
 		return &servicecatalog.ClusterServicePlan{}
 	})
 	defer shutdownServer()
 
-	if err := testClusterServicePlanClient(sType, client, name); err != nil {
+	if err := testClusterServicePlanClient(client, name); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func testClusterServicePlanClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+func testClusterServicePlanClient(client servicecatalogclient.Interface, name string) error {
 	servicePlanClient := client.Servicecatalog().ClusterServicePlans()
 
 	bindable := true
@@ -1192,18 +1148,17 @@ func TestNamespacedServicePlanClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer resetFeaturesFunc()
-	sType := server.StorageTypeEtcd
-	client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
 		return &servicecatalog.ServicePlan{}
 	})
 	defer shutdownServer()
 
-	if err := testNamespacedServicePlanClient(sType, client, namespace, name); err != nil {
+	if err := testNamespacedServicePlanClient(client, namespace, name); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func testNamespacedServicePlanClient(sType server.StorageType, client servicecatalogclient.Interface, namespace, name string) error {
+func testNamespacedServicePlanClient(client servicecatalogclient.Interface, namespace, name string) error {
 	servicePlanClient := client.Servicecatalog().ServicePlans(namespace)
 
 	bindable := true
@@ -1413,26 +1368,17 @@ func testNamespacedServicePlanClient(sType server.StorageType, client servicecat
 
 // TestInstanceClient exercises the Instance client.
 func TestInstanceClient(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			const name = "test-instance"
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceInstance{}
-			})
-			defer shutdownServer()
-			if err := testInstanceClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%q test failed", sType)
-		}
+	const name = "test-instance"
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
+		return &servicecatalog.ServiceInstance{}
+	})
+	defer shutdownServer()
+	if err := testInstanceClient(client, name); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func testInstanceClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+func testInstanceClient(client servicecatalogclient.Interface, name string) error {
 	const (
 		osbGUID      = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 		dashboardURL = "http://test-dashboard.example.com"
@@ -1684,28 +1630,18 @@ func testInstanceClient(sType server.StorageType, client servicecatalogclient.In
 
 // TestBindingClient exercises the Binding client.
 func TestBindingClient(t *testing.T) {
-	rootTestFunc := func(sType server.StorageType) func(t *testing.T) {
-		return func(t *testing.T) {
-			const name = "test-binding"
-			client, _, shutdownServer := getFreshApiserverAndClient(t, sType.String(), func() runtime.Object {
-				return &servicecatalog.ServiceBinding{}
-			})
-			defer shutdownServer()
+	const name = "test-binding"
+	client, _, shutdownServer := getFreshApiserverAndClient(t, func() runtime.Object {
+		return &servicecatalog.ServiceBinding{}
+	})
+	defer shutdownServer()
 
-			if err := testBindingClient(sType, client, name); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	for _, sType := range storageTypes {
-		if !t.Run(sType.String(), rootTestFunc(sType)) {
-			t.Errorf("%q test failed", sType)
-		}
-
+	if err := testBindingClient(client, name); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func testBindingClient(sType server.StorageType, client servicecatalogclient.Interface, name string) error {
+func testBindingClient(client servicecatalogclient.Interface, name string) error {
 	bindingClient := client.Servicecatalog().ServiceBindings("test-namespace")
 
 	binding := &v1beta1.ServiceBinding{

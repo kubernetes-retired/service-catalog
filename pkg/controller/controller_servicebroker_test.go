@@ -41,6 +41,18 @@ func TestShouldReconcileServiceBroker(t *testing.T) {
 	}
 }
 
+func TestReconcileServiceBrokerUpdatesBrokerClient(t *testing.T) {
+	broker := getTestServiceBroker()
+	broker.Name = broker.Name + "not-predefined"
+	_, _, _, testController, _ := newTestController(t, noFakeActions())
+	testController.reconcileServiceBroker(broker)
+
+	_, found := testController.brokerClientManager.BrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name))
+	if !found {
+		t.Error("expected predefined OSB client")
+	}
+}
+
 func TestReconcileServiceClassFromServiceBrokerCatalog(t *testing.T) {
 	updatedClass := func() *v1beta1.ServiceClass {
 		p := getTestServiceClass()

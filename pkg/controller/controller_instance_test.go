@@ -2935,10 +2935,10 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	}
 }
 
-// TestPollServiceInstanceClusterServiceBrokerError simulates polling a broker and getting a
+// TestPollServiceInstanceClusterServiceBrokerTemporaryError simulates polling a broker and getting a
 // Forbidden status on the poll.  Test simulates that the ClusterServiceBroker was already
 // in the process of being deleted prior to the Forbidden status.
-func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
+func TestPollServiceInstanceClusterServiceBrokerTemporaryError(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
 			Error: osb.HTTPStatusCodeError{
@@ -2959,12 +2959,13 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 	}
 
 	err := testController.pollServiceInstance(instance)
-	if err != nil {
-		t.Fatalf("pollServiceInstance failed: %v", err)
-	}
 
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
-		t.Fatalf("Expected polling queue to have record of seeing test instance once")
+	if err == nil {
+		t.Fatal("Expected pollServiceInstance to return error")
+	}
+	expectedErr := "Error polling last operation: Status: 403; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>"
+	if e, a := expectedErr, err.Error(); e != a {
+		t.Fatalf("unexpected error returned: expected %q, got %q", e, a)
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -2983,7 +2984,8 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 0)
+	assertNumberOfActions(t, actions, 1)
+	assertUpdateStatus(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 
@@ -2991,6 +2993,69 @@ func TestPollServiceInstanceClusterServiceBrokerError(t *testing.T) {
 		"Error polling last operation:",
 	).msg("Status: 403; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestPollServiceInstanceClusterServiceBrokerTerminalError simulates polling a broker and getting a
+// BadRequest status on the poll. Test simulates that the ClusterServiceBroker was already
+// in the process of being deleted prior to the BadRequest status.
+func TestPollServiceInstanceClusterServiceBrokerTerminalError(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
+			Error: osb.HTTPStatusCodeError{
+				StatusCode: http.StatusBadRequest,
+			},
+		},
+	})
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+
+	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
+	instanceKey := testNamespace + "/" + testServiceInstanceName
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have any record of test instance")
+	}
+
+	err := testController.pollServiceInstance(instance)
+
+	if err != nil {
+		t.Fatalf("pollServiceInstance failed: %v", err)
+	}
+
+	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
+		t.Fatalf("Expected polling queue to not have requeues")
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	operationKey := osb.OperationKey(testOperation)
+	assertPollLastOperation(t, brokerActions[0], &osb.LastOperationRequest{
+		InstanceID:   testServiceInstanceGUID,
+		ServiceID:    strPtr(testClusterServiceClassGUID),
+		PlanID:       strPtr(testClusterServicePlanGUID),
+		OperationKey: &operationKey,
+	})
+
+	// verify no kube resources created.
+	// No actions
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	assertUpdateStatus(t, actions[0], instance)
+
+	events := getRecordedEvents(testController)
+
+	expectedEvent := warningEventBuilder(errorPollingLastOperationReason).msg(
+		"Error polling last operation:",
+	).msg("Status: 400; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
+	// Event is sent twice: one for Ready condition and one for Failed
+	if err := checkEvents(events, []string{expectedEvent.String(), expectedEvent.String()}); err != nil {
 		t.Fatal(err)
 	}
 }

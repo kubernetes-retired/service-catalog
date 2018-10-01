@@ -224,6 +224,8 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@$(DOCKER_CMD) build/verify-errexit.sh
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
+	@echo Validating golden file flag is defined:
+	@$(DOCKER_CMD) go test -run DRYRUN ./cmd/svcat/... -update || printf "\n\nmake test-update-goldenfiles is broken. For each failed package above, add the following empty import to one of the test files to define the -update flag:\n_ \"github.com/kubernetes-incubator/service-catalog/internal/test\""
 
 verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
