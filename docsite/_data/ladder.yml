@@ -1,0 +1,16 @@
+bigheader: "Contribution Ladder"
+abstract: "Going from First PR to Maintainer"
+landing_page: /docs/contribute/ladder/
+toc:
+- docs/contribute/ladder.md
+- title: User
+  path: "#user"
+- title: Member
+  path: "#member"
+- title: Reviewer
+  path: "#reviewer"
+- title: Maintainer
+  path: "#maintainer"
+- title: Chair
+  path: "#chair"
+
