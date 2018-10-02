@@ -11,7 +11,7 @@ useAggregator: true
 rbacEnable: true
 apiserver:
   replicas: 2
-  # deploymentStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
+  # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
   updateStrategy: RollingUpdate
   minReadySeconds: 1
   # annotations is a collection of annotations to add to the apiserver pods.
@@ -127,7 +127,7 @@ apiserver:
       memory: 30Mi
 controllerManager:
   replicas: 3
-  # deploymentStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
+  # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
   updateStrategy: RollingUpdate
   minReadySeconds: 1
   # annotations is a collection of annotations to add to the controllerManager pod.
