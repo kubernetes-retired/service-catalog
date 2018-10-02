@@ -211,7 +211,10 @@ func Convert_servicecatalog_AddKeysFromTransform_To_v1beta1_AddKeysFromTransform
 }
 
 func autoConvert_v1beta1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig(in *BasicAuthConfig, out *servicecatalog.BasicAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*servicecatalog.LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -221,7 +224,10 @@ func Convert_v1beta1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig(in *Basic
 }
 
 func autoConvert_servicecatalog_BasicAuthConfig_To_v1beta1_BasicAuthConfig(in *servicecatalog.BasicAuthConfig, out *BasicAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -231,7 +237,10 @@ func Convert_servicecatalog_BasicAuthConfig_To_v1beta1_BasicAuthConfig(in *servi
 }
 
 func autoConvert_v1beta1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthConfig(in *BearerTokenAuthConfig, out *servicecatalog.BearerTokenAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*servicecatalog.LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -241,7 +250,10 @@ func Convert_v1beta1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthConf
 }
 
 func autoConvert_servicecatalog_BearerTokenAuthConfig_To_v1beta1_BearerTokenAuthConfig(in *servicecatalog.BearerTokenAuthConfig, out *BearerTokenAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*LocalObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -273,7 +285,10 @@ func Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(i
 }
 
 func autoConvert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthConfig(in *ClusterBasicAuthConfig, out *servicecatalog.ClusterBasicAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*servicecatalog.ObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -283,7 +298,10 @@ func Convert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthCo
 }
 
 func autoConvert_servicecatalog_ClusterBasicAuthConfig_To_v1beta1_ClusterBasicAuthConfig(in *servicecatalog.ClusterBasicAuthConfig, out *ClusterBasicAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*ObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -293,7 +311,10 @@ func Convert_servicecatalog_ClusterBasicAuthConfig_To_v1beta1_ClusterBasicAuthCo
 }
 
 func autoConvert_v1beta1_ClusterBearerTokenAuthConfig_To_servicecatalog_ClusterBearerTokenAuthConfig(in *ClusterBearerTokenAuthConfig, out *servicecatalog.ClusterBearerTokenAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*servicecatalog.ObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -303,7 +324,10 @@ func Convert_v1beta1_ClusterBearerTokenAuthConfig_To_servicecatalog_ClusterBeare
 }
 
 func autoConvert_servicecatalog_ClusterBearerTokenAuthConfig_To_v1beta1_ClusterBearerTokenAuthConfig(in *servicecatalog.ClusterBearerTokenAuthConfig, out *ClusterBearerTokenAuthConfig, s conversion.Scope) error {
-	out.SecretRef = (*ObjectReference)(unsafe.Pointer(in.SecretRef))
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.SecretRef, &out.SecretRef, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -365,8 +389,24 @@ func Convert_servicecatalog_ClusterServiceBroker_To_v1beta1_ClusterServiceBroker
 }
 
 func autoConvert_v1beta1_ClusterServiceBrokerAuthInfo_To_servicecatalog_ClusterServiceBrokerAuthInfo(in *ClusterServiceBrokerAuthInfo, out *servicecatalog.ClusterServiceBrokerAuthInfo, s conversion.Scope) error {
-	out.Basic = (*servicecatalog.ClusterBasicAuthConfig)(unsafe.Pointer(in.Basic))
-	out.Bearer = (*servicecatalog.ClusterBearerTokenAuthConfig)(unsafe.Pointer(in.Bearer))
+	if in.Basic != nil {
+		in, out := &in.Basic, &out.Basic
+		*out = new(servicecatalog.ClusterBasicAuthConfig)
+		if err := Convert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Basic = nil
+	}
+	if in.Bearer != nil {
+		in, out := &in.Bearer, &out.Bearer
+		*out = new(servicecatalog.ClusterBearerTokenAuthConfig)
+		if err := Convert_v1beta1_ClusterBearerTokenAuthConfig_To_servicecatalog_ClusterBearerTokenAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Bearer = nil
+	}
 	return nil
 }
 
@@ -376,8 +416,24 @@ func Convert_v1beta1_ClusterServiceBrokerAuthInfo_To_servicecatalog_ClusterServi
 }
 
 func autoConvert_servicecatalog_ClusterServiceBrokerAuthInfo_To_v1beta1_ClusterServiceBrokerAuthInfo(in *servicecatalog.ClusterServiceBrokerAuthInfo, out *ClusterServiceBrokerAuthInfo, s conversion.Scope) error {
-	out.Basic = (*ClusterBasicAuthConfig)(unsafe.Pointer(in.Basic))
-	out.Bearer = (*ClusterBearerTokenAuthConfig)(unsafe.Pointer(in.Bearer))
+	if in.Basic != nil {
+		in, out := &in.Basic, &out.Basic
+		*out = new(ClusterBasicAuthConfig)
+		if err := Convert_servicecatalog_ClusterBasicAuthConfig_To_v1beta1_ClusterBasicAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Basic = nil
+	}
+	if in.Bearer != nil {
+		in, out := &in.Bearer, &out.Bearer
+		*out = new(ClusterBearerTokenAuthConfig)
+		if err := Convert_servicecatalog_ClusterBearerTokenAuthConfig_To_v1beta1_ClusterBearerTokenAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Bearer = nil
+	}
 	return nil
 }
 
@@ -388,7 +444,17 @@ func Convert_servicecatalog_ClusterServiceBrokerAuthInfo_To_v1beta1_ClusterServi
 
 func autoConvert_v1beta1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceBrokerList(in *ClusterServiceBrokerList, out *servicecatalog.ClusterServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]servicecatalog.ClusterServiceBroker)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]servicecatalog.ClusterServiceBroker, len(*in))
+		for i := range *in {
+			if err := Convert_v1beta1_ClusterServiceBroker_To_servicecatalog_ClusterServiceBroker(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -399,7 +465,17 @@ func Convert_v1beta1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceBr
 
 func autoConvert_servicecatalog_ClusterServiceBrokerList_To_v1beta1_ClusterServiceBrokerList(in *servicecatalog.ClusterServiceBrokerList, out *ClusterServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ClusterServiceBroker)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]ClusterServiceBroker, len(*in))
+		for i := range *in {
+			if err := Convert_servicecatalog_ClusterServiceBroker_To_v1beta1_ClusterServiceBroker(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -412,7 +488,15 @@ func autoConvert_v1beta1_ClusterServiceBrokerSpec_To_servicecatalog_ClusterServi
 	if err := Convert_v1beta1_CommonServiceBrokerSpec_To_servicecatalog_CommonServiceBrokerSpec(&in.CommonServiceBrokerSpec, &out.CommonServiceBrokerSpec, s); err != nil {
 		return err
 	}
-	out.AuthInfo = (*servicecatalog.ClusterServiceBrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
+	if in.AuthInfo != nil {
+		in, out := &in.AuthInfo, &out.AuthInfo
+		*out = new(servicecatalog.ClusterServiceBrokerAuthInfo)
+		if err := Convert_v1beta1_ClusterServiceBrokerAuthInfo_To_servicecatalog_ClusterServiceBrokerAuthInfo(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.AuthInfo = nil
+	}
 	return nil
 }
 
@@ -425,7 +509,15 @@ func autoConvert_servicecatalog_ClusterServiceBrokerSpec_To_v1beta1_ClusterServi
 	if err := Convert_servicecatalog_CommonServiceBrokerSpec_To_v1beta1_CommonServiceBrokerSpec(&in.CommonServiceBrokerSpec, &out.CommonServiceBrokerSpec, s); err != nil {
 		return err
 	}
-	out.AuthInfo = (*ClusterServiceBrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
+	if in.AuthInfo != nil {
+		in, out := &in.AuthInfo, &out.AuthInfo
+		*out = new(ClusterServiceBrokerAuthInfo)
+		if err := Convert_servicecatalog_ClusterServiceBrokerAuthInfo_To_v1beta1_ClusterServiceBrokerAuthInfo(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.AuthInfo = nil
+	}
 	return nil
 }
 
@@ -1253,8 +1345,24 @@ func Convert_servicecatalog_ServiceBroker_To_v1beta1_ServiceBroker(in *serviceca
 }
 
 func autoConvert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthInfo(in *ServiceBrokerAuthInfo, out *servicecatalog.ServiceBrokerAuthInfo, s conversion.Scope) error {
-	out.Basic = (*servicecatalog.BasicAuthConfig)(unsafe.Pointer(in.Basic))
-	out.Bearer = (*servicecatalog.BearerTokenAuthConfig)(unsafe.Pointer(in.Bearer))
+	if in.Basic != nil {
+		in, out := &in.Basic, &out.Basic
+		*out = new(servicecatalog.BasicAuthConfig)
+		if err := Convert_v1beta1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Basic = nil
+	}
+	if in.Bearer != nil {
+		in, out := &in.Bearer, &out.Bearer
+		*out = new(servicecatalog.BearerTokenAuthConfig)
+		if err := Convert_v1beta1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Bearer = nil
+	}
 	return nil
 }
 
@@ -1264,8 +1372,24 @@ func Convert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthIn
 }
 
 func autoConvert_servicecatalog_ServiceBrokerAuthInfo_To_v1beta1_ServiceBrokerAuthInfo(in *servicecatalog.ServiceBrokerAuthInfo, out *ServiceBrokerAuthInfo, s conversion.Scope) error {
-	out.Basic = (*BasicAuthConfig)(unsafe.Pointer(in.Basic))
-	out.Bearer = (*BearerTokenAuthConfig)(unsafe.Pointer(in.Bearer))
+	if in.Basic != nil {
+		in, out := &in.Basic, &out.Basic
+		*out = new(BasicAuthConfig)
+		if err := Convert_servicecatalog_BasicAuthConfig_To_v1beta1_BasicAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Basic = nil
+	}
+	if in.Bearer != nil {
+		in, out := &in.Bearer, &out.Bearer
+		*out = new(BearerTokenAuthConfig)
+		if err := Convert_servicecatalog_BearerTokenAuthConfig_To_v1beta1_BearerTokenAuthConfig(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.Bearer = nil
+	}
 	return nil
 }
 
@@ -1304,7 +1428,17 @@ func Convert_servicecatalog_ServiceBrokerCondition_To_v1beta1_ServiceBrokerCondi
 
 func autoConvert_v1beta1_ServiceBrokerList_To_servicecatalog_ServiceBrokerList(in *ServiceBrokerList, out *servicecatalog.ServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]servicecatalog.ServiceBroker)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]servicecatalog.ServiceBroker, len(*in))
+		for i := range *in {
+			if err := Convert_v1beta1_ServiceBroker_To_servicecatalog_ServiceBroker(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -1315,7 +1449,17 @@ func Convert_v1beta1_ServiceBrokerList_To_servicecatalog_ServiceBrokerList(in *S
 
 func autoConvert_servicecatalog_ServiceBrokerList_To_v1beta1_ServiceBrokerList(in *servicecatalog.ServiceBrokerList, out *ServiceBrokerList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ServiceBroker)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]ServiceBroker, len(*in))
+		for i := range *in {
+			if err := Convert_servicecatalog_ServiceBroker_To_v1beta1_ServiceBroker(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -1328,7 +1472,15 @@ func autoConvert_v1beta1_ServiceBrokerSpec_To_servicecatalog_ServiceBrokerSpec(i
 	if err := Convert_v1beta1_CommonServiceBrokerSpec_To_servicecatalog_CommonServiceBrokerSpec(&in.CommonServiceBrokerSpec, &out.CommonServiceBrokerSpec, s); err != nil {
 		return err
 	}
-	out.AuthInfo = (*servicecatalog.ServiceBrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
+	if in.AuthInfo != nil {
+		in, out := &in.AuthInfo, &out.AuthInfo
+		*out = new(servicecatalog.ServiceBrokerAuthInfo)
+		if err := Convert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthInfo(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.AuthInfo = nil
+	}
 	return nil
 }
 
@@ -1341,7 +1493,15 @@ func autoConvert_servicecatalog_ServiceBrokerSpec_To_v1beta1_ServiceBrokerSpec(i
 	if err := Convert_servicecatalog_CommonServiceBrokerSpec_To_v1beta1_CommonServiceBrokerSpec(&in.CommonServiceBrokerSpec, &out.CommonServiceBrokerSpec, s); err != nil {
 		return err
 	}
-	out.AuthInfo = (*ServiceBrokerAuthInfo)(unsafe.Pointer(in.AuthInfo))
+	if in.AuthInfo != nil {
+		in, out := &in.AuthInfo, &out.AuthInfo
+		*out = new(ServiceBrokerAuthInfo)
+		if err := Convert_servicecatalog_ServiceBrokerAuthInfo_To_v1beta1_ServiceBrokerAuthInfo(*in, *out, s); err != nil {
+			return err
+		}
+	} else {
+		out.AuthInfo = nil
+	}
 	return nil
 }
 

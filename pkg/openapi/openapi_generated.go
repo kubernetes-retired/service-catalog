@@ -406,14 +406,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_BasicAuthConfig(ref common.Reference
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
+			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"},
 	}
 }
 
@@ -426,14 +426,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_BearerTokenAuthConfig(ref common.Ref
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
+			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"},
 	}
 }
 
@@ -487,14 +487,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterBasicAuthConfig(ref common.Re
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
+							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"},
 	}
 }
 
@@ -507,14 +507,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterBearerTokenAuthConfig(ref com
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
+							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ResourceReference"},
 	}
 }
 
