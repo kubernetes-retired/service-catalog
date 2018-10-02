@@ -8,9 +8,10 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  replicas: 1
+  replicas: {{ .Values.apiserver.replicas }}
   strategy:
-    type: {{ .Values.deploymentStrategy }}
+    type: {{ .Values.apiserver.updateStrategy }}
+    minReadySeconds: {{ .Values.apiserver.minReadySeconds }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}-apiserver
