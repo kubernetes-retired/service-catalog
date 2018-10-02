@@ -213,7 +213,7 @@ type ClusterBasicAuthConfig struct {
 	// Required at least one of the fields:
 	// - Secret.Data["username"] - username used for authentication
 	// - Secret.Data["password"] - password or token needed for authentication
-	SecretRef *ObjectReference
+	SecretRef ResourceReference
 }
 
 // ClusterBearerTokenAuthConfig provides config for the bearer token
@@ -224,7 +224,7 @@ type ClusterBearerTokenAuthConfig struct {
 	//
 	// Required field:
 	// - Secret.Data["token"] - bearer token for authentication
-	SecretRef *ObjectReference
+	SecretRef ResourceReference
 }
 
 // ServiceBrokerAuthInfo is a union type that contains information on
@@ -249,7 +249,7 @@ type BasicAuthConfig struct {
 	// Required at least one of the fields:
 	// - Secret.Data["username"] - username used for authentication
 	// - Secret.Data["password"] - password or token needed for authentication
-	SecretRef *LocalObjectReference
+	SecretRef ResourceReference
 }
 
 // BearerTokenAuthConfig provides config for the bearer token
@@ -260,7 +260,7 @@ type BearerTokenAuthConfig struct {
 	//
 	// Required field:
 	// - Secret.Data["token"] - bearer token for authentication
-	SecretRef *LocalObjectReference
+	SecretRef ResourceReference
 }
 
 const (
@@ -1246,6 +1246,20 @@ type SecretKeyReference struct {
 	Key string
 }
 
+// ResourceReference is a unifying interface across references to either cluster
+// scoped or namespace scoped resources.
+type ResourceReference interface {
+	GetName() string
+	DeepCopyResourceReference() ResourceReference
+}
+
+// NamespacedResourceReference is an interface for resource references to a
+// resource in a particular namespace.
+type NamespacedResourceReference interface {
+	ResourceReference
+	GetNamespace() string
+}
+
 // ObjectReference contains enough information to let you locate the
 // referenced object.
 type ObjectReference struct {
@@ -1255,11 +1269,36 @@ type ObjectReference struct {
 	Name string
 }
 
+// DeepCopyResourceReference performs a deep copy of the specified reference.
+func (r ObjectReference) DeepCopyResourceReference() ResourceReference {
+	return r.DeepCopy()
+}
+
+// GetName of the referenced object.
+func (r ObjectReference) GetName() string {
+	return r.Name
+}
+
+// GetNamespace o the referenced object.
+func (r ObjectReference) GetNamespace() string {
+	return r.Namespace
+}
+
 // LocalObjectReference contains enough information to let you locate the
 // referenced object inside the same namespace.
 type LocalObjectReference struct {
 	// Name of the referent.
 	Name string
+}
+
+// DeepCopyResourceReference performs a deep copy of the specified reference.
+func (r LocalObjectReference) DeepCopyResourceReference() ResourceReference {
+	return r.DeepCopy()
+}
+
+// GetName of the referenced object.
+func (r LocalObjectReference) GetName() string {
+	return r.Name
 }
 
 // ClusterObjectReference contains enough information to let you locate the

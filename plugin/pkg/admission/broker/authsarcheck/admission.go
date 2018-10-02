@@ -85,11 +85,11 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 		return nil
 	}
 
-	var secretRef *servicecatalog.ObjectReference
+	var secretRef servicecatalog.NamespacedResourceReference
 	if clusterServiceBroker.Spec.AuthInfo.Basic != nil {
-		secretRef = clusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
+		secretRef = clusterServiceBroker.Spec.AuthInfo.Basic.SecretRef.(servicecatalog.NamespacedResourceReference)
 	} else if clusterServiceBroker.Spec.AuthInfo.Bearer != nil {
-		secretRef = clusterServiceBroker.Spec.AuthInfo.Bearer.SecretRef
+		secretRef = clusterServiceBroker.Spec.AuthInfo.Bearer.SecretRef.(servicecatalog.NamespacedResourceReference)
 	}
 
 	if secretRef == nil {
@@ -101,12 +101,12 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 	sar := &authorizationapi.SubjectAccessReview{
 		Spec: authorizationapi.SubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationapi.ResourceAttributes{
-				Namespace: secretRef.Namespace,
+				Namespace: secretRef.GetNamespace(),
 				Verb:      "get",
 				Group:     corev1.SchemeGroupVersion.Group,
 				Version:   corev1.SchemeGroupVersion.Version,
 				Resource:  corev1.ResourceSecrets.String(),
-				Name:      secretRef.Name,
+				Name:      secretRef.GetName(),
 			},
 			User:   userInfo.GetName(),
 			Groups: userInfo.GetGroups(),
@@ -120,7 +120,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 	}
 
 	if !sar.Status.Allowed {
-		return admission.NewForbidden(a, fmt.Errorf("broker forbidden access to auth secret (%s): Reason: %s, EvaluationError: %s", secretRef.Name, sar.Status.Reason, sar.Status.EvaluationError))
+		return admission.NewForbidden(a, fmt.Errorf("broker forbidden access to auth secret (%s): Reason: %s, EvaluationError: %s", secretRef.GetName(), sar.Status.Reason, sar.Status.EvaluationError))
 	}
 	return nil
 }

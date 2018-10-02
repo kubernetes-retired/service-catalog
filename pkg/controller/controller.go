@@ -703,31 +703,35 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
-		secretRef := authInfo.Basic.SecretRef
-		secret, err := client.CoreV1().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
+		secretRef := authInfo.Basic.SecretRef.(v1beta1.NamespacedResourceReference)
+		if secretRef != nil {
+			secret, err := client.CoreV1().Secrets(secretRef.GetNamespace()).Get(secretRef.GetName(), metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			basicAuthConfig, err := getBasicAuthConfig(secret)
+			if err != nil {
+				return nil, err
+			}
+			return &osb.AuthConfig{
+				BasicAuthConfig: basicAuthConfig,
+			}, nil
 		}
-		basicAuthConfig, err := getBasicAuthConfig(secret)
-		if err != nil {
-			return nil, err
-		}
-		return &osb.AuthConfig{
-			BasicAuthConfig: basicAuthConfig,
-		}, nil
 	} else if authInfo.Bearer != nil {
-		secretRef := authInfo.Bearer.SecretRef
-		secret, err := client.CoreV1().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
+		secretRef := authInfo.Bearer.SecretRef.(v1beta1.NamespacedResourceReference)
+		if secretRef != nil {
+			secret, err := client.CoreV1().Secrets(secretRef.GetNamespace()).Get(secretRef.GetName(), metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			bearerConfig, err := getBearerConfig(secret)
+			if err != nil {
+				return nil, err
+			}
+			return &osb.AuthConfig{
+				BearerConfig: bearerConfig,
+			}, nil
 		}
-		bearerConfig, err := getBearerConfig(secret)
-		if err != nil {
-			return nil, err
-		}
-		return &osb.AuthConfig{
-			BearerConfig: bearerConfig,
-		}, nil
 	}
 	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
 }
@@ -742,7 +746,7 @@ func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
 		secretRef := authInfo.Basic.SecretRef
-		secret, err := client.CoreV1().Secrets(broker.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := client.CoreV1().Secrets(broker.Namespace).Get(secretRef.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -755,7 +759,7 @@ func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1
 		}, nil
 	} else if authInfo.Bearer != nil {
 		secretRef := authInfo.Bearer.SecretRef
-		secret, err := client.CoreV1().Secrets(broker.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := client.CoreV1().Secrets(broker.Namespace).Get(secretRef.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

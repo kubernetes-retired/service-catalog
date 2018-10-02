@@ -53,13 +53,13 @@ func validateClusterServiceBrokerSpec(spec *sc.ClusterServiceBrokerSpec, fldPath
 	// if there is auth information, check it to make sure that it's properly formatted
 	if spec.AuthInfo != nil {
 		if spec.AuthInfo.Basic != nil {
-			secretRef := spec.AuthInfo.Basic.SecretRef
+			secretRef := spec.AuthInfo.Basic.SecretRef.(v1beta1.NamespacedResourceReference)
 			if secretRef != nil {
-				for _, msg := range apivalidation.ValidateNamespaceName(secretRef.Namespace, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "namespace"), secretRef.Namespace, msg))
+				for _, msg := range apivalidation.ValidateNamespaceName(secretRef.GetNamespace(), false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "namespace"), secretRef.GetNamespace(), msg))
 				}
-				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.Name, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "name"), secretRef.Name, msg))
+				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.GetName(), false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "name"), secretRef.GetName(), msg))
 				}
 			} else {
 				allErrs = append(
@@ -68,13 +68,13 @@ func validateClusterServiceBrokerSpec(spec *sc.ClusterServiceBrokerSpec, fldPath
 				)
 			}
 		} else if spec.AuthInfo.Bearer != nil {
-			secretRef := spec.AuthInfo.Bearer.SecretRef
+			secretRef := spec.AuthInfo.Bearer.SecretRef.(v1beta1.NamespacedResourceReference)
 			if secretRef != nil {
-				for _, msg := range apivalidation.ValidateNamespaceName(secretRef.Namespace, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "namespace"), secretRef.Namespace, msg))
+				for _, msg := range apivalidation.ValidateNamespaceName(secretRef.GetNamespace(), false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "namespace"), secretRef.GetNamespace(), msg))
 				}
-				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.Name, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "name"), secretRef.Name, msg))
+				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.GetName(), false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "name"), secretRef.GetName(), msg))
 				}
 			} else {
 				allErrs = append(
@@ -123,8 +123,8 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 		if spec.AuthInfo.Basic != nil {
 			secretRef := spec.AuthInfo.Basic.SecretRef
 			if secretRef != nil {
-				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.Name, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "name"), secretRef.Name, msg))
+				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.GetName(), false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "basic", "secretRef", "name"), secretRef.GetName(), msg))
 				}
 			} else {
 				allErrs = append(
@@ -135,8 +135,8 @@ func validateServiceBrokerSpec(spec *sc.ServiceBrokerSpec, fldPath *field.Path) 
 		} else if spec.AuthInfo.Bearer != nil {
 			secretRef := spec.AuthInfo.Bearer.SecretRef
 			if secretRef != nil {
-				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.Name, false /* prefix */) {
-					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "name"), secretRef.Name, msg))
+				for _, msg := range apivalidation.NameIsDNSSubdomain(secretRef.GetName(), false /* prefix */) {
+					allErrs = append(allErrs, field.Invalid(fldPath.Child("authInfo", "bearer", "secretRef", "name"), secretRef.GetName(), msg))
 				}
 			} else {
 				allErrs = append(
