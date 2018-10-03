@@ -56,9 +56,9 @@ type Class interface {
 	// GetSpec returns the spec.
 	GetSpec() v1beta1.CommonServiceClassSpec
 
-	// GetServiceBroker returns the name of the service
+	// GetServiceBrokerName returns the name of the service
 	// broker for the class.
-	GetServiceBroker() string
+	GetServiceBrokerName() string
 
 	// GetStatusText returns the status of the class.
 	GetStatusText() string

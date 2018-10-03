@@ -71,13 +71,13 @@ func (c *ClusterServiceClass) GetSpec() CommonServiceClassSpec {
 	return c.Spec.CommonServiceClassSpec
 }
 
-// GetServiceBroker returns the name of the service broker for the class.
-func (c *ServiceClass) GetServiceBroker() string {
+// GetServiceBrokerName returns the name of the service broker for the class.
+func (c *ServiceClass) GetServiceBrokerName() string {
 	return c.Spec.ServiceBrokerName
 }
 
-// GetServiceBroker returns the name of the service broker for the class.
-func (c *ClusterServiceClass) GetServiceBroker() string {
+// GetServiceBrokerName returns the name of the service broker for the class.
+func (c *ClusterServiceClass) GetServiceBrokerName() string {
 	return c.Spec.ClusterServiceBrokerName
 }
 

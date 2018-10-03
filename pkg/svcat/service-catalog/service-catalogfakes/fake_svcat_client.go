@@ -2368,26 +2368,6 @@ func (fake *FakeSvcatClient) TouchInstanceReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeSvcatClient) WaitForInstanceToNotExist(arg1 string, arg2 string, arg3 time.Duration, arg4 *time.Duration) (*apiv1beta1.ServiceInstance, error) {
-	fake.waitForInstanceToNotExistMutex.Lock()
-	ret, specificReturn := fake.waitForInstanceToNotExistReturnsOnCall[len(fake.waitForInstanceToNotExistArgsForCall)]
-	fake.waitForInstanceToNotExistArgsForCall = append(fake.waitForInstanceToNotExistArgsForCall, struct {
-		arg1 string
-		arg2 string
-		arg3 time.Duration
-		arg4 *time.Duration
-	}{arg1, arg2, arg3, arg4})
-	fake.recordInvocation("WaitForInstanceToNotExist", []interface{}{arg1, arg2, arg3, arg4})
-	fake.waitForInstanceToNotExistMutex.Unlock()
-	if fake.WaitForInstanceToNotExistStub != nil {
-		return fake.WaitForInstanceToNotExistStub(arg1, arg2, arg3, arg4)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.waitForInstanceToNotExistReturns.result1, fake.waitForInstanceToNotExistReturns.result2
-}
-
 func (fake *FakeSvcatClient) WaitForInstance(arg1 string, arg2 string, arg3 time.Duration, arg4 *time.Duration) (*apiv1beta1.ServiceInstance, error) {
 	fake.waitForInstanceMutex.Lock()
 	ret, specificReturn := fake.waitForInstanceReturnsOnCall[len(fake.waitForInstanceArgsForCall)]
@@ -2437,6 +2417,60 @@ func (fake *FakeSvcatClient) WaitForInstanceReturnsOnCall(i int, result1 *apiv1b
 		})
 	}
 	fake.waitForInstanceReturnsOnCall[i] = struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) WaitForInstanceToNotExist(arg1 string, arg2 string, arg3 time.Duration, arg4 *time.Duration) (*apiv1beta1.ServiceInstance, error) {
+	fake.waitForInstanceToNotExistMutex.Lock()
+	ret, specificReturn := fake.waitForInstanceToNotExistReturnsOnCall[len(fake.waitForInstanceToNotExistArgsForCall)]
+	fake.waitForInstanceToNotExistArgsForCall = append(fake.waitForInstanceToNotExistArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 time.Duration
+		arg4 *time.Duration
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("WaitForInstanceToNotExist", []interface{}{arg1, arg2, arg3, arg4})
+	fake.waitForInstanceToNotExistMutex.Unlock()
+	if fake.WaitForInstanceToNotExistStub != nil {
+		return fake.WaitForInstanceToNotExistStub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.waitForInstanceToNotExistReturns.result1, fake.waitForInstanceToNotExistReturns.result2
+}
+
+func (fake *FakeSvcatClient) WaitForInstanceToNotExistCallCount() int {
+	fake.waitForInstanceToNotExistMutex.RLock()
+	defer fake.waitForInstanceToNotExistMutex.RUnlock()
+	return len(fake.waitForInstanceToNotExistArgsForCall)
+}
+
+func (fake *FakeSvcatClient) WaitForInstanceToNotExistArgsForCall(i int) (string, string, time.Duration, *time.Duration) {
+	fake.waitForInstanceToNotExistMutex.RLock()
+	defer fake.waitForInstanceToNotExistMutex.RUnlock()
+	return fake.waitForInstanceToNotExistArgsForCall[i].arg1, fake.waitForInstanceToNotExistArgsForCall[i].arg2, fake.waitForInstanceToNotExistArgsForCall[i].arg3, fake.waitForInstanceToNotExistArgsForCall[i].arg4
+}
+
+func (fake *FakeSvcatClient) WaitForInstanceToNotExistReturns(result1 *apiv1beta1.ServiceInstance, result2 error) {
+	fake.WaitForInstanceToNotExistStub = nil
+	fake.waitForInstanceToNotExistReturns = struct {
+		result1 *apiv1beta1.ServiceInstance
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) WaitForInstanceToNotExistReturnsOnCall(i int, result1 *apiv1beta1.ServiceInstance, result2 error) {
+	fake.WaitForInstanceToNotExistStub = nil
+	if fake.waitForInstanceToNotExistReturnsOnCall == nil {
+		fake.waitForInstanceToNotExistReturnsOnCall = make(map[int]struct {
+			result1 *apiv1beta1.ServiceInstance
+			result2 error
+		})
+	}
+	fake.waitForInstanceToNotExistReturnsOnCall[i] = struct {
 		result1 *apiv1beta1.ServiceInstance
 		result2 error
 	}{result1, result2}
@@ -2812,10 +2846,10 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.retrieveInstancesByPlanMutex.RUnlock()
 	fake.touchInstanceMutex.RLock()
 	defer fake.touchInstanceMutex.RUnlock()
-	fake.waitForInstanceToNotExistMutex.RLock()
-	defer fake.waitForInstanceToNotExistMutex.RUnlock()
 	fake.waitForInstanceMutex.RLock()
 	defer fake.waitForInstanceMutex.RUnlock()
+	fake.waitForInstanceToNotExistMutex.RLock()
+	defer fake.waitForInstanceToNotExistMutex.RUnlock()
 	fake.retrievePlansMutex.RLock()
 	defer fake.retrievePlansMutex.RUnlock()
 	fake.retrievePlanByNameMutex.RLock()

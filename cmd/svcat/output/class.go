@@ -80,17 +80,17 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 	scope := getScope(class)
 	spec := class.GetSpec()
 	t := NewDetailsTable(w)
+	t.Append([]string{"Name:", spec.ExternalName})
+	if class.GetNamespace() != "" {
+		t.Append([]string{"Namespace:", string(class.GetNamespace())})
+	}
 	t.AppendBulk([][]string{
-		{"Name:", spec.ExternalName},
+		{"Scope:", scope},
 		{"Description:", spec.Description},
 		{"UUID:", string(class.GetName())},
 		{"Status:", class.GetStatusText()},
 		{"Tags:", strings.Join(spec.Tags, ", ")},
-		{"Broker:", class.GetServiceBroker()},
-		{"Scope:", scope},
+		{"Broker:", class.GetServiceBrokerName()},
 	})
-	if class.GetNamespace() != "" {
-		t.Append([]string{"Namespace:", string(class.GetNamespace())})
-	}
 	t.Render()
 }
