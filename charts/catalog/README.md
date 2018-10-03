@@ -42,7 +42,7 @@ chart and their default values.
 |-----------|-------------|---------|
 | `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.33` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
-| `apiserver.replicas` | `replicas` for the service catalog apiserver pod count | `2` |
+| `apiserver.replicas` | `replicas` for the service catalog apiserver pod count | `1` |
 | `apiserver.updateStrategy` | `updateStrategy` for the service catalog apiserver deployments | `RollingUpdate` |
 | `apiserver.minReadySeconds` | how many seconds an apiServer pod needs to be ready before killing the next, during update | `1` |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
@@ -72,7 +72,7 @@ chart and their default values.
 | `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
 | `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
 | `apiserver.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
-| `controllerManager.replicas` | `replicas` for the service catalog controllerManager pod count | `3` |
+| `controllerManager.replicas` | `replicas` for the service catalog controllerManager pod count | `1` |
 | `controllerManager.updateStrategy` | `updateStrategy` for the service catalog controllerManager deployments | `RollingUpdate` |
 | `controllerManager.minReadySeconds` | how many seconds a controllerManager pod needs to be ready before killing the next, during update | `1` |
 | `controllerManager.annotations` | Annotations for controllerManager pods | `{}` |

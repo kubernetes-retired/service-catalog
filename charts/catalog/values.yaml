@@ -10,7 +10,7 @@ useAggregator: true
 ##
 rbacEnable: true
 apiserver:
-  replicas: 2
+  replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
   updateStrategy: RollingUpdate
   minReadySeconds: 1
@@ -126,7 +126,7 @@ apiserver:
       cpu: 100m
       memory: 30Mi
 controllerManager:
-  replicas: 3
+  replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
   updateStrategy: RollingUpdate
   minReadySeconds: 1
