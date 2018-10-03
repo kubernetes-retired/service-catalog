@@ -156,7 +156,7 @@ tree:
   tree:
   - name: bindings
     use: bindings [NAME]
-    shortDesc: List bindings, optionally filtered by name
+    shortDesc: List bindings, optionally filtered by name or namespace
     example: |2-
         svcat get bindings
         svcat get bindings --all-namespaces
