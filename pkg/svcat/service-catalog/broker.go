@@ -41,18 +41,29 @@ type Broker interface {
 	// GetURL returns the broker's URL.
 	GetURL() string
 
+	// GetSpec returns the broker's spec.
+	GetSpec() v1beta1.CommonServiceBrokerSpec
+
 	// GetStatus returns the broker's status.
 	GetStatus() v1beta1.CommonServiceBrokerStatus
 }
 
 // Deregister deletes a broker
-func (sdk *SDK) Deregister(brokerName string) error {
-	err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(brokerName, &v1.DeleteOptions{})
-	if err != nil {
-		return fmt.Errorf("deregister request failed (%s)", err)
+func (sdk *SDK) Deregister(brokerName string, scopeOpts *ScopeOptions) error {
+	if scopeOpts.Scope.Matches(NamespaceScope) {
+		err := sdk.ServiceCatalog().ServiceBrokers(scopeOpts.Namespace).Delete(brokerName, &v1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("deregister request failed (%s)", err)
+		}
+		return nil
+	} else if scopeOpts.Scope.Matches(ClusterScope) {
+		err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(brokerName, &v1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("deregister request failed (%s)", err)
+		}
+		return nil
 	}
-
-	return nil
+	return fmt.Errorf("cannot deregister broker, unrecognized scope provided (%s)", scopeOpts.Scope)
 }
 
 // RetrieveBrokers lists all brokers defined in the cluster.
@@ -120,7 +131,7 @@ func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 }
 
 //Register creates a broker
-func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions) (*v1beta1.ClusterServiceBroker, error) {
+func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions, scopeOpts *ScopeOptions) (Broker, error) {
 	var err error
 	var caBytes []byte
 	if opts.CAFile != "" {
@@ -130,49 +141,77 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions) (
 		}
 
 	}
-	request := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: v1.ObjectMeta{
-			Name: brokerName,
-		},
-		Spec: v1beta1.ClusterServiceBrokerSpec{
-			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
-				CABundle:              caBytes,
-				InsecureSkipTLSVerify: opts.SkipTLS,
-				RelistBehavior:        opts.RelistBehavior,
-				RelistDuration:        opts.RelistDuration,
-				URL:                   url,
-				CatalogRestrictions: &v1beta1.CatalogRestrictions{
-					ServiceClass: opts.ClassRestrictions,
-					ServicePlan:  opts.PlanRestrictions,
-				},
-			},
+	objectMeta := v1.ObjectMeta{Name: brokerName}
+	commonServiceBrokerSpec := v1beta1.CommonServiceBrokerSpec{
+		CABundle:              caBytes,
+		InsecureSkipTLSVerify: opts.SkipTLS,
+		RelistBehavior:        opts.RelistBehavior,
+		RelistDuration:        opts.RelistDuration,
+		URL:                   url,
+		CatalogRestrictions: &v1beta1.CatalogRestrictions{
+			ServiceClass: opts.ClassRestrictions,
+			ServicePlan:  opts.PlanRestrictions,
 		},
 	}
-	if opts.BasicSecret != "" {
-		request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
-			Basic: &v1beta1.ClusterBasicAuthConfig{
+	if scopeOpts.Scope.Matches(ClusterScope) {
+		request := &v1beta1.ClusterServiceBroker{
+			ObjectMeta: objectMeta,
+			Spec: v1beta1.ClusterServiceBrokerSpec{
+				CommonServiceBrokerSpec: commonServiceBrokerSpec,
+			},
+		}
+		request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{}
+		if opts.BasicSecret != "" {
+			request.Spec.AuthInfo.Basic = &v1beta1.ClusterBasicAuthConfig{
 				SecretRef: &v1beta1.ObjectReference{
 					Name:      opts.BasicSecret,
 					Namespace: opts.Namespace,
 				},
-			},
-		}
-	} else if opts.BearerSecret != "" {
-		request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{
-			Bearer: &v1beta1.ClusterBearerTokenAuthConfig{
+			}
+		} else if opts.BearerSecret != "" {
+			request.Spec.AuthInfo.Bearer = &v1beta1.ClusterBearerTokenAuthConfig{
 				SecretRef: &v1beta1.ObjectReference{
 					Name:      opts.BearerSecret,
 					Namespace: opts.Namespace,
+				},
+			}
+		}
+
+		result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(request)
+		if err != nil {
+			return nil, fmt.Errorf("register request failed (%s)", err)
+		}
+
+		return result, nil
+	} //else matches NamespaceScope
+	request := &v1beta1.ServiceBroker{
+		ObjectMeta: objectMeta,
+		Spec: v1beta1.ServiceBrokerSpec{
+			CommonServiceBrokerSpec: commonServiceBrokerSpec,
+		},
+	}
+	if opts.BasicSecret != "" {
+		request.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
+			Basic: &v1beta1.BasicAuthConfig{
+				SecretRef: &v1beta1.LocalObjectReference{
+					Name: opts.BasicSecret,
+				},
+			},
+		}
+	} else if opts.BearerSecret != "" {
+		request.Spec.AuthInfo = &v1beta1.ServiceBrokerAuthInfo{
+			Bearer: &v1beta1.BearerTokenAuthConfig{
+				SecretRef: &v1beta1.LocalObjectReference{
+					Name: opts.BearerSecret,
 				},
 			},
 		}
 	}
 
-	result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(request)
+	result, err := sdk.ServiceCatalog().ServiceBrokers(scopeOpts.Namespace).Create(request)
 	if err != nil {
 		return nil, fmt.Errorf("register request failed (%s)", err)
 	}
-
 	return result, nil
 }
 

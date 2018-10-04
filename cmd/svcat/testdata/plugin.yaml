@@ -99,8 +99,22 @@ tree:
 - name: deregister
   use: deregister NAME
   shortDesc: Deregisters an existing broker with service catalog
-  example: '  svcat deregister mysqlbroker'
+  example: |2-
+      svcat deregister mysqlbroker
+      svcat deregister mysqlbroker --namespace=mysqlnamespace
+      svcat deregister mysqlclusterbroker --cluster
   command: ./svcat deregister
+  flags:
+  - name: interval
+    desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
+      1h'
+  - name: scope
+    desc: 'Limit the results to a particular scope: cluster, namespace'
+  - name: timeout
+    desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
+      -1 to wait indefinitely.'
+  - name: wait
+    desc: Wait until the operation completes.
 - name: describe
   use: describe
   shortDesc: Show details of a specific resource
@@ -340,6 +354,8 @@ tree:
   - name: relist-duration
     desc: 'Interval to refetch broker catalog when relist-behavior is set to duration,
       specified in human readable format: 30s, 1m, 1h'
+  - name: scope
+    desc: 'Limit the results to a particular scope: cluster, namespace'
   - name: skip-tls
     desc: Disables TLS certificate verification when communicating with this broker.
       This is strongly discouraged. You should use --ca instead.

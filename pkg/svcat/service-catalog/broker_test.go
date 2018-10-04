@@ -75,10 +75,13 @@ var _ = Describe("Broker", func() {
 		})
 	})
 	Describe("Deregister", func() {
-		It("deletes a broker by calling the v1beta1 Delete method with the passed in arguement", func() {
+		It("deletes a ClusterServiceBroker by calling the v1beta1 Delete method with the passed in arguement", func() {
 			brokerName := "foobar"
-
-			err := sdk.Deregister(brokerName)
+			scopeOptions := ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
+			err := sdk.Deregister(brokerName, &scopeOptions)
 
 			Expect(err).NotTo(HaveOccurred())
 
@@ -86,16 +89,51 @@ var _ = Describe("Broker", func() {
 			Expect(actions[0].Matches("delete", "clusterservicebrokers")).To(BeTrue())
 			Expect(actions[0].(testing.DeleteActionImpl).Name).To(Equal(brokerName))
 		})
+		It("deletes a namespaced ServiceBroker by calling the v1beta1 Delete method with the passed in arguement", func() {
+			scopeOptions := ScopeOptions{
+				Namespace: sb.Namespace,
+				Scope:     NamespaceScope,
+			}
+			err := sdk.Deregister(sb.Name, &scopeOptions)
+
+			Expect(err).NotTo(HaveOccurred())
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("delete", "servicebrokers")).To(BeTrue())
+			Expect(actions[0].(testing.DeleteActionImpl).Name).To(Equal(sb.Name))
+		})
 		It("Bubbles up errors", func() {
 			errorMessage := "error deregistering broker"
 			brokerName := "potato_broker"
+			scopeOptions := ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
 			badClient := &fake.Clientset{}
 			badClient.AddReactor("delete", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			err := sdk.Deregister(brokerName)
+			err := sdk.Deregister(brokerName, &scopeOptions)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+		})
+		It("Bubbles up namespaced broker errors", func() {
+			errorMessage := "error deregistering broker"
+			brokerName := "potato_broker"
+			scopeOptions := ScopeOptions{
+				Namespace: sb.Namespace,
+				Scope:     NamespaceScope,
+			}
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("delete", "servicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			err := sdk.Deregister(brokerName, &scopeOptions)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
@@ -231,7 +269,7 @@ var _ = Describe("Broker", func() {
 		})
 	})
 	Describe("Register", func() {
-		It("creates a broker by calling the v1beta1 Create method with the passed in arguements", func() {
+		It("creates a namespaced broker by calling the v1beta1 Create method with the passed in arguments", func() {
 			brokerName := "potato_broker"
 			url := "http://potato.com"
 			basicSecret := "potatobasicsecret"
@@ -251,17 +289,117 @@ var _ = Describe("Broker", func() {
 				RelistDuration:   relistDuration,
 				SkipTLS:          skipTLS,
 			}
-			broker, err := sdk.Register(brokerName, url, opts)
+			scopeOpts := &ScopeOptions{
+				Namespace: namespace,
+				Scope:     NamespaceScope,
+			}
+			broker, err := sdk.Register(brokerName, url, opts, scopeOpts)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(broker).NotTo(BeNil())
-			Expect(broker.Name).To(Equal(brokerName))
-			Expect(broker.Spec.URL).To(Equal(url))
-			Expect(broker.Spec.CABundle).To(Equal([]byte("foo\n")))
-			Expect(broker.Spec.InsecureSkipTLSVerify).To(BeTrue())
-			Expect(broker.Spec.RelistBehavior).To(Equal(relistBehavior))
-			Expect(broker.Spec.RelistDuration).To(Equal(relistDuration))
-			Expect(broker.Spec.CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
+			Expect(broker.GetName()).To(Equal(brokerName))
+			Expect(broker.GetURL()).To(Equal(url))
+			Expect(broker.GetSpec().CABundle).To(Equal([]byte("foo\n")))
+			Expect(broker.GetSpec().InsecureSkipTLSVerify).To(BeTrue())
+			Expect(broker.GetSpec().RelistBehavior).To(Equal(relistBehavior))
+			Expect(broker.GetSpec().RelistDuration).To(Equal(relistDuration))
+			Expect(broker.GetSpec().CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("create", "servicebrokers")).To(BeTrue())
+			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ServiceBroker)
+			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(brokerName))
+			Expect(objectFromRequest.Spec.URL).To(Equal(url))
+			Expect(objectFromRequest.Spec.AuthInfo.Basic.SecretRef.Name).To(Equal(basicSecret))
+			Expect(objectFromRequest.Spec.CABundle).To(Equal([]byte("foo\n")))
+			Expect(objectFromRequest.Spec.InsecureSkipTLSVerify).To(BeTrue())
+			Expect(objectFromRequest.Spec.RelistBehavior).To(Equal(relistBehavior))
+			Expect(objectFromRequest.Spec.RelistDuration).To(Equal(relistDuration))
+			Expect(objectFromRequest.Spec.CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
+		})
+		It("creates a namespace service broker with a bearer secret", func() {
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+			namespace := "potatonamespace"
+			bearerSecret := "potatobearersecret"
+			opts := &RegisterOptions{
+				Namespace:    namespace,
+				BearerSecret: bearerSecret,
+			}
+			scopeOpts := &ScopeOptions{
+				Namespace: namespace,
+				Scope:     NamespaceScope,
+			}
+
+			broker, err := sdk.Register(brokerName, url, opts, scopeOpts)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).NotTo(BeNil())
+			Expect(broker.GetName()).To(Equal(brokerName))
+			Expect(broker.GetURL()).To(Equal(url))
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("create", "servicebrokers")).To(BeTrue())
+			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ServiceBroker)
+			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(brokerName))
+			Expect(objectFromRequest.Spec.URL).To(Equal(url))
+			Expect(objectFromRequest.Spec.AuthInfo.Bearer.SecretRef.Name).To(Equal(bearerSecret))
+		})
+		It("Bubbles up namespace service broker errors", func() {
+			errorMessage := "error provisioning broker"
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("create", "servicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+			scopeOpts := &ScopeOptions{
+				Namespace: "default",
+				Scope:     NamespaceScope,
+			}
+
+			broker, err := sdk.Register(brokerName, url, &RegisterOptions{}, scopeOpts)
+
+			Expect(broker).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+		})
+		It("creates a cluster service broker by calling the v1beta1 Create method with the passed in arguments", func() {
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+			basicSecret := "potatobasicsecret"
+			caFile := "assets/ca"
+			namespace := "potatonamespace"
+			planRestrictions := []string{"potatoplana", "potatoplanb"}
+			relistBehavior := v1beta1.ServiceBrokerRelistBehaviorDuration
+			relistDuration := &metav1.Duration{Duration: 10 * time.Minute}
+			skipTLS := true
+
+			opts := &RegisterOptions{
+				BasicSecret:      basicSecret,
+				CAFile:           caFile,
+				Namespace:        namespace,
+				PlanRestrictions: planRestrictions,
+				RelistBehavior:   relistBehavior,
+				RelistDuration:   relistDuration,
+				SkipTLS:          skipTLS,
+			}
+			scopeOpts := &ScopeOptions{
+				Namespace: namespace,
+				Scope:     ClusterScope,
+			}
+			broker, err := sdk.Register(brokerName, url, opts, scopeOpts)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).NotTo(BeNil())
+			Expect(broker.GetName()).To(Equal(brokerName))
+			Expect(broker.GetURL()).To(Equal(url))
+			Expect(broker.GetSpec().CABundle).To(Equal([]byte("foo\n")))
+			Expect(broker.GetSpec().InsecureSkipTLSVerify).To(BeTrue())
+			Expect(broker.GetSpec().RelistBehavior).To(Equal(relistBehavior))
+			Expect(broker.GetSpec().RelistDuration).To(Equal(relistDuration))
+			Expect(broker.GetSpec().CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
 
 			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("create", "clusterservicebrokers")).To(BeTrue())
@@ -275,7 +413,7 @@ var _ = Describe("Broker", func() {
 			Expect(objectFromRequest.Spec.RelistDuration).To(Equal(relistDuration))
 			Expect(objectFromRequest.Spec.CatalogRestrictions.ServicePlan).To(Equal(planRestrictions))
 		})
-		It("creates a broker with a bearer secret", func() {
+		It("creates a cluster service broker with a bearer secret", func() {
 			brokerName := "potato_broker"
 			url := "http://potato.com"
 			namespace := "potatonamespace"
@@ -284,13 +422,17 @@ var _ = Describe("Broker", func() {
 				Namespace:    namespace,
 				BearerSecret: bearerSecret,
 			}
+			scopeOpts := &ScopeOptions{
+				Namespace: namespace,
+				Scope:     ClusterScope,
+			}
 
-			broker, err := sdk.Register(brokerName, url, opts)
+			broker, err := sdk.Register(brokerName, url, opts, scopeOpts)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(broker).NotTo(BeNil())
-			Expect(broker.Name).To(Equal(brokerName))
-			Expect(broker.Spec.URL).To(Equal(url))
+			Expect(broker.GetName()).To(Equal(brokerName))
+			Expect(broker.GetURL()).To(Equal(url))
 
 			actions := svcCatClient.Actions()
 			Expect(actions[0].Matches("create", "clusterservicebrokers")).To(BeTrue())
@@ -299,7 +441,7 @@ var _ = Describe("Broker", func() {
 			Expect(objectFromRequest.Spec.URL).To(Equal(url))
 			Expect(objectFromRequest.Spec.AuthInfo.Bearer.SecretRef.Name).To(Equal(bearerSecret))
 		})
-		It("Bubbles up errors", func() {
+		It("Bubbles up cluster service broker errors", func() {
 			errorMessage := "error provisioning broker"
 			brokerName := "potato_broker"
 			url := "http://potato.com"
@@ -308,8 +450,12 @@ var _ = Describe("Broker", func() {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
+			scopeOpts := &ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
 
-			broker, err := sdk.Register(brokerName, url, &RegisterOptions{})
+			broker, err := sdk.Register(brokerName, url, &RegisterOptions{}, scopeOpts)
 
 			Expect(broker).To(BeNil())
 			Expect(err).To(HaveOccurred())

@@ -44,11 +44,11 @@ type SvcatClient interface {
 	Unbind(string, string) ([]types.NamespacedName, error)
 	WaitForBinding(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceBinding, error)
 
-	Deregister(string) error
+	Deregister(string, *ScopeOptions) error
 	RetrieveBrokers(opts ScopeOptions) ([]Broker, error)
 	RetrieveBroker(string) (*apiv1beta1.ClusterServiceBroker, error)
 	RetrieveBrokerByClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
-	Register(string, string, *RegisterOptions) (*apiv1beta1.ClusterServiceBroker, error)
+	Register(string, string, *RegisterOptions, *ScopeOptions) (Broker, error)
 	Sync(string, ScopeOptions, int) error
 	WaitForBroker(string, time.Duration, *time.Duration) (Broker, error)
 
