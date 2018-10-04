@@ -35,6 +35,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	k8stesting "k8s.io/client-go/testing"
+
+	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 )
 
 func TestListPlans(t *testing.T) {
@@ -207,96 +209,153 @@ var _ = Describe("Get Plans Command", func() {
 	})
 	Describe("Run", func() {
 		It("Calls the pkg/svcat libs RetrievePlans with namespace scope and current namespace", func() {
+			planName := "myplan"
+			planNamespace := "default"
+
+			planToReturn := &v1beta1.ServicePlan{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: planNamespace,
+				},
+				Spec: v1beta1.ServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planName,
+					},
+				},
+			}
+
 			outputBuffer := &bytes.Buffer{}
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.RetrievePlansReturns(
-				[]servicecatalog.Plan{&v1beta1.ServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "myplan", Namespace: "default"}}},
-				nil)
+			fakeSDK.RetrievePlansReturns([]servicecatalog.Plan{planToReturn}, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := getCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
+				Formatted:  command.NewFormatted(),
 			}
-			cmd.Namespace = "default"
 			cmd.Scope = servicecatalog.NamespaceScope
-
+			cmd.Namespace = planNamespace
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
-			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
-				Namespace: "default",
+			Expect(scopeArg).To(Equal(servicecatalog.RetrievePlanOptions{
+				ClassID:   "",
+				Namespace: planNamespace,
 				Scope:     servicecatalog.NamespaceScope,
 			}))
 
 			output := outputBuffer.String()
-			Expect(output).To(ContainSubstring("myplan"))
+			Expect(output).To(ContainSubstring(planName))
 		})
 		It("Calls the pkg/svcat libs RetrievePlans with namespace scope and all namespaces", func() {
+			planOneName := "myplan"
+			planOneNamespace := "default"
+
+			planTwoName := "anotherplan"
+			planTwoNamespace := "test-ns"
+
+			planOneToReturn := &v1beta1.ServicePlan{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: planOneNamespace,
+				},
+				Spec: v1beta1.ServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planOneName,
+					},
+				},
+			}
+
+			planTwoToReturn := &v1beta1.ServicePlan{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: planTwoNamespace,
+				},
+				Spec: v1beta1.ServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planTwoName,
+					},
+				},
+			}
+
 			outputBuffer := &bytes.Buffer{}
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.RetrievePlansReturns(
-				[]servicecatalog.Plan{
-					&v1beta1.ServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "myplan", Namespace: "default"}},
-					&v1beta1.ServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "anotherplan", Namespace: "test-ns"}},
-				},
-				nil)
+			fakeSDK.RetrievePlansReturns([]servicecatalog.Plan{planOneToReturn, planTwoToReturn}, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := getCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
+				Formatted:  command.NewFormatted(),
 			}
-			cmd.Namespace = ""
 			cmd.Scope = servicecatalog.NamespaceScope
-
+			cmd.Namespace = ""
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
-			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
-				Namespace: "",
+			Expect(scopeArg).To(Equal(servicecatalog.RetrievePlanOptions{
+				ClassID:   "",
 				Scope:     servicecatalog.NamespaceScope,
+				Namespace: "",
 			}))
 
 			output := outputBuffer.String()
-			Expect(output).To(ContainSubstring("myplan"))
-			Expect(output).To(ContainSubstring("anotherplan"))
+			Expect(output).To(ContainSubstring(planOneName))
+			Expect(output).To(ContainSubstring(planTwoName))
 		})
 		It("Calls the pkg/svcat libs RetrievePlans with all scope and current namespaces", func() {
+			planOneName := "myplan"
+
+			planTwoName := "anotherplan"
+			planTwoNamespace := "default"
+
+			planOneToReturn := &v1beta1.ClusterServicePlan{
+				Spec: v1beta1.ClusterServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planOneName,
+					},
+				},
+			}
+
+			planTwoToReturn := &v1beta1.ServicePlan{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: planTwoNamespace,
+				},
+				Spec: v1beta1.ServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planTwoName,
+					},
+				},
+			}
+
 			outputBuffer := &bytes.Buffer{}
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.RetrievePlansReturns(
-				[]servicecatalog.Plan{
-					&v1beta1.ClusterServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "myplan"}},
-					&v1beta1.ServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "anotherplan", Namespace: "default"}},
-				},
-				nil)
+			fakeSDK.RetrievePlansReturns([]servicecatalog.Plan{planOneToReturn, planTwoToReturn}, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := getCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
+				Formatted:  command.NewFormatted(),
 			}
-			cmd.Namespace = "default"
 			cmd.Scope = servicecatalog.AllScope
-
+			cmd.Namespace = planTwoNamespace
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
-			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
-				Namespace: "default",
+			Expect(scopeArg).To(Equal(servicecatalog.RetrievePlanOptions{
+				ClassID:   "",
+				Namespace: planTwoNamespace,
 				Scope:     servicecatalog.AllScope,
 			}))
 
 			output := outputBuffer.String()
-			Expect(output).To(ContainSubstring("myplan"))
-			Expect(output).To(ContainSubstring("anotherplan"))
+			Expect(output).To(ContainSubstring(planOneName))
+			Expect(output).To(ContainSubstring(planTwoName))
 		})
 	})
 })

@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package server
+package plan_test
 
 import (
-	"github.com/golang/glog"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"testing"
+
+	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 )
 
-// Run runs the specified APIServer.  This should never exit.
-func Run(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error {
-	storageType, err := opts.StorageType()
-	if err != nil {
-		glog.Fatalf("invalid storage type '%s' (%s)", storageType, err)
-		return err
-	}
-
-	return RunServer(opts, stopCh)
+func TestPlan(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Plan Suite")
 }

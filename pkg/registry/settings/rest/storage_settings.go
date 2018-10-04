@@ -36,7 +36,6 @@ import (
 // the servicecatalog API group. It implements (./pkg/apiserver).RESTStorageProvider
 type StorageProvider struct {
 	DefaultNamespace string
-	StorageType      server.StorageType
 	RESTClient       restclient.Interface
 }
 
@@ -82,7 +81,6 @@ func (p StorageProvider) v1alpha1Storage(
 			GetAttrsFunc:  podpreset.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		p.StorageType,
 	)
 
 	version := settingsapiv1alpha1.SchemeGroupVersion

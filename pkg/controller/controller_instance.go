@@ -964,21 +964,27 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			return c.finishPollingServiceInstance(instance)
 		}
 
-		// We got some kind of error and should continue polling.
-		//
-		// The instance's Ready condition should already be False, so
-		// we just need to record an event.
 		reason := errorPollingLastOperationReason
 		message := fmt.Sprintf("Error polling last operation: %v", err)
 		glog.V(4).Info(pcb.Message(message))
-		c.recorder.Event(instance, corev1.EventTypeWarning, reason, message)
+		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
 
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
-			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
 			return c.processServiceInstancePollingFailureRetryTimeout(instance, readyCond)
 		}
 
-		return c.continuePollingServiceInstance(instance)
+		if httpErr, ok := osb.IsHTTPError(err); ok {
+			if isRetriableHTTPStatus(httpErr.StatusCode) {
+				return c.processServiceInstancePollingTemporaryFailure(instance, readyCond)
+			}
+			// A failure with a given HTTP response code is treated as a terminal
+			// failure.
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, message)
+			return c.processServiceInstancePollingTerminalFailure(instance, readyCond, failedCond)
+		}
+
+		// Unknown error: update status and continue polling
+		return c.processServiceInstancePollingTemporaryFailure(instance, readyCond)
 	}
 
 	description := "(no description provided)"
@@ -1071,9 +1077,11 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 		return c.finishPollingServiceInstance(instance)
 	default:
-		glog.Warning(pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State))
+		message := pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State)
+		glog.Warning(message)
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
-			return c.processServiceInstancePollingFailureRetryTimeout(instance, nil)
+			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorPollingLastOperationReason, message)
+			return c.processServiceInstancePollingFailureRetryTimeout(instance, readyCond)
 		}
 
 		err := fmt.Errorf(`Got invalid state in LastOperationResponse: %q`, response.State)
@@ -1103,12 +1111,17 @@ func isServiceInstanceProcessedAlready(instance *v1beta1.ServiceInstance) bool {
 // processServiceInstancePollingFailureRetryTimeout marks the instance as having
 // failed polling due to its reconciliation retry duration expiring
 func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
+	msg := "Stopping reconciliation retries because too much time has elapsed"
+	failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
+	return c.processServiceInstancePollingTerminalFailure(instance, readyCond, failedCond)
+}
+
+// processServiceInstancePollingTerminalFailure marks the instance as having
+// failed polling due to terminal error
+func (c *controller) processServiceInstancePollingTerminalFailure(instance *v1beta1.ServiceInstance, readyCond, failedCond *v1beta1.ServiceInstanceCondition) error {
 	mitigatingOrphan := instance.Status.OrphanMitigationInProgress
 	provisioning := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationProvision && !mitigatingOrphan
 	deleting := instance.Status.CurrentOperation == v1beta1.ServiceInstanceOperationDeprovision || mitigatingOrphan
-
-	msg := "Stopping reconciliation retries because too much time has elapsed"
-	failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
 
 	var err error
 	switch {
@@ -1119,14 +1132,32 @@ func (c *controller) processServiceInstancePollingFailureRetryTimeout(instance *
 		c.finishPollingServiceInstance(instance)
 		return c.processTerminalProvisionFailure(instance, readyCond, failedCond, true)
 	default:
-		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorReconciliationRetryTimeoutReason, msg)
+		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, failedCond.Reason, failedCond.Message)
 		err = c.processTerminalUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 	}
 	if err != nil {
+		c.recorder.Event(instance, corev1.EventTypeWarning, failedCond.Reason, failedCond.Message)
 		return c.handleServiceInstancePollingError(instance, err)
 	}
 
 	return c.finishPollingServiceInstance(instance)
+}
+
+// processServiceInstancePollingTerminalFailure marks the instance as having
+// failed polling with a temporary error
+func (c *controller) processServiceInstancePollingTemporaryFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
+	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
+	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, readyCond.Status, readyCond.Reason, readyCond.Message)
+
+	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+		return c.handleServiceInstancePollingError(instance, err)
+	}
+
+	// The instance will be requeued in any case, since we updated the status
+	// a few lines above.
+	// But we still need to return a non-nil error for retriable errors and
+	// orphan mitigation to avoid resetting the rate limiter.
+	return fmt.Errorf(readyCond.Message)
 }
 
 // resolveReferences checks to see if (Cluster)ServiceClassRef and/or (Cluster)ServicePlanRef are

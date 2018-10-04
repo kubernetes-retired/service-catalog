@@ -45,7 +45,6 @@ import (
 // the servicecatalog API group. It implements (./pkg/apiserver).RESTStorageProvider
 type StorageProvider struct {
 	DefaultNamespace string
-	StorageType      server.StorageType
 	RESTClient       restclient.Interface
 }
 
@@ -88,7 +87,6 @@ func (p StorageProvider) v1beta1Storage(
 			GetAttrsFunc:  clusterservicebroker.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		p.StorageType,
 	)
 
 	clusterServiceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceclasses"))
@@ -105,7 +103,6 @@ func (p StorageProvider) v1beta1Storage(
 			GetAttrsFunc:  clusterserviceclass.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		p.StorageType,
 	)
 
 	clusterServicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
@@ -122,7 +119,6 @@ func (p StorageProvider) v1beta1Storage(
 			GetAttrsFunc:  clusterserviceplan.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		p.StorageType,
 	)
 
 	instanceClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceinstances"))
@@ -139,7 +135,6 @@ func (p StorageProvider) v1beta1Storage(
 			GetAttrsFunc:  instance.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		p.StorageType,
 	)
 
 	bindingClassRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebindings"))
@@ -156,7 +151,6 @@ func (p StorageProvider) v1beta1Storage(
 			GetAttrsFunc:  binding.GetAttrs,
 			Trigger:       storage.NoTriggerPublisher,
 		},
-		p.StorageType,
 	)
 
 	clusterServiceBrokerStorage, clusterServiceBrokerStatusStorage := clusterservicebroker.NewStorage(*clusterServiceBrokerOpts)
@@ -198,7 +192,6 @@ func (p StorageProvider) v1beta1Storage(
 				GetAttrsFunc:  serviceclass.GetAttrs,
 				Trigger:       storage.NoTriggerPublisher,
 			},
-			p.StorageType,
 		)
 
 		serviceBrokerRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("servicebrokers"))
@@ -216,7 +209,6 @@ func (p StorageProvider) v1beta1Storage(
 				GetAttrsFunc:  servicebroker.GetAttrs,
 				Trigger:       storage.NoTriggerPublisher,
 			},
-			p.StorageType,
 		)
 
 		servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
@@ -234,7 +226,6 @@ func (p StorageProvider) v1beta1Storage(
 				GetAttrsFunc:  serviceplan.GetAttrs,
 				Trigger:       storage.NoTriggerPublisher,
 			},
-			p.StorageType,
 		)
 
 		serviceClassStorage, serviceClassStatusStorage := serviceclass.NewStorage(*serviceClassOpts)

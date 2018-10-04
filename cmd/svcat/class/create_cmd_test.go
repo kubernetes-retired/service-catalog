@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package class_test
+package class
 
 import (
 	"bytes"
 
-	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,39 +39,43 @@ var _ = Describe("Create Command", func() {
 			Expect(cmd.Use).To(Equal("class [NAME] --from [EXISTING_NAME]"))
 			Expect(cmd.Short).To(ContainSubstring("Copies an existing class into a new user-defined cluster-scoped class"))
 			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb"))
+			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --scope cluster"))
+			Expect(cmd.Example).To(ContainSubstring("svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace"))
 			Expect(len(cmd.Aliases)).To(Equal(0))
+
+			fromFlag := cmd.Flags().Lookup("from")
+			Expect(fromFlag).NotTo(BeNil())
+			Expect(fromFlag.Usage).To(ContainSubstring("Name from an existing class that will be copied (Required)"))
+
+			scopeFlag := cmd.Flags().Lookup("scope")
+			Expect(scopeFlag).NotTo(BeNil())
+			Expect(scopeFlag.Usage).To(ContainSubstring("Limit the results to a particular scope"))
+
+			namespaceFlag := cmd.Flags().Lookup("namespace")
+			Expect(namespaceFlag).NotTo(BeNil())
+			Expect(namespaceFlag.Usage).To(ContainSubstring("If present, the namespace scope for this request"))
 		})
 	})
-	Describe("Validate name is provided", func() {
-		It("errors if a new class name is not provided", func() {
+	Describe("Validate", func() {
+		It("errors if no argument is provided", func() {
 			cmd := CreateCmd{
-				Context: nil,
-				Name:    "",
-				From:    "existingclass",
+				Name: "",
+				From: "class",
 			}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("Validate from is provided", func() {
-		It("errors if a existing class name is not provided using from", func() {
-			cmd := CreateCmd{
-				Context: nil,
-				Name:    "newclass",
-				From:    "",
-			}
-			err := cmd.Validate([]string{})
-			Expect(err).To(HaveOccurred())
-		})
-	})
-	Describe("Create", func() {
-		It("Calls the pkg/svcat libs Create method with the passed in variables and prints output to the user", func() {
+	Describe("Run", func() {
+		It("Calls the pkg/svcat libs CreateClassFrom method with the passed in variables for a cluster class and prints output to the user", func() {
 			className := "newclass"
 			existingClassName := "existingclass"
 
 			classToReturn := &v1beta1.ClusterServiceClass{
-				ObjectMeta: v1.ObjectMeta{
-					Name: className,
+				Spec: v1beta1.ClusterServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalName: className,
+					},
 				},
 			}
 
@@ -79,21 +83,65 @@ var _ = Describe("Create Command", func() {
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.CreateClassReturns(classToReturn, nil)
+			fakeSDK.CreateClassFromReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
-				Context: svcattest.NewContext(outputBuffer, fakeApp),
-				Name:    className,
-				From:    existingClassName,
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+				Name:       className,
+				From:       existingClassName,
 			}
+			cmd.Scope = servicecatalog.ClusterScope
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
-			class := fakeSDK.CreateClassArgsForCall(0)
-			Expect(class.Name).To(Equal(className))
+			opts := fakeSDK.CreateClassFromArgsForCall(0)
+			Expect(opts.Name).To(Equal(className))
+			Expect(opts.From).To(Equal(existingClassName))
 
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(className))
+		})
+		It("Calls the pkg/svcat libs CreateClassFrom method with the passed in variables for a namespace class and prints output to the user", func() {
+			className := "newclass"
+			classNamespace := "default"
+			existingClassName := "existingclass"
+
+			classToReturn := &v1beta1.ServiceClass{
+				ObjectMeta: v1.ObjectMeta{
+					Namespace: classNamespace,
+				},
+				Spec: v1beta1.ServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalName: className,
+					},
+				},
+			}
+
+			outputBuffer := &bytes.Buffer{}
+
+			fakeApp, _ := svcat.NewApp(nil, nil, "default")
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.CreateClassFromReturns(classToReturn, nil)
+			fakeApp.SvcatClient = fakeSDK
+			cmd := CreateCmd{
+				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+				Scoped:     command.NewScoped(),
+				Name:       className,
+				From:       existingClassName,
+			}
+			cmd.Scope = servicecatalog.NamespaceScope
+			cmd.Namespace = classNamespace
+			err := cmd.Run()
+
+			Expect(err).NotTo(HaveOccurred())
+			opts := fakeSDK.CreateClassFromArgsForCall(0)
+			Expect(opts.Name).To(Equal(className))
+			Expect(opts.From).To(Equal(existingClassName))
+
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring(className))
+			Expect(output).To(ContainSubstring(classNamespace))
 		})
 	})
 })

@@ -189,6 +189,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "register broker", cmd: "register ups-broker --url http://upsbroker.com", golden: "output/register-broker.txt"},
 		{name: "deregister broker", cmd: "deregister ups-broker", golden: "output/deregister-broker.txt"},
 
+		{name: "sync broker", cmd: "sync broker ups-broker", golden: "output/sync-broker.txt"},
+		{name: "sync broker in namespace", cmd: "sync broker ups-broker-ns -n test-ns", golden: "output/sync-broker-ns.txt"},
 		{name: "list all classes", cmd: "get classes", golden: "output/get-classes.txt"},
 		{name: "list all classes (json)", cmd: "get classes -o json", golden: "output/get-classes.json"},
 		{name: "list all classes (yaml)", cmd: "get classes -o yaml", golden: "output/get-classes.yaml"},
@@ -198,7 +200,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get class by uuid", cmd: "get class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-class.txt"},
 		{name: "describe class by name", cmd: "describe class user-provided-service", golden: "output/describe-class.txt"},
 		{name: "describe class uuid", cmd: "describe class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/describe-class.txt"},
-		{name: "create class", cmd: "create class new-class --from user-provided-service", golden: "output/create-class.txt"},
+		{name: "create cluster class", cmd: "create class new-class --from user-provided-service --scope cluster", golden: "output/create-cluster-class.txt"},
+		{name: "create namespace class", cmd: "create class new-class --from user-provided-namespaced-service --scope namespace --namespace default", golden: "output/create-namespace-class.txt"},
 
 		{name: "list all plans", cmd: "get plans", golden: "output/get-plans.txt"},
 		{name: "list all plans (json)", cmd: "get plans -o json", golden: "output/get-plans.json"},

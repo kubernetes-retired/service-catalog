@@ -33,7 +33,7 @@ SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
                    -exec dirname {} \\; | sort | uniq")
 # Either the tag name, e.g. v1.2.3 or the commit hash for untagged commits, e.g. abc123
-VERSION       ?= $(shell git describe --always --abbrev=7 --dirty)
+VERSION       ?= $(shell git describe --tags --always --abbrev=7 --dirty)
 # Either the tag name, e.g. v1.2.3 or a combination of the closest tag combined with the commit hash, e.g. v1.2.3-2-gabc123
 TAG_VERSION   ?= $(shell git describe --tags --abbrev=7 --dirty)
 BUILD_LDFLAGS  = $(shell build/version.sh $(ROOT) $(SC_PKG))
@@ -224,6 +224,8 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@$(DOCKER_CMD) build/verify-errexit.sh
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
+	@echo Validating golden file flag is defined:
+	@$(DOCKER_CMD) go test -run DRYRUN ./cmd/svcat/... -update || printf "\n\nmake test-update-goldenfiles is broken. For each failed package above, add the following empty import to one of the test files to define the -update flag:\n_ \"github.com/kubernetes-incubator/service-catalog/internal/test\""
 
 verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):

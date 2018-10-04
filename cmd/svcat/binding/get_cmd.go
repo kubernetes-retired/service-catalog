@@ -37,7 +37,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bindings [NAME]",
 		Aliases: []string{"binding", "bnd"},
-		Short:   "List bindings, optionally filtered by name",
+		Short:   "List bindings, optionally filtered by name or namespace",
 		Example: command.NormalizeExamples(`
   svcat get bindings
   svcat get bindings --all-namespaces

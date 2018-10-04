@@ -19,7 +19,6 @@ package class
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
@@ -102,18 +101,18 @@ func (c *getCmd) getAll() error {
 }
 
 func (c *getCmd) get() error {
-	var class *v1beta1.ClusterServiceClass
+	var class servicecatalog.Class
 	var err error
 
 	if c.lookupByUUID {
 		class, err = c.App.RetrieveClassByID(c.uuid)
 	} else if c.name != "" {
-		class, err = c.App.RetrieveClassByName(c.name)
+		class, err = c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{Scope: c.Scope, Namespace: c.Namespace})
 	}
 	if err != nil {
 		return err
 	}
 
-	output.WriteClass(c.Output, c.OutputFormat, *class)
+	output.WriteClass(c.Output, c.OutputFormat, class)
 	return nil
 }

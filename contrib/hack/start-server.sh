@@ -45,7 +45,7 @@ docker run -d --name apiserver \
 	--net container:etcd-svc-cat \
 	scbuildimage \
 	bin/service-catalog apiserver -v 10 --logtostderr --etcd-servers http://localhost:2379 \
-		--storage-type=etcd --disable-auth \
+		--disable-auth \
     --feature-gates "PodPreset=true" \
     --feature-gates "NamespacedServiceBroker=true" \
     --feature-gates "ServicePlanDefaults=true"
