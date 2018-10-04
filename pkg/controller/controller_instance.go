@@ -1596,23 +1596,41 @@ func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.Servic
 }
 
 func (c *controller) getDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (*runtime.RawExtension, error) {
+	var classDefaults, planDefaults *runtime.RawExtension
+
+	if instance.Spec.ClusterServiceClassSpecified() {
+		class, err := c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
+		if err != nil {
+			return nil, err
+		}
+		classDefaults = class.Spec.DefaultProvisionParameters
+	} else if instance.Spec.ServiceClassSpecified() {
+		class, err := c.serviceClassLister.ServiceClasses(instance.Namespace).Get(instance.Spec.ServiceClassRef.Name)
+		if err != nil {
+			return nil, err
+		}
+		classDefaults = class.Spec.DefaultProvisionParameters
+	} else {
+		return nil, fmt.Errorf("invalid class reference %v", instance.Spec.PlanReference)
+	}
+
 	if instance.Spec.ClusterServicePlanSpecified() {
 		plan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 		if err != nil {
 			return nil, err
 		}
-		return plan.Spec.DefaultProvisionParameters, nil
-	}
-
-	if instance.Spec.ServicePlanSpecified() {
+		planDefaults = plan.Spec.DefaultProvisionParameters
+	} else if instance.Spec.ServicePlanSpecified() {
 		plan, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
 		if err != nil {
 			return nil, err
 		}
-		return plan.Spec.DefaultProvisionParameters, nil
+		planDefaults = plan.Spec.DefaultProvisionParameters
+	} else {
+		return nil, fmt.Errorf("invalid plan reference %v", instance.Spec.PlanReference)
 	}
 
-	return nil, fmt.Errorf("invalid plan reference %v", instance.Spec.PlanReference)
+	return mergeParameters(planDefaults, classDefaults)
 }
 
 func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) (*osb.ProvisionRequest, *v1beta1.ServiceInstancePropertiesState, error) {

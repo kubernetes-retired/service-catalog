@@ -783,9 +783,11 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(sc)
 	sp := getTestClusterServicePlan()
 
-	// Setup default parameters on the plan
-	defaultProvParams := `{"secure": true}`
-	sp.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(defaultProvParams)}
+	// Setup default parameters on the class and plan
+	classParams := `{"secure": false, "class-default": 1}`
+	sc.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(classParams)}
+	planParams := `{"secure": true, "plan-default": 2}`
+	sp.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(planParams)}
 
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
 
@@ -817,10 +819,11 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
+	wantParams := `{"class-default":1,"plan-default":2,"secure":true}`
 	gotParams := string(updateObject.Spec.Parameters.Raw)
-	if gotParams != defaultProvParams {
+	if gotParams != wantParams {
 		t.Fatalf("DefaultProvisioningParameters was not applied to the service instance during reconcile.\n\nWANT: %v\nGOT: %v",
-			defaultProvParams, gotParams)
+			wantParams, gotParams)
 	}
 
 	// Check that the default parameters were saved on the status
@@ -830,9 +833,9 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	gotParams = string(updateObject.Status.DefaultProvisionParameters.Raw)
-	if gotParams != defaultProvParams {
+	if gotParams != wantParams {
 		t.Fatalf("DefaultProvisioningParameters was not persisted to the service instance status during reconcile.\n\nWANT: %v\nGOT: %v",
-			defaultProvParams, gotParams)
+			wantParams, gotParams)
 	}
 }
 
