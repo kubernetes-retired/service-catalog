@@ -174,6 +174,15 @@ func validServiceInstancePropertiesStateNamespacedPlan() *servicecatalog.Service
 	}
 }
 
+func invalidServiceInstanceStatusLastOperation() *string {
+	runes := make([]rune, 10001)
+	for i := range runes {
+		runes[i] = 'a'
+	}
+	lastOperation := string(runes)
+	return &lastOperation
+}
+
 func TestValidateServiceInstance(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -232,7 +241,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			name: "invalid clusterServiceClassExternalName",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validClusterRefServiceInstance()
-				i.Spec.ClusterServiceClassExternalName = "oing20&)*^&"
+				i.Spec.ClusterServiceClassExternalName = ""
 				return i
 			}(),
 			valid: false,
@@ -245,15 +254,6 @@ func TestValidateServiceInstance(t *testing.T) {
 				return i
 			}(),
 			valid: true, // plan may be picked by defaultserviceplan admission controller
-		},
-		{
-			name: "invalid clusterServicePlanExternalName",
-			instance: func() *servicecatalog.ServiceInstance {
-				i := validClusterRefServiceInstance()
-				i.Spec.ClusterServicePlanExternalName = "9651_JVHbebe"
-				return i
-			}(),
-			valid: false,
 		},
 		{
 			name: "valid parametersFrom",
@@ -1380,6 +1380,23 @@ func TestValidateServiceInstanceStatusUpdate(t *testing.T) {
 				DeprovisionStatus: servicecatalog.ServiceInstanceDeprovisionStatusRequired,
 			},
 			valid: true,
+			err:   "",
+		},
+		{
+			name: "LastOperation too long",
+			old: &servicecatalog.ServiceInstanceStatus{
+				AsyncOpInProgress: false,
+				DeprovisionStatus: servicecatalog.ServiceInstanceDeprovisionStatusRequired,
+			},
+			new: &servicecatalog.ServiceInstanceStatus{
+				CurrentOperation:     servicecatalog.ServiceInstanceOperationProvision,
+				OperationStartTime:   &now,
+				InProgressProperties: validServiceInstancePropertiesStateClusterPlan(),
+				LastOperation:        invalidServiceInstanceStatusLastOperation(),
+				AsyncOpInProgress:    true,
+				DeprovisionStatus:    servicecatalog.ServiceInstanceDeprovisionStatusRequired,
+			},
+			valid: false,
 			err:   "",
 		},
 	}

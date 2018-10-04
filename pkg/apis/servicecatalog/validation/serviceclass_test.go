@@ -119,16 +119,7 @@ func TestValidateClusterServiceClass(t *testing.T) {
 			name: "invalid serviceClass - invalid externalName",
 			serviceClass: func() *servicecatalog.ClusterServiceClass {
 				s := validClusterServiceClass()
-				s.Spec.ExternalName = "****"
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - underscore in externalName",
-			serviceClass: func() *servicecatalog.ClusterServiceClass {
-				s := validClusterServiceClass()
-				s.Spec.ExternalName = "test_serviceclass"
+				s.Spec.ExternalName = ""
 				return s
 			}(),
 			valid: false,
@@ -270,16 +261,7 @@ func TestValidateServiceClass(t *testing.T) {
 			name: "invalid serviceClass - invalid externalName",
 			serviceClass: func() *servicecatalog.ServiceClass {
 				s := validServiceClass()
-				s.Spec.ExternalName = "****"
-				return s
-			}(),
-			valid: false,
-		},
-		{
-			name: "invalid serviceClass - underscore in externalName",
-			serviceClass: func() *servicecatalog.ServiceClass {
-				s := validServiceClass()
-				s.Spec.ExternalName = "test_serviceclass"
+				s.Spec.ExternalName = ""
 				return s
 			}(),
 			valid: false,

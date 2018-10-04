@@ -17,8 +17,6 @@ limitations under the License.
 package validation
 
 import (
-	"regexp"
-
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -26,10 +24,7 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-const commonServiceClassNameFmt string = `[-.a-zA-Z0-9]+`
 const commonServiceClassNameMaxLength int = 63
-
-var commonServiceClassNameRegexp = regexp.MustCompile("^" + commonServiceClassNameFmt + "$")
 
 const guidMaxLength int = 63
 
@@ -40,8 +35,8 @@ func validateCommonServiceClassName(value string, prefix bool) []string {
 	if len(value) > commonServiceClassNameMaxLength {
 		errs = append(errs, utilvalidation.MaxLenError(commonServiceClassNameMaxLength))
 	}
-	if !commonServiceClassNameRegexp.MatchString(value) {
-		errs = append(errs, utilvalidation.RegexError(commonServiceClassNameFmt, "service-name-40d-0983-1b89"))
+	if len(value) == 0 {
+		errs = append(errs, utilvalidation.EmptyError())
 	}
 
 	return errs
