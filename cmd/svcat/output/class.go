@@ -88,7 +88,7 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 		{"Scope:", scope},
 		{"Description:", spec.Description},
 		{"UUID:", string(class.GetName())},
-		{"Status:", class.GetStatusText()},
+		{"Status:", string(class.GetStatusText())},
 		{"Tags:", strings.Join(spec.Tags, ", ")},
 		{"Broker:", class.GetServiceBrokerName()},
 	})
