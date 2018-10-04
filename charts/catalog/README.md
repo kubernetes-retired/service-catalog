@@ -27,7 +27,7 @@ $ helm install . --name catalog --namespace catalog
 To uninstall/delete the `catalog` deployment:
 
 ```bash
-$ helm delete catalog
+$ helm delete --purge catalog
 ```
 
 The command removes all the Kubernetes components associated with the chart and
@@ -42,7 +42,9 @@ chart and their default values.
 |-----------|-------------|---------|
 | `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.1.34` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
-| `deploymentStrategy` | `deploymentStrategy` for the service catalog deployments | `RollingUpdate` |
+| `apiserver.replicas` | `replicas` for the service catalog apiserver pod count | `1` |
+| `apiserver.updateStrategy` | `updateStrategy` for the service catalog apiserver deployments | `RollingUpdate` |
+| `apiserver.minReadySeconds` | how many seconds an apiServer pod needs to be ready before killing the next, during update | `1` |
 | `apiserver.annotations` | Annotations for apiserver pods | `{}` |
 | `apiserver.nodeSelector` | A nodeSelector value to apply to the apiserver pods. If not specified, no nodeSelector will be applied | |
 | `apiserver.aggregator.priority` | Priority of the APIService. | `100` |
@@ -70,6 +72,9 @@ chart and their default values.
 | `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
 | `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
 | `apiserver.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
+| `controllerManager.replicas` | `replicas` for the service catalog controllerManager pod count | `1` |
+| `controllerManager.updateStrategy` | `updateStrategy` for the service catalog controllerManager deployments | `RollingUpdate` |
+| `controllerManager.minReadySeconds` | how many seconds a controllerManager pod needs to be ready before killing the next, during update | `1` |
 | `controllerManager.annotations` | Annotations for controllerManager pods | `{}` |
 | `controllerManager.nodeSelector` | A nodeSelector value to apply to the controllerManager pods. If not specified, no nodeSelector will be applied | |
 | `controllerManager.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
