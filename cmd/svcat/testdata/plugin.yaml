@@ -360,6 +360,9 @@ tree:
     shortDesc: Syncs service catalog for a service broker
     example: '  svcat sync broker asb'
     command: ./svcat sync broker
+    flags:
+    - name: scope
+      desc: 'Limit the results to a particular scope: cluster, namespace'
 - name: touch
   use: touch
   shortDesc: Force Service Catalog to reprocess a resource
