@@ -83,15 +83,17 @@ func (c *ClusterServiceClass) GetServiceBrokerName() string {
 
 // GetStatusText returns the sttaus of the class.
 func (c *ServiceClass) GetStatusText() string {
-	if c.Status.RemovedFromBrokerCatalog {
-		return statusDeprecated
-	}
-	return statusActive
+	return c.Status.GetStatusText()
 }
 
 // GetStatusText returns the sttaus of the class.
 func (c *ClusterServiceClass) GetStatusText() string {
-	if c.Status.RemovedFromBrokerCatalog {
+	return c.Status.GetStatusText()
+}
+
+// GetStatusText returns the status based on the CommonServiceClassStatus.
+func (c *CommonServiceClassStatus) GetStatusText() string {
+	if c.RemovedFromBrokerCatalog {
 		return statusDeprecated
 	}
 	return statusActive
