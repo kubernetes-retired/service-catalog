@@ -181,6 +181,7 @@ func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass, nam
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec:       from.Spec,
 	}
+	class.Spec.ExternalName = name // this is the name displayed by svcat, not the k8s name
 
 	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(class)
 	if err != nil {
@@ -195,6 +196,7 @@ func (sdk *SDK) createServiceClass(from *v1beta1.ServiceClass, name, namespace s
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec:       from.Spec,
 	}
+	class.Spec.ExternalName = name // this is the name displayed by svcat, not the k8s name
 
 	created, err := sdk.ServiceCatalog().ServiceClasses(namespace).Create(class)
 	if err != nil {
