@@ -219,8 +219,11 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get plan by class/plan uuid combo", cmd: "get plan --uuid --class 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/get-plan.txt"},
 		{name: "get plan by class uuid", cmd: "get plan --uuid --class 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-plans-by-class.txt"},
 		{name: "describe plan by name", cmd: "describe plan default", golden: "output/describe-plan.txt"},
+		{name: "describe namespace plan by name", cmd: "describe plan --scope namespace namespacedplan", golden: "output/describe-namespace-plan.txt"},
 		{name: "describe plan by uuid", cmd: "describe plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-plan.txt"},
+		{name: "describe namespace plan by uuid", cmd: "describe plan --scope namespace --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-namespace-plan.txt"},
 		{name: "describe plan by class/plan name combo", cmd: "describe plan user-provided-service/default", golden: "output/describe-plan.txt"},
+		{name: "describe namespace plan by class/plan name combo", cmd: "describe plan --scope namespace user-provided-namespaced-service/namespacedplan", golden: "output/describe-namespace-plan.txt"},
 		{name: "describe plan with schemas", cmd: "describe plan premium", golden: "output/describe-plan-with-schemas.txt"},
 		{name: "describe plan without schemas", cmd: "describe plan premium --show-schemas=false", golden: "output/describe-plan-without-schemas.txt"},
 

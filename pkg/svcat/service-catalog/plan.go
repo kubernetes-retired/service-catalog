@@ -30,8 +30,11 @@ const (
 	// FieldExternalPlanName is the jsonpath to a plan's external name.
 	FieldExternalPlanName = "spec.externalName"
 
+	// FieldClusterServiceClassRef is the jsonpath to a plan's associated class name.
+	FieldClusterServiceClassRef = "spec.clusterServiceClassRef.name"
+
 	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
-	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
+	FieldServiceClassRef = "spec.serviceClassRef.name"
 )
 
 // Plan provides a unifying layer of cluster and namespace scoped plan resources.
@@ -139,9 +142,16 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 		return nil, err
 	}
 
+	var classRefSelector fields.Selector
+	if opts.Scope.Matches(ClusterScope) {
+		classRefSelector = fields.OneTermEqualSelector(FieldClusterServiceClassRef, class.GetName())
+	} else {
+		classRefSelector = fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName())
+	}
+
 	listOpts := v1.ListOptions{
 		FieldSelector: fields.AndSelectors(
-			fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName()),
+			classRefSelector,
 			fields.OneTermEqualSelector(FieldExternalPlanName, planName),
 		).String(),
 	}
