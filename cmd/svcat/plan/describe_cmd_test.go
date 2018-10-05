@@ -28,7 +28,7 @@ var _ = Describe("Describe Command", func() {
 			cxt := &command.Context{}
 			cmd := NewDescribeCmd(cxt)
 			Expect(*cmd).NotTo(BeNil())
-			Expect(cmd.Use).To(Equal("plan [NAME]"))
+			Expect(cmd.Use).To(Equal("plan NAME"))
 			Expect(cmd.Short).To(ContainSubstring("Show details of a specific plan"))
 			Expect(cmd.Example).To(ContainSubstring("svcat describe plan standard800"))
 			Expect(cmd.Example).To(ContainSubstring("svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c"))
