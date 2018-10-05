@@ -15,7 +15,7 @@
 FROM golang:GO_VERSION
 
 # Install dep as root
-ENV DEP_VERSION=v0.4.1
+ENV DEP_VERSION=v0.5.0
 RUN curl -sSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && \
     chmod +x /usr/local/bin/dep
 

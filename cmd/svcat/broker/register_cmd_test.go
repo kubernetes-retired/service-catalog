@@ -210,7 +210,6 @@ var _ = Describe("Register Command", func() {
 			fakeApp.SvcatClient = fakeSDK
 			cxt := svcattest.NewContext(outputBuffer, fakeApp)
 			cmd := RegisterCmd{
-				Context:           cxt,
 				BasicSecret:       basicSecret,
 				BrokerName:        brokerName,
 				CAFile:            certFile,
@@ -219,17 +218,19 @@ var _ = Describe("Register Command", func() {
 				PlanRestrictions:  planRestrictions,
 				RelistBehavior:    relistBehavior,
 				RelistDuration:    relistDuration,
+				Scoped:            command.NewScoped(),
 				SkipTLS:           skipTLS,
 				URL:               brokerURL,
 				Waitable:          command.NewWaitable(),
 			}
 			cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
+			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Waitable.ApplyWaitFlags()
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeSDK.RegisterCallCount()).To(Equal(1))
-			returnedName, returnedURL, returnedOpts := fakeSDK.RegisterArgsForCall(0)
+			returnedName, returnedURL, returnedOpts, returnedScopeOpts := fakeSDK.RegisterArgsForCall(0)
 			Expect(returnedName).To(Equal(brokerName))
 			Expect(returnedURL).To(Equal(brokerURL))
 			opts := servicecatalog.RegisterOptions{
@@ -243,7 +244,8 @@ var _ = Describe("Register Command", func() {
 				SkipTLS:           skipTLS,
 			}
 			Expect(*returnedOpts).To(Equal(opts))
-
+			Expect(returnedScopeOpts.Namespace).To(Equal(namespace))
+			Expect(returnedScopeOpts.Scope.Matches(servicecatalog.NamespaceScope)).To(BeTrue())
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(brokerName))
 			Expect(output).To(ContainSubstring(brokerURL))
@@ -265,12 +267,12 @@ var _ = Describe("Register Command", func() {
 			fakeApp.SvcatClient = fakeSDK
 			cxt := svcattest.NewContext(outputBuffer, fakeApp)
 			cmd := RegisterCmd{
-				Context:      cxt,
 				BearerSecret: bearerSecret,
 				BrokerName:   brokerName,
 				Namespaced:   command.NewNamespaced(cxt),
-				URL:          brokerURL,
+				Scoped:       command.NewScoped(),
 				Waitable:     command.NewWaitable(),
+				URL:          brokerURL,
 			}
 			cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
 			cmd.Waitable.ApplyWaitFlags()
@@ -278,7 +280,7 @@ var _ = Describe("Register Command", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeSDK.RegisterCallCount()).To(Equal(1))
-			returnedName, returnedURL, returnedOpts := fakeSDK.RegisterArgsForCall(0)
+			returnedName, returnedURL, returnedOpts, _ := fakeSDK.RegisterArgsForCall(0)
 			Expect(returnedName).To(Equal(brokerName))
 			Expect(returnedURL).To(Equal(brokerURL))
 			opts := servicecatalog.RegisterOptions{
@@ -304,11 +306,11 @@ var _ = Describe("Register Command", func() {
 			fakeApp.SvcatClient = fakeSDK
 			cxt := svcattest.NewContext(outputBuffer, fakeApp)
 			cmd := RegisterCmd{
-				Context:    cxt,
 				BrokerName: brokerName,
 				Namespaced: command.NewNamespaced(cxt),
-				URL:        brokerURL,
+				Scoped:     command.NewScoped(),
 				Waitable:   command.NewWaitable(),
+				URL:        brokerURL,
 			}
 			cmd.Wait = true
 			cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
@@ -320,7 +322,7 @@ var _ = Describe("Register Command", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeSDK.RegisterCallCount()).To(Equal(1))
-			returnedName, returnedURL, returnedOpts := fakeSDK.RegisterArgsForCall(0)
+			returnedName, returnedURL, returnedOpts, _ := fakeSDK.RegisterArgsForCall(0)
 			Expect(returnedName).To(Equal(brokerName))
 			Expect(returnedURL).To(Equal(brokerURL))
 			opts := servicecatalog.RegisterOptions{

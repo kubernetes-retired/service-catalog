@@ -46,6 +46,16 @@ func (b *ServiceBroker) GetURL() string {
 	return b.Spec.URL
 }
 
+// GetSpec returns the broker spec.
+func (b *ClusterServiceBroker) GetSpec() CommonServiceBrokerSpec {
+	return b.Spec.CommonServiceBrokerSpec
+}
+
+// GetSpec returns the broker spec
+func (b *ServiceBroker) GetSpec() CommonServiceBrokerSpec {
+	return b.Spec.CommonServiceBrokerSpec
+}
+
 // GetStatus returns the broker status.
 func (b *ClusterServiceBroker) GetStatus() CommonServiceBrokerStatus {
 	return b.Status.CommonServiceBrokerStatus

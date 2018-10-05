@@ -189,6 +189,8 @@ func TestCommandOutput(t *testing.T) {
 		{name: "register broker", cmd: "register ups-broker --url http://upsbroker.com", golden: "output/register-broker.txt"},
 		{name: "deregister broker", cmd: "deregister ups-broker", golden: "output/deregister-broker.txt"},
 
+		{name: "sync broker", cmd: "sync broker ups-broker", golden: "output/sync-broker.txt"},
+		{name: "sync broker in namespace", cmd: "sync broker ups-broker-ns -n test-ns", golden: "output/sync-broker-ns.txt"},
 		{name: "list all classes", cmd: "get classes", golden: "output/get-classes.txt"},
 		{name: "list all classes (json)", cmd: "get classes -o json", golden: "output/get-classes.json"},
 		{name: "list all classes (yaml)", cmd: "get classes -o yaml", golden: "output/get-classes.yaml"},

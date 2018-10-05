@@ -184,10 +184,11 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ServiceBinding
 		result2 error
 	}
-	DeregisterStub        func(string) error
+	DeregisterStub        func(string, *servicecatalog.ScopeOptions) error
 	deregisterMutex       sync.RWMutex
 	deregisterArgsForCall []struct {
 		arg1 string
+		arg2 *servicecatalog.ScopeOptions
 	}
 	deregisterReturns struct {
 		result1 error
@@ -234,26 +235,28 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ClusterServiceBroker
 		result2 error
 	}
-	RegisterStub        func(string, string, *servicecatalog.RegisterOptions) (*apiv1beta1.ClusterServiceBroker, error)
+	RegisterStub        func(string, string, *servicecatalog.RegisterOptions, *servicecatalog.ScopeOptions) (servicecatalog.Broker, error)
 	registerMutex       sync.RWMutex
 	registerArgsForCall []struct {
 		arg1 string
 		arg2 string
 		arg3 *servicecatalog.RegisterOptions
+		arg4 *servicecatalog.ScopeOptions
 	}
 	registerReturns struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+		result1 servicecatalog.Broker
 		result2 error
 	}
 	registerReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+		result1 servicecatalog.Broker
 		result2 error
 	}
-	SyncStub        func(string, int) error
+	SyncStub        func(string, servicecatalog.ScopeOptions, int) error
 	syncMutex       sync.RWMutex
 	syncArgsForCall []struct {
 		arg1 string
-		arg2 int
+		arg2 servicecatalog.ScopeOptions
+		arg3 int
 	}
 	syncReturns struct {
 		result1 error
@@ -1190,16 +1193,17 @@ func (fake *FakeSvcatClient) WaitForBindingReturnsOnCall(i int, result1 *apiv1be
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) Deregister(arg1 string) error {
+func (fake *FakeSvcatClient) Deregister(arg1 string, arg2 *servicecatalog.ScopeOptions) error {
 	fake.deregisterMutex.Lock()
 	ret, specificReturn := fake.deregisterReturnsOnCall[len(fake.deregisterArgsForCall)]
 	fake.deregisterArgsForCall = append(fake.deregisterArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("Deregister", []interface{}{arg1})
+		arg2 *servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("Deregister", []interface{}{arg1, arg2})
 	fake.deregisterMutex.Unlock()
 	if fake.DeregisterStub != nil {
-		return fake.DeregisterStub(arg1)
+		return fake.DeregisterStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -1213,10 +1217,10 @@ func (fake *FakeSvcatClient) DeregisterCallCount() int {
 	return len(fake.deregisterArgsForCall)
 }
 
-func (fake *FakeSvcatClient) DeregisterArgsForCall(i int) string {
+func (fake *FakeSvcatClient) DeregisterArgsForCall(i int) (string, *servicecatalog.ScopeOptions) {
 	fake.deregisterMutex.RLock()
 	defer fake.deregisterMutex.RUnlock()
-	return fake.deregisterArgsForCall[i].arg1
+	return fake.deregisterArgsForCall[i].arg1, fake.deregisterArgsForCall[i].arg2
 }
 
 func (fake *FakeSvcatClient) DeregisterReturns(result1 error) {
@@ -1391,18 +1395,19 @@ func (fake *FakeSvcatClient) RetrieveBrokerByClassReturnsOnCall(i int, result1 *
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) Register(arg1 string, arg2 string, arg3 *servicecatalog.RegisterOptions) (*apiv1beta1.ClusterServiceBroker, error) {
+func (fake *FakeSvcatClient) Register(arg1 string, arg2 string, arg3 *servicecatalog.RegisterOptions, arg4 *servicecatalog.ScopeOptions) (servicecatalog.Broker, error) {
 	fake.registerMutex.Lock()
 	ret, specificReturn := fake.registerReturnsOnCall[len(fake.registerArgsForCall)]
 	fake.registerArgsForCall = append(fake.registerArgsForCall, struct {
 		arg1 string
 		arg2 string
 		arg3 *servicecatalog.RegisterOptions
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("Register", []interface{}{arg1, arg2, arg3})
+		arg4 *servicecatalog.ScopeOptions
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Register", []interface{}{arg1, arg2, arg3, arg4})
 	fake.registerMutex.Unlock()
 	if fake.RegisterStub != nil {
-		return fake.RegisterStub(arg1, arg2, arg3)
+		return fake.RegisterStub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1416,45 +1421,46 @@ func (fake *FakeSvcatClient) RegisterCallCount() int {
 	return len(fake.registerArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RegisterArgsForCall(i int) (string, string, *servicecatalog.RegisterOptions) {
+func (fake *FakeSvcatClient) RegisterArgsForCall(i int) (string, string, *servicecatalog.RegisterOptions, *servicecatalog.ScopeOptions) {
 	fake.registerMutex.RLock()
 	defer fake.registerMutex.RUnlock()
-	return fake.registerArgsForCall[i].arg1, fake.registerArgsForCall[i].arg2, fake.registerArgsForCall[i].arg3
+	return fake.registerArgsForCall[i].arg1, fake.registerArgsForCall[i].arg2, fake.registerArgsForCall[i].arg3, fake.registerArgsForCall[i].arg4
 }
 
-func (fake *FakeSvcatClient) RegisterReturns(result1 *apiv1beta1.ClusterServiceBroker, result2 error) {
+func (fake *FakeSvcatClient) RegisterReturns(result1 servicecatalog.Broker, result2 error) {
 	fake.RegisterStub = nil
 	fake.registerReturns = struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+		result1 servicecatalog.Broker
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RegisterReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceBroker, result2 error) {
+func (fake *FakeSvcatClient) RegisterReturnsOnCall(i int, result1 servicecatalog.Broker, result2 error) {
 	fake.RegisterStub = nil
 	if fake.registerReturnsOnCall == nil {
 		fake.registerReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServiceBroker
+			result1 servicecatalog.Broker
 			result2 error
 		})
 	}
 	fake.registerReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+		result1 servicecatalog.Broker
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) Sync(arg1 string, arg2 int) error {
+func (fake *FakeSvcatClient) Sync(arg1 string, arg2 servicecatalog.ScopeOptions, arg3 int) error {
 	fake.syncMutex.Lock()
 	ret, specificReturn := fake.syncReturnsOnCall[len(fake.syncArgsForCall)]
 	fake.syncArgsForCall = append(fake.syncArgsForCall, struct {
 		arg1 string
-		arg2 int
-	}{arg1, arg2})
-	fake.recordInvocation("Sync", []interface{}{arg1, arg2})
+		arg2 servicecatalog.ScopeOptions
+		arg3 int
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Sync", []interface{}{arg1, arg2, arg3})
 	fake.syncMutex.Unlock()
 	if fake.SyncStub != nil {
-		return fake.SyncStub(arg1, arg2)
+		return fake.SyncStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -1468,10 +1474,10 @@ func (fake *FakeSvcatClient) SyncCallCount() int {
 	return len(fake.syncArgsForCall)
 }
 
-func (fake *FakeSvcatClient) SyncArgsForCall(i int) (string, int) {
+func (fake *FakeSvcatClient) SyncArgsForCall(i int) (string, servicecatalog.ScopeOptions, int) {
 	fake.syncMutex.RLock()
 	defer fake.syncMutex.RUnlock()
-	return fake.syncArgsForCall[i].arg1, fake.syncArgsForCall[i].arg2
+	return fake.syncArgsForCall[i].arg1, fake.syncArgsForCall[i].arg2, fake.syncArgsForCall[i].arg3
 }
 
 func (fake *FakeSvcatClient) SyncReturns(result1 error) {
