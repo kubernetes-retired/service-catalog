@@ -81,7 +81,7 @@ tree:
       shorthand: f
       desc: Name from an existing class that will be copied (Required)
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace or all'
+      desc: 'Limit the command to a particular scope: cluster, namespace or all'
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service
@@ -109,7 +109,7 @@ tree:
     desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
       1h'
   - name: scope
-    desc: 'Limit the results to a particular scope: cluster, namespace'
+    desc: 'Limit the command to a particular scope: cluster or namespace'
   - name: timeout
     desc: 'Timeout for --wait, specified in human readable format: 30s, 1m, 1h. Specify
       -1 to wait indefinitely.'
@@ -203,7 +203,7 @@ tree:
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace or all'
+      desc: 'Limit the command to a particular scope: cluster, namespace or all'
   - name: classes
     use: classes [NAME]
     shortDesc: List classes, optionally filtered by name, scope or namespace
@@ -223,7 +223,7 @@ tree:
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace or all'
+      desc: 'Limit the command to a particular scope: cluster, namespace or all'
     - name: uuid
       shorthand: u
       desc: Whether or not to get the class by UUID (the default is by name)
@@ -280,7 +280,7 @@ tree:
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace or all'
+      desc: 'Limit the command to a particular scope: cluster, namespace or all'
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
@@ -355,7 +355,7 @@ tree:
     desc: 'Interval to refetch broker catalog when relist-behavior is set to duration,
       specified in human readable format: 30s, 1m, 1h'
   - name: scope
-    desc: 'Limit the results to a particular scope: cluster, namespace'
+    desc: 'Limit the command to a particular scope: cluster or namespace'
   - name: skip-tls
     desc: Disables TLS certificate verification when communicating with this broker.
       This is strongly discouraged. You should use --ca instead.
@@ -378,7 +378,7 @@ tree:
     command: ./svcat sync broker
     flags:
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace'
+      desc: 'Limit the command to a particular scope: cluster or namespace'
 - name: touch
   use: touch
   shortDesc: Force Service Catalog to reprocess a resource
