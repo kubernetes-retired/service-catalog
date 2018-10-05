@@ -452,8 +452,6 @@ _svcat_create_class()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--all-namespaces")
-    local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--from=")
     two_word_flags+=("-f")
     local_nonpersistent_flags+=("--from=")
