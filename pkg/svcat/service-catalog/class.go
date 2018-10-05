@@ -157,6 +157,10 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 
 // CreateClassFrom returns new created class
 func (sdk *SDK) CreateClassFrom(opts CreateClassFromOptions) (Class, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
 	fromClass, err := sdk.RetrieveClassByName(opts.From, ScopeOptions{Scope: opts.Scope, Namespace: opts.Namespace})
 	if err != nil {
 		return nil, err
