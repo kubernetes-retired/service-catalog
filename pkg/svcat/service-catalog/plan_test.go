@@ -154,7 +154,7 @@ var _ = Describe("Plan", func() {
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			plan, err := sdk.RetrievePlanByName(planName, ScopeOptions{Scope: AllScope})
+			plan, err := sdk.RetrievePlanByName(planName, ScopeOptions{Scope: ClusterScope})
 
 			Expect(plan).To(BeNil())
 			Expect(err).To(HaveOccurred())
@@ -240,7 +240,7 @@ var _ = Describe("Plan", func() {
 			})
 			sdk.ServiceCatalogClient = badClient
 
-			plan, err := sdk.RetrievePlanByID(planID, ScopeOptions{Scope: AllScope})
+			plan, err := sdk.RetrievePlanByID(planID, ScopeOptions{Scope: ClusterScope})
 
 			Expect(plan).To(BeNil())
 			Expect(err).To(HaveOccurred())

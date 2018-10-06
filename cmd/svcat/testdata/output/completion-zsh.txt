@@ -672,8 +672,6 @@ _svcat_describe_plan()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--all-namespaces")
-    local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--namespace=")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")

@@ -17,11 +17,12 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -73,7 +74,7 @@ type Plan interface {
 
 // RetrievePlans lists all plans defined in the cluster.
 func (sdk *SDK) RetrievePlans(classID string, opts ScopeOptions) ([]Plan, error) {
-	plans, err := sdk.retrievePlansByListOptions(opts, v1.ListOptions{})
+	plans, err := sdk.retrievePlansByListOptions(opts, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func (sdk *SDK) RetrievePlans(classID string, opts ScopeOptions) ([]Plan, error)
 	return filtered, nil
 }
 
-func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts v1.ListOptions) ([]Plan, error) {
+func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts metav1.ListOptions) ([]Plan, error) {
 	var plans []Plan
 
 	if scopeOpts.Scope.Matches(ClusterScope) {
@@ -111,7 +112,7 @@ func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts v1.L
 		sp, err := sdk.ServiceCatalog().ServicePlans(scopeOpts.Namespace).List(listOpts)
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return plans, nil
 			}
 			return nil, fmt.Errorf("unable to list plans in %q (%s)", scopeOpts.Namespace, err)
@@ -128,7 +129,11 @@ func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts v1.L
 
 // RetrievePlanByName gets a plan by its external name.
 func (sdk *SDK) RetrievePlanByName(name string, opts ScopeOptions) (Plan, error) {
-	listOpts := v1.ListOptions{
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
+	listOpts := metav1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalPlanName, name).String(),
 	}
 
@@ -137,6 +142,10 @@ func (sdk *SDK) RetrievePlanByName(name string, opts ScopeOptions) (Plan, error)
 
 // RetrievePlanByClassAndName gets a plan by its external name and class name combination.
 func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts ScopeOptions) (Plan, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
 	class, err := sdk.RetrieveClassByName(className, opts)
 	if err != nil {
 		return nil, err
@@ -149,7 +158,7 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 		classRefSelector = fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName())
 	}
 
-	listOpts := v1.ListOptions{
+	listOpts := metav1.ListOptions{
 		FieldSelector: fields.AndSelectors(
 			classRefSelector,
 			fields.OneTermEqualSelector(FieldExternalPlanName, planName),
@@ -160,7 +169,7 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 	return sdk.retrieveSinglePlanByListOptions(strings.Join(ss, "/"), opts, listOpts)
 }
 
-func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOptions, listOpts v1.ListOptions) (Plan, error) {
+func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOptions, listOpts metav1.ListOptions) (Plan, error) {
 	plans, err := sdk.retrievePlansByListOptions(scopeOpts, listOpts)
 	if err != nil {
 		return nil, err
@@ -176,8 +185,12 @@ func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOpti
 
 // RetrievePlanByID gets a plan by its UUID.
 func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
 	if opts.Scope.Matches(ClusterScope) {
-		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, v1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to get cluster-scoped plan by uuid '%s' (%s)", uuid, err)
 		}
@@ -185,7 +198,7 @@ func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(uuid, v1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(uuid, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to get plan by uuid '%s' (%s)", uuid, err)
 		}

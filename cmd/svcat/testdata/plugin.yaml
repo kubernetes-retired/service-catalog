@@ -160,11 +160,8 @@ tree:
         svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME
     command: ./svcat describe plan
     flags:
-    - name: all-namespaces
-      desc: If present, list the requested object(s) across all namespaces. Namespace
-        in current context is ignored even if specified with --namespace
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace or all'
+      desc: 'Limit the results to a particular scope: cluster, namespace'
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
     - name: uuid

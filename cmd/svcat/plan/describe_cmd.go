@@ -68,8 +68,8 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		true,
 		"Whether or not to show instance and binding parameter schemas",
 	)
-	describeCmd.AddNamespaceFlags(cmd.Flags(), true)
-	describeCmd.AddScopedFlags(cmd.Flags(), true)
+	describeCmd.AddNamespaceFlags(cmd.Flags(), false)
+	describeCmd.AddScopedFlags(cmd.Flags(), false)
 	return cmd
 }
 
