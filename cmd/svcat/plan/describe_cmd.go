@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type DescribeCmd struct {
+type describeCmd struct {
 	*command.Namespaced
 	*command.Scoped
 	lookupByUUID bool
@@ -37,7 +37,7 @@ type DescribeCmd struct {
 
 // NewDescribeCmd builds a "svcat describe plan" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &DescribeCmd{
+	describeCmd := &describeCmd{
 		Namespaced: command.NewNamespaced(cxt),
 		Scoped:     command.NewScoped(),
 	}
@@ -73,7 +73,8 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *DescribeCmd) Validate(args []string) error {
+// Validate and load the arguments passed to the svcat command.
+func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("a plan name or uuid is required")
 	}
@@ -87,11 +88,12 @@ func (c *DescribeCmd) Validate(args []string) error {
 	return nil
 }
 
-func (c *DescribeCmd) Run() error {
+// Run a validated svcat command.
+func (c *describeCmd) Run() error {
 	return c.describe()
 }
 
-func (c *DescribeCmd) describe() error {
+func (c *describeCmd) describe() error {
 	var plan servicecatalog.Plan
 	var err error
 

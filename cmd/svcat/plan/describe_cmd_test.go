@@ -64,7 +64,7 @@ var _ = Describe("Describe Command", func() {
 	})
 	Describe("Validate", func() {
 		It("errors if no argument is provided", func() {
-			cmd := DescribeCmd{}
+			cmd := describeCmd{}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
 		})
@@ -98,7 +98,7 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByNameReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := DescribeCmd{
+			cmd := describeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
@@ -149,7 +149,7 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByNameReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := DescribeCmd{
+			cmd := describeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
@@ -198,7 +198,7 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByClassAndNameReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := DescribeCmd{
+			cmd := describeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
@@ -251,7 +251,7 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByClassAndNameReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := DescribeCmd{
+			cmd := describeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
@@ -303,7 +303,7 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByIDReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := DescribeCmd{
+			cmd := describeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
@@ -355,7 +355,7 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByIDReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := DescribeCmd{
+			cmd := describeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
