@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	appierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
@@ -105,11 +105,11 @@ func (sdk *SDK) RetrievePlans(classID string, opts ScopeOptions) ([]Plan, error)
 	return filtered, nil
 }
 
-func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts metav1.ListOptions) ([]Plan, error) {
+func (sdk *SDK) retrievePlansByListOptions(opts ScopeOptions, listOpts metav1.ListOptions) ([]Plan, error) {
 	var plans []Plan
 
-	if scopeOpts.Scope.Matches(ClusterScope) {
-		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(listOpts)
+	if opts.Scope.Matches(ClusterScope) {
+		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to list cluster-scoped plans (%s)", err)
 		}
@@ -120,14 +120,14 @@ func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts meta
 		}
 	}
 
-	if scopeOpts.Scope.Matches(NamespaceScope) {
-		sp, err := sdk.ServiceCatalog().ServicePlans(scopeOpts.Namespace).List(listOpts)
+	if opts.Scope.Matches(NamespaceScope) {
+		sp, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).List(metav1.ListOptions{})
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
-			if apierrors.IsNotFound(err) {
+			if appierrors.IsNotFound(err) {
 				return plans, nil
 			}
-			return nil, fmt.Errorf("unable to list plans in %q (%s)", scopeOpts.Namespace, err)
+			return nil, fmt.Errorf("unable to list plans in %q (%s)", opts.Namespace, err)
 		}
 
 		for _, p := range sp.Items {
@@ -141,8 +141,27 @@ func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts meta
 
 // RetrievePlanByName gets a plan by its external name.
 func (sdk *SDK) RetrievePlanByName(name string, opts ScopeOptions) (Plan, error) {
-	if opts.Scope == AllScope {
-		return nil, errors.New("invalid scope: all")
+	var searchResults []Plan
+	lopts := metav1.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(FieldExternalPlanName, name).String(),
+	}
+	if opts.Scope.Matches(ClusterScope) {
+		cspList, err := sdk.ServiceCatalog().ClusterServicePlans().List(lopts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to search plans by name '%s', (%s)", name, err)
+		}
+		for _, p := range cspList.Items {
+			searchResults = append(searchResults, &p)
+		}
+	}
+	if opts.Scope.Matches(NamespaceScope) {
+		spList, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).List(lopts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to search plans by name '%s', (%s)", name, err)
+		}
+		for _, p := range spList.Items {
+			searchResults = append(searchResults, &p)
+		}
 	}
 
 	listOpts := metav1.ListOptions{
@@ -223,6 +242,9 @@ func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
 // CreatePlan creates a new plan.
 func (sdk *SDK) CreatePlan(opts CreatePlanOptions,
 ) (Plan, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
 	fromPlan, err := sdk.RetrievePlanByName(opts.Name, ScopeOptions{
 		Scope:     opts.Scope,
 		Namespace: opts.Namespace,
@@ -232,17 +254,21 @@ func (sdk *SDK) CreatePlan(opts CreatePlanOptions,
 	}
 	if opts.Scope.Matches(NamespaceScope) {
 		var plan = fromPlan.(*v1beta1.ServicePlan)
-		plan.Name = opts.Name
-		plan.Namespace = opts.Namespace
-		return sdk.createServicePlan(plan)
+		return sdk.createServicePlan(plan, opts.Name, opts.Namespace)
 	}
 	var plan = fromPlan.(*v1beta1.ClusterServicePlan)
-	plan.Name = opts.Name
-	return sdk.createClusterServicePlan(plan)
+	return sdk.createClusterServicePlan(plan, opts.Name)
 }
 
-func (sdk *SDK) createClusterServicePlan(plan *v1beta1.ClusterServicePlan,
+func (sdk *SDK) createClusterServicePlan(fromPlan *v1beta1.ClusterServicePlan, name string,
 ) (*v1beta1.ClusterServicePlan, error) {
+	var plan = &v1beta1.ClusterServicePlan{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: fromPlan.Spec,
+	}
+	plan.Spec.ExternalName = name
 	created, err := sdk.ServiceCatalog().ClusterServicePlans().Create(plan)
 	if err != nil {
 		return nil, err
@@ -250,8 +276,16 @@ func (sdk *SDK) createClusterServicePlan(plan *v1beta1.ClusterServicePlan,
 	return created, nil
 }
 
-func (sdk *SDK) createServicePlan(plan *v1beta1.ServicePlan,
-) (*v1beta1.ServicePlan, error) {
+func (sdk *SDK) createServicePlan(fromPlan *v1beta1.ServicePlan, name string,
+	namespace string) (*v1beta1.ServicePlan, error) {
+	var plan = &v1beta1.ServicePlan{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: fromPlan.Spec,
+	}
+	plan.Spec.ExternalName = name
 	created, err := sdk.ServiceCatalog().ServicePlans(plan.GetNamespace()).Create(plan)
 	if err != nil {
 		return nil, err
