@@ -42,19 +42,18 @@ var _ = Describe("Create command", func() {
 			Expect(cmd.Example).To(ContainSubstring("svcat create plan newplan --from mysqldb"))
 			Expect(cmd.Example).To(ContainSubstring("svcat create plan newplan --from mysqldb --scope cluster"))
 			Expect(cmd.Example).To(ContainSubstring("svcat create plan newplan --from mysqldb --scope namespace --namespace newnamespace"))
-			Expect(cmd.Aliases).To(Equal(0))
 
 			fromFlag := cmd.Flags().Lookup("from")
 			Expect(fromFlag).NotTo(BeNil())
-			Expect(fromFlag).To(ContainSubstring("Name of an existing plan that will be copied (Required)"))
+			Expect(fromFlag.Usage).To(ContainSubstring("Name of an existing plan that will be copied (Required)"))
 
 			scopeFlag := cmd.Flags().Lookup("scope")
 			Expect(scopeFlag).NotTo(BeNil())
-			Expect(scopeFlag).To(ContainSubstring("Name of an existing plan that will be copied (Required)"))
+			Expect(scopeFlag.Usage).To(ContainSubstring("Limit the results to a particular scope"))
 
 			namespaceFlag := cmd.Flags().Lookup("namespace")
 			Expect(namespaceFlag).NotTo(BeNil())
-			Expect(namespaceFlag).To(ContainSubstring("Name of an existing plan that will be copied (Required)"))
+			Expect(namespaceFlag.Usage).To(ContainSubstring("If present, the namespace scope for this request"))
 		})
 	})
 	Describe("Validate()", func() {
@@ -65,17 +64,18 @@ var _ = Describe("Create command", func() {
 			}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(ContainSubstring("new plan name should be provided"))
 		})
 	})
 	Describe("Run()", func() {
-		It("Calls the CreatePlan method with the input for a cluster class and prints output", func() {
+		It("Calls the CreatePlan method with the input for a cluster plan and prints output", func() {
 			planName := "newplan"
 			existingPlanName := "existingplan"
 
 			planToReturn := &v1beta1.ClusterServicePlan{
-				ObjectMeta: v1.ObjectMeta{
-					Name: planName,
+				Spec: v1beta1.ClusterServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planName,
+					},
 				},
 			}
 
@@ -102,15 +102,19 @@ var _ = Describe("Create command", func() {
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(planName))
 		})
-		It("Calls the CreatePlan method with input for a namespace class and prints output", func() {
+		It("Calls the CreatePlan method with input for a namespace plan and prints output", func() {
 			planName := "newplan"
-			planNamespace := "test-ns"
+			planNamespace := "default"
 			existingPlanName := "existingplan"
 
 			planToReturn := &v1beta1.ServicePlan{
 				ObjectMeta: v1.ObjectMeta{
-					Name:      planName,
 					Namespace: planNamespace,
+				},
+				Spec: v1beta1.ServicePlanSpec{
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: planName,
+					},
 				},
 			}
 
@@ -118,7 +122,7 @@ var _ = Describe("Create command", func() {
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.CreateClassFromReturns(planToReturn, nil)
+			fakeSDK.CreatePlanReturns(planToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
 				Namespaced: &command.Namespaced{
