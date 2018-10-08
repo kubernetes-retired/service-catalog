@@ -956,7 +956,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassSpec(ref common.R
 					},
 					"defaultProvisionParameters": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence the class defaults.",
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence over the class defaults.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
@@ -1406,7 +1406,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassSpec(ref common.Re
 					},
 					"defaultProvisionParameters": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence the class defaults.",
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence over the class defaults.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
@@ -2627,7 +2627,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassSpec(ref common.Referenc
 					},
 					"defaultProvisionParameters": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence the class defaults.",
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence over the class defaults.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},

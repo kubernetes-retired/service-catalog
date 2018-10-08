@@ -518,7 +518,7 @@ type CommonServiceClassSpec struct {
 	// DefaultProvisionParameters are default parameters passed to the broker
 	// when an instance of this class is provisioned. Any parameters defined on
 	// the plan and instance are merged with these defaults, with
-	// plan and then instance-defined parameters taking precedence the class
+	// plan and then instance-defined parameters taking precedence over the class
 	// defaults.
 	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
 }
