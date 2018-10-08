@@ -74,14 +74,11 @@ tree:
         svcat create class newclass --from mysqldb --scope namespace --namespace newnamespace
     command: ./svcat create class
     flags:
-    - name: all-namespaces
-      desc: If present, list the requested object(s) across all namespaces. Namespace
-        in current context is ignored even if specified with --namespace
     - name: from
       shorthand: f
       desc: Name from an existing class that will be copied (Required)
     - name: scope
-      desc: 'Limit the command to a particular scope: cluster, namespace or all'
+      desc: 'Limit the command to a particular scope: cluster or namespace'
 - name: deprovision
   use: deprovision NAME
   shortDesc: Deletes an instance of a service

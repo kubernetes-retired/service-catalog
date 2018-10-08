@@ -43,10 +43,10 @@ var _ = Describe("Class", func() {
 	)
 
 	BeforeEach(func() {
-		csc = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "foobar"}}
-		csc2 = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "barbaz"}}
-		sc = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "default"}}
-		sc2 = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", Namespace: "ns2"}}
+		csc = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "foobar", ResourceVersion: "1"}}
+		csc2 = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", ResourceVersion: "1"}}
+		sc = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "default", ResourceVersion: "1"}}
+		sc2 = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", Namespace: "ns2", ResourceVersion: "1"}}
 		svcCatClient = fake.NewSimpleClientset(csc, csc2, sc, sc2)
 		sdk = &SDK{
 			ServiceCatalogClient: svcCatClient,
@@ -262,6 +262,7 @@ var _ = Describe("Class", func() {
 			Expect(actions[1].Matches("create", "clusterserviceclasses")).To(BeTrue())
 			objectFromRequest := actions[1].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceClass)
 			Expect(objectFromRequest.Name).To(Equal(className))
+			Expect(objectFromRequest.ResourceVersion).To(BeEmpty())
 		})
 		It("Calls the generated v1beta1 create method for service class with the passed in class", func() {
 			className := "newclass"
@@ -289,6 +290,7 @@ var _ = Describe("Class", func() {
 			objectFromRequest := actions[1].(testing.CreateActionImpl).Object.(*v1beta1.ServiceClass)
 			Expect(objectFromRequest.Name).To(Equal(className))
 			Expect(objectFromRequest.Namespace).To(Equal(classNamespace))
+			Expect(objectFromRequest.ResourceVersion).To(BeEmpty())
 		})
 		It("Bubbles up errors for cluster service class", func() {
 			className := "newclass"

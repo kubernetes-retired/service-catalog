@@ -17,11 +17,12 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
 
@@ -68,7 +69,7 @@ type Class interface {
 func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 	var classes []Class
 	if opts.Scope.Matches(ClusterScope) {
-		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(v1.ListOptions{})
+		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to list cluster-scoped classes (%s)", err)
 		}
@@ -79,10 +80,10 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(v1.ListOptions{})
+		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(metav1.ListOptions{})
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return classes, nil
 			}
 			return nil, fmt.Errorf("unable to list classes in %q (%s)", opts.Namespace, err)
@@ -100,7 +101,7 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, error) {
 	var searchResults []Class
 
-	lopts := v1.ListOptions{
+	lopts := metav1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalClassName, name).String(),
 	}
 
@@ -120,7 +121,7 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 		sc, err := sdk.ServiceCatalog().ServiceClasses(opts.Namespace).List(lopts)
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				sc = &v1beta1.ServiceClassList{}
 			} else {
 				return nil, fmt.Errorf("unable to search classes by name (%s)", err)
@@ -146,7 +147,7 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 
 // RetrieveClassByID gets a class by its UUID.
 func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, error) {
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(uuid, v1.GetOptions{})
+	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(uuid, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}
@@ -157,7 +158,7 @@ func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, er
 func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 ) (*v1beta1.ClusterServiceClass, error) {
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.Spec.ClusterServiceClassRef.Name, v1.GetOptions{})
+	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}
@@ -167,25 +168,32 @@ func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
 
 // CreateClassFrom returns new created class
 func (sdk *SDK) CreateClassFrom(opts CreateClassFromOptions) (Class, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
 	fromClass, err := sdk.RetrieveClassByName(opts.From, ScopeOptions{Scope: opts.Scope, Namespace: opts.Namespace})
 	if err != nil {
 		return nil, err
 	}
 
 	if opts.Scope.Matches(ClusterScope) {
-		var class *v1beta1.ClusterServiceClass = fromClass.(*v1beta1.ClusterServiceClass)
-		class.Name = opts.Name
-		return sdk.createClusterServiceClass(class)
+		csc := fromClass.(*v1beta1.ClusterServiceClass)
+		return sdk.createClusterServiceClass(csc, opts.Name)
 	}
 
-	var class *v1beta1.ServiceClass = fromClass.(*v1beta1.ServiceClass)
-	class.Name = opts.Name
-	class.Namespace = opts.Namespace
-	return sdk.createServiceClass(class)
+	sc := fromClass.(*v1beta1.ServiceClass)
+	return sdk.createServiceClass(sc, opts.Name, opts.Namespace)
 }
 
-func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error) {
-	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(from)
+func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass, name string) (*v1beta1.ClusterServiceClass, error) {
+	var class = &v1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec:       from.Spec,
+	}
+	class.Spec.ExternalName = name // this is the name displayed by svcat, not the k8s name
+
+	created, err := sdk.ServiceCatalog().ClusterServiceClasses().Create(class)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create cluster service class (%s)", err)
 	}
@@ -193,8 +201,14 @@ func (sdk *SDK) createClusterServiceClass(from *v1beta1.ClusterServiceClass) (*v
 	return created, nil
 }
 
-func (sdk *SDK) createServiceClass(class *v1beta1.ServiceClass) (*v1beta1.ServiceClass, error) {
-	created, err := sdk.ServiceCatalog().ServiceClasses(class.GetNamespace()).Create(class)
+func (sdk *SDK) createServiceClass(from *v1beta1.ServiceClass, name, namespace string) (*v1beta1.ServiceClass, error) {
+	var class = &v1beta1.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec:       from.Spec,
+	}
+	class.Spec.ExternalName = name // this is the name displayed by svcat, not the k8s name
+
+	created, err := sdk.ServiceCatalog().ServiceClasses(namespace).Create(class)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create service class (%s)", err)
 	}
