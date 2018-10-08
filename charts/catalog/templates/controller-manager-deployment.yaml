@@ -11,7 +11,7 @@ spec:
   replicas: {{ .Values.controllerManager.replicas }}
   strategy:
     type: {{ .Values.controllerManager.updateStrategy }}
-    minReadySeconds: {{ .Values.apiserver.minReadySeconds }}
+  minReadySeconds: {{ .Values.apiserver.minReadySeconds }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}-controller-manager
