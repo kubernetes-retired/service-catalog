@@ -109,7 +109,7 @@ func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, erro
 	return broker, nil
 }
 
-// RetrieveNamespacedBroker gets a set of broker by its name.
+// RetrieveNamespacedBroker gets a broker by its name & namespace.
 func (sdk *SDK) RetrieveNamespacedBroker(namespace string, name string) (*v1beta1.ServiceBroker, error) {
 	broker, err := sdk.ServiceCatalog().ServiceBrokers(namespace).Get(name, v1.GetOptions{})
 	if err != nil {
@@ -218,19 +218,20 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions, s
 // Sync or relist a broker to refresh its broker metadata.
 func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 	success := false
+	var err error
 
 	for j := 0; j < retries && !success; j++ {
 
 		if scopeOpts.Scope.Matches(NamespaceScope) {
+			var broker *v1beta1.ServiceBroker
 			namespace := scopeOpts.Namespace
-			broker, err := sdk.RetrieveNamespacedBroker(namespace, name)
+			broker, err = sdk.RetrieveNamespacedBroker(namespace, name)
 			if err == nil {
 				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
 				_, err = sdk.ServiceCatalog().ServiceBrokers(namespace).Update(broker)
 				if err == nil {
 					success = true
-					fmt.Printf("synced servicebroker (%s) in name space (%s)\n", name, scopeOpts.Namespace)
 				}
 				if err != nil && !apierrors.IsConflict(err) {
 					return fmt.Errorf("could not sync service broker (%s)", err)
@@ -239,14 +240,14 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 		}
 
 		if scopeOpts.Scope.Matches(ClusterScope) {
-			broker, err := sdk.RetrieveBroker(name)
+			var broker *v1beta1.ClusterServiceBroker
+			broker, err = sdk.RetrieveBroker(name)
 			if err == nil {
 				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
 				_, err = sdk.ServiceCatalog().ClusterServiceBrokers().Update(broker)
 				if err == nil {
 					success = true
-					fmt.Printf("synced clusterservicebroker (%s)\n", name)
 				}
 				if err != nil && !apierrors.IsConflict(err) {
 					return fmt.Errorf("could not sync service broker (%s)", err)
@@ -260,7 +261,7 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 	}
 
 	if !success {
-		return fmt.Errorf("could not sync service broker %s", name)
+		return fmt.Errorf("could not sync service broker %s (%s)", name, err)
 	}
 
 	return nil
