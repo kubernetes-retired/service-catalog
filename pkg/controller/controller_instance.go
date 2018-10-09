@@ -1183,7 +1183,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 	var sc *v1beta1.ClusterServiceClass
 	var err error
 	if instance.Spec.ClusterServiceClassRef == nil {
-		instance, sc, err = c.resolveClusterServiceClassRef(instance)
+		sc, err = c.resolveClusterServiceClassRef(instance)
 		if err != nil {
 			return false, err
 		}
@@ -1197,7 +1197,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 			}
 		}
 
-		instance, err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
+		err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
 		if err != nil {
 			return false, err
 		}
@@ -1214,7 +1214,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 	var sc *v1beta1.ServiceClass
 	var err error
 	if instance.Spec.ServiceClassRef == nil {
-		instance, sc, err = c.resolveServiceClassRef(instance)
+		sc, err = c.resolveServiceClassRef(instance)
 		if err != nil {
 			return false, err
 		}
@@ -1228,7 +1228,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 			}
 		}
 
-		instance, err = c.resolveServicePlanRef(instance, sc.Spec.ServiceBrokerName)
+		err = c.resolveServicePlanRef(instance, sc.Spec.ServiceBrokerName)
 		if err != nil {
 			return false, err
 		}
@@ -1241,10 +1241,10 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 // and updates the instance.
 // If ClusterServiceClass can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
-func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, *v1beta1.ClusterServiceClass, error) {
+func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ClusterServiceClass, error) {
 	if !instance.Spec.ClusterServiceClassSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServiceClassExternalName, ClusterServiceClassExternalID, nor ClusterServiceClassName is set", instance.Namespace, instance.Name)
+		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServiceClassExternalName, ClusterServiceClassExternalID, nor ClusterServiceClassName is set", instance.Namespace, instance.Name)
 	}
 
 	pcb := pretty.NewInstanceContextBuilder(instance)
@@ -1277,7 +1277,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				"The instance references a ClusterServiceClass that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-			return nil, nil, fmt.Errorf(s)
+			return nil, fmt.Errorf(s)
 		}
 	} else {
 		filterField := instance.Spec.GetClusterServiceClassFilterFieldName()
@@ -1311,21 +1311,21 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				"The instance references a ClusterServiceClass that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-			return nil, nil, fmt.Errorf(s)
+			return nil, fmt.Errorf(s)
 		}
 	}
 
-	return instance, sc, nil
+	return sc, nil
 }
 
 // resolveServiceClassRef resolves a reference to a ServiceClass
 // and updates the instance.
 // If ServiceClass can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
-func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, *v1beta1.ServiceClass, error) {
+func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceClass, error) {
 	if !instance.Spec.ServiceClassSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ServiceClassExternalName, ServiceClassExternalID, nor ServiceClassName is set", instance.Namespace, instance.Name)
+		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ServiceClassExternalName, ServiceClassExternalID, nor ServiceClassName is set", instance.Namespace, instance.Name)
 	}
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
@@ -1358,7 +1358,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 				"The instance references a ServiceClass that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServiceClassReason, s)
-			return nil, nil, fmt.Errorf(s)
+			return nil, fmt.Errorf(s)
 		}
 	} else {
 		filterField := instance.Spec.GetServiceClassFilterFieldName()
@@ -1392,21 +1392,21 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 				"The instance references a ServiceClass that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServiceClassReason, s)
-			return nil, nil, fmt.Errorf(s)
+			return nil, fmt.Errorf(s)
 		}
 	}
 
-	return instance, sc, nil
+	return sc, nil
 }
 
 // resolveClusterServicePlanRef resolves a reference  to a ClusterServicePlan
 // and updates the instance.
 // If ClusterServicePlan can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
-func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) (*v1beta1.ServiceInstance, error) {
+func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) error {
 	if !instance.Spec.ClusterServicePlanSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServicePlanExternalName, ClusterServicePlanExternalID, nor ClusterServicePlanName is set", instance.Namespace, instance.Name)
+		return fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ClusterServicePlanExternalName, ClusterServicePlanExternalID, nor ClusterServicePlanName is set", instance.Namespace, instance.Name)
 	}
 
 	pcb := pretty.NewInstanceContextBuilder(instance)
@@ -1435,7 +1435,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				"The instance references a ClusterServicePlan that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-			return nil, fmt.Errorf(s)
+			return fmt.Errorf(s)
 		}
 	} else {
 		fieldSet := fields.Set{
@@ -1468,21 +1468,21 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				"The instance references a ClusterServicePlan that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-			return nil, fmt.Errorf(s)
+			return fmt.Errorf(s)
 		}
 	}
 
-	return instance, nil
+	return nil
 }
 
 // resolveServicePlanRef resolves a reference  to a ServicePlan
 // and updates the instance.
 // If ServicePlan can not be resolved, returns an error, records an
 // Event, and sets the InstanceCondition with the appropriate error message.
-func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) (*v1beta1.ServiceInstance, error) {
+func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, brokerName string) error {
 	if !instance.Spec.ServicePlanSpecified() {
 		// ServiceInstance is in invalid state, should not ever happen. check
-		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ServicePlanExternalName, ServicePlanExternalID, nor ServicePlanName is set", instance.Namespace, instance.Name)
+		return fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ServicePlanExternalName, ServicePlanExternalID, nor ServicePlanName is set", instance.Namespace, instance.Name)
 	}
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
@@ -1511,7 +1511,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				"The instance references a ServicePlan that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServicePlanReason, s)
-			return nil, fmt.Errorf(s)
+			return fmt.Errorf(s)
 		}
 	} else {
 		fieldSet := fields.Set{
@@ -1544,11 +1544,11 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				"The instance references a ServicePlan that does not exist. "+s,
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServicePlanReason, s)
-			return nil, fmt.Errorf(s)
+			return fmt.Errorf(s)
 		}
 	}
 
-	return instance, nil
+	return nil
 }
 
 // applyDefaultProvisioningParameters applies any default provisioning parameters for an instance.
