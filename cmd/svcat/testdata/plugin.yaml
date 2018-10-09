@@ -158,7 +158,7 @@ tree:
     command: ./svcat describe plan
     flags:
     - name: scope
-      desc: 'Limit the results to a particular scope: cluster, namespace'
+      desc: 'Limit the command to a particular scope: cluster or namespace'
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
     - name: uuid
