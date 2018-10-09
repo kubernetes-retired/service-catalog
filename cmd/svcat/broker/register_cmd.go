@@ -90,7 +90,7 @@ func NewRegisterCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-// Validate checks that the required arguements have been provided
+// Validate checks that the required arguments have been provided
 func (c *RegisterCmd) Validate(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("a broker name is required")

@@ -49,7 +49,7 @@ var _ = Describe("Create Command", func() {
 
 			scopeFlag := cmd.Flags().Lookup("scope")
 			Expect(scopeFlag).NotTo(BeNil())
-			Expect(scopeFlag.Usage).To(ContainSubstring("Limit the results to a particular scope"))
+			Expect(scopeFlag.Usage).To(ContainSubstring("Limit the command to a particular scope"))
 
 			namespaceFlag := cmd.Flags().Lookup("namespace")
 			Expect(namespaceFlag).NotTo(BeNil())

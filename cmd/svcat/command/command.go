@@ -41,7 +41,10 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 			nsCmd.ApplyNamespaceFlags(c.Flags())
 		}
 		if scopedCmd, ok := cmd.(HasScopedFlags); ok {
-			scopedCmd.ApplyScopedFlags(c.Flags())
+			err := scopedCmd.ApplyScopedFlags(c.Flags())
+			if err != nil {
+				return err
+			}
 		}
 		if fmtCmd, ok := cmd.(HasFormatFlags); ok {
 			err := fmtCmd.ApplyFormatFlags(c.Flags())
