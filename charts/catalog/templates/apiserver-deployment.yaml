@@ -11,7 +11,7 @@ spec:
   replicas: {{ .Values.apiserver.replicas }}
   strategy:
     type: {{ .Values.apiserver.updateStrategy }}
-    minReadySeconds: {{ .Values.apiserver.minReadySeconds }}
+  minReadySeconds: {{ .Values.apiserver.minReadySeconds }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}-apiserver
