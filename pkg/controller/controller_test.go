@@ -2051,47 +2051,16 @@ func assertNumEvents(t *testing.T, strings []string, number int) {
 	}
 }
 
-// failfFunc is a type that defines the common signatures of T.Fatalf and
-// T.Errorf.
-type failfFunc func(t *testing.T, msg string, args ...interface{})
-
 func fatalf(t *testing.T, msg string, args ...interface{}) {
 	t.Log(string(debug.Stack()))
 	t.Fatalf(msg, args...)
 }
 
-func errorf(t *testing.T, msg string, args ...interface{}) {
-	t.Log(string(debug.Stack()))
-	t.Errorf(msg, args...)
-}
-
-// assertion and expectation methods:
-//
-// - assertX will call t.Fatalf
-// - expectX will call t.Errorf and return a boolean, allowing you to drive a 'continue'
-//   in a table-type test
-
 func assertNumberOfActions(t *testing.T, actions []clientgotesting.Action, number int) {
-	testNumberOfActions(t, "" /* name */, fatalf, actions, number)
-}
-
-func expectNumberOfActions(t *testing.T, name string, actions []clientgotesting.Action, number int) bool {
-	return testNumberOfActions(t, name, errorf, actions, number)
-}
-
-func testNumberOfActions(t *testing.T, name string, f failfFunc, actions []clientgotesting.Action, number int) bool {
-	logContext := ""
-	if len(name) > 0 {
-		logContext = name + ": "
-	}
-
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		f(t, "%vUnexpected number of actions: expected %v, got %v;\nactions: %+v", logContext, e, a, actions)
-		return false
+		fatalf(t, "Unexpected number of actions: expected %v, got %v;\nactions: %+v", e, a, actions)
 	}
-
-	return true
 }
 
 func assertGet(t *testing.T, action clientgotesting.Action, obj interface{}) {
@@ -2120,36 +2089,14 @@ func assertUpdateReference(t *testing.T, action clientgotesting.Action, obj inte
 	return assertActionFor(t, action, "update", "reference", obj)
 }
 
-func expectCreate(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
-	return testActionFor(t, name, errorf, action, "create", "" /* subresource */, obj)
-}
-
-func expectUpdate(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
-	return testActionFor(t, name, errorf, action, "update", "" /* subresource */, obj)
-}
-
-func expectUpdateStatus(t *testing.T, name string, action clientgotesting.Action, obj interface{}) (runtime.Object, bool) {
-	return testActionFor(t, name, errorf, action, "update", "status", obj)
-}
-
 func assertDelete(t *testing.T, action clientgotesting.Action, obj interface{}) {
 	assertActionFor(t, action, "delete", "" /* subresource */, obj)
 }
 
 func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresource string, obj interface{}) runtime.Object {
-	r, _ := testActionFor(t, "" /* name */, fatalf, action, verb, subresource, obj)
-	return r
-}
-
-func testActionFor(t *testing.T, name string, f failfFunc, action clientgotesting.Action, verb, subresource string, obj interface{}) (runtime.Object, bool) {
-	logContext := ""
-	if len(name) > 0 {
-		logContext = name + ": "
-	}
-
 	if e, a := verb, action.GetVerb(); e != a {
-		f(t, "%vUnexpected verb: expected %v, got %v\n\tactual action %q", logContext, e, a, action)
-		return nil, false
+		fatalf(t, "Unexpected verb: expected %v, got %v\n\tactual action %q", e, a, action)
+		return nil
 	}
 
 	var resource string
@@ -2174,25 +2121,25 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	}
 
 	if e, a := resource, action.GetResource().Resource; e != a {
-		f(t, "%vUnexpected resource; expected %v, got %v", logContext, e, a)
-		return nil, false
+		fatalf(t, "Unexpected resource; expected %v, got %v", e, a)
+		return nil
 	}
 
 	if e, a := subresource, action.GetSubresource(); e != a {
-		f(t, "%vUnexpected subresource; expected %v, got %v", logContext, e, a)
-		return nil, false
+		fatalf(t, "Unexpected subresource; expected %v, got %v", e, a)
+		return nil
 	}
 
 	rtObject, ok := obj.(runtime.Object)
 	if !ok {
-		f(t, "%vObject %+v was not a runtime.Object", logContext, obj)
-		return nil, false
+		fatalf(t, "Object %+v was not a runtime.Object", obj)
+		return nil
 	}
 
 	paramAccessor, err := meta.Accessor(rtObject)
 	if err != nil {
-		f(t, "%vError creating ObjectMetaAccessor for param object %+v: %v", logContext, rtObject, err)
-		return nil, false
+		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", rtObject, err)
+		return nil
 	}
 
 	var (
@@ -2204,78 +2151,78 @@ func testActionFor(t *testing.T, name string, f failfFunc, action clientgotestin
 	case "get":
 		getAction, ok := action.(clientgotesting.GetAction)
 		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to DeleteAction", logContext, action)
-			return nil, false
+			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
+			return nil
 		}
 
 		if e, a := paramAccessor.GetName(), getAction.GetName(); e != a {
-			f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
-			return nil, false
+			fatalf(t, "Unexpected name: expected %v, got %v", e, a)
+			return nil
 		}
 
-		return nil, true
+		return nil
 	case "list":
 		_, ok := action.(clientgotesting.ListAction)
 		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to ListAction", logContext, action)
-			return nil, false
+			fatalf(t, "Unexpected type; failed to convert action %+v to ListAction", action)
+			return nil
 		}
-		return nil, true
+		return nil
 	case "delete":
 		deleteAction, ok := action.(clientgotesting.DeleteAction)
 		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to DeleteAction", logContext, action)
-			return nil, false
+			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
+			return nil
 		}
 
 		if e, a := paramAccessor.GetName(), deleteAction.GetName(); e != a {
-			f(t, "%vUnexpected name: expected %v, got %v", logContext, e, a)
-			return nil, false
+			fatalf(t, "Unexpected name: expected %v, got %v", e, a)
+			return nil
 		}
 
-		return nil, true
+		return nil
 	case "create":
 		createAction, ok := action.(clientgotesting.CreateAction)
 		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to CreateAction", logContext, action)
-			return nil, false
+			fatalf(t, "Unexpected type; failed to convert action %+v to CreateAction", action)
+			return nil
 		}
 
 		fakeRtObject = createAction.GetObject()
 		objectMeta, err = meta.Accessor(fakeRtObject)
 		if err != nil {
-			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
-			return nil, false
+			fatalf(t, "Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+			return nil
 		}
 	case "update":
 		updateAction, ok := action.(clientgotesting.UpdateAction)
 		if !ok {
-			f(t, "%vUnexpected type; failed to convert action %+v to UpdateAction", logContext, action)
-			return nil, false
+			fatalf(t, "Unexpected type; failed to convert action %+v to UpdateAction", action)
+			return nil
 		}
 
 		fakeRtObject = updateAction.GetObject()
 		objectMeta, err = meta.Accessor(fakeRtObject)
 		if err != nil {
-			f(t, "%vError creating ObjectMetaAccessor for %+v", logContext, fakeRtObject)
-			return nil, false
+			fatalf(t, "Error creating ObjectMetaAccessor for %+v", fakeRtObject)
+			return nil
 		}
 	}
 
 	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
-		f(t, "%vUnexpected name: expected %q, got %q", logContext, e, a)
-		return nil, false
+		fatalf(t, "Unexpected name: expected %q, got %q", e, a)
+		return nil
 	}
 
 	fakeValue := reflect.ValueOf(fakeRtObject)
 	paramValue := reflect.ValueOf(obj)
 
 	if e, a := paramValue.Type(), fakeValue.Type(); e != a {
-		f(t, "%vUnexpected type of object passed to fake client; expected %v, got %v", logContext, e, a)
-		return nil, false
+		fatalf(t, "Unexpected type of object passed to fake client; expected %v, got %v", e, a)
+		return nil
 	}
 
-	return fakeRtObject, true
+	return fakeRtObject
 }
 
 func assertClassRemovedFromBrokerCatalogFalse(t *testing.T, obj runtime.Object) {
@@ -2505,39 +2452,23 @@ func assertAsyncOpInProgressFalse(t *testing.T, obj runtime.Object) {
 }
 
 func assertServiceInstanceOrphanMitigationInProgressTrue(t *testing.T, obj runtime.Object) {
-	testServiceInstanceOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, true)
+	assertServiceInstanceOrphanMitigationInProgress(t, obj, true)
 }
 
 func assertServiceInstanceOrphanMitigationInProgressFalse(t *testing.T, obj runtime.Object) {
-	testServiceInstanceOrphanMitigationInProgress(t, "" /* name */, fatalf, obj, false)
+	assertServiceInstanceOrphanMitigationInProgress(t, obj, false)
 }
 
-func expectServiceInstanceOrphanMitigationInProgressTrue(t *testing.T, name string, obj runtime.Object) bool {
-	return testServiceInstanceOrphanMitigationInProgress(t, name, fatalf, obj, true)
-}
-
-func expectServiceInstanceOrphanMitigationInProgressFalse(t *testing.T, name string, obj runtime.Object) bool {
-	return testServiceInstanceOrphanMitigationInProgress(t, name, fatalf, obj, false)
-}
-
-func testServiceInstanceOrphanMitigationInProgress(t *testing.T, name string, f failfFunc, obj runtime.Object, expected bool) bool {
-	logContext := ""
-	if len(name) > 0 {
-		logContext = name + ": "
-	}
-
+func assertServiceInstanceOrphanMitigationInProgress(t *testing.T, obj runtime.Object, expected bool) {
 	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if !ok {
-		f(t, "%vCouldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", obj)
 	}
 
 	actual := isServiceInstanceOrphanMitigation(instance)
 	if actual != expected {
-		f(t, "%vexpected OrphanMitigationInProgress to be %v but was %v", logContext, expected, actual)
-		return false
+		fatalf(t, "Expected OrphanMitigationInProgress to be %v but was %v", expected, actual)
 	}
-
-	return true
 }
 
 func assertServiceInstanceLastOperation(t *testing.T, obj runtime.Object, operation string) {
@@ -3526,36 +3457,15 @@ func assertEmptyFinalizers(t *testing.T, obj runtime.Object) {
 }
 
 func assertCatalogFinalizerExists(t *testing.T, obj runtime.Object) {
-	testCatalogFinalizerExists(t, "" /* name */, fatalf, obj)
-}
-
-func expectCatalogFinalizerExists(t *testing.T, name string, obj runtime.Object) bool {
-	return testCatalogFinalizerExists(t, name, errorf, obj)
-}
-
-func testCatalogFinalizerExists(t *testing.T, name string, f failfFunc, obj runtime.Object) bool {
-	logContext := ""
-	if len(name) > 0 {
-		logContext = name + ": "
-	}
-
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		f(t, "%vError creating ObjectMetaAccessor for param object %+v: %v", logContext, obj, err)
-		return false
+		fatalf(t, "Error creating ObjectMetaAccessor for param object %+v: %v", obj, err)
 	}
 
 	finalizers := sets.NewString(accessor.GetFinalizers()...)
 	if !finalizers.Has(v1beta1.FinalizerServiceCatalog) {
-		f(t, "%vExpected Service Catalog finalizer but was not there", logContext)
-		return false
+		fatalf(t, "Expected Service Catalog finalizer but was not there")
 	}
-
-	return true
-}
-
-func assertNumberOfBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
-	testNumberOfBrokerActions(t, "" /* name */, fatalf, actions, number)
 }
 
 // assertListRestrictions compares expected Fields / Labels on a list options.
@@ -3568,23 +3478,11 @@ func assertListRestrictions(t *testing.T, e, a clientgotesting.ListRestrictions)
 	}
 }
 
-func expectNumberOfClusterServiceBrokerActions(t *testing.T, name string, actions []fakeosb.Action, number int) bool {
-	return testNumberOfBrokerActions(t, name, errorf, actions, number)
-}
-
-func testNumberOfBrokerActions(t *testing.T, name string, f failfFunc, actions []fakeosb.Action, number int) bool {
-	logContext := ""
-	if len(name) > 0 {
-		logContext = name + ": "
-	}
-
+func assertNumberOfBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		f(t, "%vUnexpected number of actions: expected %v, got %v\nactions: %+v", logContext, e, a, actions)
-		return false
+		fatalf(t, "Unexpected number of actions: expected %v, got %v\nactions: %+v", e, a, actions)
 	}
-
-	return true
 }
 
 func noFakeActions() fakeosb.FakeClientConfiguration {

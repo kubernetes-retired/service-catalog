@@ -71,15 +71,15 @@ func TestReconcileServiceClassFromServiceBrokerCatalog(t *testing.T) {
 		shouldError             bool
 		errText                 *string
 		catalogClientPrepFunc   func(*fake.Clientset)
-		catalogActionsCheckFunc func(t *testing.T, name string, actions []clientgotesting.Action)
+		catalogActionsCheckFunc func(t *testing.T, actions []clientgotesting.Action)
 	}{
 		{
 			name:            "new class",
 			newServiceClass: getTestServiceClass(),
 			shouldError:     false,
-			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
-				expectNumberOfActions(t, name, actions, 1)
-				expectCreate(t, name, actions[0], getTestServiceClass())
+			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 1)
+				assertCreate(t, actions[0], getTestServiceClass())
 			},
 		},
 		{
@@ -99,9 +99,9 @@ func TestReconcileServiceClassFromServiceBrokerCatalog(t *testing.T) {
 			newServiceClass:      updatedClass(),
 			existingServiceClass: getTestServiceClass(),
 			shouldError:          false,
-			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
-				expectNumberOfActions(t, name, actions, 1)
-				expectUpdate(t, name, actions[0], updatedClass())
+			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 1)
+				assertUpdate(t, actions[0], updatedClass())
 			},
 		},
 		{
@@ -121,36 +121,36 @@ func TestReconcileServiceClassFromServiceBrokerCatalog(t *testing.T) {
 	broker := getTestServiceBroker()
 
 	for _, tc := range cases {
-		err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
-		if err != nil {
-			t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
-		}
-		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-
-		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
-		if tc.catalogClientPrepFunc != nil {
-			tc.catalogClientPrepFunc(fakeCatalogClient)
-		}
-
-		if tc.listerServiceClass != nil {
-			sharedInformers.ServiceClasses().Informer().GetStore().Add(tc.listerServiceClass)
-		}
-
-		err = testController.reconcileServiceClassFromServiceBrokerCatalog(broker, tc.newServiceClass, tc.existingServiceClass)
-		if err != nil {
-			if !tc.shouldError {
-				t.Errorf("%v: unexpected error from method under test: %v", tc.name, err)
-				continue
-			} else if tc.errText != nil && *tc.errText != err.Error() {
-				t.Errorf("%v: unexpected error text from method under test; %s", tc.name, expectedGot(tc.errText, err.Error()))
-				continue
+		t.Run(tc.name, func(t *testing.T) {
+			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+			if err != nil {
+				t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
 			}
-		}
+			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
-		if tc.catalogActionsCheckFunc != nil {
-			actions := fakeCatalogClient.Actions()
-			tc.catalogActionsCheckFunc(t, tc.name, actions)
-		}
+			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
+			if tc.catalogClientPrepFunc != nil {
+				tc.catalogClientPrepFunc(fakeCatalogClient)
+			}
+
+			if tc.listerServiceClass != nil {
+				sharedInformers.ServiceClasses().Informer().GetStore().Add(tc.listerServiceClass)
+			}
+
+			err = testController.reconcileServiceClassFromServiceBrokerCatalog(broker, tc.newServiceClass, tc.existingServiceClass)
+			if err != nil {
+				if !tc.shouldError {
+					t.Fatalf("unexpected error from method under test: %v", err)
+				} else if tc.errText != nil && *tc.errText != err.Error() {
+					t.Fatalf("unexpected error text from method under test; %s", expectedGot(tc.errText, err.Error()))
+				}
+			}
+
+			if tc.catalogActionsCheckFunc != nil {
+				actions := fakeCatalogClient.Actions()
+				tc.catalogActionsCheckFunc(t, actions)
+			}
+		})
 	}
 }
 
@@ -176,15 +176,15 @@ func TestReconcileServicePlanFromServiceBrokerCatalog(t *testing.T) {
 		shouldError             bool
 		errText                 *string
 		catalogClientPrepFunc   func(*fake.Clientset)
-		catalogActionsCheckFunc func(t *testing.T, name string, actions []clientgotesting.Action)
+		catalogActionsCheckFunc func(t *testing.T, actions []clientgotesting.Action)
 	}{
 		{
 			name:           "new plan",
 			newServicePlan: getTestServicePlan(),
 			shouldError:    false,
-			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
-				expectNumberOfActions(t, name, actions, 1)
-				expectCreate(t, name, actions[0], getTestServicePlan())
+			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 1)
+				assertCreate(t, actions[0], getTestServicePlan())
 			},
 		},
 		{
@@ -204,9 +204,9 @@ func TestReconcileServicePlanFromServiceBrokerCatalog(t *testing.T) {
 			newServicePlan:      updatedPlan(),
 			existingServicePlan: getTestServicePlan(),
 			shouldError:         false,
-			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
-				expectNumberOfActions(t, name, actions, 1)
-				expectUpdate(t, name, actions[0], updatedPlan())
+			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
+				assertNumberOfActions(t, actions, 1)
+				assertUpdate(t, actions[0], updatedPlan())
 			},
 		},
 		{
@@ -226,35 +226,35 @@ func TestReconcileServicePlanFromServiceBrokerCatalog(t *testing.T) {
 	broker := getTestServiceBroker()
 
 	for _, tc := range cases {
-		err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
-		if err != nil {
-			t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
-		}
-		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-
-		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
-		if tc.catalogClientPrepFunc != nil {
-			tc.catalogClientPrepFunc(fakeCatalogClient)
-		}
-
-		if tc.listerServicePlan != nil {
-			sharedInformers.ServicePlans().Informer().GetStore().Add(tc.listerServicePlan)
-		}
-
-		err = testController.reconcileServicePlanFromServiceBrokerCatalog(broker, tc.newServicePlan, tc.existingServicePlan)
-		if err != nil {
-			if !tc.shouldError {
-				t.Errorf("%v: unexpected error from method under test: %v", tc.name, err)
-				continue
-			} else if tc.errText != nil && *tc.errText != err.Error() {
-				t.Errorf("%v: unexpected error text from method under test; %s", tc.name, expectedGot(tc.errText, err.Error()))
-				continue
+		t.Run(tc.name, func(t *testing.T) {
+			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+			if err != nil {
+				t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
 			}
-		}
+			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
-		if tc.catalogActionsCheckFunc != nil {
-			actions := fakeCatalogClient.Actions()
-			tc.catalogActionsCheckFunc(t, tc.name, actions)
-		}
+			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
+			if tc.catalogClientPrepFunc != nil {
+				tc.catalogClientPrepFunc(fakeCatalogClient)
+			}
+
+			if tc.listerServicePlan != nil {
+				sharedInformers.ServicePlans().Informer().GetStore().Add(tc.listerServicePlan)
+			}
+
+			err = testController.reconcileServicePlanFromServiceBrokerCatalog(broker, tc.newServicePlan, tc.existingServicePlan)
+			if err != nil {
+				if !tc.shouldError {
+					t.Fatalf("unexpected error from method under test: %v", err)
+				} else if tc.errText != nil && *tc.errText != err.Error() {
+					t.Fatalf("unexpected error text from method under test; %s", expectedGot(tc.errText, err.Error()))
+				}
+			}
+
+			if tc.catalogActionsCheckFunc != nil {
+				actions := fakeCatalogClient.Actions()
+				tc.catalogActionsCheckFunc(t, actions)
+			}
+		})
 	}
 }

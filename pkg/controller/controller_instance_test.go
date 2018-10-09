@@ -3743,66 +3743,58 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
+		t.Run(tc.name, func(t *testing.T) {
 
-		inputClone := tc.input.DeepCopy()
+			_, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
 
-		err := testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
-		if err != nil {
-			t.Errorf("%v: error updating instance condition: %v", tc.name, err)
-			continue
-		}
+			inputClone := tc.input.DeepCopy()
 
-		brokerActions := fakeClusterServiceBrokerClient.Actions()
-		assertNumberOfBrokerActions(t, brokerActions, 0)
+			err := testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
+			if err != nil {
+				t.Fatalf("%v: error updating instance condition: %v", tc.name, err)
+			}
 
-		if !reflect.DeepEqual(tc.input, inputClone) {
-			t.Errorf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
-			continue
-		}
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			assertNumberOfBrokerActions(t, brokerActions, 0)
 
-		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-			continue
-		}
+			if !reflect.DeepEqual(tc.input, inputClone) {
+				t.Fatalf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
+			}
 
-		updatedServiceInstance, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
-		if !ok {
-			continue
-		}
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
 
-		updateActionObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-		if !ok {
-			t.Errorf("%v: couldn't convert to instance", tc.name)
-			continue
-		}
+			updatedServiceInstance := assertUpdateStatus(t, actions[0], tc.input)
 
-		var initialTs metav1.Time
-		if len(inputClone.Status.Conditions) != 0 {
-			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
-		}
+			updateActionObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+			if !ok {
+				t.Fatalf("%v: couldn't convert to instance", tc.name)
+			}
 
-		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-			t.Errorf("%v: condition(s) %s", tc.name, expectedGot(e, a))
-		}
+			var initialTs metav1.Time
+			if len(inputClone.Status.Conditions) != 0 {
+				initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+			}
 
-		outputCondition := updateActionObject.Status.Conditions[0]
-		newTs := outputCondition.LastTransitionTime
+			if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+				t.Fatalf("%v: condition(s) %s", tc.name, expectedGot(e, a))
+			}
 
-		if tc.transitionTimeChanged && initialTs == newTs {
-			t.Errorf("%v: transition time didn't change when it should have", tc.name)
-			continue
-		} else if !tc.transitionTimeChanged && initialTs != newTs {
-			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
-			continue
-		}
-		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
-			continue
-		}
-		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
-		}
+			outputCondition := updateActionObject.Status.Conditions[0]
+			newTs := outputCondition.LastTransitionTime
+
+			if tc.transitionTimeChanged && initialTs == newTs {
+				t.Fatalf("%v: transition time didn't change when it should have", tc.name)
+			} else if !tc.transitionTimeChanged && initialTs != newTs {
+				t.Fatalf("%v: transition time changed when it shouldn't have", tc.name)
+			}
+			if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+				t.Fatalf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
+			}
+			if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+				t.Fatalf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
+			}
+		})
 	}
 }
 
@@ -4019,60 +4011,54 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-			ProvisionReaction: &fakeosb.ProvisionReaction{
-				Error: osb.HTTPStatusCodeError{
-					StatusCode: tc.statusCode,
+		t.Run(tc.name, func(t *testing.T) {
+
+			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				ProvisionReaction: &fakeosb.ProvisionReaction{
+					Error: osb.HTTPStatusCodeError{
+						StatusCode: tc.statusCode,
+					},
 				},
-			},
-		})
+			})
 
-		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-		sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-		sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-		instance := getTestServiceInstanceWithClusterRefs()
-		if err := reconcileServiceInstance(t, testController, instance); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-		fakeCatalogClient.ClearActions()
-
-		err := reconcileServiceInstance(t, testController, instance)
-
-		// The action should be:
-		// 0. Updating the status
-		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-			continue
-		}
-
-		updatedObject, ok := expectUpdateStatus(t, tc.name, actions[0], instance)
-		if !ok {
-			continue
-		}
-		updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
-
-		if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, tc.triggersOrphanMitigation); !ok {
-			continue
-		}
-
-		if tc.triggersOrphanMitigation {
-			// TODO(mkibbe): Rework this to be an expects, not asserts
-			assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, instance)
-			if err == nil {
-				t.Errorf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
-				continue
+			instance := getTestServiceInstanceWithClusterRefs()
+			if err := reconcileServiceInstance(t, testController, instance); err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-		} else {
-			if err != nil {
-				if tc.terminalFailure {
-					t.Errorf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
-					continue
+
+			instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+			fakeCatalogClient.ClearActions()
+
+			err := reconcileServiceInstance(t, testController, instance)
+
+			// The action should be:
+			// 0. Updating the status
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
+
+			updatedObject := assertUpdateStatus(t, actions[0], instance)
+
+			updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
+
+			assertServiceInstanceOrphanMitigationInProgress(t, updatedServiceInstance, tc.triggersOrphanMitigation)
+
+			if tc.triggersOrphanMitigation {
+				assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, instance)
+				if err == nil {
+					t.Fatalf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
+				}
+			} else {
+				if err != nil {
+					if tc.terminalFailure {
+						t.Fatalf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
+					}
 				}
 			}
-		}
+		})
 	}
 }
 
@@ -4343,27 +4329,18 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			// The action should be:
 			// 0. Updating the status
 			actions := fakeCatalogClient.Actions()
-			if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-				t.Fatalf("continue")
-			}
+			assertNumberOfActions(t, actions, 1)
 
-			updatedObject, ok := expectUpdateStatus(t, tc.name, actions[0], instance)
-			if !ok {
-				t.Fatalf("continue")
-			}
+			updatedObject := assertUpdateStatus(t, actions[0], instance)
 			updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
 
-			if ok := testServiceInstanceOrphanMitigationInProgress(t, tc.name, errorf, updatedServiceInstance, !tc.finishedOrphanMitigation); !ok {
-				t.Fatalf("continue")
-			}
-
+			assertServiceInstanceOrphanMitigationInProgress(t, updatedServiceInstance, !tc.finishedOrphanMitigation)
 			if tc.finishedOrphanMitigation {
 				assertServiceInstanceOrphanMitigationMissing(t, updatedServiceInstance)
 			} else {
 				assertServiceInstanceOrphanMitigationTrue(t, updatedServiceInstance, startingInstanceOrphanMitigationReason)
 			}
 
-			//TODO(mkibbe): change asserts to expects
 			assertServiceInstanceReadyCondition(
 				t,
 				updatedServiceInstance,
@@ -4382,7 +4359,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				}
 			}
 
-			expectCatalogFinalizerExists(t, tc.name, updatedServiceInstance)
+			assertCatalogFinalizerExists(t, updatedServiceInstance)
 		})
 	}
 }

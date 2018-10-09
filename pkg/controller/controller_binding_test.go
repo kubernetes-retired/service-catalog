@@ -1837,63 +1837,54 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+		t.Run(tc.name, func(t *testing.T) {
+			_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
-		inputClone := tc.input.DeepCopy()
+			inputClone := tc.input.DeepCopy()
 
-		err := testController.updateServiceBindingCondition(tc.input, v1beta1.ServiceBindingConditionReady, tc.status, tc.reason, tc.message)
-		if err != nil {
-			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
-			continue
-		}
+			err := testController.updateServiceBindingCondition(tc.input, v1beta1.ServiceBindingConditionReady, tc.status, tc.reason, tc.message)
+			if err != nil {
+				t.Fatalf("%v: error updating broker condition: %v", tc.name, err)
+			}
 
-		if !reflect.DeepEqual(tc.input, inputClone) {
-			t.Errorf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
-			continue
-		}
+			if !reflect.DeepEqual(tc.input, inputClone) {
+				t.Fatalf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
+			}
 
-		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-			continue
-		}
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
 
-		updatedServiceBinding, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
-		if !ok {
-			continue
-		}
+			updatedServiceBinding := assertUpdateStatus(t, actions[0], tc.input)
 
-		updateActionObject, ok := updatedServiceBinding.(*v1beta1.ServiceBinding)
-		if !ok {
-			t.Errorf("%v: couldn't convert to binding", tc.name)
-			continue
-		}
+			updateActionObject, ok := updatedServiceBinding.(*v1beta1.ServiceBinding)
+			if !ok {
+				t.Fatalf("%v: couldn't convert to binding", tc.name)
+			}
 
-		var initialTs metav1.Time
-		if len(inputClone.Status.Conditions) != 0 {
-			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
-		}
+			var initialTs metav1.Time
+			if len(inputClone.Status.Conditions) != 0 {
+				initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+			}
 
-		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-			t.Errorf("%v: %s", tc.name, expectedGot(e, a))
-		}
+			if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+				t.Errorf("%v: %s", tc.name, expectedGot(e, a))
+			}
 
-		outputCondition := updateActionObject.Status.Conditions[0]
-		newTs := outputCondition.LastTransitionTime
+			outputCondition := updateActionObject.Status.Conditions[0]
+			newTs := outputCondition.LastTransitionTime
 
-		if tc.transitionTimeChanged && initialTs == newTs {
-			t.Errorf("%v: transition time didn't change when it should have", tc.name)
-			continue
-		} else if !tc.transitionTimeChanged && initialTs != newTs {
-			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
-			continue
-		}
-		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
-			continue
-		}
-		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
-		}
+			if tc.transitionTimeChanged && initialTs == newTs {
+				t.Fatalf("%v: transition time didn't change when it should have", tc.name)
+			} else if !tc.transitionTimeChanged && initialTs != newTs {
+				t.Fatalf("%v: transition time changed when it shouldn't have", tc.name)
+			}
+			if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+				t.Fatalf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
+			}
+			if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+				t.Fatalf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
+			}
+		})
 	}
 }
 
