@@ -153,8 +153,12 @@ tree:
     example: |2-
         svcat describe plan standard800
         svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
+        svcat describe plan PLAN_NAME --scope cluster
+        svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME
     command: ./svcat describe plan
     flags:
+    - name: scope
+      desc: 'Limit the command to a particular scope: cluster or namespace'
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
     - name: uuid

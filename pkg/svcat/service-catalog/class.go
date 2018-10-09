@@ -155,10 +155,9 @@ func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, er
 }
 
 // RetrieveClassByPlan gets the class associated to a plan.
-func (sdk *SDK) RetrieveClassByPlan(plan *v1beta1.ClusterServicePlan,
-) (*v1beta1.ClusterServiceClass, error) {
+func (sdk *SDK) RetrieveClassByPlan(plan Plan) (*v1beta1.ClusterServiceClass, error) {
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
+	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.GetClassID(), metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}

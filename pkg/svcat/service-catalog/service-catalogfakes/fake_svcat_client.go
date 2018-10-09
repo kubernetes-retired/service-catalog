@@ -319,10 +319,10 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ClusterServiceClass
 		result2 error
 	}
-	RetrieveClassByPlanStub        func(*apiv1beta1.ClusterServicePlan) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByPlanStub        func(servicecatalog.Plan) (*apiv1beta1.ClusterServiceClass, error)
 	retrieveClassByPlanMutex       sync.RWMutex
 	retrieveClassByPlanArgsForCall []struct {
-		arg1 *apiv1beta1.ClusterServicePlan
+		arg1 servicecatalog.Plan
 	}
 	retrieveClassByPlanReturns struct {
 		result1 *apiv1beta1.ClusterServiceClass
@@ -472,10 +472,10 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ServiceInstanceList
 		result2 error
 	}
-	RetrieveInstancesByPlanStub        func(*apiv1beta1.ClusterServicePlan) ([]apiv1beta1.ServiceInstance, error)
+	RetrieveInstancesByPlanStub        func(servicecatalog.Plan) ([]apiv1beta1.ServiceInstance, error)
 	retrieveInstancesByPlanMutex       sync.RWMutex
 	retrieveInstancesByPlanArgsForCall []struct {
-		arg1 *apiv1beta1.ClusterServicePlan
+		arg1 servicecatalog.Plan
 	}
 	retrieveInstancesByPlanReturns struct {
 		result1 []apiv1beta1.ServiceInstance
@@ -530,10 +530,11 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ServiceInstance
 		result2 error
 	}
-	RetrievePlansStub        func(servicecatalog.RetrievePlanOptions) ([]servicecatalog.Plan, error)
+	RetrievePlansStub        func(string, servicecatalog.ScopeOptions) ([]servicecatalog.Plan, error)
 	retrievePlansMutex       sync.RWMutex
 	retrievePlansArgsForCall []struct {
-		arg1 servicecatalog.RetrievePlanOptions
+		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
 	retrievePlansReturns struct {
 		result1 []servicecatalog.Plan
@@ -543,44 +544,47 @@ type FakeSvcatClient struct {
 		result1 []servicecatalog.Plan
 		result2 error
 	}
-	RetrievePlanByNameStub        func(string) (*apiv1beta1.ClusterServicePlan, error)
+	RetrievePlanByNameStub        func(string, servicecatalog.ScopeOptions) (servicecatalog.Plan, error)
 	retrievePlanByNameMutex       sync.RWMutex
 	retrievePlanByNameArgsForCall []struct {
 		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
 	retrievePlanByNameReturns struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}
 	retrievePlanByNameReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}
-	RetrievePlanByIDStub        func(string) (*apiv1beta1.ClusterServicePlan, error)
+	RetrievePlanByClassAndNameStub        func(string, string, servicecatalog.ScopeOptions) (servicecatalog.Plan, error)
+	retrievePlanByClassAndNameMutex       sync.RWMutex
+	retrievePlanByClassAndNameArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 servicecatalog.ScopeOptions
+	}
+	retrievePlanByClassAndNameReturns struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}
+	retrievePlanByClassAndNameReturnsOnCall map[int]struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}
+	RetrievePlanByIDStub        func(string, servicecatalog.ScopeOptions) (servicecatalog.Plan, error)
 	retrievePlanByIDMutex       sync.RWMutex
 	retrievePlanByIDArgsForCall []struct {
 		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
 	retrievePlanByIDReturns struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}
 	retrievePlanByIDReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServicePlan
-		result2 error
-	}
-	RetrievePlanByClassAndPlanNamesStub        func(string, string) (*apiv1beta1.ClusterServicePlan, error)
-	retrievePlanByClassAndPlanNamesMutex       sync.RWMutex
-	retrievePlanByClassAndPlanNamesArgsForCall []struct {
-		arg1 string
-		arg2 string
-	}
-	retrievePlanByClassAndPlanNamesReturns struct {
-		result1 *apiv1beta1.ClusterServicePlan
-		result2 error
-	}
-	retrievePlanByClassAndPlanNamesReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}
 	RetrieveSecretByBindingStub        func(*apiv1beta1.ServiceBinding) (*apicorev1.Secret, error)
@@ -1702,11 +1706,11 @@ func (fake *FakeSvcatClient) RetrieveClassByIDReturnsOnCall(i int, result1 *apiv
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByPlan(arg1 *apiv1beta1.ClusterServicePlan) (*apiv1beta1.ClusterServiceClass, error) {
+func (fake *FakeSvcatClient) RetrieveClassByPlan(arg1 servicecatalog.Plan) (*apiv1beta1.ClusterServiceClass, error) {
 	fake.retrieveClassByPlanMutex.Lock()
 	ret, specificReturn := fake.retrieveClassByPlanReturnsOnCall[len(fake.retrieveClassByPlanArgsForCall)]
 	fake.retrieveClassByPlanArgsForCall = append(fake.retrieveClassByPlanArgsForCall, struct {
-		arg1 *apiv1beta1.ClusterServicePlan
+		arg1 servicecatalog.Plan
 	}{arg1})
 	fake.recordInvocation("RetrieveClassByPlan", []interface{}{arg1})
 	fake.retrieveClassByPlanMutex.Unlock()
@@ -1725,7 +1729,7 @@ func (fake *FakeSvcatClient) RetrieveClassByPlanCallCount() int {
 	return len(fake.retrieveClassByPlanArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByPlanArgsForCall(i int) *apiv1beta1.ClusterServicePlan {
+func (fake *FakeSvcatClient) RetrieveClassByPlanArgsForCall(i int) servicecatalog.Plan {
 	fake.retrieveClassByPlanMutex.RLock()
 	defer fake.retrieveClassByPlanMutex.RUnlock()
 	return fake.retrieveClassByPlanArgsForCall[i].arg1
@@ -2273,11 +2277,11 @@ func (fake *FakeSvcatClient) RetrieveInstancesReturnsOnCall(i int, result1 *apiv
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveInstancesByPlan(arg1 *apiv1beta1.ClusterServicePlan) ([]apiv1beta1.ServiceInstance, error) {
+func (fake *FakeSvcatClient) RetrieveInstancesByPlan(arg1 servicecatalog.Plan) ([]apiv1beta1.ServiceInstance, error) {
 	fake.retrieveInstancesByPlanMutex.Lock()
 	ret, specificReturn := fake.retrieveInstancesByPlanReturnsOnCall[len(fake.retrieveInstancesByPlanArgsForCall)]
 	fake.retrieveInstancesByPlanArgsForCall = append(fake.retrieveInstancesByPlanArgsForCall, struct {
-		arg1 *apiv1beta1.ClusterServicePlan
+		arg1 servicecatalog.Plan
 	}{arg1})
 	fake.recordInvocation("RetrieveInstancesByPlan", []interface{}{arg1})
 	fake.retrieveInstancesByPlanMutex.Unlock()
@@ -2296,7 +2300,7 @@ func (fake *FakeSvcatClient) RetrieveInstancesByPlanCallCount() int {
 	return len(fake.retrieveInstancesByPlanArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveInstancesByPlanArgsForCall(i int) *apiv1beta1.ClusterServicePlan {
+func (fake *FakeSvcatClient) RetrieveInstancesByPlanArgsForCall(i int) servicecatalog.Plan {
 	fake.retrieveInstancesByPlanMutex.RLock()
 	defer fake.retrieveInstancesByPlanMutex.RUnlock()
 	return fake.retrieveInstancesByPlanArgsForCall[i].arg1
@@ -2482,16 +2486,17 @@ func (fake *FakeSvcatClient) WaitForInstanceToNotExistReturnsOnCall(i int, resul
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrievePlans(arg1 servicecatalog.RetrievePlanOptions) ([]servicecatalog.Plan, error) {
+func (fake *FakeSvcatClient) RetrievePlans(arg1 string, arg2 servicecatalog.ScopeOptions) ([]servicecatalog.Plan, error) {
 	fake.retrievePlansMutex.Lock()
 	ret, specificReturn := fake.retrievePlansReturnsOnCall[len(fake.retrievePlansArgsForCall)]
 	fake.retrievePlansArgsForCall = append(fake.retrievePlansArgsForCall, struct {
-		arg1 servicecatalog.RetrievePlanOptions
-	}{arg1})
-	fake.recordInvocation("RetrievePlans", []interface{}{arg1})
+		arg1 string
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrievePlans", []interface{}{arg1, arg2})
 	fake.retrievePlansMutex.Unlock()
 	if fake.RetrievePlansStub != nil {
-		return fake.RetrievePlansStub(arg1)
+		return fake.RetrievePlansStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -2505,10 +2510,10 @@ func (fake *FakeSvcatClient) RetrievePlansCallCount() int {
 	return len(fake.retrievePlansArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrievePlansArgsForCall(i int) servicecatalog.RetrievePlanOptions {
+func (fake *FakeSvcatClient) RetrievePlansArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
 	fake.retrievePlansMutex.RLock()
 	defer fake.retrievePlansMutex.RUnlock()
-	return fake.retrievePlansArgsForCall[i].arg1
+	return fake.retrievePlansArgsForCall[i].arg1, fake.retrievePlansArgsForCall[i].arg2
 }
 
 func (fake *FakeSvcatClient) RetrievePlansReturns(result1 []servicecatalog.Plan, result2 error) {
@@ -2533,16 +2538,17 @@ func (fake *FakeSvcatClient) RetrievePlansReturnsOnCall(i int, result1 []service
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByName(arg1 string) (*apiv1beta1.ClusterServicePlan, error) {
+func (fake *FakeSvcatClient) RetrievePlanByName(arg1 string, arg2 servicecatalog.ScopeOptions) (servicecatalog.Plan, error) {
 	fake.retrievePlanByNameMutex.Lock()
 	ret, specificReturn := fake.retrievePlanByNameReturnsOnCall[len(fake.retrievePlanByNameArgsForCall)]
 	fake.retrievePlanByNameArgsForCall = append(fake.retrievePlanByNameArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("RetrievePlanByName", []interface{}{arg1})
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrievePlanByName", []interface{}{arg1, arg2})
 	fake.retrievePlanByNameMutex.Unlock()
 	if fake.RetrievePlanByNameStub != nil {
-		return fake.RetrievePlanByNameStub(arg1)
+		return fake.RetrievePlanByNameStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -2556,44 +2562,98 @@ func (fake *FakeSvcatClient) RetrievePlanByNameCallCount() int {
 	return len(fake.retrievePlanByNameArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByNameArgsForCall(i int) string {
+func (fake *FakeSvcatClient) RetrievePlanByNameArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
 	fake.retrievePlanByNameMutex.RLock()
 	defer fake.retrievePlanByNameMutex.RUnlock()
-	return fake.retrievePlanByNameArgsForCall[i].arg1
+	return fake.retrievePlanByNameArgsForCall[i].arg1, fake.retrievePlanByNameArgsForCall[i].arg2
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByNameReturns(result1 *apiv1beta1.ClusterServicePlan, result2 error) {
+func (fake *FakeSvcatClient) RetrievePlanByNameReturns(result1 servicecatalog.Plan, result2 error) {
 	fake.RetrievePlanByNameStub = nil
 	fake.retrievePlanByNameReturns = struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByNameReturnsOnCall(i int, result1 *apiv1beta1.ClusterServicePlan, result2 error) {
+func (fake *FakeSvcatClient) RetrievePlanByNameReturnsOnCall(i int, result1 servicecatalog.Plan, result2 error) {
 	fake.RetrievePlanByNameStub = nil
 	if fake.retrievePlanByNameReturnsOnCall == nil {
 		fake.retrievePlanByNameReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServicePlan
+			result1 servicecatalog.Plan
 			result2 error
 		})
 	}
 	fake.retrievePlanByNameReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByID(arg1 string) (*apiv1beta1.ClusterServicePlan, error) {
+func (fake *FakeSvcatClient) RetrievePlanByClassAndName(arg1 string, arg2 string, arg3 servicecatalog.ScopeOptions) (servicecatalog.Plan, error) {
+	fake.retrievePlanByClassAndNameMutex.Lock()
+	ret, specificReturn := fake.retrievePlanByClassAndNameReturnsOnCall[len(fake.retrievePlanByClassAndNameArgsForCall)]
+	fake.retrievePlanByClassAndNameArgsForCall = append(fake.retrievePlanByClassAndNameArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 servicecatalog.ScopeOptions
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("RetrievePlanByClassAndName", []interface{}{arg1, arg2, arg3})
+	fake.retrievePlanByClassAndNameMutex.Unlock()
+	if fake.RetrievePlanByClassAndNameStub != nil {
+		return fake.RetrievePlanByClassAndNameStub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.retrievePlanByClassAndNameReturns.result1, fake.retrievePlanByClassAndNameReturns.result2
+}
+
+func (fake *FakeSvcatClient) RetrievePlanByClassAndNameCallCount() int {
+	fake.retrievePlanByClassAndNameMutex.RLock()
+	defer fake.retrievePlanByClassAndNameMutex.RUnlock()
+	return len(fake.retrievePlanByClassAndNameArgsForCall)
+}
+
+func (fake *FakeSvcatClient) RetrievePlanByClassAndNameArgsForCall(i int) (string, string, servicecatalog.ScopeOptions) {
+	fake.retrievePlanByClassAndNameMutex.RLock()
+	defer fake.retrievePlanByClassAndNameMutex.RUnlock()
+	return fake.retrievePlanByClassAndNameArgsForCall[i].arg1, fake.retrievePlanByClassAndNameArgsForCall[i].arg2, fake.retrievePlanByClassAndNameArgsForCall[i].arg3
+}
+
+func (fake *FakeSvcatClient) RetrievePlanByClassAndNameReturns(result1 servicecatalog.Plan, result2 error) {
+	fake.RetrievePlanByClassAndNameStub = nil
+	fake.retrievePlanByClassAndNameReturns = struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) RetrievePlanByClassAndNameReturnsOnCall(i int, result1 servicecatalog.Plan, result2 error) {
+	fake.RetrievePlanByClassAndNameStub = nil
+	if fake.retrievePlanByClassAndNameReturnsOnCall == nil {
+		fake.retrievePlanByClassAndNameReturnsOnCall = make(map[int]struct {
+			result1 servicecatalog.Plan
+			result2 error
+		})
+	}
+	fake.retrievePlanByClassAndNameReturnsOnCall[i] = struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) RetrievePlanByID(arg1 string, arg2 servicecatalog.ScopeOptions) (servicecatalog.Plan, error) {
 	fake.retrievePlanByIDMutex.Lock()
 	ret, specificReturn := fake.retrievePlanByIDReturnsOnCall[len(fake.retrievePlanByIDArgsForCall)]
 	fake.retrievePlanByIDArgsForCall = append(fake.retrievePlanByIDArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("RetrievePlanByID", []interface{}{arg1})
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrievePlanByID", []interface{}{arg1, arg2})
 	fake.retrievePlanByIDMutex.Unlock()
 	if fake.RetrievePlanByIDStub != nil {
-		return fake.RetrievePlanByIDStub(arg1)
+		return fake.RetrievePlanByIDStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -2607,82 +2667,30 @@ func (fake *FakeSvcatClient) RetrievePlanByIDCallCount() int {
 	return len(fake.retrievePlanByIDArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByIDArgsForCall(i int) string {
+func (fake *FakeSvcatClient) RetrievePlanByIDArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
 	fake.retrievePlanByIDMutex.RLock()
 	defer fake.retrievePlanByIDMutex.RUnlock()
-	return fake.retrievePlanByIDArgsForCall[i].arg1
+	return fake.retrievePlanByIDArgsForCall[i].arg1, fake.retrievePlanByIDArgsForCall[i].arg2
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByIDReturns(result1 *apiv1beta1.ClusterServicePlan, result2 error) {
+func (fake *FakeSvcatClient) RetrievePlanByIDReturns(result1 servicecatalog.Plan, result2 error) {
 	fake.RetrievePlanByIDStub = nil
 	fake.retrievePlanByIDReturns = struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrievePlanByIDReturnsOnCall(i int, result1 *apiv1beta1.ClusterServicePlan, result2 error) {
+func (fake *FakeSvcatClient) RetrievePlanByIDReturnsOnCall(i int, result1 servicecatalog.Plan, result2 error) {
 	fake.RetrievePlanByIDStub = nil
 	if fake.retrievePlanByIDReturnsOnCall == nil {
 		fake.retrievePlanByIDReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServicePlan
+			result1 servicecatalog.Plan
 			result2 error
 		})
 	}
 	fake.retrievePlanByIDReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServicePlan
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeSvcatClient) RetrievePlanByClassAndPlanNames(arg1 string, arg2 string) (*apiv1beta1.ClusterServicePlan, error) {
-	fake.retrievePlanByClassAndPlanNamesMutex.Lock()
-	ret, specificReturn := fake.retrievePlanByClassAndPlanNamesReturnsOnCall[len(fake.retrievePlanByClassAndPlanNamesArgsForCall)]
-	fake.retrievePlanByClassAndPlanNamesArgsForCall = append(fake.retrievePlanByClassAndPlanNamesArgsForCall, struct {
-		arg1 string
-		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("RetrievePlanByClassAndPlanNames", []interface{}{arg1, arg2})
-	fake.retrievePlanByClassAndPlanNamesMutex.Unlock()
-	if fake.RetrievePlanByClassAndPlanNamesStub != nil {
-		return fake.RetrievePlanByClassAndPlanNamesStub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.retrievePlanByClassAndPlanNamesReturns.result1, fake.retrievePlanByClassAndPlanNamesReturns.result2
-}
-
-func (fake *FakeSvcatClient) RetrievePlanByClassAndPlanNamesCallCount() int {
-	fake.retrievePlanByClassAndPlanNamesMutex.RLock()
-	defer fake.retrievePlanByClassAndPlanNamesMutex.RUnlock()
-	return len(fake.retrievePlanByClassAndPlanNamesArgsForCall)
-}
-
-func (fake *FakeSvcatClient) RetrievePlanByClassAndPlanNamesArgsForCall(i int) (string, string) {
-	fake.retrievePlanByClassAndPlanNamesMutex.RLock()
-	defer fake.retrievePlanByClassAndPlanNamesMutex.RUnlock()
-	return fake.retrievePlanByClassAndPlanNamesArgsForCall[i].arg1, fake.retrievePlanByClassAndPlanNamesArgsForCall[i].arg2
-}
-
-func (fake *FakeSvcatClient) RetrievePlanByClassAndPlanNamesReturns(result1 *apiv1beta1.ClusterServicePlan, result2 error) {
-	fake.RetrievePlanByClassAndPlanNamesStub = nil
-	fake.retrievePlanByClassAndPlanNamesReturns = struct {
-		result1 *apiv1beta1.ClusterServicePlan
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeSvcatClient) RetrievePlanByClassAndPlanNamesReturnsOnCall(i int, result1 *apiv1beta1.ClusterServicePlan, result2 error) {
-	fake.RetrievePlanByClassAndPlanNamesStub = nil
-	if fake.retrievePlanByClassAndPlanNamesReturnsOnCall == nil {
-		fake.retrievePlanByClassAndPlanNamesReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServicePlan
-			result2 error
-		})
-	}
-	fake.retrievePlanByClassAndPlanNamesReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServicePlan
+		result1 servicecatalog.Plan
 		result2 error
 	}{result1, result2}
 }
@@ -2860,10 +2868,10 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.retrievePlansMutex.RUnlock()
 	fake.retrievePlanByNameMutex.RLock()
 	defer fake.retrievePlanByNameMutex.RUnlock()
+	fake.retrievePlanByClassAndNameMutex.RLock()
+	defer fake.retrievePlanByClassAndNameMutex.RUnlock()
 	fake.retrievePlanByIDMutex.RLock()
 	defer fake.retrievePlanByIDMutex.RUnlock()
-	fake.retrievePlanByClassAndPlanNamesMutex.RLock()
-	defer fake.retrievePlanByClassAndPlanNamesMutex.RUnlock()
 	fake.retrieveSecretByBindingMutex.RLock()
 	defer fake.retrieveSecretByBindingMutex.RUnlock()
 	fake.serverVersionMutex.RLock()

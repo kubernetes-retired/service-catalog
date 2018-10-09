@@ -17,34 +17,35 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
 	// FieldExternalPlanName is the jsonpath to a plan's external name.
 	FieldExternalPlanName = "spec.externalName"
 
-	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
-	FieldServiceClassRef = "spec.clusterServiceClassRef.name"
-)
+	// FieldClusterServiceClassRef is the jsonpath to a plan's associated class name.
+	FieldClusterServiceClassRef = "spec.clusterServiceClassRef.name"
 
-// RetrievePlanOptions allows to specify which plans will be retrieved
-type RetrievePlanOptions struct {
-	ClassID   string
-	Namespace string
-	Scope     Scope
-}
+	// FieldServiceClassRef is the jsonpath to a plan's associated class name.
+	FieldServiceClassRef = "spec.serviceClassRef.name"
+)
 
 // Plan provides a unifying layer of cluster and namespace scoped plan resources.
 type Plan interface {
 
 	// GetName returns the plan's name.
 	GetName() string
+
+	// GetShortStatus returns the plan's status.
+	GetShortStatus() string
 
 	// GetNamespace returns the plan's namespace, or "" if it's cluster-scoped.
 	GetNamespace() string
@@ -55,44 +56,69 @@ type Plan interface {
 	// GetDescription returns the plan description.
 	GetDescription() string
 
+	// GetFree returns if the plan is free.
+	GetFree() bool
+
 	// GetClassID returns the plan's class name.
 	GetClassID() string
+
+	// GetInstanceCreateSchema returns the instance create schema from plan.
+	GetInstanceCreateSchema() *runtime.RawExtension
+
+	// GetInstanceUpdateSchema returns the instance update schema from plan.
+	GetInstanceUpdateSchema() *runtime.RawExtension
+
+	// GetBindingCreateSchema returns the instance create schema from plan.
+	GetBindingCreateSchema() *runtime.RawExtension
 }
 
 // RetrievePlans lists all plans defined in the cluster.
-func (sdk *SDK) RetrievePlans(opts RetrievePlanOptions) ([]Plan, error) {
+func (sdk *SDK) RetrievePlans(classID string, opts ScopeOptions) ([]Plan, error) {
+	plans, err := sdk.retrievePlansByListOptions(opts, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	if classID == "" {
+		return plans, nil
+	}
+
+	var filtered []Plan
+	for _, p := range plans {
+		if p.GetClassID() == classID {
+			filtered = append(filtered, p)
+		}
+	}
+
+	return filtered, nil
+}
+
+func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts metav1.ListOptions) ([]Plan, error) {
 	var plans []Plan
 
-	if opts.Scope.Matches(ClusterScope) {
-		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(v1.ListOptions{})
+	if scopeOpts.Scope.Matches(ClusterScope) {
+		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(listOpts)
 		if err != nil {
 			return nil, fmt.Errorf("unable to list cluster-scoped plans (%s)", err)
 		}
 
 		for _, p := range csp.Items {
-			if opts.ClassID != "" && p.GetClassID() != opts.ClassID {
-				continue
-			}
-
 			plan := p
 			plans = append(plans, &plan)
 		}
 	}
 
-	if opts.Scope.Matches(NamespaceScope) {
-		sp, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).List(v1.ListOptions{})
+	if scopeOpts.Scope.Matches(NamespaceScope) {
+		sp, err := sdk.ServiceCatalog().ServicePlans(scopeOpts.Namespace).List(listOpts)
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return plans, nil
 			}
-			return nil, fmt.Errorf("unable to list plans in %q (%s)", opts.Namespace, err)
+			return nil, fmt.Errorf("unable to list plans in %q (%s)", scopeOpts.Namespace, err)
 		}
-		for _, p := range sp.Items {
-			if opts.ClassID != "" && p.GetClassID() != opts.ClassID {
-				continue
-			}
 
+		for _, p := range sp.Items {
 			plan := p
 			plans = append(plans, &plan)
 		}
@@ -102,56 +128,82 @@ func (sdk *SDK) RetrievePlans(opts RetrievePlanOptions) ([]Plan, error) {
 }
 
 // RetrievePlanByName gets a plan by its external name.
-func (sdk *SDK) RetrievePlanByName(name string) (*v1beta1.ClusterServicePlan, error) {
-	opts := v1.ListOptions{
+func (sdk *SDK) RetrievePlanByName(name string, opts ScopeOptions) (Plan, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
+	listOpts := metav1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalPlanName, name).String(),
 	}
-	searchResults, err := sdk.ServiceCatalog().ClusterServicePlans().List(opts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to search plans by name '%s', (%s)", name, err)
-	}
-	if len(searchResults.Items) == 0 {
-		return nil, fmt.Errorf("plan not found '%s'", name)
-	}
-	if len(searchResults.Items) > 1 {
-		return nil, fmt.Errorf("more than one matching plan found for '%s'", name)
-	}
-	return &searchResults.Items[0], nil
+
+	return sdk.retrieveSinglePlanByListOptions(name, opts, listOpts)
 }
 
-// RetrievePlanByID gets a plan by its UUID.
-func (sdk *SDK) RetrievePlanByID(uuid string) (*v1beta1.ClusterServicePlan, error) {
-	plan, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, v1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to get plan by uuid '%s' (%s)", uuid, err)
+// RetrievePlanByClassAndName gets a plan by its external name and class name combination.
+func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts ScopeOptions) (Plan, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
 	}
-	return plan, nil
-}
 
-// RetrievePlanByClassAndPlanNames gets a plan by its class/plan name combination.
-func (sdk *SDK) RetrievePlanByClassAndPlanNames(className, planName string,
-) (*v1beta1.ClusterServicePlan, error) {
-	class, err := sdk.RetrieveClassByName(className, ScopeOptions{Scope: ClusterScope})
+	class, err := sdk.RetrieveClassByName(className, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	planOpts := v1.ListOptions{
+	var classRefSelector fields.Selector
+	if opts.Scope.Matches(ClusterScope) {
+		classRefSelector = fields.OneTermEqualSelector(FieldClusterServiceClassRef, class.GetName())
+	} else {
+		classRefSelector = fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName())
+	}
+
+	listOpts := metav1.ListOptions{
 		FieldSelector: fields.AndSelectors(
-			fields.OneTermEqualSelector(FieldServiceClassRef, class.GetName()),
+			classRefSelector,
 			fields.OneTermEqualSelector(FieldExternalPlanName, planName),
 		).String(),
 	}
-	searchResults, err := sdk.ServiceCatalog().ClusterServicePlans().List(planOpts)
+
+	ss := []string{class.GetName(), planName}
+	return sdk.retrieveSinglePlanByListOptions(strings.Join(ss, "/"), opts, listOpts)
+}
+
+func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOptions, listOpts metav1.ListOptions) (Plan, error) {
+	plans, err := sdk.retrievePlansByListOptions(scopeOpts, listOpts)
 	if err != nil {
-		return nil, fmt.Errorf("unable to search plans by class/plan name '%s/%s' (%s)", className, planName, err)
+		return nil, err
 	}
-	if len(searchResults.Items) == 0 {
-		return nil, fmt.Errorf("plan not found '%s/%s'", className, planName)
+	if len(plans) == 0 {
+		return nil, fmt.Errorf("plan not found '%s'", name)
 	}
-	if len(searchResults.Items) > 1 {
-		// Note: Should never occur, as class/plan name combo must be unique
-		return nil, fmt.Errorf("more than one matching plan found for '%s/%s'", className, planName)
+	if len(plans) > 1 {
+		return nil, fmt.Errorf("more than one matching plan found for '%s'", name)
 	}
-	return &searchResults.Items[0], nil
+	return plans[0], nil
+}
+
+// RetrievePlanByID gets a plan by its UUID.
+func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
+	if opts.Scope == AllScope {
+		return nil, errors.New("invalid scope: all")
+	}
+
+	if opts.Scope.Matches(ClusterScope) {
+		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("unable to get cluster-scoped plan by uuid '%s' (%s)", uuid, err)
+		}
+		return p, nil
+	}
+
+	if opts.Scope.Matches(NamespaceScope) {
+		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(uuid, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("unable to get plan by uuid '%s' (%s)", uuid, err)
+		}
+		return p, nil
+	}
+
+	return nil, fmt.Errorf("unable to get plan by uuid '%s'", uuid)
 }

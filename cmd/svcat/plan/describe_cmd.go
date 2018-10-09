@@ -22,12 +22,13 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 type describeCmd struct {
-	*command.Context
+	*command.Namespaced
+	*command.Scoped
 	lookupByUUID bool
 	showSchemas  bool
 	uuid         string
@@ -36,7 +37,10 @@ type describeCmd struct {
 
 // NewDescribeCmd builds a "svcat describe plan" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Context: cxt}
+	describeCmd := &describeCmd{
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+	}
 	cmd := &cobra.Command{
 		Use:     "plan NAME",
 		Aliases: []string{"plans", "pl"},
@@ -44,6 +48,8 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Example: command.NormalizeExamples(`
   svcat describe plan standard800
   svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
+  svcat describe plan PLAN_NAME --scope cluster
+  svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME
 `),
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
@@ -62,9 +68,12 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		true,
 		"Whether or not to show instance and binding parameter schemas",
 	)
+	describeCmd.AddNamespaceFlags(cmd.Flags(), false)
+	describeCmd.AddScopedFlags(cmd.Flags(), false)
 	return cmd
 }
 
+// Validate and load the arguments passed to the svcat command.
 func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("a plan name or uuid is required")
@@ -79,23 +88,30 @@ func (c *describeCmd) Validate(args []string) error {
 	return nil
 }
 
+// Run a validated svcat command.
 func (c *describeCmd) Run() error {
 	return c.describe()
 }
 
 func (c *describeCmd) describe() error {
-	var plan *v1beta1.ClusterServicePlan
+	var plan servicecatalog.Plan
 	var err error
+
+	opts := servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	}
+
 	if c.lookupByUUID {
-		plan, err = c.App.RetrievePlanByID(c.uuid)
+		plan, err = c.App.RetrievePlanByID(c.uuid, opts)
 	} else if strings.Contains(c.name, "/") {
 		names := strings.Split(c.name, "/")
 		if len(names) != 2 {
 			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
 		}
-		plan, err = c.App.RetrievePlanByClassAndPlanNames(names[0], names[1])
+		plan, err = c.App.RetrievePlanByClassAndName(names[0], names[1], opts)
 	} else {
-		plan, err = c.App.RetrievePlanByName(c.name)
+		plan, err = c.App.RetrievePlanByName(c.name, opts)
 	}
 	if err != nil {
 		return err
