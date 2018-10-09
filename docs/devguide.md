@@ -323,7 +323,7 @@ Certain tests use fakes generated with [Counterfeiter](http://github.com/maxbrun
 to an interface (such as SvcatClient in pkg/svcat/service-catalog) you may need to regenerate the fake. You can install
 Counterfeiter by running `go get github.com/maxbrunsfeld/counterfeiter`.
 Then regenerate the fake with `counterfeiter ./pkg/svcat/service-catalog SvcatClient` and manually paste the boilerplate
-copyright comment into the the generated file.
+copyright comment into the generated file.
 
 ## FeatureGates
 Feature gates are a set of key=value pairs that describe experimental features
