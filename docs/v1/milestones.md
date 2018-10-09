@@ -42,7 +42,7 @@ High-level functional requirements:
   6.  Remove broker
   7.  Update broker
   8.  Delete broker
-5.  ServiceBindings manifest as a Secret in the the k8s core; users will be expected
+5.  ServiceBindings manifest as a Secret in the k8s core; users will be expected
     to explicitly reference this secret in their Pod specs
 
 High-level architectural requirements:

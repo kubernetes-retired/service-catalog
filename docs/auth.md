@@ -94,7 +94,7 @@ often use client certificate authentication.
 By default, a main Kubernetes API server configured with the
 `--client-ca-file` option automatically creates a ConfigMap called
 `extension-apiserver-authentication` in the `kube-system` namespace,
-populated with the the client CA file.  The service catalog API server use
+populated with the client CA file.  The service catalog API server use
 this CA certificate as the CA used to verify client authentication. This
 way, client certificate users who can authenticate with the main
 Kubernetes system can also authenticate with the service catalog API
