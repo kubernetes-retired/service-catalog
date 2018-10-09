@@ -140,7 +140,7 @@ func (i *InstanceClient) UpdateServiceInstance(
 }
 
 // DeleteServiceInstance returns i.DeleteErr if it was non-nil. Otherwise returns
-// ErrInstanceNotFound if id didn't already exist in i.Instances. If it it did already exist,
+// ErrInstanceNotFound if id didn't already exist in i.Instances. If it did already exist,
 // removes i.Instances[id] from the map and returns nil
 func (i *InstanceClient) DeleteServiceInstance(id string, req *brokerapi.DeleteServiceInstanceRequest) (*brokerapi.DeleteServiceInstanceResponse, int, error) {
 	resp := &brokerapi.DeleteServiceInstanceResponse{}

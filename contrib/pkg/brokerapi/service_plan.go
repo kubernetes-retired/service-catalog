@@ -17,7 +17,7 @@ limitations under the License.
 package brokerapi
 
 // ServicePlan is the Open Service API compatible struct for service plans.
-// It comes with with JSON struct tags to match the API spec
+// It comes with JSON struct tags to match the API spec
 type ServicePlan struct {
 	Name        string      `json:"name"`
 	ID          string      `json:"id"`
