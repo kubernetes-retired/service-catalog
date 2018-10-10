@@ -94,3 +94,33 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 	})
 	t.Render()
 }
+
+// WriteClassAndPlanDetails prints details for multiple classes and plans
+func WriteClassAndPlanDetails(w io.Writer, classes []servicecatalog.Class, plans [][]servicecatalog.Plan) {
+	t := NewListTable(w)
+	t.SetHeader([]string{
+		"Class",
+		"Plans",
+		"Description",
+	})
+	for i, class := range classes {
+		for i, plan := range plans[i] {
+			if i == 0 {
+				t.Append([]string{
+					class.GetExternalName(),
+					plan.GetName(),
+					class.GetSpec().Description,
+				})
+			} else {
+				t.Append([]string{
+					"",
+					plan.GetName(),
+					"",
+				})
+			}
+		}
+	}
+	t.table.SetAutoWrapText(true)
+	t.SetVariableColumn(3)
+	t.Render()
+}

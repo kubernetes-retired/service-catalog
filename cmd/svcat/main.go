@@ -31,6 +31,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/completion"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/extra"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
@@ -124,6 +125,7 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(instance.NewDeprovisionCmd(cxt))
 	cmd.AddCommand(binding.NewBindCmd(cxt))
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
+	cmd.AddCommand(extra.NewMarketplaceCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
 	if !plugin.IsPlugin() {
 		cmd.AddCommand(newInstallCmd(cxt))

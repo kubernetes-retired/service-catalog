@@ -964,6 +964,36 @@ _svcat_install()
     noun_aliases=()
 }
 
+_svcat_marketplace()
+{
+    last_command="svcat_marketplace"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--all-namespaces")
+    local_nonpersistent_flags+=("--all-namespaces")
+    flags+=("--namespace=")
+    two_word_flags+=("-n")
+    local_nonpersistent_flags+=("--namespace=")
+    flags+=("--output=")
+    two_word_flags+=("-o")
+    local_nonpersistent_flags+=("--output=")
+    flags+=("--context=")
+    flags+=("--kubeconfig=")
+    flags+=("--logtostderr")
+    flags+=("--v=")
+    two_word_flags+=("-v")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _svcat_provision()
 {
     last_command="svcat_provision"
@@ -1231,6 +1261,7 @@ _svcat_root_command()
     commands+=("describe")
     commands+=("get")
     commands+=("install")
+    commands+=("marketplace")
     commands+=("provision")
     commands+=("register")
     commands+=("sync")

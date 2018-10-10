@@ -285,6 +285,19 @@ tree:
     - name: uuid
       shorthand: u
       desc: Whether or not to get the plan by UUID (the default is by name)
+- name: marketplace
+  use: marketplace
+  shortDesc: List available service offerings
+  example: "  svcat marketplace\n  \tsvcat marketplace --namespace dev"
+  command: ./svcat marketplace
+  flags:
+  - name: all-namespaces
+    desc: If present, list the requested object(s) across all namespaces. Namespace
+      in current context is ignored even if specified with --namespace
+  - name: output
+    shorthand: o
+    desc: The output format to use. Valid options are table, json or yaml. If not
+      present, defaults to table
 - name: provision
   use: provision NAME --plan PLAN --class CLASS
   shortDesc: Create a new instance of a service
