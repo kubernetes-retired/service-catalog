@@ -63,6 +63,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"context"
 )
 
 // NewControllerManagerCommand creates a *cobra.Command object with default
@@ -211,7 +212,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	recorder := eventBroadcaster.NewRecorder(eventsScheme, v1.EventSource{Component: controllerManagerAgentName})
 
 	// 'run' is the logic to run the controllers for the controller manager
-	run := func(stop <-chan struct{}) {
+	run := func(ctx context.Context) {
 		serviceCatalogClientBuilder := controller.SimpleClientBuilder{
 			ClientConfig: serviceCatalogKubeconfig,
 		}
@@ -228,13 +229,13 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// 	k8sClientBuilder = rootClientBuilder
 		// }
 
-		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, stop)
+		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, ctx.Done())
 		glog.Fatalf("error running controllers: %v", err)
 		panic("unreachable")
 	}
 
 	if !controllerManagerOptions.LeaderElection.LeaderElect {
-		run(make(<-chan (struct{})))
+		run(context.TODO())
 		panic("unreachable")
 	}
 
@@ -261,7 +262,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	}
 
 	// Try and become the leader and start cloud controller manager loops
-	leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+	leaderelection.RunOrDie(context.TODO(), leaderelection.LeaderElectionConfig{
 		Lock:          rl,
 		LeaseDuration: controllerManagerOptions.LeaderElection.LeaseDuration.Duration,
 		RenewDeadline: controllerManagerOptions.LeaderElection.RenewDeadline.Duration,
