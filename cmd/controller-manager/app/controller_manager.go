@@ -60,10 +60,10 @@ import (
 	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
+	"context"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"context"
 )
 
 // NewControllerManagerCommand creates a *cobra.Command object with default
