@@ -193,3 +193,26 @@ items:
     name: "{{ .Values.controllerManager.serviceAccount }}"
     namespace: "{{ .Release.Namespace }}"
 {{end}}
+
+# This allows anyone to fetch the Service Catalog version
+- apiVersion: {{template "rbacApiVersion" . }}
+  kind: ClusterRole
+  metadata:
+    name: "servicecatalog.k8s.io:service-catalog-version"
+  rules:
+  - nonResourceURLs:
+    - /service-catalog-version
+    verbs:
+      - get
+- apiVersion: {{template "rbacApiVersion" . }}
+  kind: ClusterRoleBinding
+  metadata:
+    name: "servicecatalog.k8s.io:service-catalog-version"
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: "servicecatalog.k8s.io:service-catalog-version"
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:unauthenticated

@@ -18,8 +18,10 @@ package server
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg"
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage/etcd3/preflight"
@@ -105,6 +107,11 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 	// PingHealtz is installed by the default config, so it will
 	// run in addition the checkers being installed here.
 	server.GenericAPIServer.AddHealthzChecks(etcdChecker)
+
+	// Register handler to return Service Catalog version (version format is "v0.1.35-14+e21502afa7d08e")
+	server.GenericAPIServer.Handler.NonGoRestfulMux.HandleFunc("/service-catalog-version", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%q", html.EscapeString(pkg.VERSION))
+	})
 
 	// do we need to do any post api installation setup? We should have set up the api already?
 	glog.Infoln("Running the API server")
