@@ -1168,63 +1168,54 @@ func TestUpdateServiceBrokerCondition(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, _ := newTestController(t, getTestCatalogConfig())
+		t.Run(tc.name, func(t *testing.T) {
+			_, fakeCatalogClient, _, testController, _ := newTestController(t, getTestCatalogConfig())
 
-		inputClone := tc.input.DeepCopy()
+			inputClone := tc.input.DeepCopy()
 
-		err := testController.updateClusterServiceBrokerCondition(tc.input, v1beta1.ServiceBrokerConditionReady, tc.status, tc.reason, tc.message)
-		if err != nil {
-			t.Errorf("%v: error updating broker condition: %v", tc.name, err)
-			continue
-		}
+			err := testController.updateClusterServiceBrokerCondition(tc.input, v1beta1.ServiceBrokerConditionReady, tc.status, tc.reason, tc.message)
+			if err != nil {
+				t.Fatalf("%v: error updating broker condition: %v", tc.name, err)
+			}
 
-		if !reflect.DeepEqual(tc.input, inputClone) {
-			t.Errorf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
-			continue
-		}
+			if !reflect.DeepEqual(tc.input, inputClone) {
+				t.Fatalf("%v: updating broker condition mutated input: %s", tc.name, expectedGot(inputClone, tc.input))
+			}
 
-		actions := fakeCatalogClient.Actions()
-		if ok := expectNumberOfActions(t, tc.name, actions, 1); !ok {
-			continue
-		}
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
 
-		updatedClusterServiceBroker, ok := expectUpdateStatus(t, tc.name, actions[0], tc.input)
-		if !ok {
-			continue
-		}
+			updatedClusterServiceBroker := assertUpdateStatus(t, actions[0], tc.input)
 
-		updateActionObject, ok := updatedClusterServiceBroker.(*v1beta1.ClusterServiceBroker)
-		if !ok {
-			t.Errorf("%v: couldn't convert to broker", tc.name)
-			continue
-		}
+			updateActionObject, ok := updatedClusterServiceBroker.(*v1beta1.ClusterServiceBroker)
+			if !ok {
+				t.Fatalf("%v: couldn't convert to broker", tc.name)
+			}
 
-		var initialTs metav1.Time
-		if len(inputClone.Status.Conditions) != 0 {
-			initialTs = inputClone.Status.Conditions[0].LastTransitionTime
-		}
+			var initialTs metav1.Time
+			if len(inputClone.Status.Conditions) != 0 {
+				initialTs = inputClone.Status.Conditions[0].LastTransitionTime
+			}
 
-		if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
-			t.Errorf("%v: %s", tc.name, expectedGot(e, a))
-		}
+			if e, a := 1, len(updateActionObject.Status.Conditions); e != a {
+				t.Fatalf("%v: %s", tc.name, expectedGot(e, a))
+			}
 
-		outputCondition := updateActionObject.Status.Conditions[0]
-		newTs := outputCondition.LastTransitionTime
+			outputCondition := updateActionObject.Status.Conditions[0]
+			newTs := outputCondition.LastTransitionTime
 
-		if tc.transitionTimeChanged && initialTs == newTs {
-			t.Errorf("%v: transition time didn't change when it should have", tc.name)
-			continue
-		} else if !tc.transitionTimeChanged && initialTs != newTs {
-			t.Errorf("%v: transition time changed when it shouldn't have", tc.name)
-			continue
-		}
-		if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
-			t.Errorf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
-			continue
-		}
-		if e, a := tc.message, outputCondition.Message; e != "" && e != a {
-			t.Errorf("%v: condition message didn't match; %s", tc.name, expectedGot(e, a))
-		}
+			if tc.transitionTimeChanged && initialTs == newTs {
+				t.Fatalf("%v: transition time didn't change when it should have", tc.name)
+			} else if !tc.transitionTimeChanged && initialTs != newTs {
+				t.Fatalf("%v: transition time changed when it shouldn't have", tc.name)
+			}
+			if e, a := tc.reason, outputCondition.Reason; e != "" && e != a {
+				t.Fatalf("%v: condition reasons didn't match; %s", tc.name, expectedGot(e, a))
+			}
+			if e, a := tc.message, outputCondition.Message; e != "" && e != a {
+				t.Fatalf("%v: condition message didn't match; %s", tc.name, expectedGot(e, a))
+			}
+		})
 	}
 }
 
@@ -1257,8 +1248,8 @@ func TestReconcileClusterServicePlanFromClusterServiceBrokerCatalog(t *testing.T
 			newServicePlan: getTestClusterServicePlan(),
 			shouldError:    false,
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
-				expectNumberOfActions(t, name, actions, 1)
-				expectCreate(t, name, actions[0], getTestClusterServicePlan())
+				assertNumberOfActions(t, actions, 1)
+				assertCreate(t, actions[0], getTestClusterServicePlan())
 			},
 		},
 		{
@@ -1279,8 +1270,8 @@ func TestReconcileClusterServicePlanFromClusterServiceBrokerCatalog(t *testing.T
 			existingServicePlan: getTestClusterServicePlan(),
 			shouldError:         false,
 			catalogActionsCheckFunc: func(t *testing.T, name string, actions []clientgotesting.Action) {
-				expectNumberOfActions(t, name, actions, 1)
-				expectUpdate(t, name, actions[0], updatedPlan())
+				assertNumberOfActions(t, actions, 1)
+				assertUpdate(t, actions[0], updatedPlan())
 			},
 		},
 		{
@@ -1300,30 +1291,30 @@ func TestReconcileClusterServicePlanFromClusterServiceBrokerCatalog(t *testing.T
 	broker := getTestClusterServiceBroker()
 
 	for _, tc := range cases {
-		_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
-		if tc.catalogClientPrepFunc != nil {
-			tc.catalogClientPrepFunc(fakeCatalogClient)
-		}
-
-		if tc.listerServicePlan != nil {
-			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(tc.listerServicePlan)
-		}
-
-		err := testController.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, tc.newServicePlan, tc.existingServicePlan)
-		if err != nil {
-			if !tc.shouldError {
-				t.Errorf("%v: unexpected error from method under test: %v", tc.name, err)
-				continue
-			} else if tc.errText != nil && *tc.errText != err.Error() {
-				t.Errorf("%v: unexpected error text from method under test; %s", tc.name, expectedGot(tc.errText, err.Error()))
-				continue
+		t.Run(tc.name, func(t *testing.T) {
+			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
+			if tc.catalogClientPrepFunc != nil {
+				tc.catalogClientPrepFunc(fakeCatalogClient)
 			}
-		}
 
-		if tc.catalogActionsCheckFunc != nil {
-			actions := fakeCatalogClient.Actions()
-			tc.catalogActionsCheckFunc(t, tc.name, actions)
-		}
+			if tc.listerServicePlan != nil {
+				sharedInformers.ClusterServicePlans().Informer().GetStore().Add(tc.listerServicePlan)
+			}
+
+			err := testController.reconcileClusterServicePlanFromClusterServiceBrokerCatalog(broker, tc.newServicePlan, tc.existingServicePlan)
+			if err != nil {
+				if !tc.shouldError {
+					t.Fatalf("%v: unexpected error from method under test: %v", tc.name, err)
+				} else if tc.errText != nil && *tc.errText != err.Error() {
+					t.Fatalf("%v: unexpected error text from method under test; %s", tc.name, expectedGot(tc.errText, err.Error()))
+				}
+			}
+
+			if tc.catalogActionsCheckFunc != nil {
+				actions := fakeCatalogClient.Actions()
+				tc.catalogActionsCheckFunc(t, tc.name, actions)
+			}
+		})
 	}
 }
 
