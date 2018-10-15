@@ -668,7 +668,7 @@
   revision = "a22138067af1c4942683050411a841ade67fe1eb"
 
 [[projects]]
-  digest = "1:8440a10c0b04e6a7b4ae70680e4dc6474fd4d472696361e5ef68de75afd08f32"
+  digest = "1:d0add9b073f4778471642b1c8cc65e9d921ba3377f0476a2c19fb3592299e544"
   name = "github.com/pmorie/go-open-service-broker-client"
   packages = [
     "v2",
@@ -676,8 +676,8 @@
     "v2/generator",
   ]
   pruneopts = "NUT"
-  revision = "9cc214e88d00504888af633376c9462e0ab2bd8b"
-  version = "0.0.11"
+  revision = "79b374a2302fe4a2c05c6f469262d195b765152f"
+  version = "0.0.12"
 
 [[projects]]
   digest = "1:84c59299d10402298277e3388120e91244b9f5fd1bdaf06c394ba3c6a9e85db2"

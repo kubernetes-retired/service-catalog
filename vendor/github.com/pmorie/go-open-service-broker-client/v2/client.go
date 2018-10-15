@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -38,7 +39,21 @@ func NewClient(config *ClientConfiguration) (Client, error) {
 	httpClient := &http.Client{
 		Timeout: time.Duration(config.TimeoutSeconds) * time.Second,
 	}
-	transport := &http.Transport{}
+
+	// use default values lifted from DefaultTransport
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	if config.TLSConfig != nil {
 		transport.TLSClientConfig = config.TLSConfig
 	} else {
