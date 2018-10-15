@@ -96,6 +96,16 @@ func (p *ServicePlan) GetClassID() string {
 	return p.Spec.ServiceClassRef.Name
 }
 
+// GetDefaultProvisionParameters returns the default provision parameters from plan.
+func (p *ClusterServicePlan) GetDefaultProvisionParameters() *runtime.RawExtension {
+	return p.Spec.DefaultProvisionParameters
+}
+
+// GetDefaultProvisionParameters returns the default provision parameters from plan.
+func (p *ServicePlan) GetDefaultProvisionParameters() *runtime.RawExtension {
+	return p.Spec.DefaultProvisionParameters
+}
+
 // GetInstanceCreateSchema returns the instance create schema from plan.
 func (p *ClusterServicePlan) GetInstanceCreateSchema() *runtime.RawExtension {
 	return p.Spec.ServiceInstanceCreateParameterSchema

@@ -70,6 +70,9 @@ type Plan interface {
 
 	// GetBindingCreateSchema returns the instance create schema from plan.
 	GetBindingCreateSchema() *runtime.RawExtension
+
+	// GetDefaultProvisionParameters returns the default provision parameters from plan.
+	GetDefaultProvisionParameters() *runtime.RawExtension
 }
 
 // RetrievePlans lists all plans defined in the cluster.
