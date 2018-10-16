@@ -310,6 +310,7 @@ clean-generated:
 	find $(TOP_SRC_DIRS) -type d -name *_generated | xargs git checkout --
 	# rollback openapi changes
 	git checkout -- pkg/openapi/openapi_generated.go
+	rm api_violations.txt
 
 # purge-generated removes generated files from the filesystem.
 purge-generated: .init $(scBuildImageTarget)

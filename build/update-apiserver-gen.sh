@@ -82,9 +82,13 @@ ${BINDIR}/conversion-gen "$@" \
 	--output-file-base zz_generated.conversion
 
 # generate openapi for servicecatalog and settings group
+REPORT_FILENAME=./api_violations.txt
+KNOWN_VIOLATION_FILENAME=./contrib/build/violation_exceptions.txt
+API_RULE_CHECK_FAILURE_MESSAGE="Error: API rules check failed. Reported violations \"${REPORT_FILENAME}\" differ from known violations \"${KNOWN_VIOLATION_FILENAME}\". Please fix API source file if new violation is detected, or update known violations \"${KNOWN_VIOLATION_FILENAME}\" if existing violation is being fixed. Please refer to k8s.io/kubernetes/api/api-rules/README.md and https://github.com/kubernetes/kube-openapi/tree/master/pkg/generators/rules for more information about the API rules being enforced."
 ${BINDIR}/openapi-gen "$@" \
 	--v 1 --logtostderr \
 	--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 	--input-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1,k8s.io/api/core/v1,k8s.io/apimachinery/pkg/api/resource,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/version,k8s.io/apimachinery/pkg/runtime" \
 	--input-dirs "${SC_PKG}/pkg/apis/settings/v1alpha1" \
-	--output-package "${SC_PKG}/pkg/openapi"
+	--output-package "${SC_PKG}/pkg/openapi" > ${REPORT_FILENAME} || true
+diff ${REPORT_FILENAME} ${KNOWN_VIOLATION_FILENAME} || (echo ${API_RULE_CHECK_FAILURE_MESSAGE}; exit 1)
