@@ -67,7 +67,7 @@ func NewServiceCatalogServerOptions() *ServiceCatalogServerOptions {
 	opts := &ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
-		SecureServingOptions:    genericserveroptions.WithLoopback(genericserveroptions.NewSecureServingOptions()),
+		SecureServingOptions:    genericserveroptions.NewSecureServingOptions().WithLoopback(),
 		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),
 		AuditOptions:            genericserveroptions.NewAuditOptions(),

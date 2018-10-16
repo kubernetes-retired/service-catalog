@@ -27,3 +27,4 @@ contrib/examples/vendor/*
 integration.test*
 debug.test*
 .cache
+/api_violations.txt

@@ -21,7 +21,7 @@ package v1beta1
 import (
 	time "time"
 
-	servicecatalog_v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces"
 	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
@@ -70,7 +70,7 @@ func NewFilteredServiceInstanceInformer(client clientset.Interface, namespace st
 				return client.ServicecatalogV1beta1().ServiceInstances(namespace).Watch(options)
 			},
 		},
-		&servicecatalog_v1beta1.ServiceInstance{},
+		&servicecatalogv1beta1.ServiceInstance{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *serviceInstanceInformer) defaultInformer(client clientset.Interface, re
 }
 
 func (f *serviceInstanceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1beta1.ServiceInstance{}, f.defaultInformer)
+	return f.factory.InformerFor(&servicecatalogv1beta1.ServiceInstance{}, f.defaultInformer)
 }
 
 func (f *serviceInstanceInformer) Lister() v1beta1.ServiceInstanceLister {

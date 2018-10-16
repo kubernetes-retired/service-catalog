@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build linux darwin freebsd openbsd netbsd
-// +build !appengine
+// +build linux,!appengine darwin freebsd openbsd netbsd
 
 package imports
 
@@ -24,7 +23,7 @@ const unknownFileMode os.FileMode = os.ModeNamedPipe | os.ModeSocket | os.ModeDe
 func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) error) error {
 	fd, err := syscall.Open(dirName, 0, 0)
 	if err != nil {
-		return &os.PathError{Op: "open", Path: dirName, Err: err}
+		return err
 	}
 	defer syscall.Close(fd)
 

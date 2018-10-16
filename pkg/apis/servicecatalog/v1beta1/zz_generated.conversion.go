@@ -35,133 +35,628 @@ func init() {
 
 // RegisterConversions adds conversion functions to the given scheme.
 // Public to allow building arbitrary schemes.
-func RegisterConversions(scheme *runtime.Scheme) error {
-	return scheme.AddGeneratedConversionFuncs(
-		Convert_v1beta1_AddKeyTransform_To_servicecatalog_AddKeyTransform,
-		Convert_servicecatalog_AddKeyTransform_To_v1beta1_AddKeyTransform,
-		Convert_v1beta1_AddKeysFromTransform_To_servicecatalog_AddKeysFromTransform,
-		Convert_servicecatalog_AddKeysFromTransform_To_v1beta1_AddKeysFromTransform,
-		Convert_v1beta1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig,
-		Convert_servicecatalog_BasicAuthConfig_To_v1beta1_BasicAuthConfig,
-		Convert_v1beta1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthConfig,
-		Convert_servicecatalog_BearerTokenAuthConfig_To_v1beta1_BearerTokenAuthConfig,
-		Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions,
-		Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions,
-		Convert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthConfig,
-		Convert_servicecatalog_ClusterBasicAuthConfig_To_v1beta1_ClusterBasicAuthConfig,
-		Convert_v1beta1_ClusterBearerTokenAuthConfig_To_servicecatalog_ClusterBearerTokenAuthConfig,
-		Convert_servicecatalog_ClusterBearerTokenAuthConfig_To_v1beta1_ClusterBearerTokenAuthConfig,
-		Convert_v1beta1_ClusterObjectReference_To_servicecatalog_ClusterObjectReference,
-		Convert_servicecatalog_ClusterObjectReference_To_v1beta1_ClusterObjectReference,
-		Convert_v1beta1_ClusterServiceBroker_To_servicecatalog_ClusterServiceBroker,
-		Convert_servicecatalog_ClusterServiceBroker_To_v1beta1_ClusterServiceBroker,
-		Convert_v1beta1_ClusterServiceBrokerAuthInfo_To_servicecatalog_ClusterServiceBrokerAuthInfo,
-		Convert_servicecatalog_ClusterServiceBrokerAuthInfo_To_v1beta1_ClusterServiceBrokerAuthInfo,
-		Convert_v1beta1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceBrokerList,
-		Convert_servicecatalog_ClusterServiceBrokerList_To_v1beta1_ClusterServiceBrokerList,
-		Convert_v1beta1_ClusterServiceBrokerSpec_To_servicecatalog_ClusterServiceBrokerSpec,
-		Convert_servicecatalog_ClusterServiceBrokerSpec_To_v1beta1_ClusterServiceBrokerSpec,
-		Convert_v1beta1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus,
-		Convert_servicecatalog_ClusterServiceBrokerStatus_To_v1beta1_ClusterServiceBrokerStatus,
-		Convert_v1beta1_ClusterServiceClass_To_servicecatalog_ClusterServiceClass,
-		Convert_servicecatalog_ClusterServiceClass_To_v1beta1_ClusterServiceClass,
-		Convert_v1beta1_ClusterServiceClassList_To_servicecatalog_ClusterServiceClassList,
-		Convert_servicecatalog_ClusterServiceClassList_To_v1beta1_ClusterServiceClassList,
-		Convert_v1beta1_ClusterServiceClassSpec_To_servicecatalog_ClusterServiceClassSpec,
-		Convert_servicecatalog_ClusterServiceClassSpec_To_v1beta1_ClusterServiceClassSpec,
-		Convert_v1beta1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus,
-		Convert_servicecatalog_ClusterServiceClassStatus_To_v1beta1_ClusterServiceClassStatus,
-		Convert_v1beta1_ClusterServicePlan_To_servicecatalog_ClusterServicePlan,
-		Convert_servicecatalog_ClusterServicePlan_To_v1beta1_ClusterServicePlan,
-		Convert_v1beta1_ClusterServicePlanList_To_servicecatalog_ClusterServicePlanList,
-		Convert_servicecatalog_ClusterServicePlanList_To_v1beta1_ClusterServicePlanList,
-		Convert_v1beta1_ClusterServicePlanSpec_To_servicecatalog_ClusterServicePlanSpec,
-		Convert_servicecatalog_ClusterServicePlanSpec_To_v1beta1_ClusterServicePlanSpec,
-		Convert_v1beta1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus,
-		Convert_servicecatalog_ClusterServicePlanStatus_To_v1beta1_ClusterServicePlanStatus,
-		Convert_v1beta1_CommonServiceBrokerSpec_To_servicecatalog_CommonServiceBrokerSpec,
-		Convert_servicecatalog_CommonServiceBrokerSpec_To_v1beta1_CommonServiceBrokerSpec,
-		Convert_v1beta1_CommonServiceBrokerStatus_To_servicecatalog_CommonServiceBrokerStatus,
-		Convert_servicecatalog_CommonServiceBrokerStatus_To_v1beta1_CommonServiceBrokerStatus,
-		Convert_v1beta1_CommonServiceClassSpec_To_servicecatalog_CommonServiceClassSpec,
-		Convert_servicecatalog_CommonServiceClassSpec_To_v1beta1_CommonServiceClassSpec,
-		Convert_v1beta1_CommonServiceClassStatus_To_servicecatalog_CommonServiceClassStatus,
-		Convert_servicecatalog_CommonServiceClassStatus_To_v1beta1_CommonServiceClassStatus,
-		Convert_v1beta1_CommonServicePlanSpec_To_servicecatalog_CommonServicePlanSpec,
-		Convert_servicecatalog_CommonServicePlanSpec_To_v1beta1_CommonServicePlanSpec,
-		Convert_v1beta1_CommonServicePlanStatus_To_servicecatalog_CommonServicePlanStatus,
-		Convert_servicecatalog_CommonServicePlanStatus_To_v1beta1_CommonServicePlanStatus,
-		Convert_v1beta1_LocalObjectReference_To_servicecatalog_LocalObjectReference,
-		Convert_servicecatalog_LocalObjectReference_To_v1beta1_LocalObjectReference,
-		Convert_v1beta1_ObjectReference_To_servicecatalog_ObjectReference,
-		Convert_servicecatalog_ObjectReference_To_v1beta1_ObjectReference,
-		Convert_v1beta1_ParametersFromSource_To_servicecatalog_ParametersFromSource,
-		Convert_servicecatalog_ParametersFromSource_To_v1beta1_ParametersFromSource,
-		Convert_v1beta1_PlanReference_To_servicecatalog_PlanReference,
-		Convert_servicecatalog_PlanReference_To_v1beta1_PlanReference,
-		Convert_v1beta1_RemoveKeyTransform_To_servicecatalog_RemoveKeyTransform,
-		Convert_servicecatalog_RemoveKeyTransform_To_v1beta1_RemoveKeyTransform,
-		Convert_v1beta1_RenameKeyTransform_To_servicecatalog_RenameKeyTransform,
-		Convert_servicecatalog_RenameKeyTransform_To_v1beta1_RenameKeyTransform,
-		Convert_v1beta1_SecretKeyReference_To_servicecatalog_SecretKeyReference,
-		Convert_servicecatalog_SecretKeyReference_To_v1beta1_SecretKeyReference,
-		Convert_v1beta1_SecretTransform_To_servicecatalog_SecretTransform,
-		Convert_servicecatalog_SecretTransform_To_v1beta1_SecretTransform,
-		Convert_v1beta1_ServiceBinding_To_servicecatalog_ServiceBinding,
-		Convert_servicecatalog_ServiceBinding_To_v1beta1_ServiceBinding,
-		Convert_v1beta1_ServiceBindingCondition_To_servicecatalog_ServiceBindingCondition,
-		Convert_servicecatalog_ServiceBindingCondition_To_v1beta1_ServiceBindingCondition,
-		Convert_v1beta1_ServiceBindingList_To_servicecatalog_ServiceBindingList,
-		Convert_servicecatalog_ServiceBindingList_To_v1beta1_ServiceBindingList,
-		Convert_v1beta1_ServiceBindingPropertiesState_To_servicecatalog_ServiceBindingPropertiesState,
-		Convert_servicecatalog_ServiceBindingPropertiesState_To_v1beta1_ServiceBindingPropertiesState,
-		Convert_v1beta1_ServiceBindingSpec_To_servicecatalog_ServiceBindingSpec,
-		Convert_servicecatalog_ServiceBindingSpec_To_v1beta1_ServiceBindingSpec,
-		Convert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingStatus,
-		Convert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingStatus,
-		Convert_v1beta1_ServiceBroker_To_servicecatalog_ServiceBroker,
-		Convert_servicecatalog_ServiceBroker_To_v1beta1_ServiceBroker,
-		Convert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthInfo,
-		Convert_servicecatalog_ServiceBrokerAuthInfo_To_v1beta1_ServiceBrokerAuthInfo,
-		Convert_v1beta1_ServiceBrokerCondition_To_servicecatalog_ServiceBrokerCondition,
-		Convert_servicecatalog_ServiceBrokerCondition_To_v1beta1_ServiceBrokerCondition,
-		Convert_v1beta1_ServiceBrokerList_To_servicecatalog_ServiceBrokerList,
-		Convert_servicecatalog_ServiceBrokerList_To_v1beta1_ServiceBrokerList,
-		Convert_v1beta1_ServiceBrokerSpec_To_servicecatalog_ServiceBrokerSpec,
-		Convert_servicecatalog_ServiceBrokerSpec_To_v1beta1_ServiceBrokerSpec,
-		Convert_v1beta1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus,
-		Convert_servicecatalog_ServiceBrokerStatus_To_v1beta1_ServiceBrokerStatus,
-		Convert_v1beta1_ServiceClass_To_servicecatalog_ServiceClass,
-		Convert_servicecatalog_ServiceClass_To_v1beta1_ServiceClass,
-		Convert_v1beta1_ServiceClassList_To_servicecatalog_ServiceClassList,
-		Convert_servicecatalog_ServiceClassList_To_v1beta1_ServiceClassList,
-		Convert_v1beta1_ServiceClassSpec_To_servicecatalog_ServiceClassSpec,
-		Convert_servicecatalog_ServiceClassSpec_To_v1beta1_ServiceClassSpec,
-		Convert_v1beta1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus,
-		Convert_servicecatalog_ServiceClassStatus_To_v1beta1_ServiceClassStatus,
-		Convert_v1beta1_ServiceInstance_To_servicecatalog_ServiceInstance,
-		Convert_servicecatalog_ServiceInstance_To_v1beta1_ServiceInstance,
-		Convert_v1beta1_ServiceInstanceCondition_To_servicecatalog_ServiceInstanceCondition,
-		Convert_servicecatalog_ServiceInstanceCondition_To_v1beta1_ServiceInstanceCondition,
-		Convert_v1beta1_ServiceInstanceList_To_servicecatalog_ServiceInstanceList,
-		Convert_servicecatalog_ServiceInstanceList_To_v1beta1_ServiceInstanceList,
-		Convert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_ServiceInstancePropertiesState,
-		Convert_servicecatalog_ServiceInstancePropertiesState_To_v1beta1_ServiceInstancePropertiesState,
-		Convert_v1beta1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSpec,
-		Convert_servicecatalog_ServiceInstanceSpec_To_v1beta1_ServiceInstanceSpec,
-		Convert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanceStatus,
-		Convert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstanceStatus,
-		Convert_v1beta1_ServicePlan_To_servicecatalog_ServicePlan,
-		Convert_servicecatalog_ServicePlan_To_v1beta1_ServicePlan,
-		Convert_v1beta1_ServicePlanList_To_servicecatalog_ServicePlanList,
-		Convert_servicecatalog_ServicePlanList_To_v1beta1_ServicePlanList,
-		Convert_v1beta1_ServicePlanSpec_To_servicecatalog_ServicePlanSpec,
-		Convert_servicecatalog_ServicePlanSpec_To_v1beta1_ServicePlanSpec,
-		Convert_v1beta1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus,
-		Convert_servicecatalog_ServicePlanStatus_To_v1beta1_ServicePlanStatus,
-		Convert_v1beta1_UserInfo_To_servicecatalog_UserInfo,
-		Convert_servicecatalog_UserInfo_To_v1beta1_UserInfo,
-	)
+func RegisterConversions(s *runtime.Scheme) error {
+	if err := s.AddGeneratedConversionFunc((*AddKeyTransform)(nil), (*servicecatalog.AddKeyTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_AddKeyTransform_To_servicecatalog_AddKeyTransform(a.(*AddKeyTransform), b.(*servicecatalog.AddKeyTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.AddKeyTransform)(nil), (*AddKeyTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_AddKeyTransform_To_v1beta1_AddKeyTransform(a.(*servicecatalog.AddKeyTransform), b.(*AddKeyTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*AddKeysFromTransform)(nil), (*servicecatalog.AddKeysFromTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_AddKeysFromTransform_To_servicecatalog_AddKeysFromTransform(a.(*AddKeysFromTransform), b.(*servicecatalog.AddKeysFromTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.AddKeysFromTransform)(nil), (*AddKeysFromTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_AddKeysFromTransform_To_v1beta1_AddKeysFromTransform(a.(*servicecatalog.AddKeysFromTransform), b.(*AddKeysFromTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*BasicAuthConfig)(nil), (*servicecatalog.BasicAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_BasicAuthConfig_To_servicecatalog_BasicAuthConfig(a.(*BasicAuthConfig), b.(*servicecatalog.BasicAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.BasicAuthConfig)(nil), (*BasicAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_BasicAuthConfig_To_v1beta1_BasicAuthConfig(a.(*servicecatalog.BasicAuthConfig), b.(*BasicAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*BearerTokenAuthConfig)(nil), (*servicecatalog.BearerTokenAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_BearerTokenAuthConfig_To_servicecatalog_BearerTokenAuthConfig(a.(*BearerTokenAuthConfig), b.(*servicecatalog.BearerTokenAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.BearerTokenAuthConfig)(nil), (*BearerTokenAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_BearerTokenAuthConfig_To_v1beta1_BearerTokenAuthConfig(a.(*servicecatalog.BearerTokenAuthConfig), b.(*BearerTokenAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CatalogRestrictions)(nil), (*servicecatalog.CatalogRestrictions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CatalogRestrictions_To_servicecatalog_CatalogRestrictions(a.(*CatalogRestrictions), b.(*servicecatalog.CatalogRestrictions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CatalogRestrictions)(nil), (*CatalogRestrictions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CatalogRestrictions_To_v1beta1_CatalogRestrictions(a.(*servicecatalog.CatalogRestrictions), b.(*CatalogRestrictions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterBasicAuthConfig)(nil), (*servicecatalog.ClusterBasicAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterBasicAuthConfig_To_servicecatalog_ClusterBasicAuthConfig(a.(*ClusterBasicAuthConfig), b.(*servicecatalog.ClusterBasicAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterBasicAuthConfig)(nil), (*ClusterBasicAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterBasicAuthConfig_To_v1beta1_ClusterBasicAuthConfig(a.(*servicecatalog.ClusterBasicAuthConfig), b.(*ClusterBasicAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterBearerTokenAuthConfig)(nil), (*servicecatalog.ClusterBearerTokenAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterBearerTokenAuthConfig_To_servicecatalog_ClusterBearerTokenAuthConfig(a.(*ClusterBearerTokenAuthConfig), b.(*servicecatalog.ClusterBearerTokenAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterBearerTokenAuthConfig)(nil), (*ClusterBearerTokenAuthConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterBearerTokenAuthConfig_To_v1beta1_ClusterBearerTokenAuthConfig(a.(*servicecatalog.ClusterBearerTokenAuthConfig), b.(*ClusterBearerTokenAuthConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterObjectReference)(nil), (*servicecatalog.ClusterObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterObjectReference_To_servicecatalog_ClusterObjectReference(a.(*ClusterObjectReference), b.(*servicecatalog.ClusterObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterObjectReference)(nil), (*ClusterObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterObjectReference_To_v1beta1_ClusterObjectReference(a.(*servicecatalog.ClusterObjectReference), b.(*ClusterObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceBroker)(nil), (*servicecatalog.ClusterServiceBroker)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceBroker_To_servicecatalog_ClusterServiceBroker(a.(*ClusterServiceBroker), b.(*servicecatalog.ClusterServiceBroker), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceBroker)(nil), (*ClusterServiceBroker)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceBroker_To_v1beta1_ClusterServiceBroker(a.(*servicecatalog.ClusterServiceBroker), b.(*ClusterServiceBroker), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceBrokerAuthInfo)(nil), (*servicecatalog.ClusterServiceBrokerAuthInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceBrokerAuthInfo_To_servicecatalog_ClusterServiceBrokerAuthInfo(a.(*ClusterServiceBrokerAuthInfo), b.(*servicecatalog.ClusterServiceBrokerAuthInfo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceBrokerAuthInfo)(nil), (*ClusterServiceBrokerAuthInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceBrokerAuthInfo_To_v1beta1_ClusterServiceBrokerAuthInfo(a.(*servicecatalog.ClusterServiceBrokerAuthInfo), b.(*ClusterServiceBrokerAuthInfo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceBrokerList)(nil), (*servicecatalog.ClusterServiceBrokerList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceBrokerList_To_servicecatalog_ClusterServiceBrokerList(a.(*ClusterServiceBrokerList), b.(*servicecatalog.ClusterServiceBrokerList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceBrokerList)(nil), (*ClusterServiceBrokerList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceBrokerList_To_v1beta1_ClusterServiceBrokerList(a.(*servicecatalog.ClusterServiceBrokerList), b.(*ClusterServiceBrokerList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceBrokerSpec)(nil), (*servicecatalog.ClusterServiceBrokerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceBrokerSpec_To_servicecatalog_ClusterServiceBrokerSpec(a.(*ClusterServiceBrokerSpec), b.(*servicecatalog.ClusterServiceBrokerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceBrokerSpec)(nil), (*ClusterServiceBrokerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceBrokerSpec_To_v1beta1_ClusterServiceBrokerSpec(a.(*servicecatalog.ClusterServiceBrokerSpec), b.(*ClusterServiceBrokerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceBrokerStatus)(nil), (*servicecatalog.ClusterServiceBrokerStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceBrokerStatus_To_servicecatalog_ClusterServiceBrokerStatus(a.(*ClusterServiceBrokerStatus), b.(*servicecatalog.ClusterServiceBrokerStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceBrokerStatus)(nil), (*ClusterServiceBrokerStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceBrokerStatus_To_v1beta1_ClusterServiceBrokerStatus(a.(*servicecatalog.ClusterServiceBrokerStatus), b.(*ClusterServiceBrokerStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceClass)(nil), (*servicecatalog.ClusterServiceClass)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceClass_To_servicecatalog_ClusterServiceClass(a.(*ClusterServiceClass), b.(*servicecatalog.ClusterServiceClass), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceClass)(nil), (*ClusterServiceClass)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceClass_To_v1beta1_ClusterServiceClass(a.(*servicecatalog.ClusterServiceClass), b.(*ClusterServiceClass), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceClassList)(nil), (*servicecatalog.ClusterServiceClassList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceClassList_To_servicecatalog_ClusterServiceClassList(a.(*ClusterServiceClassList), b.(*servicecatalog.ClusterServiceClassList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceClassList)(nil), (*ClusterServiceClassList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceClassList_To_v1beta1_ClusterServiceClassList(a.(*servicecatalog.ClusterServiceClassList), b.(*ClusterServiceClassList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceClassSpec)(nil), (*servicecatalog.ClusterServiceClassSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceClassSpec_To_servicecatalog_ClusterServiceClassSpec(a.(*ClusterServiceClassSpec), b.(*servicecatalog.ClusterServiceClassSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceClassSpec)(nil), (*ClusterServiceClassSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceClassSpec_To_v1beta1_ClusterServiceClassSpec(a.(*servicecatalog.ClusterServiceClassSpec), b.(*ClusterServiceClassSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServiceClassStatus)(nil), (*servicecatalog.ClusterServiceClassStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServiceClassStatus_To_servicecatalog_ClusterServiceClassStatus(a.(*ClusterServiceClassStatus), b.(*servicecatalog.ClusterServiceClassStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServiceClassStatus)(nil), (*ClusterServiceClassStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServiceClassStatus_To_v1beta1_ClusterServiceClassStatus(a.(*servicecatalog.ClusterServiceClassStatus), b.(*ClusterServiceClassStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServicePlan)(nil), (*servicecatalog.ClusterServicePlan)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServicePlan_To_servicecatalog_ClusterServicePlan(a.(*ClusterServicePlan), b.(*servicecatalog.ClusterServicePlan), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServicePlan)(nil), (*ClusterServicePlan)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServicePlan_To_v1beta1_ClusterServicePlan(a.(*servicecatalog.ClusterServicePlan), b.(*ClusterServicePlan), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServicePlanList)(nil), (*servicecatalog.ClusterServicePlanList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServicePlanList_To_servicecatalog_ClusterServicePlanList(a.(*ClusterServicePlanList), b.(*servicecatalog.ClusterServicePlanList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServicePlanList)(nil), (*ClusterServicePlanList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServicePlanList_To_v1beta1_ClusterServicePlanList(a.(*servicecatalog.ClusterServicePlanList), b.(*ClusterServicePlanList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServicePlanSpec)(nil), (*servicecatalog.ClusterServicePlanSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServicePlanSpec_To_servicecatalog_ClusterServicePlanSpec(a.(*ClusterServicePlanSpec), b.(*servicecatalog.ClusterServicePlanSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServicePlanSpec)(nil), (*ClusterServicePlanSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServicePlanSpec_To_v1beta1_ClusterServicePlanSpec(a.(*servicecatalog.ClusterServicePlanSpec), b.(*ClusterServicePlanSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterServicePlanStatus)(nil), (*servicecatalog.ClusterServicePlanStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterServicePlanStatus_To_servicecatalog_ClusterServicePlanStatus(a.(*ClusterServicePlanStatus), b.(*servicecatalog.ClusterServicePlanStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ClusterServicePlanStatus)(nil), (*ClusterServicePlanStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ClusterServicePlanStatus_To_v1beta1_ClusterServicePlanStatus(a.(*servicecatalog.ClusterServicePlanStatus), b.(*ClusterServicePlanStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CommonServiceBrokerSpec)(nil), (*servicecatalog.CommonServiceBrokerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CommonServiceBrokerSpec_To_servicecatalog_CommonServiceBrokerSpec(a.(*CommonServiceBrokerSpec), b.(*servicecatalog.CommonServiceBrokerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CommonServiceBrokerSpec)(nil), (*CommonServiceBrokerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CommonServiceBrokerSpec_To_v1beta1_CommonServiceBrokerSpec(a.(*servicecatalog.CommonServiceBrokerSpec), b.(*CommonServiceBrokerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CommonServiceBrokerStatus)(nil), (*servicecatalog.CommonServiceBrokerStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CommonServiceBrokerStatus_To_servicecatalog_CommonServiceBrokerStatus(a.(*CommonServiceBrokerStatus), b.(*servicecatalog.CommonServiceBrokerStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CommonServiceBrokerStatus)(nil), (*CommonServiceBrokerStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CommonServiceBrokerStatus_To_v1beta1_CommonServiceBrokerStatus(a.(*servicecatalog.CommonServiceBrokerStatus), b.(*CommonServiceBrokerStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CommonServiceClassSpec)(nil), (*servicecatalog.CommonServiceClassSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CommonServiceClassSpec_To_servicecatalog_CommonServiceClassSpec(a.(*CommonServiceClassSpec), b.(*servicecatalog.CommonServiceClassSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CommonServiceClassSpec)(nil), (*CommonServiceClassSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CommonServiceClassSpec_To_v1beta1_CommonServiceClassSpec(a.(*servicecatalog.CommonServiceClassSpec), b.(*CommonServiceClassSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CommonServiceClassStatus)(nil), (*servicecatalog.CommonServiceClassStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CommonServiceClassStatus_To_servicecatalog_CommonServiceClassStatus(a.(*CommonServiceClassStatus), b.(*servicecatalog.CommonServiceClassStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CommonServiceClassStatus)(nil), (*CommonServiceClassStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CommonServiceClassStatus_To_v1beta1_CommonServiceClassStatus(a.(*servicecatalog.CommonServiceClassStatus), b.(*CommonServiceClassStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CommonServicePlanSpec)(nil), (*servicecatalog.CommonServicePlanSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CommonServicePlanSpec_To_servicecatalog_CommonServicePlanSpec(a.(*CommonServicePlanSpec), b.(*servicecatalog.CommonServicePlanSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CommonServicePlanSpec)(nil), (*CommonServicePlanSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CommonServicePlanSpec_To_v1beta1_CommonServicePlanSpec(a.(*servicecatalog.CommonServicePlanSpec), b.(*CommonServicePlanSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*CommonServicePlanStatus)(nil), (*servicecatalog.CommonServicePlanStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_CommonServicePlanStatus_To_servicecatalog_CommonServicePlanStatus(a.(*CommonServicePlanStatus), b.(*servicecatalog.CommonServicePlanStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.CommonServicePlanStatus)(nil), (*CommonServicePlanStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_CommonServicePlanStatus_To_v1beta1_CommonServicePlanStatus(a.(*servicecatalog.CommonServicePlanStatus), b.(*CommonServicePlanStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*LocalObjectReference)(nil), (*servicecatalog.LocalObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_LocalObjectReference_To_servicecatalog_LocalObjectReference(a.(*LocalObjectReference), b.(*servicecatalog.LocalObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.LocalObjectReference)(nil), (*LocalObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_LocalObjectReference_To_v1beta1_LocalObjectReference(a.(*servicecatalog.LocalObjectReference), b.(*LocalObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ObjectReference)(nil), (*servicecatalog.ObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ObjectReference_To_servicecatalog_ObjectReference(a.(*ObjectReference), b.(*servicecatalog.ObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ObjectReference)(nil), (*ObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ObjectReference_To_v1beta1_ObjectReference(a.(*servicecatalog.ObjectReference), b.(*ObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ParametersFromSource)(nil), (*servicecatalog.ParametersFromSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ParametersFromSource_To_servicecatalog_ParametersFromSource(a.(*ParametersFromSource), b.(*servicecatalog.ParametersFromSource), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ParametersFromSource)(nil), (*ParametersFromSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ParametersFromSource_To_v1beta1_ParametersFromSource(a.(*servicecatalog.ParametersFromSource), b.(*ParametersFromSource), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*PlanReference)(nil), (*servicecatalog.PlanReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_PlanReference_To_servicecatalog_PlanReference(a.(*PlanReference), b.(*servicecatalog.PlanReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.PlanReference)(nil), (*PlanReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_PlanReference_To_v1beta1_PlanReference(a.(*servicecatalog.PlanReference), b.(*PlanReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*RemoveKeyTransform)(nil), (*servicecatalog.RemoveKeyTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_RemoveKeyTransform_To_servicecatalog_RemoveKeyTransform(a.(*RemoveKeyTransform), b.(*servicecatalog.RemoveKeyTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.RemoveKeyTransform)(nil), (*RemoveKeyTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_RemoveKeyTransform_To_v1beta1_RemoveKeyTransform(a.(*servicecatalog.RemoveKeyTransform), b.(*RemoveKeyTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*RenameKeyTransform)(nil), (*servicecatalog.RenameKeyTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_RenameKeyTransform_To_servicecatalog_RenameKeyTransform(a.(*RenameKeyTransform), b.(*servicecatalog.RenameKeyTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.RenameKeyTransform)(nil), (*RenameKeyTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_RenameKeyTransform_To_v1beta1_RenameKeyTransform(a.(*servicecatalog.RenameKeyTransform), b.(*RenameKeyTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SecretKeyReference)(nil), (*servicecatalog.SecretKeyReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_SecretKeyReference_To_servicecatalog_SecretKeyReference(a.(*SecretKeyReference), b.(*servicecatalog.SecretKeyReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.SecretKeyReference)(nil), (*SecretKeyReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_SecretKeyReference_To_v1beta1_SecretKeyReference(a.(*servicecatalog.SecretKeyReference), b.(*SecretKeyReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SecretTransform)(nil), (*servicecatalog.SecretTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_SecretTransform_To_servicecatalog_SecretTransform(a.(*SecretTransform), b.(*servicecatalog.SecretTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.SecretTransform)(nil), (*SecretTransform)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_SecretTransform_To_v1beta1_SecretTransform(a.(*servicecatalog.SecretTransform), b.(*SecretTransform), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBinding)(nil), (*servicecatalog.ServiceBinding)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBinding_To_servicecatalog_ServiceBinding(a.(*ServiceBinding), b.(*servicecatalog.ServiceBinding), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBinding)(nil), (*ServiceBinding)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBinding_To_v1beta1_ServiceBinding(a.(*servicecatalog.ServiceBinding), b.(*ServiceBinding), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBindingCondition)(nil), (*servicecatalog.ServiceBindingCondition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBindingCondition_To_servicecatalog_ServiceBindingCondition(a.(*ServiceBindingCondition), b.(*servicecatalog.ServiceBindingCondition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBindingCondition)(nil), (*ServiceBindingCondition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBindingCondition_To_v1beta1_ServiceBindingCondition(a.(*servicecatalog.ServiceBindingCondition), b.(*ServiceBindingCondition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBindingList)(nil), (*servicecatalog.ServiceBindingList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBindingList_To_servicecatalog_ServiceBindingList(a.(*ServiceBindingList), b.(*servicecatalog.ServiceBindingList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBindingList)(nil), (*ServiceBindingList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBindingList_To_v1beta1_ServiceBindingList(a.(*servicecatalog.ServiceBindingList), b.(*ServiceBindingList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBindingPropertiesState)(nil), (*servicecatalog.ServiceBindingPropertiesState)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBindingPropertiesState_To_servicecatalog_ServiceBindingPropertiesState(a.(*ServiceBindingPropertiesState), b.(*servicecatalog.ServiceBindingPropertiesState), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBindingPropertiesState)(nil), (*ServiceBindingPropertiesState)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBindingPropertiesState_To_v1beta1_ServiceBindingPropertiesState(a.(*servicecatalog.ServiceBindingPropertiesState), b.(*ServiceBindingPropertiesState), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBindingSpec)(nil), (*servicecatalog.ServiceBindingSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBindingSpec_To_servicecatalog_ServiceBindingSpec(a.(*ServiceBindingSpec), b.(*servicecatalog.ServiceBindingSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBindingSpec)(nil), (*ServiceBindingSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBindingSpec_To_v1beta1_ServiceBindingSpec(a.(*servicecatalog.ServiceBindingSpec), b.(*ServiceBindingSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBindingStatus)(nil), (*servicecatalog.ServiceBindingStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingStatus(a.(*ServiceBindingStatus), b.(*servicecatalog.ServiceBindingStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBindingStatus)(nil), (*ServiceBindingStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingStatus(a.(*servicecatalog.ServiceBindingStatus), b.(*ServiceBindingStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBroker)(nil), (*servicecatalog.ServiceBroker)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBroker_To_servicecatalog_ServiceBroker(a.(*ServiceBroker), b.(*servicecatalog.ServiceBroker), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBroker)(nil), (*ServiceBroker)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBroker_To_v1beta1_ServiceBroker(a.(*servicecatalog.ServiceBroker), b.(*ServiceBroker), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBrokerAuthInfo)(nil), (*servicecatalog.ServiceBrokerAuthInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBrokerAuthInfo_To_servicecatalog_ServiceBrokerAuthInfo(a.(*ServiceBrokerAuthInfo), b.(*servicecatalog.ServiceBrokerAuthInfo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBrokerAuthInfo)(nil), (*ServiceBrokerAuthInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBrokerAuthInfo_To_v1beta1_ServiceBrokerAuthInfo(a.(*servicecatalog.ServiceBrokerAuthInfo), b.(*ServiceBrokerAuthInfo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBrokerCondition)(nil), (*servicecatalog.ServiceBrokerCondition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBrokerCondition_To_servicecatalog_ServiceBrokerCondition(a.(*ServiceBrokerCondition), b.(*servicecatalog.ServiceBrokerCondition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBrokerCondition)(nil), (*ServiceBrokerCondition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBrokerCondition_To_v1beta1_ServiceBrokerCondition(a.(*servicecatalog.ServiceBrokerCondition), b.(*ServiceBrokerCondition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBrokerList)(nil), (*servicecatalog.ServiceBrokerList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBrokerList_To_servicecatalog_ServiceBrokerList(a.(*ServiceBrokerList), b.(*servicecatalog.ServiceBrokerList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBrokerList)(nil), (*ServiceBrokerList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBrokerList_To_v1beta1_ServiceBrokerList(a.(*servicecatalog.ServiceBrokerList), b.(*ServiceBrokerList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBrokerSpec)(nil), (*servicecatalog.ServiceBrokerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBrokerSpec_To_servicecatalog_ServiceBrokerSpec(a.(*ServiceBrokerSpec), b.(*servicecatalog.ServiceBrokerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBrokerSpec)(nil), (*ServiceBrokerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBrokerSpec_To_v1beta1_ServiceBrokerSpec(a.(*servicecatalog.ServiceBrokerSpec), b.(*ServiceBrokerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceBrokerStatus)(nil), (*servicecatalog.ServiceBrokerStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceBrokerStatus_To_servicecatalog_ServiceBrokerStatus(a.(*ServiceBrokerStatus), b.(*servicecatalog.ServiceBrokerStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceBrokerStatus)(nil), (*ServiceBrokerStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceBrokerStatus_To_v1beta1_ServiceBrokerStatus(a.(*servicecatalog.ServiceBrokerStatus), b.(*ServiceBrokerStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceClass)(nil), (*servicecatalog.ServiceClass)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceClass_To_servicecatalog_ServiceClass(a.(*ServiceClass), b.(*servicecatalog.ServiceClass), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceClass)(nil), (*ServiceClass)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceClass_To_v1beta1_ServiceClass(a.(*servicecatalog.ServiceClass), b.(*ServiceClass), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceClassList)(nil), (*servicecatalog.ServiceClassList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceClassList_To_servicecatalog_ServiceClassList(a.(*ServiceClassList), b.(*servicecatalog.ServiceClassList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceClassList)(nil), (*ServiceClassList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceClassList_To_v1beta1_ServiceClassList(a.(*servicecatalog.ServiceClassList), b.(*ServiceClassList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceClassSpec)(nil), (*servicecatalog.ServiceClassSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceClassSpec_To_servicecatalog_ServiceClassSpec(a.(*ServiceClassSpec), b.(*servicecatalog.ServiceClassSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceClassSpec)(nil), (*ServiceClassSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceClassSpec_To_v1beta1_ServiceClassSpec(a.(*servicecatalog.ServiceClassSpec), b.(*ServiceClassSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceClassStatus)(nil), (*servicecatalog.ServiceClassStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceClassStatus_To_servicecatalog_ServiceClassStatus(a.(*ServiceClassStatus), b.(*servicecatalog.ServiceClassStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceClassStatus)(nil), (*ServiceClassStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceClassStatus_To_v1beta1_ServiceClassStatus(a.(*servicecatalog.ServiceClassStatus), b.(*ServiceClassStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceInstance)(nil), (*servicecatalog.ServiceInstance)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceInstance_To_servicecatalog_ServiceInstance(a.(*ServiceInstance), b.(*servicecatalog.ServiceInstance), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceInstance)(nil), (*ServiceInstance)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceInstance_To_v1beta1_ServiceInstance(a.(*servicecatalog.ServiceInstance), b.(*ServiceInstance), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceInstanceCondition)(nil), (*servicecatalog.ServiceInstanceCondition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceInstanceCondition_To_servicecatalog_ServiceInstanceCondition(a.(*ServiceInstanceCondition), b.(*servicecatalog.ServiceInstanceCondition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceInstanceCondition)(nil), (*ServiceInstanceCondition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceInstanceCondition_To_v1beta1_ServiceInstanceCondition(a.(*servicecatalog.ServiceInstanceCondition), b.(*ServiceInstanceCondition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceInstanceList)(nil), (*servicecatalog.ServiceInstanceList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceInstanceList_To_servicecatalog_ServiceInstanceList(a.(*ServiceInstanceList), b.(*servicecatalog.ServiceInstanceList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceInstanceList)(nil), (*ServiceInstanceList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceInstanceList_To_v1beta1_ServiceInstanceList(a.(*servicecatalog.ServiceInstanceList), b.(*ServiceInstanceList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceInstancePropertiesState)(nil), (*servicecatalog.ServiceInstancePropertiesState)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceInstancePropertiesState_To_servicecatalog_ServiceInstancePropertiesState(a.(*ServiceInstancePropertiesState), b.(*servicecatalog.ServiceInstancePropertiesState), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceInstancePropertiesState)(nil), (*ServiceInstancePropertiesState)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceInstancePropertiesState_To_v1beta1_ServiceInstancePropertiesState(a.(*servicecatalog.ServiceInstancePropertiesState), b.(*ServiceInstancePropertiesState), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceInstanceSpec)(nil), (*servicecatalog.ServiceInstanceSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceInstanceSpec_To_servicecatalog_ServiceInstanceSpec(a.(*ServiceInstanceSpec), b.(*servicecatalog.ServiceInstanceSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceInstanceSpec)(nil), (*ServiceInstanceSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceInstanceSpec_To_v1beta1_ServiceInstanceSpec(a.(*servicecatalog.ServiceInstanceSpec), b.(*ServiceInstanceSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServiceInstanceStatus)(nil), (*servicecatalog.ServiceInstanceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstanceStatus(a.(*ServiceInstanceStatus), b.(*servicecatalog.ServiceInstanceStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServiceInstanceStatus)(nil), (*ServiceInstanceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstanceStatus(a.(*servicecatalog.ServiceInstanceStatus), b.(*ServiceInstanceStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServicePlan)(nil), (*servicecatalog.ServicePlan)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServicePlan_To_servicecatalog_ServicePlan(a.(*ServicePlan), b.(*servicecatalog.ServicePlan), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServicePlan)(nil), (*ServicePlan)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServicePlan_To_v1beta1_ServicePlan(a.(*servicecatalog.ServicePlan), b.(*ServicePlan), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServicePlanList)(nil), (*servicecatalog.ServicePlanList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServicePlanList_To_servicecatalog_ServicePlanList(a.(*ServicePlanList), b.(*servicecatalog.ServicePlanList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServicePlanList)(nil), (*ServicePlanList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServicePlanList_To_v1beta1_ServicePlanList(a.(*servicecatalog.ServicePlanList), b.(*ServicePlanList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServicePlanSpec)(nil), (*servicecatalog.ServicePlanSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServicePlanSpec_To_servicecatalog_ServicePlanSpec(a.(*ServicePlanSpec), b.(*servicecatalog.ServicePlanSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServicePlanSpec)(nil), (*ServicePlanSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServicePlanSpec_To_v1beta1_ServicePlanSpec(a.(*servicecatalog.ServicePlanSpec), b.(*ServicePlanSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ServicePlanStatus)(nil), (*servicecatalog.ServicePlanStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ServicePlanStatus_To_servicecatalog_ServicePlanStatus(a.(*ServicePlanStatus), b.(*servicecatalog.ServicePlanStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.ServicePlanStatus)(nil), (*ServicePlanStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_ServicePlanStatus_To_v1beta1_ServicePlanStatus(a.(*servicecatalog.ServicePlanStatus), b.(*ServicePlanStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*UserInfo)(nil), (*servicecatalog.UserInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_UserInfo_To_servicecatalog_UserInfo(a.(*UserInfo), b.(*servicecatalog.UserInfo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*servicecatalog.UserInfo)(nil), (*UserInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_servicecatalog_UserInfo_To_v1beta1_UserInfo(a.(*servicecatalog.UserInfo), b.(*UserInfo), scope)
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func autoConvert_v1beta1_AddKeyTransform_To_servicecatalog_AddKeyTransform(in *AddKeyTransform, out *servicecatalog.AddKeyTransform, s conversion.Scope) error {

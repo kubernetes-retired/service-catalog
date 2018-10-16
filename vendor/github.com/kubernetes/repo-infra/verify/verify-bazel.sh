@@ -18,38 +18,26 @@ set -o nounset
 set -o pipefail
 
 REPOINFRA_ROOT=$(git rev-parse --show-toplevel)
-TMP_GOPATH=$(mktemp -d)
+# https://github.com/kubernetes/test-infra/issues/5699#issuecomment-348350792
+cd ${REPOINFRA_ROOT}
 
-GOBIN="${TMP_GOPATH}/bin" go get github.com/kubernetes/repo-infra/kazel
+OUTPUT_GOBIN="${REPOINFRA_ROOT}/_output/bin"
+GOBIN="${OUTPUT_GOBIN}" go install ./vendor/github.com/bazelbuild/bazel-gazelle/cmd/gazelle
+GOBIN="${OUTPUT_GOBIN}" go install ./kazel
 
-"${REPOINFRA_ROOT}/verify/go_install_from_commit.sh" \
-  github.com/bazelbuild/bazel-gazelle/cmd/gazelle \
-  0.8 \
-  "${TMP_GOPATH}"
+touch "${REPOINFRA_ROOT}/vendor/BUILD.bazel"
 
-touch "${REPOINFRA_ROOT}/vendor/BUILD"
-
-gazelle_diff=$("${TMP_GOPATH}/bin/gazelle" fix \
-  -build_file_name=BUILD,BUILD.bazel \
+gazelle_diff=$("${OUTPUT_GOBIN}/gazelle" fix \
   -external=vendored \
-  -mode=diff \
-  -repo_root="${REPOINFRA_ROOT}")
+  -mode=diff)
 
-kazel_diff=$("${TMP_GOPATH}/bin/kazel" \
+kazel_diff=$("${OUTPUT_GOBIN}/kazel" \
   -dry-run \
-  -print-diff \
-  -root="${REPOINFRA_ROOT}")
+  -print-diff)
 
-# check if there are vendor/*_test.go
-# previously we used godeps which did this, but `dep` does not handle this
-# properly yet. some of these tests don't build well. see:
-# ref: https://github.com/kubernetes/test-infra/pull/5411
-vendor_tests=$(find ${REPOINFRA_ROOT}/vendor/ -name "*_test.go" | wc -l)
-
-if [[ -n "${gazelle_diff}" || -n "${kazel_diff}" || "${vendor_tests}" -ne "0" ]]; then
+if [[ -n "${gazelle_diff}" || -n "${kazel_diff}" ]]; then
   echo "${gazelle_diff}"
   echo "${kazel_diff}"
-  echo "number of vendor/*_test.go: ${vendor_tests} (want: 0)"
   echo
   echo "Run ./verify/update-bazel.sh"
   exit 1

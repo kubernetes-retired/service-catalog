@@ -78,9 +78,9 @@ func (o Options) GetStorage(
 	newListFunc func() runtime.Object,
 	getAttrsFunc storage.AttrFunc,
 	trigger storage.TriggerPublisherFunc,
-) (storage.Interface, factory.DestroyFunc) {
+) (registry.DryRunnableStorage, factory.DestroyFunc) {
 	etcdRESTOpts := o.EtcdOptions.RESTOptions
-	return etcdRESTOpts.Decorator(
+	storageInterface, dFunc := etcdRESTOpts.Decorator(
 		etcdRESTOpts.StorageConfig,
 		objectType,
 		resourcePrefix,
@@ -89,4 +89,6 @@ func (o Options) GetStorage(
 		getAttrsFunc,
 		trigger,
 	)
+	dryRunnableStorage := registry.DryRunnableStorage{Storage: storageInterface, Codec: etcdRESTOpts.StorageConfig.Codec}
+	return dryRunnableStorage, dFunc
 }

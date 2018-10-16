@@ -35,15 +35,38 @@ func init() {
 
 // RegisterConversions adds conversion functions to the given scheme.
 // Public to allow building arbitrary schemes.
-func RegisterConversions(scheme *runtime.Scheme) error {
-	return scheme.AddGeneratedConversionFuncs(
-		Convert_v1alpha1_PodPreset_To_settings_PodPreset,
-		Convert_settings_PodPreset_To_v1alpha1_PodPreset,
-		Convert_v1alpha1_PodPresetList_To_settings_PodPresetList,
-		Convert_settings_PodPresetList_To_v1alpha1_PodPresetList,
-		Convert_v1alpha1_PodPresetSpec_To_settings_PodPresetSpec,
-		Convert_settings_PodPresetSpec_To_v1alpha1_PodPresetSpec,
-	)
+func RegisterConversions(s *runtime.Scheme) error {
+	if err := s.AddGeneratedConversionFunc((*PodPreset)(nil), (*settings.PodPreset)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_PodPreset_To_settings_PodPreset(a.(*PodPreset), b.(*settings.PodPreset), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*settings.PodPreset)(nil), (*PodPreset)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_settings_PodPreset_To_v1alpha1_PodPreset(a.(*settings.PodPreset), b.(*PodPreset), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*PodPresetList)(nil), (*settings.PodPresetList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_PodPresetList_To_settings_PodPresetList(a.(*PodPresetList), b.(*settings.PodPresetList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*settings.PodPresetList)(nil), (*PodPresetList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_settings_PodPresetList_To_v1alpha1_PodPresetList(a.(*settings.PodPresetList), b.(*PodPresetList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*PodPresetSpec)(nil), (*settings.PodPresetSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_PodPresetSpec_To_settings_PodPresetSpec(a.(*PodPresetSpec), b.(*settings.PodPresetSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*settings.PodPresetSpec)(nil), (*PodPresetSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_settings_PodPresetSpec_To_v1alpha1_PodPresetSpec(a.(*settings.PodPresetSpec), b.(*PodPresetSpec), scope)
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func autoConvert_v1alpha1_PodPreset_To_settings_PodPreset(in *PodPreset, out *settings.PodPreset, s conversion.Scope) error {

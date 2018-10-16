@@ -81,7 +81,7 @@ func withConfigGetFreshApiserverAndClient(
 	options := &server.ServiceCatalogServerOptions{
 		GenericServerRunOptions: genericserveroptions.NewServerRunOptions(),
 		AdmissionOptions:        genericserveroptions.NewAdmissionOptions(),
-		SecureServingOptions:    genericserveroptions.WithLoopback(secureServingOptions),
+		SecureServingOptions:    secureServingOptions.WithLoopback(),
 		EtcdOptions:             etcdOptions,
 		AuthenticationOptions:   genericserveroptions.NewDelegatingAuthenticationOptions(),
 		AuthorizationOptions:    genericserveroptions.NewDelegatingAuthorizationOptions(),

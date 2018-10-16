@@ -21,7 +21,7 @@ package v1beta1
 import (
 	time "time"
 
-	servicecatalog_v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces"
 	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
@@ -69,7 +69,7 @@ func NewFilteredClusterServiceBrokerInformer(client clientset.Interface, resyncP
 				return client.ServicecatalogV1beta1().ClusterServiceBrokers().Watch(options)
 			},
 		},
-		&servicecatalog_v1beta1.ClusterServiceBroker{},
+		&servicecatalogv1beta1.ClusterServiceBroker{},
 		resyncPeriod,
 		indexers,
 	)
@@ -80,7 +80,7 @@ func (f *clusterServiceBrokerInformer) defaultInformer(client clientset.Interfac
 }
 
 func (f *clusterServiceBrokerInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&servicecatalog_v1beta1.ClusterServiceBroker{}, f.defaultInformer)
+	return f.factory.InformerFor(&servicecatalogv1beta1.ClusterServiceBroker{}, f.defaultInformer)
 }
 
 func (f *clusterServiceBrokerInformer) Lister() v1beta1.ClusterServiceBrokerLister {
