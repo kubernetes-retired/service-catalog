@@ -35,21 +35,13 @@ func (in *AddKeyTransform) DeepCopyInto(out *AddKeyTransform) {
 	}
 	if in.StringValue != nil {
 		in, out := &in.StringValue, &out.StringValue
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	if in.JSONPathExpression != nil {
 		in, out := &in.JSONPathExpression, &out.JSONPathExpression
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	return
 }
@@ -69,12 +61,8 @@ func (in *AddKeysFromTransform) DeepCopyInto(out *AddKeysFromTransform) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ObjectReference)
-			**out = **in
-		}
+		*out = new(ObjectReference)
+		**out = **in
 	}
 	return
 }
@@ -94,12 +82,8 @@ func (in *BasicAuthConfig) DeepCopyInto(out *BasicAuthConfig) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(LocalObjectReference)
-			**out = **in
-		}
+		*out = new(LocalObjectReference)
+		**out = **in
 	}
 	return
 }
@@ -119,12 +103,8 @@ func (in *BearerTokenAuthConfig) DeepCopyInto(out *BearerTokenAuthConfig) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(LocalObjectReference)
-			**out = **in
-		}
+		*out = new(LocalObjectReference)
+		**out = **in
 	}
 	return
 }
@@ -170,12 +150,8 @@ func (in *ClusterBasicAuthConfig) DeepCopyInto(out *ClusterBasicAuthConfig) {
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ObjectReference)
-			**out = **in
-		}
+		*out = new(ObjectReference)
+		**out = **in
 	}
 	return
 }
@@ -195,12 +171,8 @@ func (in *ClusterBearerTokenAuthConfig) DeepCopyInto(out *ClusterBearerTokenAuth
 	*out = *in
 	if in.SecretRef != nil {
 		in, out := &in.SecretRef, &out.SecretRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ObjectReference)
-			**out = **in
-		}
+		*out = new(ObjectReference)
+		**out = **in
 	}
 	return
 }
@@ -264,21 +236,13 @@ func (in *ClusterServiceBrokerAuthInfo) DeepCopyInto(out *ClusterServiceBrokerAu
 	*out = *in
 	if in.Basic != nil {
 		in, out := &in.Basic, &out.Basic
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterBasicAuthConfig)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ClusterBasicAuthConfig)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Bearer != nil {
 		in, out := &in.Bearer, &out.Bearer
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterBearerTokenAuthConfig)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ClusterBearerTokenAuthConfig)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -332,12 +296,8 @@ func (in *ClusterServiceBrokerSpec) DeepCopyInto(out *ClusterServiceBrokerSpec) 
 	in.CommonServiceBrokerSpec.DeepCopyInto(&out.CommonServiceBrokerSpec)
 	if in.AuthInfo != nil {
 		in, out := &in.AuthInfo, &out.AuthInfo
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterServiceBrokerAuthInfo)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ClusterServiceBrokerAuthInfo)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -570,21 +530,13 @@ func (in *CommonServiceBrokerSpec) DeepCopyInto(out *CommonServiceBrokerSpec) {
 	}
 	if in.RelistDuration != nil {
 		in, out := &in.RelistDuration, &out.RelistDuration
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(v1.Duration)
-			**out = **in
-		}
+		*out = new(v1.Duration)
+		**out = **in
 	}
 	if in.CatalogRestrictions != nil {
 		in, out := &in.CatalogRestrictions, &out.CatalogRestrictions
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(CatalogRestrictions)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(CatalogRestrictions)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -611,19 +563,11 @@ func (in *CommonServiceBrokerStatus) DeepCopyInto(out *CommonServiceBrokerStatus
 	}
 	if in.OperationStartTime != nil {
 		in, out := &in.OperationStartTime, &out.OperationStartTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.LastCatalogRetrievalTime != nil {
 		in, out := &in.LastCatalogRetrievalTime, &out.LastCatalogRetrievalTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	return
 }
@@ -643,12 +587,8 @@ func (in *CommonServiceClassSpec) DeepCopyInto(out *CommonServiceClassSpec) {
 	*out = *in
 	if in.ExternalMetadata != nil {
 		in, out := &in.ExternalMetadata, &out.ExternalMetadata
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Tags != nil {
 		in, out := &in.Tags, &out.Tags
@@ -694,66 +634,38 @@ func (in *CommonServicePlanSpec) DeepCopyInto(out *CommonServicePlanSpec) {
 	*out = *in
 	if in.Bindable != nil {
 		in, out := &in.Bindable, &out.Bindable
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(bool)
-			**out = **in
-		}
+		*out = new(bool)
+		**out = **in
 	}
 	if in.ExternalMetadata != nil {
 		in, out := &in.ExternalMetadata, &out.ExternalMetadata
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceInstanceCreateParameterSchema != nil {
 		in, out := &in.ServiceInstanceCreateParameterSchema, &out.ServiceInstanceCreateParameterSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceInstanceUpdateParameterSchema != nil {
 		in, out := &in.ServiceInstanceUpdateParameterSchema, &out.ServiceInstanceUpdateParameterSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceBindingCreateParameterSchema != nil {
 		in, out := &in.ServiceBindingCreateParameterSchema, &out.ServiceBindingCreateParameterSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ServiceBindingCreateResponseSchema != nil {
 		in, out := &in.ServiceBindingCreateResponseSchema, &out.ServiceBindingCreateResponseSchema
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.DefaultProvisionParameters != nil {
 		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -841,12 +753,8 @@ func (in *ParametersFromSource) DeepCopyInto(out *ParametersFromSource) {
 	*out = *in
 	if in.SecretKeyRef != nil {
 		in, out := &in.SecretKeyRef, &out.SecretKeyRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(SecretKeyReference)
-			**out = **in
-		}
+		*out = new(SecretKeyReference)
+		**out = **in
 	}
 	return
 }
@@ -930,39 +838,23 @@ func (in *SecretTransform) DeepCopyInto(out *SecretTransform) {
 	*out = *in
 	if in.RenameKey != nil {
 		in, out := &in.RenameKey, &out.RenameKey
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(RenameKeyTransform)
-			**out = **in
-		}
+		*out = new(RenameKeyTransform)
+		**out = **in
 	}
 	if in.AddKey != nil {
 		in, out := &in.AddKey, &out.AddKey
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(AddKeyTransform)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(AddKeyTransform)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.AddKeysFrom != nil {
 		in, out := &in.AddKeysFrom, &out.AddKeysFrom
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(AddKeysFromTransform)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(AddKeysFromTransform)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.RemoveKey != nil {
 		in, out := &in.RemoveKey, &out.RemoveKey
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(RemoveKeyTransform)
-			**out = **in
-		}
+		*out = new(RemoveKeyTransform)
+		**out = **in
 	}
 	return
 }
@@ -1060,21 +952,13 @@ func (in *ServiceBindingPropertiesState) DeepCopyInto(out *ServiceBindingPropert
 	*out = *in
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.UserInfo != nil {
 		in, out := &in.UserInfo, &out.UserInfo
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(UserInfo)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(UserInfo)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1095,12 +979,8 @@ func (in *ServiceBindingSpec) DeepCopyInto(out *ServiceBindingSpec) {
 	out.ServiceInstanceRef = in.ServiceInstanceRef
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ParametersFrom != nil {
 		in, out := &in.ParametersFrom, &out.ParametersFrom
@@ -1118,12 +998,8 @@ func (in *ServiceBindingSpec) DeepCopyInto(out *ServiceBindingSpec) {
 	}
 	if in.UserInfo != nil {
 		in, out := &in.UserInfo, &out.UserInfo
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(UserInfo)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(UserInfo)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1150,38 +1026,22 @@ func (in *ServiceBindingStatus) DeepCopyInto(out *ServiceBindingStatus) {
 	}
 	if in.LastOperation != nil {
 		in, out := &in.LastOperation, &out.LastOperation
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	if in.OperationStartTime != nil {
 		in, out := &in.OperationStartTime, &out.OperationStartTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.InProgressProperties != nil {
 		in, out := &in.InProgressProperties, &out.InProgressProperties
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ServiceBindingPropertiesState)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ServiceBindingPropertiesState)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ExternalProperties != nil {
 		in, out := &in.ExternalProperties, &out.ExternalProperties
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ServiceBindingPropertiesState)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ServiceBindingPropertiesState)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1229,21 +1089,13 @@ func (in *ServiceBrokerAuthInfo) DeepCopyInto(out *ServiceBrokerAuthInfo) {
 	*out = *in
 	if in.Basic != nil {
 		in, out := &in.Basic, &out.Basic
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(BasicAuthConfig)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(BasicAuthConfig)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Bearer != nil {
 		in, out := &in.Bearer, &out.Bearer
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(BearerTokenAuthConfig)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(BearerTokenAuthConfig)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1314,12 +1166,8 @@ func (in *ServiceBrokerSpec) DeepCopyInto(out *ServiceBrokerSpec) {
 	in.CommonServiceBrokerSpec.DeepCopyInto(&out.CommonServiceBrokerSpec)
 	if in.AuthInfo != nil {
 		in, out := &in.AuthInfo, &out.AuthInfo
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ServiceBrokerAuthInfo)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ServiceBrokerAuthInfo)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1529,21 +1377,13 @@ func (in *ServiceInstancePropertiesState) DeepCopyInto(out *ServiceInstancePrope
 	*out = *in
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.UserInfo != nil {
 		in, out := &in.UserInfo, &out.UserInfo
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(UserInfo)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(UserInfo)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1564,48 +1404,28 @@ func (in *ServiceInstanceSpec) DeepCopyInto(out *ServiceInstanceSpec) {
 	out.PlanReference = in.PlanReference
 	if in.ClusterServiceClassRef != nil {
 		in, out := &in.ClusterServiceClassRef, &out.ClusterServiceClassRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterObjectReference)
-			**out = **in
-		}
+		*out = new(ClusterObjectReference)
+		**out = **in
 	}
 	if in.ClusterServicePlanRef != nil {
 		in, out := &in.ClusterServicePlanRef, &out.ClusterServicePlanRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ClusterObjectReference)
-			**out = **in
-		}
+		*out = new(ClusterObjectReference)
+		**out = **in
 	}
 	if in.ServiceClassRef != nil {
 		in, out := &in.ServiceClassRef, &out.ServiceClassRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(LocalObjectReference)
-			**out = **in
-		}
+		*out = new(LocalObjectReference)
+		**out = **in
 	}
 	if in.ServicePlanRef != nil {
 		in, out := &in.ServicePlanRef, &out.ServicePlanRef
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(LocalObjectReference)
-			**out = **in
-		}
+		*out = new(LocalObjectReference)
+		**out = **in
 	}
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ParametersFrom != nil {
 		in, out := &in.ParametersFrom, &out.ParametersFrom
@@ -1616,12 +1436,8 @@ func (in *ServiceInstanceSpec) DeepCopyInto(out *ServiceInstanceSpec) {
 	}
 	if in.UserInfo != nil {
 		in, out := &in.UserInfo, &out.UserInfo
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(UserInfo)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(UserInfo)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1648,56 +1464,32 @@ func (in *ServiceInstanceStatus) DeepCopyInto(out *ServiceInstanceStatus) {
 	}
 	if in.LastOperation != nil {
 		in, out := &in.LastOperation, &out.LastOperation
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	if in.DashboardURL != nil {
 		in, out := &in.DashboardURL, &out.DashboardURL
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
+		*out = new(string)
+		**out = **in
 	}
 	if in.OperationStartTime != nil {
 		in, out := &in.OperationStartTime, &out.OperationStartTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.InProgressProperties != nil {
 		in, out := &in.InProgressProperties, &out.InProgressProperties
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ServiceInstancePropertiesState)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ServiceInstancePropertiesState)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ExternalProperties != nil {
 		in, out := &in.ExternalProperties, &out.ExternalProperties
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(ServiceInstancePropertiesState)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(ServiceInstancePropertiesState)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.DefaultProvisionParameters != nil {
 		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -1820,12 +1612,15 @@ func (in *UserInfo) DeepCopyInto(out *UserInfo) {
 		in, out := &in.Extra, &out.Extra
 		*out = make(map[string]ExtraValue, len(*in))
 		for key, val := range *in {
+			var outVal []string
 			if val == nil {
 				(*out)[key] = nil
 			} else {
-				(*out)[key] = make([]string, len(val))
-				copy((*out)[key], val)
+				in, out := &val, &outVal
+				*out = make(ExtraValue, len(*in))
+				copy(*out, *in)
 			}
+			(*out)[key] = outVal
 		}
 	}
 	return
