@@ -140,6 +140,10 @@ func WriteParentPlan(w io.Writer, plan *v1beta1.ClusterServicePlan) {
 func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.ClusterServiceClass) {
 	t := NewDetailsTable(w)
 
+	source := "broker"
+	if !class.GetIsManaged() {
+		source = "user"
+	}
 	t.AppendBulk([][]string{
 		{"Name:", plan.GetExternalName()},
 		{"Description:", plan.GetDescription()},
@@ -147,6 +151,7 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 		{"Status:", plan.GetShortStatus()},
 		{"Free:", strconv.FormatBool(plan.GetFree())},
 		{"Class:", class.Spec.ExternalName},
+		{"Source:", source},
 	})
 
 	t.Render()

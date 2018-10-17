@@ -199,6 +199,7 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get class by name (yaml)", cmd: "get class user-provided-service -o yaml", golden: "output/get-class.yaml"},
 		{name: "get class by uuid", cmd: "get class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-class.txt"},
 		{name: "describe class by name", cmd: "describe class user-provided-service", golden: "output/describe-class.txt"},
+		{name: "describe class by name (managed)", cmd: "describe class user-provided-service-managed", golden: "output/describe-class-managed.txt"},
 		{name: "describe class uuid", cmd: "describe class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/describe-class.txt"},
 		{name: "create cluster class", cmd: "create class new-class --from user-provided-service --scope cluster", golden: "output/create-cluster-class.txt"},
 		{name: "create namespace class", cmd: "create class new-class --from user-provided-namespaced-service --scope namespace --namespace default", golden: "output/create-namespace-class.txt"},
@@ -223,7 +224,9 @@ func TestCommandOutput(t *testing.T) {
 		{name: "describe plan by uuid", cmd: "describe plan --scope cluster --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-plan.txt"},
 		{name: "describe namespace plan by uuid", cmd: "describe plan --uuid 86064792-7ea2-467b-af93-ac9694d96d52", golden: "output/describe-namespace-plan.txt"},
 		{name: "describe plan by class/plan name combo", cmd: "describe plan --scope cluster user-provided-service/default", golden: "output/describe-plan.txt"},
+		{name: "describe plan by class/plan name combo (managed)", cmd: "describe plan --scope cluster user-provided-service-managed/default-managed", golden: "output/describe-plan-managed.txt"},
 		{name: "describe namespace plan by class/plan name combo", cmd: "describe plan user-provided-namespaced-service/namespacedplan", golden: "output/describe-namespace-plan.txt"},
+		{name: "describe namespace plan by class/plan name combo (managed)", cmd: "describe plan user-provided-namespaced-service-managed/namespacedplan-managed", golden: "output/describe-namespace-plan-managed.txt"},
 		{name: "describe plan with schemas", cmd: "describe plan --scope cluster premium", golden: "output/describe-plan-with-schemas.txt"},
 		{name: "describe plan without schemas", cmd: "describe plan --scope cluster premium --show-schemas=false", golden: "output/describe-plan-without-schemas.txt"},
 

@@ -1,0 +1,11 @@
+  Name:          user-provided-service-managed         
+  Scope:         cluster                               
+  Description:   A user provided service               
+  UUID:          4f6e6cf6-ffdd-425f-a2c7-3c9258ad2469  
+  Status:        Active                                
+  Tags:                                                
+  Broker:        ups-broker                            
+  Source:        broker                                
+
+Plans:
+No plans defined

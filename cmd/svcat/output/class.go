@@ -84,6 +84,10 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 	if class.GetNamespace() != "" {
 		t.Append([]string{"Namespace:", class.GetNamespace()})
 	}
+	source := "broker"
+	if !class.GetIsManaged() {
+		source = "user"
+	}
 	t.AppendBulk([][]string{
 		{"Scope:", scope},
 		{"Description:", spec.Description},
@@ -91,6 +95,7 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 		{"Status:", class.GetStatusText()},
 		{"Tags:", strings.Join(spec.Tags, ", ")},
 		{"Broker:", class.GetServiceBrokerName()},
+		{"Source:", source},
 	})
 	t.Render()
 }

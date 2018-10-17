@@ -4,6 +4,7 @@
   Status:        Active                                
   Free:          true                                  
   Class:         user-provided-service                 
+  Source:        user                                  
 
 Instances:
       NAME       NAMESPACE   STATUS  

@@ -18,7 +18,6 @@ package controller
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -784,10 +783,5 @@ func markAsServiceCatalogManagedResource(obj metav1.Object, broker *v1beta1.Clus
 }
 
 func isServiceCatalogManagedResource(resource metav1.Object) bool {
-	c := metav1.GetControllerOf(resource)
-	if c == nil {
-		return false
-	}
-
-	return strings.HasPrefix(c.APIVersion, v1beta1.GroupName)
+	return v1beta1.IsServiceCatalogManagedResource(resource.GetOwnerReferences())
 }

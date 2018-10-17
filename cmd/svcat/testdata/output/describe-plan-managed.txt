@@ -1,0 +1,19 @@
+  Name:          default-managed                       
+  Description:   Sample plan description               
+  UUID:          86064792-7ea2-467b-af93-ac9694d96d53  
+  Status:        Active                                
+  Free:          true                                  
+  Class:         user-provided-service-managed         
+  Source:        broker                                
+
+Default Provision Parameters:
+  firewall:
+    ips:
+    - 10.1.1.1
+    - 12.2.2.2
+  secure: true
+
+Instances:
+          NAME           NAMESPACE   STATUS  
++----------------------+-----------+--------+
+  ups-instance-managed   test-ns     Ready   

@@ -62,6 +62,9 @@ type Plan interface {
 	// GetClassID returns the plan's class name.
 	GetClassID() string
 
+	// GetIsManaged returns whether the plan is managed or not.
+	GetIsManaged() bool
+
 	// GetInstanceCreateSchema returns the instance create schema from plan.
 	GetInstanceCreateSchema() *runtime.RawExtension
 

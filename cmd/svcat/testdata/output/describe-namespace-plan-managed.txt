@@ -1,0 +1,12 @@
+  Name:          namespacedplan-managed                
+  Description:   Sample plan description               
+  UUID:          86064792-7ea2-467b-af93-ac9694d96d53  
+  Status:        Active                                
+  Free:          true                                  
+  Class:         user-provided-service-managed         
+  Source:        broker                                
+
+Instances:
+          NAME           NAMESPACE   STATUS  
++----------------------+-----------+--------+
+  ups-instance-managed   test-ns     Ready   
