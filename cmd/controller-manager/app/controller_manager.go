@@ -280,8 +280,8 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 // getAvailableResources uses the discovery client to determine which API
 // groups are available in the endpoint reachable from the given client and
 // returns a map of them.
-func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.GroupVersionResource]bool, error) {
-	var resourceMap []*metav1.APIResourceList
+func getAvailableResources(clientBuilder controller.ClientBuilder, version schema.GroupVersion) (map[schema.GroupVersionResource]struct{}, error) {
+	var apiResourceList *metav1.APIResourceList
 
 	// If apiserver is not running we should wait for some time and fail only then. This is particularly
 	// important when we start apiserver and controller manager at the same time.
@@ -295,7 +295,7 @@ func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.G
 		glog.V(4).Info("Created client for API discovery")
 
 		discoveryClient := client.Discovery()
-		resourceMap, err = discoveryClient.ServerResources()
+		apiResourceList, err = discoveryClient.ServerResourcesForGroupVersion(version.String())
 		if err != nil {
 			return false, fmt.Errorf("failed to get supported resources from server: %v", err)
 		}
@@ -307,15 +307,9 @@ func getAvailableResources(clientBuilder controller.ClientBuilder) (map[schema.G
 		return nil, fmt.Errorf("failed to get api versions from server: %v", err)
 	}
 
-	allResources := map[schema.GroupVersionResource]bool{}
-	for _, apiResourceList := range resourceMap {
-		version, err := schema.ParseGroupVersion(apiResourceList.GroupVersion)
-		if err != nil {
-			return nil, err
-		}
-		for _, apiResource := range apiResourceList.APIResources {
-			allResources[version.WithResource(apiResource.Name)] = true
-		}
+	allResources := map[schema.GroupVersionResource]struct{}{}
+	for _, apiResource := range apiResourceList.APIResources {
+		allResources[version.WithResource(apiResource.Name)] = struct{}{}
 	}
 
 	return allResources, nil
@@ -333,14 +327,15 @@ func StartControllers(s *options.ControllerManagerServer,
 	// same time with API Aggregation enabled, it may take some time before
 	// Catalog registration shows up in API Server.  Attempt to get resources
 	// every 10 seconds and quit after 3 minutes if unsuccessful.
-	var availableResources map[schema.GroupVersionResource]bool
+	var availableResources map[schema.GroupVersionResource]struct{}
 	err := wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) {
 		var err error
-		availableResources, err = getAvailableResources(serviceCatalogClientBuilder)
+		availableResources, err = getAvailableResources(serviceCatalogClientBuilder, servicecatalogv1beta1.SchemeGroupVersion)
 		if err != nil {
 			return false, err
 		}
-		return availableResources[catalogGVR], nil
+		_, ok := availableResources[catalogGVR]
+		return ok, nil
 	},
 	)
 
@@ -416,11 +411,11 @@ func (c checkAPIAvailableResources) Name() string {
 
 func (c checkAPIAvailableResources) Check(_ *http.Request) error {
 	glog.Info("Health-checking connection with service-catalog API server")
-	availableResources, err := getAvailableResources(c.serviceCatalogClientBuilder)
+	availableResources, err := getAvailableResources(c.serviceCatalogClientBuilder, servicecatalogv1beta1.SchemeGroupVersion)
 	if err != nil {
 		return err
 	}
-	if !availableResources[catalogGVR] {
+	if _, ok := availableResources[catalogGVR]; !ok {
 		return fmt.Errorf("failed to get API GroupVersion %q; found: %#v", catalogGVR, availableResources)
 	}
 	return nil
