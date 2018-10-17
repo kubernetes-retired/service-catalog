@@ -81,13 +81,13 @@ func (c *ClusterServiceClass) GetServiceBrokerName() string {
 	return c.Spec.ClusterServiceBrokerName
 }
 
-// GetIsManaged returns whether the class is managed or not.
-func (c *ServiceClass) GetIsManaged() bool {
+// IsManaged returns whether the class is managed or not.
+func (c *ServiceClass) IsManaged() bool {
 	return IsServiceCatalogManagedResource(c.ObjectMeta.GetOwnerReferences())
 }
 
-// GetIsManaged returns whether the class is managed or not.
-func (c *ClusterServiceClass) GetIsManaged() bool {
+// IsManaged returns whether the class is managed or not.
+func (c *ClusterServiceClass) IsManaged() bool {
 	return IsServiceCatalogManagedResource(c.ObjectMeta.GetOwnerReferences())
 }
 

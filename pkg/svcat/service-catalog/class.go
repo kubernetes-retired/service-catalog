@@ -61,8 +61,8 @@ type Class interface {
 	// broker for the class.
 	GetServiceBrokerName() string
 
-	// GetIsManaged returns whether the class is managed or not.
-	GetIsManaged() bool
+	// IsManaged returns whether the class is managed or not.
+	IsManaged() bool
 
 	// GetStatusText returns the status of the class.
 	GetStatusText() string

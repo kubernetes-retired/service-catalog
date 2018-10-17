@@ -141,7 +141,7 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 	t := NewDetailsTable(w)
 
 	source := "broker"
-	if !class.GetIsManaged() {
+	if !class.IsManaged() {
 		source = "user"
 	}
 	t.AppendBulk([][]string{

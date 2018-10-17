@@ -85,7 +85,7 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 		t.Append([]string{"Namespace:", class.GetNamespace()})
 	}
 	source := "broker"
-	if !class.GetIsManaged() {
+	if !class.IsManaged() {
 		source = "user"
 	}
 	t.AppendBulk([][]string{

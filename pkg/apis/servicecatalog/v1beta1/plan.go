@@ -96,14 +96,14 @@ func (p *ServicePlan) GetClassID() string {
 	return p.Spec.ServiceClassRef.Name
 }
 
-// GetIsManaged returns whether the plan is managed or not.
-func (c *ClusterServicePlan) GetIsManaged() bool {
-	return IsServiceCatalogManagedResource(c.ObjectMeta.GetOwnerReferences())
+// IsManaged returns whether the plan is managed or not.
+func (p *ClusterServicePlan) IsManaged() bool {
+	return IsServiceCatalogManagedResource(p.ObjectMeta.GetOwnerReferences())
 }
 
-// GetIsManaged returns whether the plan is managed or not.
-func (c *ServicePlan) GetIsManaged() bool {
-	return IsServiceCatalogManagedResource(c.ObjectMeta.GetOwnerReferences())
+// IsManaged returns whether the plan is managed or not.
+func (p *ServicePlan) IsManaged() bool {
+	return IsServiceCatalogManagedResource(p.ObjectMeta.GetOwnerReferences())
 }
 
 // GetDefaultProvisionParameters returns the default provision parameters from plan.
