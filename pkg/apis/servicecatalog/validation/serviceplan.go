@@ -18,7 +18,6 @@ package validation
 
 import (
 	"fmt"
-	"regexp"
 
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
@@ -27,10 +26,7 @@ import (
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-const commonServicePlanNameFmt string = `[-.a-zA-Z0-9]+`
 const commonServicePlanNameMaxLength int = 63
-
-var servicePlanNameRegexp = regexp.MustCompile("^" + commonServicePlanNameFmt + "$")
 
 // validateCommonServicePlanName is the common validation function for
 // service plan types.
@@ -39,8 +35,8 @@ func validateCommonServicePlanName(value string, prefix bool) []string {
 	if len(value) > commonServicePlanNameMaxLength {
 		errs = append(errs, utilvalidation.MaxLenError(commonServicePlanNameMaxLength))
 	}
-	if !servicePlanNameRegexp.MatchString(value) {
-		errs = append(errs, utilvalidation.RegexError(commonServicePlanNameFmt, "plan-name-40d-0983-1b89"))
+	if len(value) == 0 {
+		errs = append(errs, utilvalidation.EmptyError())
 	}
 
 	return errs

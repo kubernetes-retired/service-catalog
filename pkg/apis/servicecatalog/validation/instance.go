@@ -18,6 +18,7 @@ package validation
 
 import (
 	"fmt"
+
 	"github.com/ghodss/yaml"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
@@ -26,6 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
+
+const lastOperationMaxLength int = 10000
 
 // validateServiceInstanceName is the validation function for Instance names.
 var validateServiceInstanceName = apivalidation.NameIsDNSSubdomain
@@ -139,6 +142,9 @@ func validateServiceInstanceStatus(status *sc.ServiceInstanceStatus, fldPath *fi
 			if c.Type == sc.ServiceInstanceConditionReady && c.Status == sc.ConditionTrue {
 				allErrs = append(allErrs, field.Forbidden(fldPath.Child("conditions").Index(i), "Can not set ServiceInstanceConditionReady to true when there is an operation in progress"))
 			}
+		}
+		if status.LastOperation != nil && len(*status.LastOperation) > lastOperationMaxLength {
+			allErrs = append(allErrs, field.TooLong(fldPath.Child("lastOperation"), status.LastOperation, lastOperationMaxLength))
 		}
 	}
 

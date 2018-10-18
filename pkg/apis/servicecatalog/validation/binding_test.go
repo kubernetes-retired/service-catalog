@@ -62,6 +62,15 @@ func validServiceBindingPropertiesState() *servicecatalog.ServiceBindingProperti
 	}
 }
 
+func invalidServiceBindingStatusLastOperation() *string {
+	runes := make([]rune, 10001)
+	for i := range runes {
+		runes[i] = 'a'
+	}
+	lastOperation := string(runes)
+	return &lastOperation
+}
+
 func TestValidateServiceBinding(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -563,6 +572,15 @@ func TestValidateServiceBinding(t *testing.T) {
 				return b
 			}(),
 			valid: true,
+		},
+		{
+			name: "LastOperation too long",
+			binding: func() *servicecatalog.ServiceBinding {
+				b := validServiceBindingWithInProgressBind()
+				b.Status.LastOperation = invalidServiceBindingStatusLastOperation()
+				return b
+			}(),
+			valid: false,
 		},
 	}
 
