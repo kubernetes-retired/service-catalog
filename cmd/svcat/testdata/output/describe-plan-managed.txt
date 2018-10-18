@@ -6,13 +6,6 @@
   Class:         user-provided-service-managed         
   Source:        broker                                
 
-Default Provision Parameters:
-  firewall:
-    ips:
-    - 10.1.1.1
-    - 12.2.2.2
-  secure: true
-
 Instances:
           NAME           NAMESPACE   STATUS  
 +----------------------+-----------+--------+
