@@ -141,7 +141,9 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 	if len(searchResults) == 0 {
 		if opts.Scope.Matches(ClusterScope) {
 			return nil, fmt.Errorf("class '%s' not found in cluster scope", name)
-		} else if opts.Scope.Matches(NamespaceScope) {
+		} else if opts.Scope.Matches(NamespaceScope) && opts.Namespace == "" {
+			return nil, fmt.Errorf("class '%s' not found in all namespaces", name)
+		} else if opts.Scope.Matches(NamespaceScope) && opts.Namespace != "" {
 			return nil, fmt.Errorf("class '%s' not found in namespace %s", name, opts.Namespace)
 		} else {
 			return nil, fmt.Errorf("class '%s' not found", name)
