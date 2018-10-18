@@ -152,6 +152,16 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 	t.Render()
 }
 
+// WriteDefaultProvisionParameters prints the default provision parameters for a single plan.
+func WriteDefaultProvisionParameters(w io.Writer, plan servicecatalog.Plan) {
+	defaultProvisionParameters := plan.GetDefaultProvisionParameters()
+
+	if defaultProvisionParameters != nil {
+		fmt.Fprintln(w, "\nDefault Provision Parameters:")
+		writeYAML(w, defaultProvisionParameters, 2)
+	}
+}
+
 // WritePlanSchemas prints the schemas for a single plan.
 func WritePlanSchemas(w io.Writer, plan servicecatalog.Plan) {
 	instanceCreateSchema := plan.GetInstanceCreateSchema()
