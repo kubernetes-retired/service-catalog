@@ -1,0 +1,1 @@
+Error: class 'foo' not found in namespace default

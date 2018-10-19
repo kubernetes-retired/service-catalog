@@ -91,12 +91,12 @@ func (c *ClusterServiceClass) IsManaged() bool {
 	return IsServiceCatalogManagedResource(c)
 }
 
-// GetStatusText returns the sttaus of the class.
+// GetStatusText returns the status of the class.
 func (c *ServiceClass) GetStatusText() string {
 	return c.Status.GetStatusText()
 }
 
-// GetStatusText returns the sttaus of the class.
+// GetStatusText returns the status of the class.
 func (c *ClusterServiceClass) GetStatusText() string {
 	return c.Status.GetStatusText()
 }

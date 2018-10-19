@@ -125,6 +125,8 @@ func (c *describeCmd) describe() error {
 
 	output.WritePlanDetails(c.Output, plan, class)
 
+	output.WriteDefaultProvisionParameters(c.Output, plan)
+
 	instances, err := c.App.RetrieveInstancesByPlan(plan)
 	if err != nil {
 		return err

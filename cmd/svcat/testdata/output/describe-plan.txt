@@ -6,6 +6,13 @@
   Class:         user-provided-service                 
   Source:        user                                  
 
+Default Provision Parameters:
+  firewall:
+    ips:
+    - 10.1.1.1
+    - 12.2.2.2
+  secure: true
+
 Instances:
       NAME       NAMESPACE   STATUS  
 +--------------+-----------+--------+

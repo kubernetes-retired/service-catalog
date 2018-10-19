@@ -16,6 +16,12 @@
     "free": true,
     "clusterServiceClassRef": {
       "name": "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+    },
+    "defaultProvisionParameters": {
+      "firewall": {
+        "ips": ["10.1.1.1", "12.2.2.2"]
+      },
+      "secure": true
     }
   },
   "status": {
