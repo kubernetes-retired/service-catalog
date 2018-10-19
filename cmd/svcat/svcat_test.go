@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -31,11 +32,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/spf13/pflag"
-	clientgotesting "k8s.io/client-go/testing"
-
-	"encoding/json"
-
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
 	"github.com/kubernetes-incubator/service-catalog/internal/test"
@@ -46,11 +42,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgotesting "k8s.io/client-go/testing"
 	k8stesting "k8s.io/client-go/testing"
 )
 
@@ -195,13 +193,18 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all classes (json)", cmd: "get classes -o json", golden: "output/get-classes.json"},
 		{name: "list all classes (yaml)", cmd: "get classes -o yaml", golden: "output/get-classes.yaml"},
 		{name: "get class by name", cmd: "get class user-provided-service", golden: "output/get-class.txt"},
+		{name: "get class not found（cluster scope）", cmd: "get class foo --scope cluster", golden: "output/get-class-not-found-cluster.txt", continueOnError: true},
+		{name: "get class not found（default namespace）", cmd: "get class foo --scope namespace", golden: "output/get-class-not-found-default-namespace.txt", continueOnError: true},
+		{name: "get class not found（all namespaces）", cmd: "get class foo --scope namespace --all-namespaces", golden: "output/get-class-not-found-all-namespaces.txt", continueOnError: true},
 		{name: "get class by name (json)", cmd: "get class user-provided-service -o json", golden: "output/get-class.json"},
 		{name: "get class by name (yaml)", cmd: "get class user-provided-service -o yaml", golden: "output/get-class.yaml"},
 		{name: "get class by uuid", cmd: "get class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-class.txt"},
 		{name: "describe class by name", cmd: "describe class user-provided-service", golden: "output/describe-class.txt"},
 		{name: "describe class uuid", cmd: "describe class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/describe-class.txt"},
 		{name: "create cluster class", cmd: "create class new-class --from user-provided-service --scope cluster", golden: "output/create-cluster-class.txt"},
+		{name: "create cluster class not found", cmd: "create class new-class --from foo --scope cluster", golden: "output/create-cluster-class-not-found.txt", continueOnError: true},
 		{name: "create namespace class", cmd: "create class new-class --from user-provided-namespaced-service --scope namespace --namespace default", golden: "output/create-namespace-class.txt"},
+		{name: "create namespace class not found", cmd: "create class new-class --from foo --scope namespace --namespace default", golden: "output/create-namespace-class-not-found.txt", continueOnError: true},
 
 		{name: "list all plans", cmd: "get plans", golden: "output/get-plans.txt"},
 		{name: "list all plans (json)", cmd: "get plans -o json", golden: "output/get-plans.json"},

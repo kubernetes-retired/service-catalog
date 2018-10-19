@@ -1,0 +1,10 @@
+{
+  "kind": "ClusterServiceClassList",
+  "apiVersion": "servicecatalog.k8s.io/v1beta1",
+  "metadata": {
+    "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses",
+    "resourceVersion": "114"
+  },
+  "items": [
+  ]
+}
