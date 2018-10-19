@@ -24,11 +24,11 @@ import (
 
 // IsServiceCatalogManagedResource returns true if the specified resource
 // is service catalog managed
-func IsServiceCatalogManagedResource(refs []metav1.OwnerReference) bool {
-	for _, ref := range refs {
-		if ref.Controller != nil && *ref.Controller {
-			return strings.HasPrefix(ref.APIVersion, GroupName)
-		}
+func IsServiceCatalogManagedResource(resource metav1.Object) bool {
+	c := metav1.GetControllerOf(resource)
+	if c == nil {
+		return false
 	}
-	return false
+
+	return strings.HasPrefix(c.APIVersion, GroupName)
 }

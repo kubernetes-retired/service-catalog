@@ -98,12 +98,12 @@ func (p *ServicePlan) GetClassID() string {
 
 // IsManaged returns whether the plan is managed or not.
 func (p *ClusterServicePlan) IsManaged() bool {
-	return IsServiceCatalogManagedResource(p.ObjectMeta.GetOwnerReferences())
+	return IsServiceCatalogManagedResource(p)
 }
 
 // IsManaged returns whether the plan is managed or not.
 func (p *ServicePlan) IsManaged() bool {
-	return IsServiceCatalogManagedResource(p.ObjectMeta.GetOwnerReferences())
+	return IsServiceCatalogManagedResource(p)
 }
 
 // GetInstanceCreateSchema returns the instance create schema from plan.

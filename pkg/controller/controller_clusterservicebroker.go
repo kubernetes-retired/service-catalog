@@ -21,18 +21,16 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
+	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
-	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 // the Message strings have a terminating period and space so they can
@@ -277,7 +275,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			}
 
 			// Do not delete user-defined classes
-			if !isServiceCatalogManagedResource(existingServiceClass) {
+			if !v1beta1.IsServiceCatalogManagedResource(existingServiceClass) {
 				continue
 			}
 
@@ -331,7 +329,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			}
 
 			// Do not delete user-defined plans
-			if !isServiceCatalogManagedResource(existingServicePlan) {
+			if !v1beta1.IsServiceCatalogManagedResource(existingServicePlan) {
 				continue
 			}
 
@@ -771,7 +769,7 @@ func convertClusterServicePlanListToMap(list []v1beta1.ClusterServicePlan) map[s
 }
 
 func markAsServiceCatalogManagedResource(obj metav1.Object, broker *v1beta1.ClusterServiceBroker) {
-	if isServiceCatalogManagedResource(obj) {
+	if v1beta1.IsServiceCatalogManagedResource(obj) {
 		return
 	}
 
@@ -780,8 +778,4 @@ func markAsServiceCatalogManagedResource(obj metav1.Object, broker *v1beta1.Clus
 	controllerRef.BlockOwnerDeletion = &blockOwnerDeletion
 
 	obj.SetOwnerReferences(append(obj.GetOwnerReferences(), controllerRef))
-}
-
-func isServiceCatalogManagedResource(resource metav1.Object) bool {
-	return v1beta1.IsServiceCatalogManagedResource(resource.GetOwnerReferences())
 }

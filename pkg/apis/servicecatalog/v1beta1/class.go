@@ -83,12 +83,12 @@ func (c *ClusterServiceClass) GetServiceBrokerName() string {
 
 // IsManaged returns whether the class is managed or not.
 func (c *ServiceClass) IsManaged() bool {
-	return IsServiceCatalogManagedResource(c.ObjectMeta.GetOwnerReferences())
+	return IsServiceCatalogManagedResource(c)
 }
 
 // IsManaged returns whether the class is managed or not.
 func (c *ClusterServiceClass) IsManaged() bool {
-	return IsServiceCatalogManagedResource(c.ObjectMeta.GetOwnerReferences())
+	return IsServiceCatalogManagedResource(c)
 }
 
 // GetStatusText returns the sttaus of the class.

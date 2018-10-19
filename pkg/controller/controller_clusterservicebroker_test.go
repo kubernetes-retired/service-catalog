@@ -19,24 +19,20 @@ package controller
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
-
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
-
-	"strings"
-
-	corev1 "k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
 )
 
@@ -1365,7 +1361,7 @@ func TestReconcileUpdatesManagedClassesAndPlans(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not cast %T to metav1.Object", c)
 	}
-	if !isServiceCatalogManagedResource(updatedClass) {
+	if !v1beta1.IsServiceCatalogManagedResource(updatedClass) {
 		t.Error("expected the class to have a service catalog controller reference")
 	}
 
@@ -1374,7 +1370,7 @@ func TestReconcileUpdatesManagedClassesAndPlans(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not cast %T to metav1.Object", p)
 	}
-	if !isServiceCatalogManagedResource(updatedPlan) {
+	if !v1beta1.IsServiceCatalogManagedResource(updatedPlan) {
 		t.Error("expected the plan to have a service catalog controller reference")
 	}
 }
@@ -1400,7 +1396,7 @@ func TestReconcileCreatesManagedClassesAndPlans(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not cast %T to metav1.Object", c)
 	}
-	if !isServiceCatalogManagedResource(createdClass) {
+	if !v1beta1.IsServiceCatalogManagedResource(createdClass) {
 		t.Error("expected the class to have a service catalog controller reference")
 	}
 
@@ -1409,7 +1405,7 @@ func TestReconcileCreatesManagedClassesAndPlans(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not cast %T to metav1.Object", p)
 	}
-	if !isServiceCatalogManagedResource(createdPlan) {
+	if !v1beta1.IsServiceCatalogManagedResource(createdPlan) {
 		t.Error("expected the plan to have a service catalog controller reference")
 	}
 }
@@ -1457,7 +1453,7 @@ func TestReconcileMarksExistingClassesAndPlansAsManaged(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not cast %T to metav1.Object", c)
 	}
-	if !isServiceCatalogManagedResource(updatedClass) {
+	if !v1beta1.IsServiceCatalogManagedResource(updatedClass) {
 		t.Error("expected the class to have a service catalog controller reference")
 	}
 
@@ -1466,7 +1462,7 @@ func TestReconcileMarksExistingClassesAndPlansAsManaged(t *testing.T) {
 	if !ok {
 		t.Fatalf("could not cast %T to metav1.Object", p)
 	}
-	if !isServiceCatalogManagedResource(updatedPlan) {
+	if !v1beta1.IsServiceCatalogManagedResource(updatedPlan) {
 		t.Error("expected the plan to have a service catalog controller reference")
 	}
 }
@@ -1535,7 +1531,7 @@ func TestIsServiceCatalogManagedResource(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := isServiceCatalogManagedResource(tc.resource)
+			got := v1beta1.IsServiceCatalogManagedResource(tc.resource)
 			if tc.want != got {
 				t.Fatalf("WANT: %v, GOT: %v", tc.want, got)
 			}
@@ -1581,8 +1577,8 @@ func TestMarkAsServiceCatalogManagedResource(t *testing.T) {
 			}
 
 			// Also verify that our pair of functions work together
-			if !isServiceCatalogManagedResource(tc.resource) {
-				t.Fatal("expected isServiceCatalogManagedResource to return true")
+			if !v1beta1.IsServiceCatalogManagedResource(tc.resource) {
+				t.Fatal("expected v1beta1.IsServiceCatalogManagedResource to return true")
 			}
 		})
 	}
