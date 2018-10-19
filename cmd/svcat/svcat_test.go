@@ -202,7 +202,9 @@ func TestCommandOutput(t *testing.T) {
 		{name: "describe class by name", cmd: "describe class user-provided-service", golden: "output/describe-class.txt"},
 		{name: "describe class uuid", cmd: "describe class --uuid 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/describe-class.txt"},
 		{name: "create cluster class", cmd: "create class new-class --from user-provided-service --scope cluster", golden: "output/create-cluster-class.txt"},
+		{name: "create cluster class not found", cmd: "create class new-class --from foo --scope cluster", golden: "output/create-cluster-class-not-found.txt", continueOnError: true},
 		{name: "create namespace class", cmd: "create class new-class --from user-provided-namespaced-service --scope namespace --namespace default", golden: "output/create-namespace-class.txt"},
+		{name: "create namespace class not found", cmd: "create class new-class --from foo --scope namespace --namespace default", golden: "output/create-namespace-class-not-found.txt", continueOnError: true},
 
 		{name: "list all plans", cmd: "get plans", golden: "output/get-plans.txt"},
 		{name: "list all plans (json)", cmd: "get plans -o json", golden: "output/get-plans.json"},
