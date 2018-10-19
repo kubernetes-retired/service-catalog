@@ -147,9 +147,8 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 			} else {
 				return nil, fmt.Errorf("class '%s' not found in namespace %s", name, opts.Namespace)
 			}
-		} else {
-			return nil, fmt.Errorf("class '%s' not found", name)
 		}
+		return nil, fmt.Errorf("class '%s' not found", name)
 	}
 
 	return searchResults[0], nil
