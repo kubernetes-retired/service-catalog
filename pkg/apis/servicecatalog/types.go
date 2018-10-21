@@ -192,7 +192,7 @@ const (
 )
 
 // ClusterServiceBrokerAuthInfo is a union type that contains information on
-// one of the authentication methods the the service catalog and brokers may
+// one of the authentication methods the service catalog and brokers may
 // support, according to the OpenServiceBroker API specification
 // (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
 type ClusterServiceBrokerAuthInfo struct {
@@ -228,7 +228,7 @@ type ClusterBearerTokenAuthConfig struct {
 }
 
 // ServiceBrokerAuthInfo is a union type that contains information on
-// one of the authentication methods the the service catalog and brokers may
+// one of the authentication methods the service catalog and brokers may
 // support, according to the OpenServiceBroker API specification
 // (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).
 type ServiceBrokerAuthInfo struct {
@@ -1295,7 +1295,7 @@ type AddKeyTransform struct {
 }
 
 // AddKeysFromTransform specifies that Service Catalog should merge
-// an existing secret into the the Secret associated with the ServiceBinding.
+// an existing secret into the Secret associated with the ServiceBinding.
 type AddKeysFromTransform struct {
 	SecretRef *ObjectReference
 }
