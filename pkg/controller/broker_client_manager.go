@@ -18,10 +18,11 @@ package controller
 
 import (
 	"fmt"
-	"github.com/golang/glog"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"reflect"
 	"sync"
+
+	"github.com/golang/glog"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 // BrokerKey defines a key which points to a broker (cluster wide or namespaced)
@@ -96,7 +97,7 @@ func (m *BrokerClientManager) RemoveBrokerClient(brokerKey BrokerKey) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	glog.V(4).Info("Removing OSB client for broker %s", brokerKey.String())
+	glog.V(4).Infof("Removing OSB client for broker %s", brokerKey.String())
 	delete(m.clients, brokerKey)
 }
 
