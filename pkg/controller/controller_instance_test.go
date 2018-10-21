@@ -318,7 +318,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
-	// ensure that there is only one action to to set the condition on the
+	// ensure that there is only one action to set the condition on the
 	// instance to indicate that the service plan doesn't exist
 	actions := fakeCatalogClient.Actions()
 
