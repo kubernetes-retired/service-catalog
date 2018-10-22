@@ -2004,6 +2004,10 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		DefaultClusterIDConfigMapNamespace,
 	)
 
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if c, ok := testController.(*controller); ok {
 		c.setClusterID(testClusterID)
 		c.brokerClientManager.clients[NewClusterServiceBrokerKey(getTestClusterServiceBroker().Name)] = clientWithConfig{
@@ -2012,10 +2016,6 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		c.brokerClientManager.clients[NewServiceBrokerKey(getTestServiceBroker().Namespace, getTestServiceBroker().Name)] = clientWithConfig{
 			OSBClient: fakeOSBClient,
 		}
-	}
-
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	fakeKubeClient.AddReactor("get", "namespaces", func(action clientgotesting.Action) (bool, runtime.Object, error) {
