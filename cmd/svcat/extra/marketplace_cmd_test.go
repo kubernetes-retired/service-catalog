@@ -56,16 +56,21 @@ var _ = Describe("Register Command", func() {
 			namespace := "banana"
 
 			className := "foobarclass"
+			classGUID := "abc123"
 			classDescription := "This class foobars"
 			className2 := "barbazclass"
+			classGUID2 := "qwerty456"
 			classDescription2 := "This class barbazs"
 			planName := "foobarplan1"
+			planGUID := "banana52"
 			planName2 := "foobarplan2"
+			planGUID2 := "banana53"
 			planName3 := "barbazplan"
+			planGUID3 := "banana54"
 			classToReturn := &v1beta1.ClusterServiceClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      className,
+					Name:      classGUID,
 				},
 				Spec: v1beta1.ClusterServiceClassSpec{
 					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
@@ -77,7 +82,7 @@ var _ = Describe("Register Command", func() {
 			classToReturn2 := &v1beta1.ClusterServiceClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      className2,
+					Name:      classGUID2,
 				},
 				Spec: v1beta1.ClusterServiceClassSpec{
 					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
@@ -89,42 +94,42 @@ var _ = Describe("Register Command", func() {
 			planToReturn := &v1beta1.ClusterServicePlan{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      planName,
+					Name:      planGUID,
 				},
 				Spec: v1beta1.ClusterServicePlanSpec{
 					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 						ExternalName: planName,
 					},
 					ClusterServiceClassRef: v1beta1.ClusterObjectReference{
-						Name: className,
+						Name: classGUID,
 					},
 				},
 			}
 			planToReturn2 := &v1beta1.ClusterServicePlan{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      planName2,
+					Name:      planGUID2,
 				},
 				Spec: v1beta1.ClusterServicePlanSpec{
 					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 						ExternalName: planName2,
 					},
 					ClusterServiceClassRef: v1beta1.ClusterObjectReference{
-						Name: className,
+						Name: classGUID,
 					},
 				},
 			}
 			planToReturn3 := &v1beta1.ClusterServicePlan{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      planName3,
+					Name:      planGUID3,
 				},
 				Spec: v1beta1.ClusterServicePlanSpec{
 					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 						ExternalName: planName3,
 					},
 					ClusterServiceClassRef: v1beta1.ClusterObjectReference{
-						Name: className2,
+						Name: classGUID2,
 					},
 				},
 			}
