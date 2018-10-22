@@ -2151,7 +2151,7 @@ func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresou
 	case "get":
 		getAction, ok := action.(clientgotesting.GetAction)
 		if !ok {
-			fatalf(t, "Unexpected type; failed to convert action %+v to DeleteAction", action)
+			fatalf(t, "Unexpected type; failed to convert action %+v to GetAction", action)
 			return nil
 		}
 
