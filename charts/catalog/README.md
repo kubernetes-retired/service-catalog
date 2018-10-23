@@ -88,7 +88,7 @@ chart and their default values.
 | `controllerManager.serviceAccount` | Service account | `service-catalog-controller-manager` |
 | `controllerManager.apiserverSkipVerify` | Controls whether the API server's TLS verification should be skipped | `true` |
 | `controllerManager.enablePrometheusScrape` | Whether the controller will expose metrics on /metrics | `false` |
-| `controllerManager.service.type` | Type of service; valid values are `LoadBalancer` , `NodePort` and `ClusterIP` | `NodePort` |
+| `controllerManager.service.type` | Type of service; valid values are `LoadBalancer` , `NodePort` and `ClusterIP` | `ClusterIP` |
 | `controllerManager.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30444` |
 | `controllerManager.service.clusterIP` | If service type is ClusterIP, specify clusterIP as `None` for `headless services` OR specify your own specific IP OR leave blank to let Kubernetes assign a cluster IP |  |
 | `controllerManager.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
