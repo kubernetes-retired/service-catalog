@@ -471,6 +471,13 @@ type CommonServiceClassSpec struct {
 	// Foundry.  These 'permissions' have no meaning within Kubernetes and an
 	// ServiceInstance provisioned from this ServiceClass will not work correctly.
 	Requires []string
+
+	// DefaultProvisionParameters are default parameters passed to the broker
+	// when an instance of this class is provisioned. Any parameters defined on
+	// the plan and instance are merged with these defaults, with
+	// plan and then instance-defined parameters taking precedence over the class
+	// defaults.
+	DefaultProvisionParameters *runtime.RawExtension
 }
 
 // ClusterServiceClassSpec represents the details about a ClusterServiceClass.

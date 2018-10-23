@@ -514,6 +514,13 @@ type CommonServiceClassSpec struct {
 	// ServiceInstance provisioned from this ServiceClass will not
 	// work correctly.
 	Requires []string `json:"requires,omitempty"`
+
+	// DefaultProvisionParameters are default parameters passed to the broker
+	// when an instance of this class is provisioned. Any parameters defined on
+	// the plan and instance are merged with these defaults, with
+	// plan and then instance-defined parameters taking precedence over the class
+	// defaults.
+	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
 }
 
 // ClusterServiceClassSpec represents the details about a ClusterServiceClass
