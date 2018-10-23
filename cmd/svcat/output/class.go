@@ -108,13 +108,13 @@ func WriteClassAndPlanDetails(w io.Writer, classes []servicecatalog.Class, plans
 			if i == 0 {
 				t.Append([]string{
 					class.GetExternalName(),
-					plan.GetName(),
+					plan.GetExternalName(),
 					class.GetSpec().Description,
 				})
 			} else {
 				t.Append([]string{
 					"",
-					plan.GetName(),
+					plan.GetExternalName(),
 					"",
 				})
 			}
