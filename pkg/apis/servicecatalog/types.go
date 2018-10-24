@@ -478,6 +478,13 @@ type CommonServiceClassSpec struct {
 	// plan and then instance-defined parameters taking precedence over the class
 	// defaults.
 	DefaultProvisionParameters *runtime.RawExtension
+
+	// DefaultBindingParameters are default parameters passed to the broker
+	// when an instance of this class is binded. Any parameters defined on
+	// the plan and binding are merged with these defaults, with
+	// plan and then binding-defined parameters taking precedence over the class
+	// defaults.
+	DefaultBindingParameters *runtime.RawExtension
 }
 
 // ClusterServiceClassSpec represents the details about a ClusterServiceClass.
@@ -589,6 +596,12 @@ type CommonServicePlanSpec struct {
 	// the instance are merged with these defaults, with instance-defined
 	// parameters taking precedence over defaults.
 	DefaultProvisionParameters *runtime.RawExtension
+
+	// DefaultBindingParameters are default parameters passed to the broker
+	// when an instance of this plan is binded. Any parameters defined on
+	// the binding are merged with these defaults, with binding-defined
+	// parameters taking precedence over defaults.
+	DefaultBindingParameters *runtime.RawExtension
 }
 
 // ClusterServicePlanSpec represents details about the ClusterServicePlan
@@ -1148,6 +1161,10 @@ type ServiceBindingStatus struct {
 
 	// UnbindStatus describes what has been done to unbind a ServiceBinding
 	UnbindStatus ServiceBindingUnbindStatus
+
+	// DefaultBindingParameters are the default parameters applied to this
+	// binding.
+	DefaultBindingParameters *runtime.RawExtension
 }
 
 // ServiceBindingCondition condition information for a ServiceBinding.

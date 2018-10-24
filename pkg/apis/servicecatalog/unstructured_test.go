@@ -71,6 +71,7 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 		},
 		func(is *servicecatalog.CommonServicePlanSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(is)
+			is.DefaultBindingParameters = nil
 			is.DefaultProvisionParameters = nil
 			is.ExternalMetadata = nil
 			is.ServiceBindingCreateParameterSchema = nil
@@ -80,6 +81,7 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 		},
 		func(cs *servicecatalog.CommonServiceClassSpec, c fuzz.Continue) {
 			c.FuzzNoCustom(cs)
+			cs.DefaultBindingParameters = nil
 			cs.DefaultProvisionParameters = nil
 			cs.ExternalMetadata = nil
 		},
@@ -94,6 +96,10 @@ func doUnstructuredRoundTrip(t *testing.T, group testapi.TestGroup, kind string)
 				bs.SecretName = c.RandString()
 			}
 			bs.Parameters = nil
+		},
+		func(bs *servicecatalog.ServiceBindingStatus, c fuzz.Continue) {
+			c.FuzzNoCustom(bs)
+			bs.DefaultBindingParameters = nil
 		},
 		func(ps *servicecatalog.ServiceInstancePropertiesState, c fuzz.Continue) {
 			c.FuzzNoCustom(ps)
