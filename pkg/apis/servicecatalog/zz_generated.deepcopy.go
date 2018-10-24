@@ -602,12 +602,8 @@ func (in *CommonServiceClassSpec) DeepCopyInto(out *CommonServiceClassSpec) {
 	}
 	if in.DefaultProvisionParameters != nil {
 		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
