@@ -883,8 +883,8 @@ func TestReconcileServiceInstanceRespectsServicePlanDefaultsFeatureGate(t *testi
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	// Check that the default provisioning parameters defined on the plan is
-	// Check that the default parameters were saved on the status
+	// Check that the default parameters were not saved on the status
+	// because the feature is disabled
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
