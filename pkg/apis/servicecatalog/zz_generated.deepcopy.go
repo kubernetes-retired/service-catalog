@@ -602,12 +602,13 @@ func (in *CommonServiceClassSpec) DeepCopyInto(out *CommonServiceClassSpec) {
 	}
 	if in.DefaultProvisionParameters != nil {
 		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(runtime.RawExtension)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DefaultBindingParameters != nil {
+		in, out := &in.DefaultBindingParameters, &out.DefaultBindingParameters
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -673,6 +674,11 @@ func (in *CommonServicePlanSpec) DeepCopyInto(out *CommonServicePlanSpec) {
 	}
 	if in.DefaultProvisionParameters != nil {
 		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DefaultBindingParameters != nil {
+		in, out := &in.DefaultBindingParameters, &out.DefaultBindingParameters
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
@@ -1050,6 +1056,11 @@ func (in *ServiceBindingStatus) DeepCopyInto(out *ServiceBindingStatus) {
 	if in.ExternalProperties != nil {
 		in, out := &in.ExternalProperties, &out.ExternalProperties
 		*out = new(ServiceBindingPropertiesState)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DefaultBindingParameters != nil {
+		in, out := &in.DefaultBindingParameters, &out.DefaultBindingParameters
+		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
 	return

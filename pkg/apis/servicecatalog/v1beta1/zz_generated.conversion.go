@@ -1236,6 +1236,7 @@ func autoConvert_v1beta1_CommonServiceClassSpec_To_servicecatalog_CommonServiceC
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.DefaultBindingParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultBindingParameters))
 	return nil
 }
 
@@ -1255,6 +1256,7 @@ func autoConvert_servicecatalog_CommonServiceClassSpec_To_v1beta1_CommonServiceC
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.DefaultBindingParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultBindingParameters))
 	return nil
 }
 
@@ -1295,6 +1297,7 @@ func autoConvert_v1beta1_CommonServicePlanSpec_To_servicecatalog_CommonServicePl
 	out.ServiceBindingCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateParameterSchema))
 	out.ServiceBindingCreateResponseSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateResponseSchema))
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.DefaultBindingParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultBindingParameters))
 	return nil
 }
 
@@ -1315,6 +1318,7 @@ func autoConvert_servicecatalog_CommonServicePlanSpec_To_v1beta1_CommonServicePl
 	out.ServiceBindingCreateParameterSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateParameterSchema))
 	out.ServiceBindingCreateResponseSchema = (*runtime.RawExtension)(unsafe.Pointer(in.ServiceBindingCreateResponseSchema))
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.DefaultBindingParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultBindingParameters))
 	return nil
 }
 
@@ -1690,6 +1694,7 @@ func autoConvert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingSt
 	out.ExternalProperties = (*servicecatalog.ServiceBindingPropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.UnbindStatus = servicecatalog.ServiceBindingUnbindStatus(in.UnbindStatus)
+	out.DefaultBindingParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultBindingParameters))
 	return nil
 }
 
@@ -1709,6 +1714,7 @@ func autoConvert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingSt
 	out.ExternalProperties = (*ServiceBindingPropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.UnbindStatus = ServiceBindingUnbindStatus(in.UnbindStatus)
+	out.DefaultBindingParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultBindingParameters))
 	return nil
 }
 
