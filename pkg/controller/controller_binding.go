@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -32,7 +33,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -231,6 +234,16 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			return c.processServiceBindingOperationError(binding, readyCond)
 		}
 
+		// Apply default binding parameters, this must be done after we've resolved the class and plan
+		modified, err := c.applyDefaultBindingParameters(binding, instance)
+		if err != nil {
+			return err
+		}
+		if modified {
+			// the binding was updated with new parameters, so we need to continue in the next iteration
+			return nil
+		}
+
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
 
 		request, inProgressProperties, err = c.prepareBindRequest(binding, instance)
@@ -266,6 +279,16 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			msg := fmt.Sprintf(`Binding cannot begin because referenced %s is not ready`, pretty.ServiceInstanceName(instance))
 			readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorServiceInstanceNotReadyReason, msg)
 			return c.processServiceBindingOperationError(binding, readyCond)
+		}
+
+		// Apply default binding parameters, this must be done after we've resolved the class and plan
+		modified, err := c.applyDefaultBindingParameters(binding, instance)
+		if err != nil {
+			return err
+		}
+		if modified {
+			// the binding was updated with new parameters, so we need to continue in the next iteration
+			return nil
 		}
 
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
@@ -1132,6 +1155,113 @@ func setServiceBindingLastOperation(binding *v1beta1.ServiceBinding, operationKe
 		key := string(*operationKey)
 		binding.Status.LastOperation = &key
 	}
+}
+
+// applyDefaultBindingParameters applies any default binding parameters for a binding.
+// If parameter defaults were applied, and the binding status was successfully updated, the method returns true.
+// If either can not be resloved, returns an error and sets the BindingCondition with the appropriate error message.
+func (c *controller) applyDefaultBindingParameters(binding *v1beta1.ServiceBinding, instance *v1beta1.ServiceInstance) (bool, error) {
+	// The default parameters are only applied once (though we may revisit that decision in the future depending on how
+	// we want to handle plan changes).
+	if binding.Status.DefaultBindingParameters != nil {
+		return false, nil
+	}
+
+	defaultParams, err := c.getDefaultBindingParameters(instance)
+	if err != nil {
+		return false, err
+	}
+
+	finalParams, err := mergeParameters(binding.Spec.Parameters, defaultParams)
+	if err != nil {
+		return false, err
+	}
+
+	if binding.Spec.Parameters == finalParams {
+		return false, nil
+	}
+
+	pcb := pretty.NewContextBuilder(pretty.ServiceBinding, binding.Namespace, binding.Name, "")
+	glog.V(4).Info(pcb.Message("Applying default binding parameters"))
+
+	binding.Spec.Parameters = finalParams
+	_, err = c.updateServiceBindingWithRetries(binding, func(conflictBinding *v1beta1.ServiceBinding) {
+		conflictBinding.Spec.Parameters = finalParams
+	})
+	if err != nil {
+		msg := fmt.Sprintf("error updating service binding to apply default parameters: %v", err)
+		glog.Warningf(pcb.Message(msg))
+		c.recorder.Event(binding, corev1.EventTypeWarning, errorWithParameters, msg)
+		return false, fmt.Errorf(msg)
+	}
+
+	binding.Status.DefaultBindingParameters = defaultParams
+	_, err = c.updateServiceBindingStatus(binding)
+	return true, err
+}
+
+func (c *controller) getDefaultBindingParameters(instance *v1beta1.ServiceInstance) (*runtime.RawExtension, error) {
+	if instance.Spec.ClusterServicePlanSpecified() {
+		plan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
+		if err != nil {
+			return nil, err
+		}
+		return plan.Spec.DefaultBindingParameters, nil
+	}
+
+	if instance.Spec.ServicePlanSpecified() {
+		plan, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
+		if err != nil {
+			return nil, err
+		}
+		return plan.Spec.DefaultBindingParameters, nil
+	}
+	return nil, fmt.Errorf("invalid plan reference %v", instance.Spec.PlanReference)
+}
+
+// updateServiceBindingWithRetries updates the binding
+// and automatically retries if a 409 Conflict error is
+// returned by the API server.
+// If a conflict occurs, the provided conflictResolutionFunc is called
+// so that the conflict can be resolved. There is no default universal safe
+// conflict resolution logic, so conflictResolutionFunc must always be provided.
+func (c *controller) updateServiceBindingWithRetries(
+	binding *v1beta1.ServiceBinding,
+	conflictResolutionFunc func(*v1beta1.ServiceBinding)) (*v1beta1.ServiceBinding, error) {
+
+	pcb := pretty.NewBindingContextBuilder(binding)
+
+	const interval = 100 * time.Millisecond
+	const timeout = 10 * time.Second
+	var updateBinding *v1beta1.ServiceBinding
+
+	bindingToUpdate := binding
+	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		glog.V(4).Info(pcb.Message("Updating instance"))
+		upd, err := c.serviceCatalogClient.ServiceBindings(binding.Namespace).Update(bindingToUpdate)
+		if err != nil {
+			if !apierrors.IsConflict(err) {
+				return false, err
+			}
+			glog.V(4).Info(pcb.Message("Couldn't update binding because the resource was stale"))
+			// Fetch a fresh binding to resolve the update conflict and retry
+			bindingToUpdate, err = c.serviceCatalogClient.ServiceBindings(binding.Namespace).Get(binding.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+			conflictResolutionFunc(bindingToUpdate)
+			return false, nil
+		}
+
+		updateBinding = upd
+		return true, nil
+	})
+
+	if err != nil {
+		glog.Errorf(pcb.Messagef("failed to update binding: %v", err))
+	}
+
+	return updateBinding, err
 }
 
 // prepareBindRequest creates a bind request object to be passed to the broker
