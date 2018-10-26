@@ -35,7 +35,7 @@ cid: community
                   <a href="https://kubernetes.slack.com/messages/sig-service-catalog"><img src="/images/slack-logo.png" alt="Slack" width="150"></a>
                   <p>
                     <a href="https://kubernetes.slack.com/messages/sig-service-catalog">#sig-service-catalog</a><br/>
-                    <a href="http://slack.k8s.io/">Join the Kuberentes Slack!</a>
+                    <a href="http://slack.k8s.io/">Join the Kubernetes Slack!</a>
                   </p>
               </div>
               <div class="case-study">
