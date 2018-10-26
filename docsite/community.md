@@ -15,7 +15,7 @@ cid: community
         <div class="content">
             <div class="case-studies">
               <div class="case-study">
-                  <a href="https://zoom.us/j/7201225346"><img src="/images/zoom-logo.jpg" alt="Zoom" width="150"></a>
+                  <a href="https://zoom.us/j/7201225346"><img src="/docsite/images/zoom-logo.jpg" alt="Zoom" width="150"></a>
                   <p class="quote">
                     Mondays at 13:00 Pacific Time via <a href="https://zoom.us/j/7201225346">Zoom</a><br/>
                     <a href="http://www.thetimezoneconverter.com/?t=13:00&tz=PT%20%28Pacific%20Time%29">Convert to your timezone</a><br/>
@@ -24,7 +24,7 @@ cid: community
                   </p>
               </div>
               <div class="case-study">
-                  <a href="https://github.com/kubernetes-incubator/service-catalog"><img src="/images/github-logo.png" alt="GitHub" width="150"></a>
+                  <a href="https://github.com/kubernetes-incubator/service-catalog"><img src="/docsite/images/github-logo.png" alt="GitHub" width="150"></a>
                   <p>
                     <a href="https://github.com/kubernetes-incubator/service-catalog">GitHub</a><br/>
                     <a href="/docs/devguide/">Developer Guide</a><br/>
@@ -32,14 +32,14 @@ cid: community
                   </p>
               </div>
               <div class="case-study">
-                  <a href="https://kubernetes.slack.com/messages/sig-service-catalog"><img src="/images/slack-logo.png" alt="Slack" width="150"></a>
+                  <a href="https://kubernetes.slack.com/messages/sig-service-catalog"><img src="/docsite/images/slack-logo.png" alt="Slack" width="150"></a>
                   <p>
                     <a href="https://kubernetes.slack.com/messages/sig-service-catalog">#sig-service-catalog</a><br/>
                     <a href="http://slack.k8s.io/">Join the Kuberentes Slack!</a>
                   </p>
               </div>
               <div class="case-study">
-                  <a href="https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog"><img src="/images/google-groups.png" alt="Google Groups" width="150"></a>
+                  <a href="https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog"><img src="/docsite/images/google-groups.png" alt="Google Groups" width="150"></a>
                   <p>
                     <a href="https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog">Mailing List</a>
                   </p>
@@ -53,10 +53,10 @@ cid: community
     <main>
         <h3>Leadership</h3>
         <div id="usersGrid">
-          <a target="_blank" href="https://github.com/carolynvs"><img src="https://avatars1.githubusercontent.com/u/1368985" width="100"><br/>Carolyn Van Slyck<br/>Microsoft</a>
-          <a target="_blank" href="https://github.com/kibbles-n-bytes"><img src="https://avatars0.githubusercontent.com/u/4024724" width="100"><br/>Michael Kibbe<br/>Google</a>
-          <a target="_blank" href="https://github.com/duglin"><img src="https://avatars3.githubusercontent.com/u/1944671" width="100"><br/>Doug Davis<br/>IBM</a>
-          <a target="_blank" href="https://github.com/jboyd01"><img src="https://avatars1.githubusercontent.com/u/4184708" width="100"><br/>Jay Boyd<br/>Red Hat</a>
+          <a target="_blank" href="https://github.com/carolynvs"><img src="https://avatars1.githubusercontent.com/u/1368985" width="100"><br/>Carolyn Van Slyck<br/>Microsoft</a><br/><br/>
+          <a target="_blank" href="https://github.com/kibbles-n-bytes"><img src="https://avatars0.githubusercontent.com/u/4024724" width="100"><br/>Michael Kibbe<br/>Google</a><br/><br/>
+          <a target="_blank" href="https://github.com/duglin"><img src="https://avatars3.githubusercontent.com/u/1944671" width="100"><br/>Doug Davis<br/>IBM</a><br/><br/>
+          <a target="_blank" href="https://github.com/jboyd01"><img src="https://avatars1.githubusercontent.com/u/4184708" width="100"><br/>Jay Boyd<br/>Red Hat</a><br/><br/>
         </div>
     </main>
 </section>
@@ -65,16 +65,9 @@ cid: community
     <main>
         <h3>Emeritus Leadership</h3>
         <div id="usersGrid">
-          <a target="_blank" href="https://github.com/pmorie"><img src="https://avatars2.githubusercontent.com/u/366488" width="100"><br/>Paul Morie<br/>Red Hat</a>
-          <a target="_blank" href="https://github.com/arschles"><img src="https://avatars3.githubusercontent.com/u/70865" width="100"><br/>Aaron Schlesinger<br/>Microsoft</a>
-          <a target="_blank" href="https://github.com/vaikas-google"><img src="https://avatars3.githubusercontent.com/u/11279988" width="100"><br/>Ville Aikas<br/>Google</a>
+          <a target="_blank" href="https://github.com/pmorie"><img src="https://avatars2.githubusercontent.com/u/366488" width="100"><br/>Paul Morie<br/>Red Hat</a><br/><br/>
+          <a target="_blank" href="https://github.com/arschles"><img src="https://avatars3.githubusercontent.com/u/70865" width="100"><br/>Aaron Schlesinger<br/>Microsoft</a><br/><br/>
+          <a target="_blank" href="https://github.com/vaikas-google"><img src="https://avatars3.githubusercontent.com/u/11279988" width="100"><br/>Ville Aikas<br/>Google</a><br/><br/>
         </div>
     </main>
 </section>
-
-
-<div id="videoPlayer">
-    <!--<iframe data-url="https://www.youtube.com/watch?v=of45hYbkIZs" frameborder="0" allowfullscreen></iframe>-->
-    <iframe data-url="https://www.youtube.com/embed/of45hYbkIZs?autoplay=1" frameborder="0" allowfullscreen="true"></iframe>
-    <button id="closeButton"></button>
-</div>
