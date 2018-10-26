@@ -234,14 +234,16 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			return c.processServiceBindingOperationError(binding, readyCond)
 		}
 
-		// Apply default binding parameters, this must be done after we've resolved the class and plan
-		modified, err := c.applyDefaultBindingParameters(binding, instance)
-		if err != nil {
-			return err
-		}
-		if modified {
-			// the binding was updated with new parameters, so we need to continue in the next iteration
-			return nil
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ServicePlanDefaults) {
+			// Apply default binding parameters, this must be done after we've resolved the class and plan
+			modified, err := c.applyDefaultBindingParameters(binding, instance)
+			if err != nil {
+				return err
+			}
+			if modified {
+				// the binding was updated with new parameters, so we need to continue in the next iteration
+				return nil
+			}
 		}
 
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
@@ -281,14 +283,16 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			return c.processServiceBindingOperationError(binding, readyCond)
 		}
 
-		// Apply default binding parameters, this must be done after we've resolved the class and plan
-		modified, err := c.applyDefaultBindingParameters(binding, instance)
-		if err != nil {
-			return err
-		}
-		if modified {
-			// the binding was updated with new parameters, so we need to continue in the next iteration
-			return nil
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ServicePlanDefaults) {
+			// Apply default binding parameters, this must be done after we've resolved the class and plan
+			modified, err := c.applyDefaultBindingParameters(binding, instance)
+			if err != nil {
+				return err
+			}
+			if modified {
+				// the binding was updated with new parameters, so we need to continue in the next iteration
+				return nil
+			}
 		}
 
 		glog.V(4).Info(pcb.Message("Adding/Updating"))
