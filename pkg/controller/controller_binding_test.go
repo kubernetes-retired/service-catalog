@@ -539,6 +539,81 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 	}
 }
 
+// TestReconcileBindingAppliesDefaultBindingParameters tests reconcileBinding to ensure a
+// binding with default parameters will be passed to the broker properly.
+func TestReconcileBindingAppliesDefaultBindingParameters(t *testing.T) {
+	fakeKubeClient, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+		BindReaction: &fakeosb.BindReaction{
+			Response: &osb.BindResponse{
+				Credentials: map[string]interface{}{
+					"a": "b",
+					"c": "d",
+				},
+			},
+		},
+	})
+
+	addGetNamespaceReaction(fakeKubeClient)
+	addGetSecretNotFoundReaction(fakeKubeClient)
+
+	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+	sc := getTestClusterServiceClass()
+	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(sc)
+	sp := getTestClusterServicePlan()
+
+	// Setup default parameters on the plan
+	defaultBindingParams := `{"name": "test-default-param"}`
+	sp.Spec.DefaultBindingParameters = &runtime.RawExtension{Raw: []byte(defaultBindingParams)}
+	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
+	sharedInformers.ServiceInstances().Informer().GetStore().Add(getTestServiceInstanceWithStatus(v1beta1.ConditionTrue))
+
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceBindingName,
+			Namespace:  testNamespace,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:         testServiceBindingGUID,
+			SecretName:         testServiceBindingSecretName,
+		},
+		Status: v1beta1.ServiceBindingStatus{
+			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+		},
+	}
+
+	if err := reconcileServiceBinding(t, testController, binding); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	// Check that the default binding parameters defined on the plan is now applied to the service binding
+	updatedServiceBinding, ok := assertUpdate(t, actions[0], binding).(*v1beta1.ServiceBinding)
+	if !ok {
+		t.Fatal("couldn't convert to *v1beta1.ServiceBinding")
+	}
+	gotParams := string(updatedServiceBinding.Spec.Parameters.Raw)
+	if gotParams != defaultBindingParams {
+		t.Fatalf("DefaultBindingParameters was not applied to the service instance during reconcile.\n\nWANT: %s\nGOT: %s",
+			defaultBindingParams, gotParams)
+	}
+
+	// Check that the default binding parameters were saved on the status
+	updatedServiceBinding, ok = assertUpdateStatus(t, actions[1], binding).(*v1beta1.ServiceBinding)
+	if !ok {
+		t.Fatal("couldn't convert to *v1beta1.ServiceBinding")
+	}
+	gotParams = string(updatedServiceBinding.Status.DefaultBindingParameters.Raw)
+	if gotParams != defaultBindingParams {
+		t.Fatalf("DefaultBindingParameters was not persisted to the service binding status during reconcile.\n\nWANT: %s\nGOT: %s",
+			defaultBindingParams, gotParams)
+	}
+}
+
 // TestReconcileServiceBindingWithSecretTransform tests reconcileBinding to ensure a
 // binding with secretTransforms performs the specified transformations.
 func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
