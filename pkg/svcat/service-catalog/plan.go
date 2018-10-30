@@ -245,7 +245,7 @@ func (sdk *SDK) CreatePlan(opts CreatePlanOptions,
 	if opts.Scope == AllScope {
 		return nil, errors.New("invalid scope: all")
 	}
-	fromPlan, err := sdk.RetrievePlanByName(opts.Name, ScopeOptions{
+	fromPlan, err := sdk.RetrievePlanByName(opts.From, ScopeOptions{
 		Scope:     opts.Scope,
 		Namespace: opts.Namespace,
 	})
@@ -269,11 +269,7 @@ func (sdk *SDK) createClusterServicePlan(fromPlan *v1beta1.ClusterServicePlan, n
 		Spec: fromPlan.Spec,
 	}
 	plan.Spec.ExternalName = name
-	created, err := sdk.ServiceCatalog().ClusterServicePlans().Create(plan)
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return sdk.ServiceCatalog().ClusterServicePlans().Create(plan)
 }
 
 func (sdk *SDK) createServicePlan(fromPlan *v1beta1.ServicePlan, name string,
@@ -286,9 +282,5 @@ func (sdk *SDK) createServicePlan(fromPlan *v1beta1.ServicePlan, name string,
 		Spec: fromPlan.Spec,
 	}
 	plan.Spec.ExternalName = name
-	created, err := sdk.ServiceCatalog().ServicePlans(plan.GetNamespace()).Create(plan)
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return sdk.ServiceCatalog().ServicePlans(plan.GetNamespace()).Create(plan)
 }

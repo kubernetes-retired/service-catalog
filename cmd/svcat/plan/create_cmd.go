@@ -48,7 +48,7 @@ func NewCreateCmd(ctx *command.Context) *cobra.Command {
 		Example: command.NormalizeExamples(`
 svcat create plan newplan --from mysqldb
 svcat create plan newplan --from mysqldb --scope cluster
-  svcat create plan newplan --from mysqldb --scope namespace --namespace newnamespace
+svcat create plan newplan --from mysqldb --scope namespace --namespace newnamespace
 `),
 		PreRunE: command.PreRunE(createCmd),
 		RunE:    command.RunE(createCmd),
