@@ -69,7 +69,7 @@ Now you can view Prometheus at http://localhost:9090.  If you navigate to
 "Status" -> "Targets" you will see the endpoints that Prometheus is scraping.
 It should include the "catalog-controller-manager" pod if you deployed Catalog
 with enablePrometheusScrape.  If you navigate back to "Graph" and type "catalog"
-into the expression filter you should see metrics from Service Catlog.
+into the expression filter you should see metrics from Service Catalog.
 
 **The present set of Catalog metics needs to be greatly expanded upon** -- it's
 really simple to add additional metrics, or drop me (jboyd01) a note if you have
