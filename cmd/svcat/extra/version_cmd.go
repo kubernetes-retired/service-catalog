@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package versions
+package extra
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
@@ -23,15 +23,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type versionCmd struct {
+// VersionCmd contains the information needed to print the version
+// of svcat and the targeted Service Catalog to the user
+type VersionCmd struct {
 	*command.Context
-	client bool
-	server bool
+	Client bool
+	Server bool
 }
 
 // NewVersionCmd builds a "svcat version" command
 func NewVersionCmd(cxt *command.Context) *cobra.Command {
-	versionCmd := &versionCmd{Context: cxt}
+	versionCmd := &VersionCmd{Context: cxt}
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Provides the version for the Service Catalog client and server",
@@ -43,7 +45,7 @@ func NewVersionCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(versionCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&versionCmd.client,
+		&versionCmd.Client,
 		"client",
 		"c",
 		false,
@@ -53,24 +55,27 @@ func NewVersionCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *versionCmd) Validate(args []string) error {
-	if !c.client && !c.server {
-		c.client = true
-		c.server = true
+// Validate defaults the client and server to true
+func (c *VersionCmd) Validate(args []string) error {
+	if !c.Client && !c.Server {
+		c.Client = true
+		c.Server = true
 	}
 	return nil
 }
 
-func (c *versionCmd) Run() error {
+// Run  determines the versions of svcat and/or
+// the platform and prints them
+func (c *VersionCmd) Run() error {
 	return c.version()
 }
 
-func (c *versionCmd) version() error {
-	if c.client {
+func (c *VersionCmd) version() error {
+	if c.Client {
 		output.WriteClientVersion(c.Output, pkg.VERSION)
 	}
 
-	if c.server {
+	if c.Server {
 		version, err := c.App.ServerVersion()
 		if err != nil {
 			return err

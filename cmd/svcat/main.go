@@ -30,12 +30,10 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/completion"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/extra"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/versions"
 	svcatclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util/kube"
@@ -125,14 +123,14 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(instance.NewDeprovisionCmd(cxt))
 	cmd.AddCommand(binding.NewBindCmd(cxt))
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
-	cmd.AddCommand(extra.NewMarketplaceCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
 	if !plugin.IsPlugin() {
 		cmd.AddCommand(newInstallCmd(cxt))
 	}
 	cmd.AddCommand(newTouchCmd(cxt))
-	cmd.AddCommand(versions.NewVersionCmd(cxt))
-	cmd.AddCommand(newCompletionCmd(cxt))
+	cmd.AddCommand(extra.NewVersionCmd(cxt))
+	cmd.AddCommand(extra.NewMarketplaceCmd(cxt))
+	cmd.AddCommand(extra.NewCompletionCmd(cxt))
 
 	return cmd
 }
@@ -203,10 +201,6 @@ func newTouchCmd(cxt *command.Context) *cobra.Command {
 	}
 	cmd.AddCommand(instance.NewTouchCommand(cxt))
 	return cmd
-}
-
-func newCompletionCmd(ctx *command.Context) *cobra.Command {
-	return completion.NewCompletionCmd(ctx)
 }
 
 // getClients loads api clients based on the plugin context if present, otherwise the specified kube config.

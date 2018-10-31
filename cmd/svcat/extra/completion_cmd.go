@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package completion
+package extra
 
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/spf13/cobra"
-	"io"
 )
 
 var (
@@ -67,7 +68,9 @@ var (
 	}
 )
 
-type completionCmd struct {
+// CompletionCmd Contains the information needed to add auto-completion
+// to the user's shell
+type CompletionCmd struct {
 	*command.Context
 	command  *cobra.Command
 	shellgen func(w io.Writer, cmd *cobra.Command) error
@@ -75,7 +78,7 @@ type completionCmd struct {
 
 // NewCompletionCmd return command for executing "svcat completion" command
 func NewCompletionCmd(cxt *command.Context) *cobra.Command {
-	completionCmd := &completionCmd{Context: cxt}
+	completionCmd := &CompletionCmd{Context: cxt}
 
 	shells := []string{}
 	for s := range completionShells {
@@ -97,7 +100,9 @@ func NewCompletionCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *completionCmd) Validate(args []string) error {
+// Validate ensures the user entered the name
+// of a supported shell
+func (c *CompletionCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("Shell not specified")
 	}
@@ -114,7 +119,9 @@ func (c *completionCmd) Validate(args []string) error {
 	return nil
 }
 
-func (c *completionCmd) Run() error {
+// Run generated the completion data
+// and writes it to disk
+func (c *CompletionCmd) Run() error {
 	return c.shellgen(c.Output, c.command)
 }
 

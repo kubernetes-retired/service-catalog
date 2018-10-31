@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package versions
+package extra_test
 
 import (
 	"bytes"
@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/extra"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 	svcatfake "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
@@ -66,10 +67,10 @@ func TestVersionCommand(t *testing.T) {
 				Output: output,
 				App:    fakeApp,
 			}
-			versionCommand := &versionCmd{
-				cxt,
-				tc.client,
-				tc.server,
+			versionCommand := &VersionCmd{
+				Context: cxt,
+				Client:  tc.client,
+				Server:  tc.server,
 			}
 
 			err := versionCommand.Run()
