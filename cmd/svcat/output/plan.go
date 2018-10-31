@@ -130,8 +130,8 @@ func WriteParentPlan(w io.Writer, plan servicecatalog.Plan) {
 	t := NewDetailsTable(w)
 	t.AppendBulk([][]string{
 		{"Name:", plan.GetExternalName()},
-		{"UUID:", string(plan.GetName())},
-		{"Status:", string(plan.GetStatus())},
+		{"UUID:", plan.GetName()},
+		{"Status:", plan.GetStatus()},
 	})
 	t.Render()
 }
@@ -154,7 +154,7 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class servicecatalo
 
 // WriteDefaultProvisionParameters prints the default provision parameters for a single plan.
 func WriteDefaultProvisionParameters(w io.Writer, plan servicecatalog.Plan) {
-	defaultProvisionParameters := plan.GetDefaultProvisionParameters()
+	defaultProvisionParameters := plan.GetSpec().DefaultProvisionParameters
 
 	if defaultProvisionParameters != nil {
 		fmt.Fprintln(w, "\nDefault Provision Parameters:")

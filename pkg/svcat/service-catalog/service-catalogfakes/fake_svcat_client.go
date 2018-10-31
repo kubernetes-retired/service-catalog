@@ -587,6 +587,19 @@ type FakeSvcatClient struct {
 		result1 servicecatalog.Plan
 		result2 error
 	}
+	CreatePlanStub        func(servicecatalog.CreatePlanOptions) (servicecatalog.Plan, error)
+	createPlanMutex       sync.RWMutex
+	createPlanArgsForCall []struct {
+		arg1 servicecatalog.CreatePlanOptions
+	}
+	createPlanReturns struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}
+	createPlanReturnsOnCall map[int]struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}
 	RetrieveSecretByBindingStub        func(*apiv1beta1.ServiceBinding) (*apicorev1.Secret, error)
 	retrieveSecretByBindingMutex       sync.RWMutex
 	retrieveSecretByBindingArgsForCall []struct {
@@ -2695,6 +2708,57 @@ func (fake *FakeSvcatClient) RetrievePlanByIDReturnsOnCall(i int, result1 servic
 	}{result1, result2}
 }
 
+func (fake *FakeSvcatClient) CreatePlan(arg1 servicecatalog.CreatePlanOptions) (servicecatalog.Plan, error) {
+	fake.createPlanMutex.Lock()
+	ret, specificReturn := fake.createPlanReturnsOnCall[len(fake.createPlanArgsForCall)]
+	fake.createPlanArgsForCall = append(fake.createPlanArgsForCall, struct {
+		arg1 servicecatalog.CreatePlanOptions
+	}{arg1})
+	fake.recordInvocation("CreatePlan", []interface{}{arg1})
+	fake.createPlanMutex.Unlock()
+	if fake.CreatePlanStub != nil {
+		return fake.CreatePlanStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.createPlanReturns.result1, fake.createPlanReturns.result2
+}
+
+func (fake *FakeSvcatClient) CreatePlanCallCount() int {
+	fake.createPlanMutex.RLock()
+	defer fake.createPlanMutex.RUnlock()
+	return len(fake.createPlanArgsForCall)
+}
+
+func (fake *FakeSvcatClient) CreatePlanArgsForCall(i int) servicecatalog.CreatePlanOptions {
+	fake.createPlanMutex.RLock()
+	defer fake.createPlanMutex.RUnlock()
+	return fake.createPlanArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) CreatePlanReturns(result1 servicecatalog.Plan, result2 error) {
+	fake.CreatePlanStub = nil
+	fake.createPlanReturns = struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) CreatePlanReturnsOnCall(i int, result1 servicecatalog.Plan, result2 error) {
+	fake.CreatePlanStub = nil
+	if fake.createPlanReturnsOnCall == nil {
+		fake.createPlanReturnsOnCall = make(map[int]struct {
+			result1 servicecatalog.Plan
+			result2 error
+		})
+	}
+	fake.createPlanReturnsOnCall[i] = struct {
+		result1 servicecatalog.Plan
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeSvcatClient) RetrieveSecretByBinding(arg1 *apiv1beta1.ServiceBinding) (*apicorev1.Secret, error) {
 	fake.retrieveSecretByBindingMutex.Lock()
 	ret, specificReturn := fake.retrieveSecretByBindingReturnsOnCall[len(fake.retrieveSecretByBindingArgsForCall)]
@@ -2872,6 +2936,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.retrievePlanByClassAndNameMutex.RUnlock()
 	fake.retrievePlanByIDMutex.RLock()
 	defer fake.retrievePlanByIDMutex.RUnlock()
+	fake.createPlanMutex.RLock()
+	defer fake.createPlanMutex.RUnlock()
 	fake.retrieveSecretByBindingMutex.RLock()
 	defer fake.retrieveSecretByBindingMutex.RUnlock()
 	fake.serverVersionMutex.RLock()

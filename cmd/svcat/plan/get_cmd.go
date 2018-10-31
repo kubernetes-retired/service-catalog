@@ -187,7 +187,7 @@ func (c *getCmd) get() error {
 		return err
 	}
 
-	output.WritePlan(c.Output, c.OutputFormat, plan, *class)
+	output.WritePlan(c.Output, c.OutputFormat, plan, class)
 
 	return nil
 }

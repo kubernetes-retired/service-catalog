@@ -59,9 +59,6 @@ type Plan interface {
 	// GetName returns the plan's name.
 	GetName() string
 
-	// GetShortStatus returns the plan's status.
-	GetShortStatus() string
-
 	// GetNamespace returns the plan's namespace, or "" if it's cluster-scoped.
 	GetNamespace() string
 

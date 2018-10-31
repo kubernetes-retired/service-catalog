@@ -36,22 +36,6 @@ func (p *ServicePlan) GetNamespace() string {
 	return p.Namespace
 }
 
-// GetShortStatus returns the plan's status.
-func (p *ClusterServicePlan) GetShortStatus() string {
-	if p.Status.RemovedFromBrokerCatalog {
-		return "Deprecated"
-	}
-	return "Active"
-}
-
-// GetShortStatus returns the plan's status.
-func (p *ServicePlan) GetShortStatus() string {
-	if p.Status.RemovedFromBrokerCatalog {
-		return "Deprecated"
-	}
-	return "Active"
-}
-
 // GetExternalName returns the plan's external name.
 func (p *ClusterServicePlan) GetExternalName() string {
 	return p.Spec.ExternalName

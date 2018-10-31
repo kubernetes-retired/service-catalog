@@ -120,14 +120,24 @@ func (c *describeCmd) describe() error {
 	}
 	// TODO: This convert will be removed and implemented properly in
 	// https://github.com/kubernetes-incubator/service-catalog/issues/2216
-	csp := plan.(*v1beta1.ClusterServicePlan)
-	// Retrieve the class as well because plans don't have the external class name
-	class, err := c.App.RetrieveClassByPlan(csp)
-	if err != nil {
-		return err
+	var class servicecatalog.Class
+	if opts.Scope == "cluster" {
+		csp := plan.(*v1beta1.ClusterServicePlan)
+		// Retrieve the class as well because plans don't have the external class name
+		class, err = c.App.RetrieveClassByPlan(csp)
+		if err != nil {
+			return err
+		}
+	} else if opts.Scope == "namespace" {
+		sp := plan.(*v1beta1.ServicePlan)
+		// Retrieve the class as well because plans don't have the external class name
+		class, err = c.App.RetrieveClassByPlan(sp)
+		if err != nil {
+			return err
+		}
 	}
 
-	output.WritePlanDetails(c.Output, csp, class)
+	output.WritePlanDetails(c.Output, plan, class)
 
 	output.WriteDefaultProvisionParameters(c.Output, plan)
 
@@ -138,7 +148,7 @@ func (c *describeCmd) describe() error {
 	output.WriteAssociatedInstances(c.Output, instances)
 
 	if c.showSchemas {
-		output.WritePlanSchemas(c.Output, csp)
+		output.WritePlanSchemas(c.Output, plan)
 	}
 
 	return nil

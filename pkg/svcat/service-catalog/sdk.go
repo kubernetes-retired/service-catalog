@@ -76,6 +76,7 @@ type SvcatClient interface {
 	RetrievePlanByName(string, ScopeOptions) (Plan, error)
 	RetrievePlanByClassAndName(string, string, ScopeOptions) (Plan, error)
 	RetrievePlanByID(string, ScopeOptions) (Plan, error)
+	CreatePlan(CreatePlanOptions) (Plan, error)
 
 	RetrieveSecretByBinding(*apiv1beta1.ServiceBinding) (*apicorev1.Secret, error)
 
