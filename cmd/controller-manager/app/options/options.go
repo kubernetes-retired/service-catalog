@@ -100,6 +100,7 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(k8scomponentconfig.IPVar{Val: &s.Address}, "address", "DEPRECATED: see --bind-address instead")
 	fs.MarkDeprecated("address", "see --bind-address instead")
 	fs.Int32Var(&s.Port, "port", 0, "DEPRECATED: see --secure-port instead")
+	fs.IntVar(&s.ConcurrentSyncs, "concurrent-syncs", defaultConcurrentSyncs, "Number of concurrent syncs")
 	fs.MarkDeprecated("port", "see --secure-port instead")
 	fs.StringVar(&s.ContentType, "api-content-type", s.ContentType, "Content type of requests sent to API servers")
 	fs.StringVar(&s.K8sAPIServerURL, "k8s-api-server-url", "", "The URL for the k8s API server")
