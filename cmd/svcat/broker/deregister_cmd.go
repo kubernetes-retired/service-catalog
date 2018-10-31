@@ -46,7 +46,7 @@ func NewDeregisterCmd(cxt *command.Context) *cobra.Command {
 		Example: command.NormalizeExamples(`
 		svcat deregister mysqlbroker
 		svcat deregister mysqlbroker --namespace=mysqlnamespace
-		svcat deregister mysqlclusterbroker --cluster
+		svcat deregister mysqlclusterbroker --scope=cluster
 		`),
 		PreRunE: command.PreRunE(deregisterCmd),
 		RunE:    command.RunE(deregisterCmd),
