@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -154,8 +155,14 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 }
 
 // RetrieveClassByID gets a class by its UUID.
-func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, error) {
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(uuid, metav1.GetOptions{})
+func (sdk *SDK) RetrieveClassByID(uuid string, opts ScopeOptions) (Class, error) {
+	var err error
+	var class Class
+	if opts.Scope.Matches(ClusterScope) {
+		class, err = sdk.ServiceCatalog().ClusterServiceClasses().Get(uuid, metav1.GetOptions{})
+	} else if opts.Scope.Matches(NamespaceScope) {
+		class, err = sdk.ServiceCatalog().ServiceClasses(opts.Namespace).Get(uuid, metav1.GetOptions{})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}
@@ -163,9 +170,15 @@ func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, er
 }
 
 // RetrieveClassByPlan gets the class associated to a plan.
-func (sdk *SDK) RetrieveClassByPlan(plan Plan) (*v1beta1.ClusterServiceClass, error) {
+func (sdk *SDK) RetrieveClassByPlan(plan Plan, opts ScopeOptions) (Class, error) {
+	var err error
+	var class Class
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.GetClassID(), metav1.GetOptions{})
+	if opts.Scope.Matches(ClusterScope) {
+		class, err = sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.GetClassID(), metav1.GetOptions{})
+	} else if opts.Scope.Matches(NamespaceScope) {
+		class, err = sdk.ServiceCatalog().ServiceClasses(opts.Namespace).Get(plan.GetClassID(), metav1.GetOptions{})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}

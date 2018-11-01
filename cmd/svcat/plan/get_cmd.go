@@ -182,7 +182,7 @@ func (c *getCmd) get() error {
 		return err
 	}
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := c.App.RetrieveClassByID(plan.GetClassID())
+	class, err := c.App.RetrieveClassByID(plan.GetClassID(), opts)
 	if err != nil {
 		return err
 	}

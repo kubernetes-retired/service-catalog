@@ -106,7 +106,7 @@ func (sdk *SDK) retrievePlansByListOptions(opts ScopeOptions, listOpts metav1.Li
 	var plans []Plan
 
 	if opts.Scope.Matches(ClusterScope) {
-		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(metav1.ListOptions{})
+		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(listOpts)
 		if err != nil {
 			return nil, fmt.Errorf("unable to list cluster-scoped plans (%s)", err)
 		}

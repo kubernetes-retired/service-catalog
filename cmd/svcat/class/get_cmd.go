@@ -103,11 +103,14 @@ func (c *getCmd) getAll() error {
 func (c *getCmd) get() error {
 	var class servicecatalog.Class
 	var err error
-
+	opts := servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	}
 	if c.lookupByUUID {
-		class, err = c.App.RetrieveClassByID(c.uuid)
+		class, err = c.App.RetrieveClassByID(c.uuid, opts)
 	} else if c.name != "" {
-		class, err = c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{Scope: c.Scope, Namespace: c.Namespace})
+		class, err = c.App.RetrieveClassByName(c.name, opts)
 	}
 	if err != nil {
 		return err

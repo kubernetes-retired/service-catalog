@@ -84,7 +84,10 @@ func (c *CreateCmd) Run() error {
 		return err
 	}
 	className := createdPlan.GetClassID()
-	class, err := c.App.RetrieveClassByID(className)
+	class, err := c.App.RetrieveClassByID(className, servicecatalog.ScopeOptions{
+		Namespace: c.Namespace,
+		Scope:     c.Scope,
+	})
 	output.WritePlanDetails(c.Output, createdPlan, class)
 	return nil
 }

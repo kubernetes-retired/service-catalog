@@ -117,7 +117,7 @@ var _ = Describe("Create command", func() {
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(planName))
 		})
-		FIt("Calls the CreatePlan method with input for a namespace plan and prints output", func() {
+		It("Calls the CreatePlan method with input for a namespace plan and prints output", func() {
 			planName := "newplan"
 			existingPlanName := "existingplan"
 			planNamespace := "default"
