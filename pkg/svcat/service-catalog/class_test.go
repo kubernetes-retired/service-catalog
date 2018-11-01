@@ -158,9 +158,9 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: realClient,
 			}
-			class, err := sdk.RetrieveClassByID(classID)
+			class, err := sdk.RetrieveClassByID(classID, ScopeOptions{Scope: ClusterScope})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fmt.Sprintf("%v", class.UID)).To(Equal(classID))
+			Expect(fmt.Sprintf("%v", class.GetExternalName())).To(Equal(classID))
 			actions := realClient.Actions()
 			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
 		})
@@ -173,7 +173,7 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: emptyClient,
 			}
-			class, err := sdk.RetrieveClassByID("not_real")
+			class, err := sdk.RetrieveClassByID("not_real", ScopeOptions{Scope: ClusterScope})
 
 			Expect(class).To(BeNil())
 			Expect(err).To(HaveOccurred())
@@ -201,7 +201,7 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: realClient,
 			}
-			class, err := sdk.RetrieveClassByPlan(classPlan)
+			class, err := sdk.RetrieveClassByPlan(classPlan, ScopeOptions{Scope: ClusterScope})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(class).To(Equal(csc))
 			actions := realClient.Actions()
@@ -229,7 +229,7 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: badClient,
 			}
-			class, err := sdk.RetrieveClassByPlan(classPlan)
+			class, err := sdk.RetrieveClassByPlan(classPlan, ScopeOptions{Scope: ClusterScope})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
 			Expect(class).To(BeNil())
