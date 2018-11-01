@@ -20,6 +20,7 @@ import (
 	"bytes"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -28,7 +29,6 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Create command", func() {
@@ -71,10 +71,24 @@ var _ = Describe("Create command", func() {
 			planName := "newplan"
 			existingPlanName := "existingplan"
 
+			classID := "abc123"
+			className := "myclass"
+
 			planToReturn := &v1beta1.ClusterServicePlan{
 				Spec: v1beta1.ClusterServicePlanSpec{
+					ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+						Name: classID,
+					},
 					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 						ExternalName: planName,
+					},
+				},
+			}
+			classToReturn := &v1beta1.ClusterServiceClass{
+				ObjectMeta: metav1.ObjectMeta{Name: classID},
+				Spec: v1beta1.ClusterServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalName: className,
 					},
 				},
 			}
@@ -84,6 +98,7 @@ var _ = Describe("Create command", func() {
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
 			fakeSDK.CreatePlanReturns(planToReturn, nil)
+			fakeSDK.RetrieveClassByIDReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
@@ -102,13 +117,16 @@ var _ = Describe("Create command", func() {
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(planName))
 		})
-		It("Calls the CreatePlan method with input for a namespace plan and prints output", func() {
+		FIt("Calls the CreatePlan method with input for a namespace plan and prints output", func() {
 			planName := "newplan"
-			planNamespace := "default"
 			existingPlanName := "existingplan"
+			planNamespace := "default"
+
+			className := "myclass"
+			classID := "abc123"
 
 			planToReturn := &v1beta1.ServicePlan{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: planNamespace,
 				},
 				Spec: v1beta1.ServicePlanSpec{
@@ -118,11 +136,22 @@ var _ = Describe("Create command", func() {
 				},
 			}
 
+			classToReturn := &v1beta1.ClusterServiceClass{
+				ObjectMeta: metav1.ObjectMeta{Name: classID},
+				Spec: v1beta1.ClusterServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalName: className,
+					},
+				},
+			}
+
 			outputBuffer := &bytes.Buffer{}
 
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
 			fakeSDK.CreatePlanReturns(planToReturn, nil)
+			fakeSDK.RetrieveClassByIDReturns(classToReturn, nil)
+
 			fakeApp.SvcatClient = fakeSDK
 			cmd := CreateCmd{
 				Namespaced: &command.Namespaced{
@@ -139,7 +168,7 @@ var _ = Describe("Create command", func() {
 			opts := fakeSDK.CreatePlanArgsForCall(0)
 			Expect(opts.Name).To(Equal(planName))
 			Expect(opts.From).To(Equal(existingPlanName))
-			Expect(opts.Scope).To(Equal(servicecatalog.NamespaceScope))
+			Expect(string(opts.Scope)).To(Equal(servicecatalog.NamespaceScope))
 			Expect(opts.Namespace).To(Equal(planNamespace))
 
 			output := outputBuffer.String()
@@ -147,5 +176,4 @@ var _ = Describe("Create command", func() {
 			Expect(output).To(ContainSubstring(planNamespace))
 		})
 	})
-
 })

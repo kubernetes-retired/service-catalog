@@ -22,15 +22,14 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
-func getPlanStatusShort(status v1beta1.ClusterServicePlanStatus) string {
-	if status.RemovedFromBrokerCatalog {
-		return statusDeprecated
+func getPlanScope(plan servicecatalog.Plan) string {
+	if plan.GetNamespace() != "" {
+		return servicecatalog.NamespaceScope
 	}
-	return statusActive
+	return servicecatalog.ClusterScope
 }
 
 // ByAge implements sort.Interface for []Person based on
@@ -138,13 +137,20 @@ func WriteParentPlan(w io.Writer, plan servicecatalog.Plan) {
 
 // WritePlanDetails prints details for a single plan.
 func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class servicecatalog.Class) {
+	scope := getPlanScope(plan)
+
 	t := NewDetailsTable(w)
+	t.Append([]string{"Name:", plan.GetExternalName()})
+
+	if plan.GetNamespace() != "" {
+		t.Append([]string{"Namespace:", plan.GetNamespace()})
+	}
 
 	t.AppendBulk([][]string{
-		{"Name:", plan.GetExternalName()},
+		{"Scope:", scope},
 		{"Description:", plan.GetDescription()},
-		{"UUID:", string(plan.GetName())},
-		{"Status:", string(plan.GetStatus())},
+		{"UUID:", plan.GetName()},
+		{"Status:", plan.GetStatus()},
 		{"Free:", strconv.FormatBool(plan.GetSpec().Free)},
 		{"Class:", class.GetExternalName()},
 	})

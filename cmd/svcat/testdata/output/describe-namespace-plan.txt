@@ -1,4 +1,5 @@
   Name:          namespacedplan                        
+  Scope:         cluster                               
   Description:   Sample plan description               
   UUID:          86064792-7ea2-467b-af93-ac9694d96d52  
   Status:        Active                                

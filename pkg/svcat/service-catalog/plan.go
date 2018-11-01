@@ -138,29 +138,6 @@ func (sdk *SDK) retrievePlansByListOptions(opts ScopeOptions, listOpts metav1.Li
 
 // RetrievePlanByName gets a plan by its external name.
 func (sdk *SDK) RetrievePlanByName(name string, opts ScopeOptions) (Plan, error) {
-	var searchResults []Plan
-	lopts := metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(FieldExternalPlanName, name).String(),
-	}
-	if opts.Scope.Matches(ClusterScope) {
-		cspList, err := sdk.ServiceCatalog().ClusterServicePlans().List(lopts)
-		if err != nil {
-			return nil, fmt.Errorf("unable to search plans by name '%s', (%s)", name, err)
-		}
-		for _, p := range cspList.Items {
-			searchResults = append(searchResults, &p)
-		}
-	}
-	if opts.Scope.Matches(NamespaceScope) {
-		spList, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).List(lopts)
-		if err != nil {
-			return nil, fmt.Errorf("unable to search plans by name '%s', (%s)", name, err)
-		}
-		for _, p := range spList.Items {
-			searchResults = append(searchResults, &p)
-		}
-	}
-
 	listOpts := metav1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(FieldExternalPlanName, name).String(),
 	}
