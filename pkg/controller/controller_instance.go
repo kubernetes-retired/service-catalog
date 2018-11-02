@@ -25,7 +25,6 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -144,11 +143,16 @@ func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
 }
 
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
-	// Instances with ongoing asynchronous operations will be manually added
-	// to the polling queue by the reconciler. They should be ignored here in
-	// order to enforce polling rate-limiting.
+	// To prevent the controller from performing the same work multiple times,
+	// we need to ignore all instance status updates that come from the
+	// controller itself. Since we can't know who performed the update, we
+	// can instead check if the generation was incremented, since no status update
+	// performed by the controller ever changes the generation.
+	// The controller only needs to do work if the generation has changed (this
+	// happens if the spec is modified or if the instance is marked for deletion).
+	oldInstance := oldObj.(*v1beta1.ServiceInstance)
 	instance := newObj.(*v1beta1.ServiceInstance)
-	if !instance.Status.AsyncOpInProgress {
+	if oldInstance.Generation != instance.Generation {
 		c.instanceAdd(newObj)
 	}
 }
@@ -285,23 +289,13 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 // error is returned to indicate that the instance has not been fully
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance) error {
-	updated, err := c.initObservedGeneration(instance)
+	instance, err := c.initObservedGeneration(instance)
 	if err != nil {
 		return err
 	}
-	if updated {
-		// The updated instance will be automatically added back to the queue
-		// and processed again
-		return nil
-	}
-	updated, err = c.initOrphanMitigationCondition(instance)
+	instance, err = c.initOrphanMitigationCondition(instance)
 	if err != nil {
 		return err
-	}
-	if updated {
-		// The updated instance will be automatically added back to the queue
-		// and processed again
-		return nil
 	}
 	reconciliationAction := getReconciliationActionForServiceInstance(instance)
 	switch reconciliationAction {
@@ -325,7 +319,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 // ReconciledGeneration for status API migration.
 // Returns true if the status was updated (i.e. the iteration has finished and no
 // more processing needed).
-func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (bool, error) {
+func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	if instance.Status.ObservedGeneration == 0 && instance.Status.ReconciledGeneration != 0 {
 		instance = instance.DeepCopy()
 		instance.Status.ObservedGeneration = instance.Status.ReconciledGeneration
@@ -338,20 +332,16 @@ func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (
 			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 		}
 
-		_, err := c.updateServiceInstanceStatus(instance)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
+		return c.updateServiceInstanceStatus(instance)
 	}
-	return false, nil
+	return instance, nil
 }
 
 // initOrphanMitigationCondition implements OrphanMitigation condition initialization
 // based on OrphanMitigationInProgress field for status API migration.
 // Returns true if the status was updated (i.e. the iteration has finished and no
 // more processing needed).
-func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInstance) (bool, error) {
+func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	if !isServiceInstanceOrphanMitigation(instance) && instance.Status.OrphanMitigationInProgress {
 		instance := instance.DeepCopy()
 		reason := startingInstanceOrphanMitigationReason
@@ -362,13 +352,9 @@ func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInst
 			reason,
 			message)
 
-		_, err := c.updateServiceInstanceStatus(instance)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
+		return c.updateServiceInstanceStatus(instance)
 	}
-	return false, nil
+	return instance, nil
 }
 
 // setRetryBackoffRequired marks the specified instance/generation as needing a
@@ -501,24 +487,16 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	}
 
 	// Update references to Plan/Class if necessary.
-	modified, err := c.resolveReferences(instance)
+	instance, err := c.resolveReferences(instance)
 	if err != nil {
 		return err
-	}
-	if modified {
-		// resolveReferences has updated the instance, so we need to continue in the next iteration
-		return nil
 	}
 
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ServicePlanDefaults) {
 		// Apply default provisioning parameters, this must be done after we've resolved the class and plan
-		modified, err = c.applyDefaultProvisioningParameters(instance)
+		instance, err = c.applyDefaultProvisioningParameters(instance)
 		if err != nil {
 			return err
-		}
-		if modified {
-			// the instance was updated with new parameters, so we need to continue in the next iteration
-			return nil
 		}
 	}
 
@@ -536,8 +514,6 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			// over with a fresh view of the instance.
 			return err
 		}
-		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-		return nil
 	} else if instance.Status.DeprovisionStatus != v1beta1.ServiceInstanceDeprovisionStatusRequired {
 		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 		instance, err = c.updateServiceInstanceStatus(instance)
@@ -546,8 +522,6 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			// over with a fresh view of the instance.
 			return err
 		}
-		// instance was updated, we will to continue in the next iteration
-		return nil
 	}
 
 	var prettyClass string
@@ -642,13 +616,9 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	}
 
 	// Update references to ClusterServicePlan / ClusterServiceClass if necessary.
-	modified, err := c.resolveReferences(instance)
+	instance, err := c.resolveReferences(instance)
 	if err != nil {
 		return err
-	}
-	if modified {
-		// resolveReferences has updated the instance, so we need to continue in the next iteration
-		return nil
 	}
 
 	glog.V(4).Info(pcb.Message("Processing updating event"))
@@ -684,8 +654,6 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 				// over with a fresh view of the instance.
 				return err
 			}
-			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-			return nil
 		}
 
 		glog.V(4).Info(pcb.Messagef(
@@ -721,8 +689,6 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 				// over with a fresh view of the instance.
 				return err
 			}
-			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-			return nil
 		}
 
 		glog.V(4).Info(pcb.Messagef(
@@ -800,7 +766,8 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	if instance.Status.OrphanMitigationInProgress {
+	isOrphanMitigation := instance.Status.OrphanMitigationInProgress
+	if isOrphanMitigation {
 		glog.V(4).Info(pcb.Message("Performing orphan mitigation"))
 	} else {
 		glog.V(4).Info(pcb.Message("Processing deleting event"))
@@ -810,7 +777,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	// Any status updates from this point should have an updated observed generation
 	// except for the orphan mitigation (it is considered to be a continuation
 	// of the previously failed provisioning operation).
-	if !instance.Status.OrphanMitigationInProgress && instance.Status.ObservedGeneration != instance.Generation {
+	if !isOrphanMitigation && instance.Status.ObservedGeneration != instance.Generation {
 		c.prepareObservedGeneration(instance)
 	}
 
@@ -876,7 +843,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	} else {
 		if instance.Status.CurrentOperation != v1beta1.ServiceInstanceOperationDeprovision {
-			if instance.Status.OrphanMitigationInProgress {
+			if isOrphanMitigation {
 				// There is no need in tracking orphan mitigation separately
 				// from the normal deletion
 				removeServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
@@ -888,8 +855,6 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 				// over with a fresh view of the instance.
 				return err
 			}
-			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-			return nil
 		}
 	}
 
@@ -919,7 +884,16 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return c.processDeprovisionAsyncResponse(instance, response)
 	}
 
-	return c.processDeprovisionSuccess(instance)
+	err = c.processDeprovisionSuccess(instance)
+	if err != nil {
+		return err
+	}
+
+	if isOrphanMitigation {
+		// need to requeue the instance, since it won't be requeued automatically, because we're returning a nil error
+		c.instanceAdd(instance)
+	}
+	return nil
 }
 
 func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) error {
@@ -1165,19 +1139,19 @@ func (c *controller) processServiceInstancePollingTemporaryFailure(instance *v1b
 // If references needed to be resolved, and the instance status was successfully updated, the method returns true
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
-func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool, error) {
+func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	if instance.Spec.ClusterServiceClassSpecified() {
 		return c.resolveClusterReferences(instance)
 	} else if instance.Spec.ServiceClassSpecified() {
 		return c.resolveNamespacedReferences(instance)
 	}
 
-	return false, stderrors.New(errorAmbiguousPlanReferenceScope)
+	return instance, stderrors.New(errorAmbiguousPlanReferenceScope)
 }
 
-func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance) (bool, error) {
+func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	if instance.Spec.ClusterServiceClassRef != nil && instance.Spec.ClusterServicePlanRef != nil {
-		return false, nil
+		return instance, nil
 	}
 
 	var sc *v1beta1.ClusterServiceClass
@@ -1185,7 +1159,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 	if instance.Spec.ClusterServiceClassRef == nil {
 		sc, err = c.resolveClusterServiceClassRef(instance)
 		if err != nil {
-			return false, err
+			return instance, err
 		}
 	}
 
@@ -1193,22 +1167,21 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 		if sc == nil {
 			sc, err = c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if err != nil {
-				return false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
+				return instance, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
 			}
 		}
 
 		err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
 		if err != nil {
-			return false, err
+			return instance, err
 		}
 	}
-	_, err = c.updateServiceInstanceReferences(instance)
-	return err == nil, err
+	return c.updateServiceInstanceReferences(instance)
 }
 
-func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstance) (bool, error) {
+func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	if instance.Spec.ServiceClassRef != nil && instance.Spec.ServicePlanRef != nil {
-		return false, nil
+		return instance, nil
 	}
 
 	var sc *v1beta1.ServiceClass
@@ -1216,7 +1189,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 	if instance.Spec.ServiceClassRef == nil {
 		sc, err = c.resolveServiceClassRef(instance)
 		if err != nil {
-			return false, err
+			return instance, err
 		}
 	}
 
@@ -1224,17 +1197,16 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 		if sc == nil {
 			sc, err = c.serviceClassLister.ServiceClasses(instance.Namespace).Get(instance.Spec.ServiceClassRef.Name)
 			if err != nil {
-				return false, fmt.Errorf(`Couldn't find ServiceClass (K8S: %s)": %v`, instance.Spec.ServiceClassRef.Name, err.Error())
+				return instance, fmt.Errorf(`Couldn't find ServiceClass (K8S: %s)": %v`, instance.Spec.ServiceClassRef.Name, err.Error())
 			}
 		}
 
 		err = c.resolveServicePlanRef(instance, sc.Spec.ServiceBrokerName)
 		if err != nil {
-			return false, err
+			return instance, err
 		}
 	}
-	_, err = c.updateServiceInstanceReferences(instance)
-	return err == nil, err
+	return c.updateServiceInstanceReferences(instance)
 }
 
 // resolveClusterServiceClassRef resolves a reference  to a ClusterServiceClass
@@ -1555,25 +1527,25 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 // If parameter defaults were applied, and the instance status was successfully updated, the method returns true
 // If either can not be resolved, returns an error and sets the InstanceCondition
 // with the appropriate error message.
-func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (bool, error) {
+func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	// The default parameters are only applied once (though we may revisit that decision in the future depending on how
 	// we want to handle plan changes).
 	if instance.Status.DefaultProvisionParameters != nil {
-		return false, nil
+		return instance, nil
 	}
 
 	defaultParams, err := c.getDefaultProvisioningParameters(instance)
 	if err != nil {
-		return false, err
+		return instance, err
 	}
 
 	finalParams, err := mergeParameters(instance.Spec.Parameters, defaultParams)
 	if err != nil {
-		return false, err
+		return instance, err
 	}
 
 	if instance.Spec.Parameters == finalParams {
-		return false, nil
+		return instance, nil
 	}
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
@@ -1587,12 +1559,11 @@ func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.Servic
 		s := fmt.Sprintf("error updating service instance to apply default parameters: %s", err)
 		glog.Warning(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorWithParameters, s)
-		return false, fmt.Errorf(s)
+		return instance, fmt.Errorf(s)
 	}
 
 	instance.Status.DefaultProvisionParameters = defaultParams
-	_, err = c.updateServiceInstanceStatus(instance)
-	return true, err
+	return c.updateServiceInstanceStatus(instance)
 }
 
 func (c *controller) getDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (*runtime.RawExtension, error) {
@@ -1900,6 +1871,7 @@ func (c *controller) updateServiceInstanceStatusWithRetries(
 			}
 			return false, nil
 		}
+		glog.V(4).Info(pcb.Messagef("Status updated. New instance resourceVersion: %v", upd.ResourceVersion))
 
 		updatedInstance = upd
 		return true, nil

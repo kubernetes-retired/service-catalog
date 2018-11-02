@@ -41,7 +41,6 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	sctestutil "github.com/kubernetes-incubator/service-catalog/test/util"
 	corev1 "k8s.io/api/core/v1"
 	clientgotesting "k8s.io/client-go/testing"
@@ -582,9 +581,6 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 			instance.Spec.ParametersFrom = tc.paramsFrom
 
-			//////////////////////////////////////
-			// Check 1st reconcilliation iteration (prepare/validate request & set status to in progress)
-
 			err := reconcileServiceInstance(t, testController, instance)
 			if tc.expectedError {
 				if err == nil {
@@ -596,8 +592,6 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 				}
 			}
 
-			brokerActions := fakeClusterServiceBrokerClient.Actions()
-			assertNumberOfBrokerActions(t, brokerActions, 0)
 			expectedKubeActions := []kubeClientAction{
 				{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
 			}
@@ -611,84 +605,53 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 			}
 
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 1)
-			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+			if tc.expectedError {
+				assertNumberOfActions(t, actions, 1)
+
+				updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+				assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParameters, instance)
+			} else {
+				assertNumberOfActions(t, actions, 2)
+				assertProvisionInProgressWithParameters(t, actions[0],
+					tc.expectedParamsWithSecretsRedacted,
+					generateChecksumOfParametersOrFail(t, tc.expectedParams),
+					instance,
+				)
+				assertProvisionSuccessWithParameters(t, actions[1],
+					tc.expectedParamsWithSecretsRedacted,
+					generateChecksumOfParametersOrFail(t, tc.expectedParams),
+					instance,
+				)
+			}
 
 			events := getRecordedEvents(testController)
 			if tc.expectedError {
-				assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParameters, instance)
-
 				expectedEvent := warningEventBuilder(errorWithParameters).msg("failed to prepare parameters")
 				if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
 					t.Fatal(err)
 				}
 			} else {
-				assertServiceInstanceOperationInProgressWithParameters(t,
-					updatedServiceInstance,
-					v1beta1.ServiceInstanceOperationProvision,
-					testClusterServicePlanName,
-					testClusterServicePlanGUID,
-					tc.expectedParamsWithSecretsRedacted,
-					generateChecksumOfParametersOrFail(t, tc.expectedParams),
-					instance,
-				)
-
-				if err := checkEvents(events, []string{}); err != nil {
+				expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
+				if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 					t.Fatal(err)
 				}
 			}
 
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
 			if tc.expectedError {
-				return // don't even try the 2nd iteration if the first one was supposed to return an error
-			}
-
-			//////////////////////////////////////
-			// Check 2nd reconcilliation iteration (actual broker request)
-
-			fakeCatalogClient.ClearActions()
-			fakeKubeClient.ClearActions()
-			instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
-
-			err = reconcileServiceInstance(t, testController, instance)
-			if err != nil {
-				t.Fatalf("Reconcile not expected to fail : %v", err)
-			}
-
-			brokerActions = fakeClusterServiceBrokerClient.Actions()
-			assertNumberOfBrokerActions(t, brokerActions, 1)
-			assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
-				AcceptsIncomplete: true,
-				InstanceID:        testServiceInstanceGUID,
-				ServiceID:         testClusterServiceClassGUID,
-				PlanID:            testClusterServicePlanGUID,
-				OrganizationGUID:  testClusterID,
-				SpaceGUID:         testNamespaceGUID,
-				Context:           testContext,
-				Parameters:        tc.expectedParams,
-			})
-
-			actions = fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 1)
-			updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-			assertServiceInstanceOperationSuccessWithParameters(t,
-				updatedServiceInstance,
-				v1beta1.ServiceInstanceOperationProvision,
-				testClusterServicePlanName,
-				testClusterServicePlanGUID,
-				tc.expectedParamsWithSecretsRedacted,
-				generateChecksumOfParametersOrFail(t, tc.expectedParams),
-				instance,
-			)
-
-			kubeActions = fakeKubeClient.Actions()
-			if err := checkKubeClientActions(kubeActions, expectedKubeActions); err != nil {
-				t.Fatal(err)
-			}
-
-			events = getRecordedEvents(testController)
-			expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
-			if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-				t.Fatal(err)
+				assertNumberOfBrokerActions(t, brokerActions, 0)
+			} else {
+				assertNumberOfBrokerActions(t, brokerActions, 1)
+				assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
+					AcceptsIncomplete: true,
+					InstanceID:        testServiceInstanceGUID,
+					ServiceID:         testClusterServiceClassGUID,
+					PlanID:            testClusterServicePlanGUID,
+					OrganizationGUID:  testClusterID,
+					SpaceGUID:         testNamespaceGUID,
+					Context:           testContext,
+					Parameters:        tc.expectedParams,
+				})
 			}
 		})
 	}
@@ -728,14 +691,16 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 
 	// We should get the following actions:
 	// list call for ClusterServiceClass
 	// list call for ClusterServicePlan
 	// setReferences on ServiceInstance
+	// update status on ServiceInstance (ProvisionInProgress)
+	// update status on ServiceInstance (ProvisionSuccess)
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 3)
+	assertNumberOfActions(t, actions, 5)
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
@@ -762,8 +727,25 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
-	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
-	assertNumEvents(t, getRecordedEvents(testController), 0)
+	updatedServiceInstance = assertProvisionInProgress(t, actions[3], instance)
+	updatedServiceInstance = assertProvisionSuccess(t, actions[4], instance)
+
+	// verify no kube resources created
+	// One single action comes from getting namespace uid
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) {
@@ -810,7 +792,7 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 4)
 
 	// Check that the default provisioning parameters defined on the plan is
 	// now on the service instance
@@ -881,16 +863,19 @@ func TestReconcileServiceInstanceRespectsServicePlanDefaultsFeatureGate(t *testi
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
 	// Check that the default parameters were not saved on the status
 	// because the feature is disabled
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
+	if updatedServiceInstance.Status.DefaultProvisionParameters != nil {
+		t.Fatal("DefaultProvisioningParameters should not be set on the status because the feature is disabled")
 	}
-	if updateObject.Status.DefaultProvisionParameters != nil {
+
+	// Check that the default parameters were not saved on the status
+	// because the feature is disabled
+	updatedServiceInstance = assertProvisionSuccess(t, actions[1], instance)
+	if updatedServiceInstance.Status.DefaultProvisionParameters != nil {
 		t.Fatal("DefaultProvisioningParameters should not be set on the status because the feature is disabled")
 	}
 }
@@ -933,13 +918,13 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	}
 
 	brokerActions := fakeServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 
 	// We should get the following actions:
 	// list call for ClusterServicePlan
 	// setReferences on ServiceInstance
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 4)
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
@@ -960,8 +945,20 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
-	assertNumberOfActions(t, fakeKubeClient.Actions(), 0)
-	assertNumEvents(t, getRecordedEvents(testController), 0)
+	kubeActions := fakeKubeClient.Actions()
+	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	events := getRecordedEvents(testController)
+	assertNumEvents(t, events, 1)
+
+	expectedEvent := normalEventBuilder(successProvisionReason).msg("The instance was provisioned successfully")
+	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // TestReconcileServiceInstanceWithProvisionCallFailure tests that when the provision
@@ -979,14 +976,6 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithClusterRefs()
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
 	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance")
@@ -1013,10 +1002,11 @@ func TestReconcileServiceInstanceWithProvisionCallFailure(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
+	assertProvisionInProgress(t, actions[0], instance)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	updatedObject := assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceRequestRetriableError(t, updatedObject, v1beta1.ServiceInstanceOperationProvision, errorErrorCallingProvisionReason, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -1050,15 +1040,9 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceWithClusterRefs()
 
-	//////////////////////////////////////
-	// Check 1st reconcilliation iteration (prepare/validate request & set status to in progress)
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("Reconcile not expected to fail : %v", err)
+	if err := reconcileServiceInstance(t, testController, instance); err == nil {
+		t.Fatalf("Should not be able to make the ServiceInstance")
 	}
-
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
 
 	expectedKubeActions := []kubeClientAction{
 		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
@@ -1069,31 +1053,21 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertNumberOfActions(t, actions, 2)
+	assertProvisionInProgress(t, actions[0], instance)
 
-	events := getRecordedEvents(testController)
-	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgress(t,
-		updatedServiceInstance,
+	updatedObject := assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
+		t,
+		updatedObject,
 		v1beta1.ServiceInstanceOperationProvision,
-		testClusterServicePlanName,
-		testClusterServicePlanGUID,
+		startingInstanceOrphanMitigationReason,
+		"",
+		errorProvisionCallFailedReason,
 		instance,
 	)
 
-	//////////////////////////////////////
-	// Check 2nd reconcilliation iteration (actual broker request)
-
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-	instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
-
-	if err := reconcileServiceInstance(t, testController, instance); err == nil {
-		t.Fatalf("Should not be able to make the ServiceInstance")
-	}
-
-	brokerActions = fakeClusterServiceBrokerClient.Actions()
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
 	assertProvision(t, brokerActions[0], &osb.ProvisionRequest{
 		AcceptsIncomplete: true,
@@ -1105,30 +1079,7 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 		Context:           testContext,
 	})
 
-	// verify no kube resources created
-	// One single action comes from getting namespace uid
-	kubeActions = fakeKubeClient.Actions()
-	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
-		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	actions = fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestFailingErrorStartOrphanMitigation(
-		t,
-		updatedServiceInstance,
-		v1beta1.ServiceInstanceOperationProvision,
-		startingInstanceOrphanMitigationReason,
-		"",
-		errorProvisionCallFailedReason,
-		instance,
-	)
-
-	events = getRecordedEvents(testController)
+	events := getRecordedEvents(testController)
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
@@ -1170,13 +1121,19 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertProvisionInProgress(t, actions[0], instance)
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	updatedObject := assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
+		t,
+		updatedObject,
+		v1beta1.ServiceInstanceOperationProvision,
+		errorProvisionCallFailedReason,
+		"ClusterServiceBrokerReturnedFailure",
+		instance,
+	)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1196,19 +1153,6 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceProvisionRequestFailingErrorNoOrphanMitigation(
-		t,
-		updatedServiceInstance,
-		v1beta1.ServiceInstanceOperationProvision,
-		errorProvisionCallFailedReason,
-		"ClusterServiceBrokerReturnedFailure",
-		instance,
-	)
 
 	events := getRecordedEvents(testController)
 
@@ -1248,15 +1192,12 @@ func TestReconcileServiceInstance(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
 
-	assertNumberOfBrokerActions(t, fakeClusterServiceBrokerClient.Actions(), 0)
-	fakeKubeClient.ClearActions()
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
+	updatedServiceInstance = assertProvisionSuccess(t, actions[1], instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1276,9 +1217,6 @@ func TestReconcileServiceInstance(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
@@ -1287,10 +1225,6 @@ func TestReconcileServiceInstance(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
 
@@ -1423,35 +1357,22 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-	updatedServiceInstance := assertUpdateReference(t, actions[0], instance)
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
+	assertNumberOfActions(t, actions, 3)
+	updatedObject := assertUpdateReference(t, actions[0], instance)
+	updatedServiceInstance, ok := updatedObject.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
+	if updatedServiceInstance.Spec.ClusterServiceClassRef == nil || updatedServiceInstance.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
+	if updatedServiceInstance.Spec.ClusterServicePlanRef == nil || updatedServiceInstance.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
-	instance = updateObject
-
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
-
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	updatedServiceInstance = assertProvisionInProgress(t, actions[1], instance)
+	updatedServiceInstance = assertProvisionSuccess(t, actions[2], instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1479,15 +1400,6 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
-	// There are 3 actions, one to update references and update status
-	// twice.
-	actions = fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
 
@@ -1523,19 +1435,11 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	instanceKey := testNamespace + "/" + testServiceInstanceName
-
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance")
-	}
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
+	updatedServiceInstance = assertAsyncProvisionInProgress(t, actions[1], instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1549,13 +1453,6 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		Context:           testContext,
 	})
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
-
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
@@ -1563,6 +1460,7 @@ func TestReconcileServiceInstanceAsynchronous(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
+	instanceKey := testNamespace + "/" + testServiceInstanceName
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
@@ -1593,19 +1491,11 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	instanceKey := testNamespace + "/" + testServiceInstanceName
-
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance")
-	}
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
+	updatedServiceInstance = assertAsyncProvisionInProgressWithOperationKey(t, actions[1], "", instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1618,13 +1508,6 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		SpaceGUID:         testNamespaceGUID,
 		Context:           testContext})
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, "", testClusterServicePlanName, testClusterServicePlanGUID, instance)
-	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
-
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
@@ -1632,6 +1515,7 @@ func TestReconcileServiceInstanceAsynchronousNoOperation(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
+	instanceKey := testNamespace + "/" + testServiceInstanceName
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
@@ -1720,14 +1604,11 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail")
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgress(t, actions[0], instance)
+	assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1741,12 +1622,6 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -1806,8 +1681,8 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, "DeprovisionBlockedByExistingCredentials", instance)
+	updatedObject := assertUpdateStatus(t, actions[0], instance)
+	assertServiceInstanceErrorBeforeRequest(t, updatedObject, "DeprovisionBlockedByExistingCredentials", instance)
 
 	events := getRecordedEvents(testController)
 
@@ -1829,13 +1704,11 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions = fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgress(t, actions[0], instance)
+	assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions = fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -1849,16 +1722,6 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions = fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions = fakeCatalogClient.Actions()
-
-	// The actions should be:
-	// 0. Updating the current operation
-	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events = getRecordedEvents(testController)
 
@@ -1911,14 +1774,11 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgress(t, actions[0], instance)
+	assertAsyncDeprovisionInProgress(t, actions[1], instance)
 
 	// The item should've been added to the instancePollingQueue for later processing
 
@@ -1938,12 +1798,6 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -1989,14 +1843,10 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgress(t, actions[0], instance)
+	assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -2010,12 +1860,6 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -2200,14 +2044,11 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertDeprovisionInProgress(t, actions[0], instance)
+	updatedServiceInstance = assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -2221,12 +2062,6 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -2368,13 +2203,11 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertProvisionInProgress(t, actions[0], instance)
+	assertProvisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -2393,12 +2226,6 @@ func TestReconcileServiceInstanceWithFailedCondition(t *testing.T) {
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 1)
@@ -2465,8 +2292,7 @@ func TestPollServiceInstanceInProgressProvisioningWithOperation(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	updatedServiceInstance := assertAsyncProvisionInProgress(t, actions[0], instance)
 	assertServiceInstanceConditionHasLastOperationDescription(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, lastOperationDescription)
 
 	// verify no kube resources created.
@@ -2525,9 +2351,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperation(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertProvisionSuccess(t, actions[0], instance)
 }
 
 // TestPollServiceInstanceFailureProvisioningWithOperation tests polling an
@@ -2722,9 +2546,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertDeprovisionSuccess(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 
@@ -2926,9 +2748,7 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertDeprovisionSuccess(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 
@@ -3117,9 +2937,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertDeprovisionSuccess(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 
@@ -3170,9 +2988,7 @@ func TestReconcileServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertProvisionSuccess(t, actions[0], instance)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -3240,9 +3056,8 @@ func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T)
 		t.Fatalf("This should not fail : %v", err)
 	}
 
-	// No OSB requests expected
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 
 	// InProgressProperties fields should be updated
 	expectedParameters := map[string]interface{}{
@@ -3255,9 +3070,9 @@ func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T)
 	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, expectedParameters)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
+	assertNumberOfActions(t, actions, 2)
+	assertProvisionInProgressWithParameters(t, actions[0], expectedParameters, expectedParametersChecksum, instance)
+	assertProvisionSuccessWithParameters(t, actions[1], expectedParameters, expectedParametersChecksum, instance)
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -3395,9 +3210,7 @@ func TestPollServiceInstanceSuccessOnFinalRetry(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertProvisionSuccess(t, actions[0], instance)
 }
 
 // TestPollServiceInstanceFailureOnFinalRetry verifies that polling
@@ -3493,7 +3306,9 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+	assertProvisionInProgress(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 0)
@@ -3831,14 +3646,9 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 			}
 
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 1)
-			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-
-			instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
-
-			if err := reconcileServiceInstance(t, testController, instance); err != nil {
-				t.Fatalf("This should not fail : %v", err)
-			}
+			assertNumberOfActions(t, actions, 2)
+			assertUpdateStatus(t, actions[0], instance)
+			assertUpdateStatus(t, actions[1], instance)
 
 			brokerActions := fakeBrokerClient.Actions()
 			assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -3899,13 +3709,9 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-			fakeCatalogClient.ClearActions()
-
-			err := reconcileServiceInstance(t, testController, instance)
-			if err != nil {
-				t.Fatalf("This should not fail")
-			}
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 2)
+			assertDeprovisionInProgress(t, actions[0], instance)
 
 			brokerActions := fakeBrokerClient.Actions()
 			assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -4029,35 +3835,24 @@ func TestReconcileServiceInstanceWithHTTPStatusCodeErrorOrphanMitigation(t *test
 			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 			instance := getTestServiceInstanceWithClusterRefs()
-			if err := reconcileServiceInstance(t, testController, instance); err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-
-			instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-			fakeCatalogClient.ClearActions()
-
 			err := reconcileServiceInstance(t, testController, instance)
 
-			// The action should be:
-			// 0. Updating the status
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 1)
+			assertNumberOfActions(t, actions, 2)
+			assertProvisionInProgress(t, actions[0], instance)
 
-			updatedObject := assertUpdateStatus(t, actions[0], instance)
-
-			updatedServiceInstance, _ := updatedObject.(*v1beta1.ServiceInstance)
-
+			updatedServiceInstance := assertUpdateStatus(t, actions[1], instance).(*v1beta1.ServiceInstance)
 			assertServiceInstanceOrphanMitigationInProgress(t, updatedServiceInstance, tc.triggersOrphanMitigation)
 
 			if tc.triggersOrphanMitigation {
 				assertServiceInstanceStartingOrphanMitigation(t, updatedServiceInstance, instance)
 				if err == nil {
-					t.Fatalf("%v: Reconciler should return error so that instance is orphan mitigated", tc.name)
+					t.Fatalf("Reconciler should return error so that instance is orphan mitigated")
 				}
 			} else {
 				if err != nil {
 					if tc.terminalFailure {
-						t.Fatalf("%v: Reconciler should treat as terminal condition and not requeue", tc.name)
+						t.Fatalf("Reconciler should treat as terminal condition and not requeue")
 					}
 				}
 			}
@@ -4079,21 +3874,15 @@ func TestReconcileServiceInstanceTimeoutTriggersOrphanMitigation(t *testing.T) {
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
 	instance := getTestServiceInstanceWithClusterRefs()
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-
 	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("Reconciler should return error for timeout so that instance is orphan mitigated")
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
 
-	updatedObject := assertUpdateStatus(t, actions[0], instance)
+	updatedObject := assertUpdateStatus(t, actions[1], instance)
 	updatedServiceInstance, ok := updatedObject.(*v1beta1.ServiceInstance)
 	if !ok {
 		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceInstance", updatedObject)
@@ -4358,7 +4147,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 				}
 			} else {
 				if err != nil {
-					t.Fatalf("%v: Unexpected error; this should be a terminal state", tc.name)
+					t.Fatalf("%v: Unexpected error; this should be a terminal state; Error: %s", tc.name, err)
 				}
 			}
 
@@ -4420,16 +4209,18 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 		"b": "2",
 	})
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
+	assertNumberOfActions(t, actions, 2)
 
-	instance = updatedServiceInstance.(*v1beta1.ServiceInstance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
+	updatedServiceInstance := assertProvisionInProgressWithParameters(t, actions[0], expectedParameters, expectedParametersChecksum, instance)
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if len(updatedServiceInstance.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
+	}
 
-	if err = reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
+	updatedServiceInstance = assertProvisionSuccessWithParameters(t, actions[1], expectedParameters, expectedParametersChecksum, instance)
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if len(updatedServiceInstance.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -4447,22 +4238,6 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 			"b": "2",
 		},
 	})
-
-	actions = fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance = assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
-
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
-	}
-
-	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
-	}
 
 	// verify no kube resources created
 	// First action is getting the namespace uid
@@ -4488,13 +4263,14 @@ func TestReconcileServiceInstanceWithSecretParameters(t *testing.T) {
 func TestResolveReferencesReferencesAlreadySet(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 	instance := getTestServiceInstanceWithClusterRefs()
-	modified, err := testController.resolveReferences(instance)
+	clone := instance.DeepCopy()
+	returnedInstance, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("resolveReferences failed unexpectedly: %q", err)
 	}
 
-	if modified {
-		t.Fatalf("Should have returned false")
+	if !reflect.DeepEqual(clone, returnedInstance) {
+		t.Fatalf("Should not have modified instance")
 	}
 
 	// No kube actions
@@ -4512,8 +4288,8 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
 
 	instance := getTestServiceInstance()
-
-	modified, err := testController.resolveReferences(instance)
+	clone := instance.DeepCopy()
+	returnedInstance, err := testController.resolveReferences(instance)
 	if err == nil {
 		t.Fatalf("Should have failed with no service class")
 	}
@@ -4522,8 +4298,8 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
 
-	if modified {
-		t.Fatalf("Should have returned false")
+	if !reflect.DeepEqual(clone, returnedInstance) {
+		t.Fatalf("Should not have modified instance")
 	}
 
 	// We should get the following actions:
@@ -4631,12 +4407,20 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	}
 	expectedParametersChecksum := generateChecksumOfParametersOrFail(t, expectedParameters)
 
-	instance = assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
 
-	if err = reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
+	updatedServiceInstance := assertUpdateInProgress(t, actions[0], expectedParameters, expectedParametersChecksum, instance)
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if len(updatedServiceInstance.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
+	}
+
+	updatedServiceInstance = assertUpdateSuccess(t, actions[1], expectedParameters, expectedParametersChecksum, instance)
+
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if len(updatedServiceInstance.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -4655,22 +4439,6 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 			"name": "test-param",
 		},
 	})
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
-
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
-	}
-
-	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
-	}
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -4734,12 +4502,18 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	if err = reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+
+	updatedServiceInstance := assertUpdateInProgress(t, actions[0], nil, "", instance)
+	if updatedServiceInstance.Spec.Parameters != nil {
+		t.Fatalf("Parameters was unexpectedly not empty")
+	}
+
+	updatedServiceInstance = assertUpdateSuccess(t, actions[1], nil, "", instance)
+	if updatedServiceInstance.Spec.Parameters != nil {
+		t.Fatalf("Parameters was unexpectedly not empty")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -4752,21 +4526,6 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		Context:           testContext,
 		Parameters:        make(map[string]interface{}),
 	})
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, instance)
-
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
-	}
-
-	if updateObject.Spec.Parameters != nil {
-		t.Fatalf("Parameters was unexpectedly not empty")
-	}
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -4799,17 +4558,13 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		return true, &v1beta1.ClusterServiceClassList{Items: scItems}, nil
 	})
 
-	modified, err := testController.resolveReferences(instance)
+	_, err := testController.resolveReferences(instance)
 	if err == nil {
 		t.Fatalf("Should have failed with no service plan")
 	}
 
 	if e, a := "a non-existent ClusterServicePlan", err.Error(); !strings.Contains(a, e) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
-	}
-
-	if modified {
-		t.Fatalf("Should have returned false")
 	}
 
 	// We should get the following actions:
@@ -4956,12 +4711,19 @@ func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		instance = assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, oldParameters, oldParametersChecksum)
-		fakeCatalogClient.ClearActions()
-		fakeKubeClient.ClearActions()
+		actions := fakeCatalogClient.Actions()
+		assertNumberOfActions(t, actions, 2)
+		assertUpdateInProgress(t, actions[0], oldParameters, oldParametersChecksum, instance)
 
-		if err = testController.reconcileServiceInstance(instance); err != nil {
-			t.Fatalf("This should not fail : %v", err)
+		updatedObject := assertUpdateStatus(t, actions[1], instance)
+		if tc.enableUpdateDashboardURL {
+			if tc.newDashboardURL != "" {
+				assertServiceInstanceDashboardURL(t, updatedObject, tc.newDashboardURL)
+			} else {
+				assertServiceInstanceDashboardURL(t, updatedObject, testDashboardURL)
+			}
+		} else {
+			assertServiceInstanceDashboardURL(t, updatedObject, testDashboardURL)
 		}
 
 		brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -4975,21 +4737,6 @@ func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
 			Context:           testContext,
 			Parameters:        nil, // no change to parameters
 		})
-
-		actions := fakeCatalogClient.Actions()
-		assertNumberOfActions(t, actions, 1)
-
-		updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-
-		if tc.enableUpdateDashboardURL {
-			if tc.newDashboardURL != "" {
-				assertServiceInstanceDashboardURL(t, updatedServiceInstance, tc.newDashboardURL)
-			} else {
-				assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
-			}
-		} else {
-			assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
-		}
 
 		// verify no kube resources created
 		// One single action comes from getting namespace uid
@@ -5067,12 +4814,19 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, oldParameters, oldParametersChecksum)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
 
-	if err = reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
+	updatedServiceInstance := assertUpdateInProgress(t, actions[0], oldParameters, oldParametersChecksum, instance)
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if len(updatedServiceInstance.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
+	}
+
+	updatedServiceInstance = assertUpdateSuccess(t, actions[1], oldParameters, oldParametersChecksum, instance)
+	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
+	if len(updatedServiceInstance.Spec.Parameters.Raw) == 0 {
+		t.Fatalf("Parameters was unexpectedly empty")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -5086,22 +4840,6 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		Context:           testContext,
 		Parameters:        nil, // no change to parameters
 	})
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, oldParameters, oldParametersChecksum, instance)
-
-	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
-	if !ok {
-		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
-	}
-
-	// Verify parameters are what we'd expect them to be, basically name, map with two values in it.
-	if len(updateObject.Spec.Parameters.Raw) == 0 {
-		t.Fatalf("Parameters was unexpectedly empty")
-	}
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -5136,16 +4874,16 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceUpdatingPlan()
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
 	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("Should not be able to make the ServiceInstance.")
 	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertUpdateInProgress(t, actions[0], nil, "", instance)
+
+	updatedObject := assertUpdateStatus(t, actions[1], instance)
+	assertServiceInstanceRequestRetriableError(t, updatedObject, v1beta1.ServiceInstanceOperationUpdate, errorErrorCallingUpdateInstanceReason, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -5165,12 +4903,6 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorErrorCallingUpdateInstanceReason, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -5200,16 +4932,16 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 
 	instance := getTestServiceInstanceUpdatingPlan()
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
 	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatal("expected error to be returned")
 	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertUpdateInProgress(t, actions[0], nil, "", instance)
+
+	updatedObject := assertUpdateStatus(t, actions[1], updatedServiceInstance)
+	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedObject, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "", updatedServiceInstance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -5228,12 +4960,6 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "", instance)
 
 	events := getRecordedEvents(testController)
 
@@ -5263,13 +4989,14 @@ func TestResolveReferencesWorks(t *testing.T) {
 		return true, &v1beta1.ClusterServicePlanList{Items: spItems}, nil
 	})
 
-	modified, err := testController.resolveReferences(instance)
+	clone := instance.DeepCopy()
+	returnedInstance, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
-	if !modified {
-		t.Fatalf("Should have returned true")
+	if reflect.DeepEqual(clone, returnedInstance) {
+		t.Fatalf("Should have returned a different & modified instance")
 	}
 
 	// We should get the following actions:
@@ -5343,13 +5070,14 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	instance.Spec.ClusterServicePlanExternalName = newPlanName
 	instance.Spec.ClusterServicePlanRef = nil
 
-	modified, err := testController.resolveReferences(instance)
+	clone := instance.DeepCopy()
+	returnedInstance, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
-	if !modified {
-		t.Fatalf("Should have returned true")
+	if reflect.DeepEqual(clone, returnedInstance) {
+		t.Fatalf("Should have modified instance")
 	}
 
 	// We should get the following actions:
@@ -5396,13 +5124,14 @@ func TestResolveReferencesWorksK8SNames(t *testing.T) {
 
 	instance := getTestServiceInstanceK8SNames()
 
-	modified, err := testController.resolveReferences(instance)
+	clone := instance.DeepCopy()
+	returnedInstance, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
-	if !modified {
-		t.Fatalf("Should have returned true")
+	if reflect.DeepEqual(clone, returnedInstance) {
+		t.Fatalf("Should have modified instance")
 	}
 
 	// We should get the following actions:
@@ -5471,13 +5200,11 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertUpdateInProgress(t, actions[0], nil, "", instance)
+	assertAsyncUpdateInProgress(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -5488,12 +5215,6 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
 		Context:           testContext})
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
@@ -5614,9 +5335,7 @@ func TestPollServiceInstanceAsyncSuccessUpdating(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+	assertUpdateSuccess(t, actions[0], nil, "", instance)
 }
 
 // TestPollServiceInstanceAsyncFailureUpdating tests polling an instance where
@@ -5795,24 +5514,20 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertDeprovisionInProgress(t, actions[0], instance)
 
 	// Verify that the operation start time was reset to Now
-	if instance.Status.OperationStartTime.Before(&timeOfReconciliation) {
+	if updatedServiceInstance.Status.OperationStartTime.Before(&timeOfReconciliation) {
 		t.Fatalf(
 			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
-			instance.Status.OperationStartTime,
+			updatedServiceInstance.Status.OperationStartTime,
 			timeOfReconciliation,
 		)
 	}
 
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail")
-	}
+	assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -5826,12 +5541,6 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -5857,6 +5566,7 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 	instance := getTestServiceInstanceWithClusterRefs()
 	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
 	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+	instance.Status.ObservedGeneration = instance.ObjectMeta.Generation
 	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
 	startTime := metav1.NewTime(time.Now().Add(-1 * time.Hour))
 	instance.Status.OperationStartTime = &startTime
@@ -5879,10 +5589,12 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertDeprovisionInProgress(t, actions[0], instance)
 
 	// Verify that the operation start time was reset to Now
-	if instance.Status.OperationStartTime.Before(&timeOfReconciliation) {
+	if updatedServiceInstance.Status.OperationStartTime.Before(&timeOfReconciliation) {
 		t.Fatalf(
 			"OperationStartTime should not be before the time that the reconciliation started. OperationStartTime=%v. timeOfReconciliation=%v",
 			instance.Status.OperationStartTime,
@@ -5890,13 +5602,7 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 		)
 	}
 
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail")
-	}
+	updatedServiceInstance = assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -5910,12 +5616,6 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 	assertNumEvents(t, events, 1)
@@ -5962,14 +5662,10 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationDeprovision, "old-plan-name", "old-plan-id")
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail")
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgressWithPlan(t, actions[0], "old-plan-name", "old-plan-id", instance)
+	assertDeprovisionSuccessWithPlan(t, actions[1], "old-plan-name", "old-plan-id", instance)
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -5983,12 +5679,6 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, "old-plan-name", "old-plan-id", instance)
 
 	events := getRecordedEvents(testController)
 
@@ -6030,10 +5720,10 @@ func TestReconcileServiceInstanceUpdateMissingObservedGeneration(t *testing.T) {
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	assertNumberOfBrokerActions(t, brokerActions, 1)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 3)
 
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
 	if updatedServiceInstance.Status.ObservedGeneration == 0 || updatedServiceInstance.Status.ObservedGeneration != instance.Status.ReconciledGeneration {
@@ -6098,7 +5788,94 @@ func generateChecksumOfParametersOrFail(t *testing.T, params map[string]interfac
 	return expectedParametersChecksum
 }
 
-func assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+func assertProvisionInProgress(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationInProgress(t, action, v1beta1.ServiceInstanceOperationProvision, nil, "", instance)
+}
+
+func assertProvisionInProgressWithParameters(t *testing.T, action clientgotesting.Action, parameters map[string]interface{}, parametersChecksum string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationInProgress(t, action, v1beta1.ServiceInstanceOperationProvision, parameters, parametersChecksum, instance)
+}
+
+func assertDeprovisionInProgress(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationInProgress(t, action, v1beta1.ServiceInstanceOperationDeprovision, nil, "", instance)
+}
+
+func assertDeprovisionInProgressWithPlan(t *testing.T, action clientgotesting.Action, planName, planGUID string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	updatedObject := assertUpdateStatus(t, action, instance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedObject, v1beta1.ServiceInstanceOperationDeprovision, planName, planGUID, nil, "", instance)
+	return toServiceInstance(updatedObject, t)
+}
+
+func assertUpdateInProgress(t *testing.T, action clientgotesting.Action, parameters map[string]interface{}, parametersChecksum string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationInProgress(t, action, v1beta1.ServiceInstanceOperationUpdate, parameters, parametersChecksum, instance)
+}
+
+func assertOperationInProgress(t *testing.T, action clientgotesting.Action, operation v1beta1.ServiceInstanceOperation, parameters map[string]interface{}, parametersChecksum string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	updatedObject := assertUpdateStatus(t, action, instance)
+
+	planName, planGUID := getDefaultTestPlanNameAndGUID(instance)
+	assertServiceInstanceOperationInProgressWithParameters(t, updatedObject, operation, planName, planGUID, parameters, parametersChecksum, instance)
+
+	return toServiceInstance(updatedObject, t)
+}
+
+func assertProvisionSuccess(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationSuccess(t, action, v1beta1.ServiceInstanceOperationProvision, nil, "", instance)
+}
+
+func assertProvisionSuccessWithParameters(t *testing.T, action clientgotesting.Action, parameters map[string]interface{}, parametersChecksum string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationSuccess(t, action, v1beta1.ServiceInstanceOperationProvision, parameters, parametersChecksum, instance)
+}
+
+func assertDeprovisionSuccess(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationSuccess(t, action, v1beta1.ServiceInstanceOperationDeprovision, nil, "", instance)
+}
+
+func assertDeprovisionSuccessWithPlan(t *testing.T, action clientgotesting.Action, planName, planGUID string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	updatedObject := assertUpdateStatus(t, action, instance)
+	assertServiceInstanceOperationSuccessWithParameters(t, updatedObject, v1beta1.ServiceInstanceOperationDeprovision, planName, planGUID, nil, "", instance)
+	return toServiceInstance(updatedObject, t)
+}
+
+func assertUpdateSuccess(t *testing.T, action clientgotesting.Action, parameters map[string]interface{}, parametersChecksum string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertOperationSuccess(t, action, v1beta1.ServiceInstanceOperationUpdate, parameters, parametersChecksum, instance)
+}
+
+func assertOperationSuccess(t *testing.T, action clientgotesting.Action, operation v1beta1.ServiceInstanceOperation, parameters map[string]interface{}, parametersChecksum string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	updatedObject := assertUpdateStatus(t, action, instance)
+
+	planName, planGUID := getDefaultTestPlanNameAndGUID(instance)
+	assertServiceInstanceOperationSuccessWithParameters(t, updatedObject, operation, planName, planGUID, parameters, parametersChecksum, instance)
+
+	return toServiceInstance(updatedObject, t)
+}
+
+func assertAsyncProvisionInProgress(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertAsyncOperationInProgress(t, action, v1beta1.ServiceInstanceOperationProvision, testOperation, instance)
+}
+
+func assertAsyncProvisionInProgressWithOperationKey(t *testing.T, action clientgotesting.Action, operationKey string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertAsyncOperationInProgress(t, action, v1beta1.ServiceInstanceOperationProvision, operationKey, instance)
+}
+
+func assertAsyncDeprovisionInProgress(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertAsyncOperationInProgress(t, action, v1beta1.ServiceInstanceOperationDeprovision, testOperation, instance)
+}
+
+func assertAsyncUpdateInProgress(t *testing.T, action clientgotesting.Action, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	return assertAsyncOperationInProgress(t, action, v1beta1.ServiceInstanceOperationUpdate, testOperation, instance)
+}
+
+func assertAsyncOperationInProgress(t *testing.T, action clientgotesting.Action, operation v1beta1.ServiceInstanceOperation, operationKey string, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
+	updatedObject := assertUpdateStatus(t, action, instance)
+
+	planName, planGUID := getDefaultTestPlanNameAndGUID(instance)
+	assertServiceInstanceAsyncStartInProgress(t, updatedObject, operation, operationKey, planName, planGUID, instance)
+
+	return toServiceInstance(updatedObject, t)
+}
+
+func getDefaultTestPlanNameAndGUID(instance *v1beta1.ServiceInstance) (string, string) {
 	var planName, planGUID string
 	if instance.Spec.ClusterServiceClassSpecified() {
 		planName = testClusterServicePlanName
@@ -6107,43 +5884,15 @@ func assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t *tes
 		planName = testServicePlanName
 		planGUID = testServicePlanGUID
 	}
-	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationProvision, planName, planGUID)
+	return planName, planGUID
 }
 
-func assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
-	var planName, planGUID string
-	if instance.Spec.ClusterServiceClassSpecified() {
-		planName = testClusterServicePlanName
-		planGUID = testClusterServicePlanGUID
-	} else {
-		planName = testServicePlanName
-		planGUID = testServicePlanGUID
+func toServiceInstance(obj runtime.Object, t *testing.T) *v1beta1.ServiceInstance {
+	instance, ok := obj.(*v1beta1.ServiceInstance)
+	if !ok {
+		fatalf(t, "couldn't convert to *v1beta1.ServiceInstance")
 	}
-	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationUpdate, planName, planGUID)
-}
-
-func assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance) *v1beta1.ServiceInstance {
-	var planName, planGUID string
-	if instance.Spec.ClusterServiceClassSpecified() {
-		planName = testClusterServicePlanName
-		planGUID = testClusterServicePlanGUID
-	} else {
-		planName = testServicePlanName
-		planGUID = testServicePlanGUID
-	}
-	return assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, v1beta1.ServiceInstanceOperationDeprovision, planName, planGUID)
-}
-
-func assertServiceInstanceOperationInProgressIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance, operation v1beta1.ServiceInstanceOperation, planName string, planGUID string) *v1beta1.ServiceInstance {
-	return assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance, operation, planName, planGUID, nil, "")
-}
-
-func assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClientAction(t *testing.T, fakeCatalogClient *fake.Clientset, instance *v1beta1.ServiceInstance, operation v1beta1.ServiceInstanceOperation, planName string, planGUID string, parameters map[string]interface{}, parametersChecksum string) *v1beta1.ServiceInstance {
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-	updateObject := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationInProgressWithParameters(t, updateObject, operation, planName, planGUID, parameters, parametersChecksum, instance)
-	return updateObject.(*v1beta1.ServiceInstance)
+	return instance
 }
 
 func reconcileServiceInstance(t *testing.T, testController *controller, instance *v1beta1.ServiceInstance) error {

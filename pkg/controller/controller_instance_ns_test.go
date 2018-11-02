@@ -18,6 +18,7 @@ package controller
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -63,15 +64,11 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-
-	assertNumberOfBrokerActions(t, fakeBrokerClient.Actions(), 0)
-	fakeKubeClient.ClearActions()
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
+	updatedServiceInstance = assertProvisionSuccess(t, actions[1], instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -91,9 +88,6 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
@@ -102,10 +96,6 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testServicePlanName, testServicePlanGUID, instance)
-	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	events := getRecordedEvents(testController)
 
@@ -150,19 +140,11 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	instanceKey := testNamespace + "/" + testServiceInstanceName
-
-	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue to not have any record of test instance")
-	}
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	updatedServiceInstance := assertProvisionInProgress(t, actions[0], instance)
+	updatedServiceInstance = assertAsyncProvisionInProgress(t, actions[1], instance)
+	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -176,13 +158,6 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 		Context:           testContext,
 	})
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testOperation, testServicePlanName, testServicePlanGUID, instance)
-	assertServiceInstanceDashboardURL(t, updatedServiceInstance, testDashboardURL)
-
 	// verify no kube resources created.
 	// One single action comes from getting namespace uid
 	kubeActions := fakeKubeClient.Actions()
@@ -190,6 +165,7 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 		t.Fatalf("Unexpected number of actions: expected %v, got %v", e, a)
 	}
 
+	instanceKey := testNamespace + "/" + testServiceInstanceName
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 1 {
 		t.Fatalf("Expected polling queue to have a record of seeing test instance once")
 	}
@@ -315,9 +291,7 @@ func TestPollServiceInstanceSuccessProvisioningWithOperationNamespacedRefs(t *te
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationProvision, testServicePlanName, testServicePlanGUID, instance)
+	assertProvisionSuccess(t, actions[0], instance)
 }
 
 // TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs tests
@@ -429,14 +403,11 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	err = reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail")
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgress(t, actions[0], instance)
+	assertDeprovisionSuccess(t, actions[1], instance)
 
 	brokerActions := fakeBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 1)
@@ -450,12 +421,6 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -514,14 +479,11 @@ func TestReconcileServiceInstanceDeleteAsynchronousWithNamespacedRefs(t *testing
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
 
-	err = reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("This should not fail : %v", err)
-	}
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 2)
+	assertDeprovisionInProgress(t, actions[0], instance)
+	assertAsyncDeprovisionInProgress(t, actions[1], instance)
 
 	// The item should've been added to the instancePollingQueue for later processing
 
@@ -541,12 +503,6 @@ func TestReconcileServiceInstanceDeleteAsynchronousWithNamespacedRefs(t *testing
 	// Verify no core kube actions occurred
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
-
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testOperation, testServicePlanName, testServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
 
@@ -698,9 +654,7 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testServicePlanName, testServicePlanGUID, instance)
+	assertDeprovisionSuccess(t, actions[0], instance)
 
 	events := getRecordedEvents(testController)
 
@@ -805,13 +759,14 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 		return true, &v1beta1.ServicePlanList{Items: spItems}, nil
 	})
 
-	modified, err := testController.resolveReferences(instance)
+	clone := instance.DeepCopy()
+	returnedInstance, err := testController.resolveReferences(instance)
 	if err != nil {
 		t.Fatalf("Should not have failed, but failed with: %q", err)
 	}
 
-	if !modified {
-		t.Fatalf("Should have returned true")
+	if reflect.DeepEqual(clone, returnedInstance) {
+		t.Fatalf("Should have returned a different instance")
 	}
 
 	// We should get the following actions:

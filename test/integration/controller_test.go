@@ -29,6 +29,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
@@ -41,7 +42,7 @@ import (
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
-	generator "github.com/pmorie/go-open-service-broker-client/v2/generator"
+	"github.com/pmorie/go-open-service-broker-client/v2/generator"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -360,6 +361,80 @@ func TestAsyncProvisionWithMultiplePolls(t *testing.T) {
 		verifyInstanceCreated(t, ct.client, ct.instance)
 	})
 }
+
+// TestServiceInstanceDeleteDuringSyncProvision tests that you can
+// delete an instance during a synchronous provision.
+func TestServiceInstanceDeleteDuringSyncProvision(t *testing.T) {
+	cases := []struct {
+		name              string
+		provisionSucceeds bool
+	}{
+		{
+			name:              "provision succeeds",
+			provisionSucceeds: true,
+		},
+		{
+			name:              "provision fails",
+			provisionSucceeds: false,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			//t.Parallel()
+			var provisionStarted int32 = 0
+			var done int32 = 0
+			ct := controllerTest{
+				t:                            t,
+				broker:                       getTestBroker(),
+				instance:                     getTestInstance(),
+				skipVerifyingInstanceSuccess: true,
+				setup: func(ct *controllerTest) {
+					ct.osbClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+						func(req *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+							atomic.StoreInt32(&provisionStarted, 1)
+
+							wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
+								func() (bool, error) {
+									return atomic.LoadInt32(&done) > 0, nil
+								},
+							)
+
+							if tc.provisionSucceeds {
+								return &osb.ProvisionResponse{}, nil
+							} else {
+								return nil, fmt.Errorf("provision failure")
+							}
+						})
+				},
+			}
+			ct.run(func(ct *controllerTest) {
+
+				wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
+					func() (bool, error) {
+						return atomic.LoadInt32(&provisionStarted) > 0, nil
+					},
+				)
+
+				if err := ct.client.ServiceInstances(ct.instance.Namespace).Delete(ct.instance.Name, &metav1.DeleteOptions{}); err != nil {
+					t.Fatalf("failed to delete instance: %v", err)
+				}
+
+				// notify the thread handling DynamicPollLastOperationReaction that it can end the async op
+				atomic.StoreInt32(&done, 1)
+
+				if err := util.WaitForInstanceToNotExist(ct.client, ct.instance.Namespace, ct.instance.Name); err != nil {
+					t.Fatalf("error waiting for instance to not exist: %v", err)
+				}
+
+				// We deleted the instance above, clear it so test cleanup doesn't fail
+				ct.instance = nil
+			})
+		})
+	}
+}
+
 
 // TestServiceInstanceDeleteWithAsyncUpdateInProgress tests that you can delete
 // an instance during an async update.  That is, if you request a delete during

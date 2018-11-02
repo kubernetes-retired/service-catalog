@@ -2521,10 +2521,6 @@ func assertServiceInstanceErrorBeforeRequest(t *testing.T, obj runtime.Object, r
 	assertServiceInstanceDeprovisionStatus(t, obj, originalInstance.Status.DeprovisionStatus)
 }
 
-func assertServiceInstanceOperationInProgress(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceOperationInProgressWithParameters(t, obj, operation, planName, planID, nil, "", originalInstance)
-}
-
 func assertServiceInstanceOperationInProgressWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, inProgressParameters map[string]interface{}, inProgressParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
 	reason := ""
 	var expectedObservedGeneration int64
@@ -2567,10 +2563,6 @@ func assertServiceInstanceStartingOrphanMitigation(t *testing.T, obj runtime.Obj
 	assertServiceInstanceOrphanMitigationTrue(t, obj, errorProvisionCallFailedReason)
 	assertServiceInstanceOrphanMitigationInProgressTrue(t, obj)
 	assertServiceInstanceDeprovisionStatus(t, obj, v1beta1.ServiceInstanceDeprovisionStatusRequired)
-}
-
-func assertServiceInstanceOperationSuccess(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, originalInstance *v1beta1.ServiceInstance) {
-	assertServiceInstanceOperationSuccessWithParameters(t, obj, operation, planName, planID, nil, "", originalInstance)
 }
 
 func assertServiceInstanceOperationSuccessWithParameters(t *testing.T, obj runtime.Object, operation v1beta1.ServiceInstanceOperation, planName, planID string, externalParameters map[string]interface{}, externalParametersChecksum string, originalInstance *v1beta1.ServiceInstance) {
@@ -3481,7 +3473,7 @@ func assertListRestrictions(t *testing.T, e, a clientgotesting.ListRestrictions)
 func assertNumberOfBrokerActions(t *testing.T, actions []fakeosb.Action, number int) {
 	if e, a := number, len(actions); e != a {
 		t.Logf("%+v\n", actions)
-		fatalf(t, "Unexpected number of actions: expected %v, got %v\nactions: %+v", e, a, actions)
+		fatalf(t, "Unexpected number of broker actions: expected %v, got %v\nactions: %+v", e, a, actions)
 	}
 }
 
