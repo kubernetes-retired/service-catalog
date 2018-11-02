@@ -21,7 +21,9 @@
         "externalID": "ac9694d9-7ea2-af93-467b-860647926d52",
         "description": "Sample namespace plan description",
         "free": true,
-        "serviceClassRef": {}
+        "serviceClassRef": {
+          "name": "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+        }
       },
       "status": {
         "removedFromBrokerCatalog": false

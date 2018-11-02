@@ -1,4 +1,4 @@
-              NAME               NAMESPACE   CLASS            DESCRIPTION            
-+------------------------------+-----------+-------+--------------------------------+
-  user-provided-namespace-plan   default             Sample namespace plan           
-                                                     description                     
+              NAME               NAMESPACE           CLASS                    DESCRIPTION            
++------------------------------+-----------+-----------------------+--------------------------------+
+  user-provided-namespace-plan   default     user-provided-service   Sample namespace plan           
+                                                                     description                     

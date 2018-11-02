@@ -1,12 +1,11 @@
-  Name:          namespacedplan                        
-  Scope:         cluster                               
-  Description:   Sample plan description               
-  UUID:          86064792-7ea2-467b-af93-ac9694d96d52  
+  Name:          user-provided-namespace-plan          
+  Namespace:     default                               
+  Scope:         namespace                             
+  Description:   Sample namespace plan description     
+  UUID:          ac9694d9-7ea2-af93-467b-860647926d52  
   Status:        Active                                
   Free:          true                                  
   Class:         user-provided-service                 
 
 Instances:
-      NAME       NAMESPACE   STATUS  
-+--------------+-----------+--------+
-  ups-instance   test-ns     Ready   
+No instances defined

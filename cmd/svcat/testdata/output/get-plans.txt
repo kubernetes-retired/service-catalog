@@ -1,9 +1,9 @@
               NAME               NAMESPACE            CLASS                      DESCRIPTION            
 +------------------------------+-----------+--------------------------+--------------------------------+
-  user-provided-namespace-plan   default                                Sample namespace plan           
-                                                                        description                     
   default                                    user-provided-service      Sample plan description         
   premium                                    user-provided-service      Premium plan                    
+  user-provided-namespace-plan   default     user-provided-service      Sample namespace plan           
+                                                                        description                     
   default                                    another-provided-service   Another sample plan             
                                                                         description that's really       
                                                                         really really really really,    
