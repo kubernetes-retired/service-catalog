@@ -2238,7 +2238,7 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	assertEmptyFinalizers(t, updatedServiceInstance)
 }
 
-// TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker verfies that if an instance
+// TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker verifies that if an instance
 // is created that is never actually provisioned the instance is able to be
 // deleted and is not blocked by any interaction with a broker (since its very
 // likely that a broker never actually existed).
@@ -2285,7 +2285,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumEvents(t, events, 0)
 }
 
-// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verfies that the finalizer
+// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verifies that the finalizer
 // is removed even when the status update gets back a 409 Conflict from the API server
 // because the controller is working with an old version of the ServiceInstance
 func TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate(t *testing.T) {
