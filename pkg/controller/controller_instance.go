@@ -1666,7 +1666,7 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) 
 		return request, inProgressProperties, nil
 	}
 
-	// If we're hitting this retun, it means we couldn't tell whether the class
+	// If we're hitting this return, it means we couldn't tell whether the class
 	// and plan were cluster or namespace scoped
 	return nil, nil, stderrors.New(errorAmbiguousPlanReferenceScope)
 }
