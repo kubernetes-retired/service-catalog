@@ -30,7 +30,7 @@ import (
 // tripping." Values are serialized using the serialize() function, then are
 // deserialized using the inverse of the process used by serialize(). Comparison
 // of the original value to the output of the round trip is used to assert the
-// correcness of the serialize() function.
+// correctness of the serialize() function.
 
 const fuzzIters = 20
 
