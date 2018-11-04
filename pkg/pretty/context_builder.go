@@ -131,9 +131,10 @@ func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 
 func (pcb ContextBuilder) String() string {
 	var buffer bytes.Buffer
-	space := " "
+	space := ""
 	if pcb.Kind > 0 {
 		buffer.WriteString(fmt.Sprintf("%s", pcb.Kind))
+                space = " "
 	}
 
 	if pcb.Namespace != "" && pcb.Name != "" {
