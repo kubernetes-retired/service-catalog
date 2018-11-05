@@ -116,11 +116,11 @@ func (pcb ContextBuilder) String() string {
 		}
 	}
 	if pcb.Namespace != "" && pcb.Name != "" {
-		s += string('"') + pcb.Namespace + "/" + pcb.Name + string('"')
+		s += `"` + pcb.Namespace + "/" + pcb.Name + `"`
 	} else if pcb.Namespace != "" {
-		s += string('"') + pcb.Namespace + string('"')
+		s += `"` + pcb.Namespace + `"`
 	} else if pcb.Name != "" {
-		s += string('"') + pcb.Name + string('"')
+		s += `"`+ pcb.Name + `"`
 	}
 
 	if pcb.ResourceVersion != "" {
