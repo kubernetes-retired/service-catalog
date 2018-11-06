@@ -106,7 +106,7 @@ const (
 	minBrokerOperationRetryDelay time.Duration = time.Second * 1
 	maxBrokerOperationRetryDelay time.Duration = time.Minute * 20
 
-	eventHandlerLogLevel = 4	// TODO: move all logLevel settings to a central location
+	eventHandlerLogLevel = 4 // TODO: move all logLevel settings to a central location
 )
 
 type backoffEntry struct {
@@ -144,7 +144,6 @@ func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 	}
 	c.instanceQueue.AddAfter(key, d)
 }
-
 
 // instanceAdd handles the ServiceInstance ADDED watch event
 func (c *controller) instanceAdd(obj interface{}) {
