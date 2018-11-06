@@ -120,8 +120,6 @@ type instanceOperationBackoff struct {
 	rateLimiter workqueue.RateLimiter   // used to calculate next retry time, key is UID
 }
 
-// ServiceInstance handlers and control-loop
-
 // instanceAdd adds the instance key to the work queue
 func (c *controller) instanceAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
