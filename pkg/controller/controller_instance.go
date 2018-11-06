@@ -122,8 +122,8 @@ type instanceOperationBackoff struct {
 
 // ServiceInstance handlers and control-loop
 
-// instanceAdd adds the instance key to the work queue
-func (c *controller) instanceAdd(obj interface{}) {
+// enqueueInstance adds the instance key to the work queue
+func (c *controller) enqueueInstance(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
@@ -132,9 +132,9 @@ func (c *controller) instanceAdd(obj interface{}) {
 	c.instanceQueue.Add(key)
 }
 
-// instanceAddAfter adds the instance key to the work queue after the specified
+// enqueueInstanceAfter adds the instance key to the work queue after the specified
 // duration elapses
-func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
+func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
@@ -143,16 +143,24 @@ func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
 	c.instanceQueue.AddAfter(key, d)
 }
 
+
+// instanceAdd calls enqueueInstance
+func (c *controller) instanceAdd(obj interface{}) {
+	c.enqueueInstance(obj)
+}
+
+// instanceUpdate handles the ServiceInstance UPDATED watch event
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 	// Instances with ongoing asynchronous operations will be manually added
 	// to the polling queue by the reconciler. They should be ignored here in
 	// order to enforce polling rate-limiting.
 	instance := newObj.(*v1beta1.ServiceInstance)
 	if !instance.Status.AsyncOpInProgress {
-		c.instanceAdd(newObj)
+		c.enqueueInstance(newObj)
 	}
 }
 
+// instanceDelete handles the ServiceInstance DELETED watch event
 func (c *controller) instanceDelete(obj interface{}) {
 	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if instance == nil || !ok {
@@ -434,7 +442,7 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 			glog.V(2).Info(pcb.Messagef("BrokerOpRetry: %s", msg))
 
 			// add back to worker queue to retry at the specified time
-			c.instanceAddAfter(instance, delay)
+			c.enqueueInstanceAfter(instance, delay)
 			return true
 		}
 	}
