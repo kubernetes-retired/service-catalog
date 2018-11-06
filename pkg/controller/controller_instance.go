@@ -146,7 +146,7 @@ func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 }
 
 
-// instanceAdd calls enqueueInstance
+// instanceAdd handles the ServiceInstance ADDED watch event
 func (c *controller) instanceAdd(obj interface{}) {
 	if glog.V(eventHandlerLogLevel) {
 		instance := obj.(*v1beta1.ServiceInstance)
