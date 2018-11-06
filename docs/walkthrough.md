@@ -49,10 +49,10 @@ No resources found.
 ```
 
 We'll register a broker server with the catalog by creating a new
-[`ClusterServiceBroker`](../contrib/examples/walkthrough/ups-broker.yaml) resource:
+[`ClusterServiceBroker`](../contrib/examples/walkthrough/ups-clusterservicebroker.yaml) resource:
 
 ```console
-$ kubectl create -f contrib/examples/walkthrough/ups-broker.yaml
+$ kubectl create -f contrib/examples/walkthrough/ups-clusterservicebroker.yaml
 clusterservicebroker.servicecatalog.k8s.io/ups-broker created
 ```
 
