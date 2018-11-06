@@ -1143,7 +1143,7 @@ func (c *controller) processServiceInstancePollingTerminalFailure(instance *v1be
 	return c.finishPollingServiceInstance(instance)
 }
 
-// processServiceInstancePollingTerminalFailure marks the instance as having
+// processServiceInstancePollingTemporaryFailure marks the instance as having
 // failed polling with a temporary error
 func (c *controller) processServiceInstancePollingTemporaryFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
@@ -2108,7 +2108,7 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.InProgressProperties = nil
 }
 
-// serviceInstanceHasExistingBindings returns true if there are any existing
+// checkServiceInstanceHasExistingBindings returns true if there are any existing
 // bindings associated with the given ServiceInstance.
 func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.ServiceInstance) error {
 	bindingLister := c.bindingLister.ServiceBindings(instance.Namespace)
@@ -2387,7 +2387,7 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 	return request, rh.inProgressProperties, nil
 }
 
-// preparePollServiceInstanceRequest creates a request object to be passed to
+// prepareServiceInstanceLastOperationRequest creates a request object to be passed to
 // the broker client to query the given instance's last operation endpoint.
 func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta1.ServiceInstance) (*osb.LastOperationRequest, error) {
 
