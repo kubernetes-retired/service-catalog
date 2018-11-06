@@ -105,6 +105,8 @@ const (
 
 	minBrokerOperationRetryDelay time.Duration = time.Second * 1
 	maxBrokerOperationRetryDelay time.Duration = time.Minute * 20
+
+	eventHandlerLogLevel = 4	// TODO: move all logLevel settings to a central location
 )
 
 type backoffEntry struct {
@@ -146,15 +148,24 @@ func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 
 // instanceAdd calls enqueueInstance
 func (c *controller) instanceAdd(obj interface{}) {
+	if glog.V(eventHandlerLogLevel) {
+		instance := obj.(*v1beta1.ServiceInstance)
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		glog.Info(pcb.Message("Received ADD event"))
+	}
 	c.enqueueInstance(obj)
 }
 
 // instanceUpdate handles the ServiceInstance UPDATED watch event
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
+	instance := newObj.(*v1beta1.ServiceInstance)
+	if glog.V(eventHandlerLogLevel) {
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		glog.Info(pcb.Message("Received UPDATE event"))
+	}
 	// Instances with ongoing asynchronous operations will be manually added
 	// to the polling queue by the reconciler. They should be ignored here in
 	// order to enforce polling rate-limiting.
-	instance := newObj.(*v1beta1.ServiceInstance)
 	if !instance.Status.AsyncOpInProgress {
 		c.enqueueInstance(newObj)
 	}
@@ -167,8 +178,10 @@ func (c *controller) instanceDelete(obj interface{}) {
 		return
 	}
 
-	pcb := pretty.NewInstanceContextBuilder(instance)
-	glog.V(4).Info(pcb.Message("Received delete event; no further processing will occur"))
+	if glog.V(eventHandlerLogLevel) {
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		glog.Info(pcb.Message("Received DELETE event; no further processing will occur"))
+	}
 }
 
 // Async operations on instances have a somewhat convoluted flow in order to
