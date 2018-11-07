@@ -108,30 +108,6 @@ func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 
 // TODO(n3wscott): Support <type> (K8S: <K8S-Type-Name> ExternalName: <External-Type-Name>)
 
-//no space no sprintf but buffer
-//func (pcb ContextBuilder) String() string {
-//	var buffer bytes.Buffer
-//	if pcb.Kind > 0 {
-//		buffer.WriteString(pcb.Kind.String())
-//		if pcb.Name != "" || pcb.Namespace != "" {
-//			buffer.WriteString(" ")
-//		}
-//	}
-//	if pcb.Namespace != "" && pcb.Name != "" {
-//		buffer.WriteString("\"" + pcb.Namespace + "/" + pcb.Name + "\"")
-//	} else if pcb.Namespace != "" {
-//		buffer.WriteString("\"" + pcb.Namespace + "\"")
-//	} else if pcb.Name != "" {
-//		buffer.WriteString("\"" + pcb.Name + "\"")
-//	}
-//
-//	if pcb.ResourceVersion != "" {
-//		buffer.WriteString("v" + pcb.ResourceVersion)
-//	}
-//	return buffer.String()
-//}
-
-//no space no sprintf
 func (pcb ContextBuilder) String() string {
 	s := ""
 	if pcb.Kind > 0 {
@@ -141,15 +117,15 @@ func (pcb ContextBuilder) String() string {
 		}
 	}
 	if pcb.Namespace != "" && pcb.Name != "" {
-		s += "\"" + pcb.Namespace + "/" + pcb.Name + "\""
+		s += string('"') + pcb.Namespace + "/" + pcb.Name + string('"')
 	} else if pcb.Namespace != "" {
-		s += "\"" + pcb.Namespace + "\""
+		s += string('"') + pcb.Namespace + string('"')
 	} else if pcb.Name != "" {
-		s += "\"" + pcb.Name + "\""
+		s += string('"') + pcb.Name + string('"')
 	}
 
 	if pcb.ResourceVersion != "" {
-		s += "v" + pcb.ResourceVersion
+		s += " v" + pcb.ResourceVersion
 	}
 	return s
 }
