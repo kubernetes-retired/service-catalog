@@ -174,7 +174,8 @@ func TestBenchmark(t *testing.T) {
 	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
 
 	for i := 0; i < count; i++ {
-		pcb.String()
+		g := pcb.String()
+		fmt.Printf("ContextBuilder string: %s", g)
 	}
 
 	elapsed := time.Since(t1)
