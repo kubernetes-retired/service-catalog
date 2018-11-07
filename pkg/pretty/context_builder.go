@@ -17,7 +17,6 @@ limitations under the License.
 package pretty
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -109,44 +108,48 @@ func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 
 // TODO(n3wscott): Support <type> (K8S: <K8S-Type-Name> ExternalName: <External-Type-Name>)
 
+//no space no sprintf but buffer
 //func (pcb ContextBuilder) String() string {
-//	s := ""
-//	space := ""
+//	var buffer bytes.Buffer
 //	if pcb.Kind > 0 {
-//		s += fmt.Sprintf("%s", pcb.Kind)
-//		space = " "
+//		buffer.WriteString(pcb.Kind.String())
+//		if pcb.Name != "" || pcb.Namespace != "" {
+//			buffer.WriteString(" ")
+//		}
 //	}
 //	if pcb.Namespace != "" && pcb.Name != "" {
-//		s += fmt.Sprintf(`%s"%s/%s"`, space, pcb.Namespace, pcb.Name)
+//		buffer.WriteString("\"" + pcb.Namespace + "/" + pcb.Name + "\"")
 //	} else if pcb.Namespace != "" {
-//		s += fmt.Sprintf(`%s"%s"`, space, pcb.Namespace)
+//		buffer.WriteString("\"" + pcb.Namespace + "\"")
 //	} else if pcb.Name != "" {
-//		s += fmt.Sprintf(`%s"%s"`, space, pcb.Name)
+//		buffer.WriteString("\"" + pcb.Name + "\"")
 //	}
+//
 //	if pcb.ResourceVersion != "" {
-//		s += fmt.Sprintf(" v%s", pcb.ResourceVersion)
+//		buffer.WriteString("v" + pcb.ResourceVersion)
 //	}
-//	return s
+//	return buffer.String()
 //}
 
+//no space no sprintf
 func (pcb ContextBuilder) String() string {
-	var buffer bytes.Buffer
+	s := ""
 	if pcb.Kind > 0 {
-		buffer.WriteString(pcb.Kind.String())
+		s += pcb.Kind.String()
 		if pcb.Name != "" || pcb.Namespace != "" {
-			buffer.WriteString(" ")
+			s += " "
 		}
 	}
 	if pcb.Namespace != "" && pcb.Name != "" {
-		buffer.WriteString("\"" + pcb.Namespace + "/" + pcb.Name + "\"")
+		s += "\"" + pcb.Namespace + "/" + pcb.Name + "\""
 	} else if pcb.Namespace != "" {
-		buffer.WriteString("\"" + pcb.Namespace + "\"")
+		s += "\"" + pcb.Namespace + "\""
 	} else if pcb.Name != "" {
-		buffer.WriteString("\"" + pcb.Name + "\"")
+		s += "\"" + pcb.Name + "\""
 	}
 
 	if pcb.ResourceVersion != "" {
-		buffer.WriteString("v" + pcb.ResourceVersion)
+		s += "v" + pcb.ResourceVersion
 	}
-	return buffer.String()
+	return s
 }
