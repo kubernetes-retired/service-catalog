@@ -155,3 +155,13 @@ func TestPrettyContextBuilderContextMessagefAndContext(t *testing.T) {
 		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
+
+func TestPrettyContextBuilderMessagefAndResourceVersion(t *testing.T) {
+	pcb := ContextBuilder{ResourceVersion: "877"}
+
+	e := ` v877`
+	g := pcb.String()
+	if g != e {
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
+	}
+}
