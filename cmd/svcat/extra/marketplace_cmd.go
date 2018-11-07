@@ -59,7 +59,7 @@ func (c *MarketplaceCmd) Validate(args []string) error {
 }
 
 // Run retrieves all service classes visible in the current namespace,
-// retrieves the plans belonging to those classses, and then displays
+// retrieves the plans belonging to those classes, and then displays
 // that to the user
 func (c *MarketplaceCmd) Run() error {
 	opts := servicecatalog.ScopeOptions{
