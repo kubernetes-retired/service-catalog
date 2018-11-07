@@ -136,12 +136,13 @@ tree:
     shortDesc: Show details of a specific class
     example: |2-
         svcat describe class mysqldb
-        svcat describe class -uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
+        svcat describe class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5
     command: ./svcat describe class
     flags:
-    - name: uuid
-      shorthand: u
-      desc: Whether or not to get the class by UUID (the default is by name)
+    - name: kube-name
+      shorthand: k
+      desc: Whether or not to get the class by its Kubernetes Name (the default is
+        by external name)
   - name: instance
     use: instance NAME
     shortDesc: Show details of a specific instance
@@ -152,18 +153,19 @@ tree:
     shortDesc: Show details of a specific plan
     example: |2-
         svcat describe plan standard800
-        svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
+        svcat describe plan --kube-name 08e4b43a-36bc-447e-a81f-8202b13e339c
         svcat describe plan PLAN_NAME --scope cluster
         svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME
     command: ./svcat describe plan
     flags:
+    - name: kube-name
+      shorthand: k
+      desc: Whether or not to get the class by its Kubernetes name (the default is
+        by external name)
     - name: scope
       desc: 'Limit the command to a particular scope: cluster or namespace'
     - name: show-schemas
       desc: Whether or not to show instance and binding parameter schemas
-    - name: uuid
-      shorthand: u
-      desc: Whether or not to get the class by UUID (the default is by name)
 - name: get
   use: get
   shortDesc: List a resource, optionally filtered by name
@@ -213,21 +215,22 @@ tree:
         svcat get classes --scope cluster
         svcat get classes --scope namespace --namespace dev
         svcat get class mysqldb
-        svcat get class --uuid 997b8372-8dac-40ac-ae65-758b4a5075a5
+        svcat get class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5
     command: ./svcat get classes
     flags:
     - name: all-namespaces
       desc: If present, list the requested object(s) across all namespaces. Namespace
         in current context is ignored even if specified with --namespace
+    - name: kube-name
+      shorthand: k
+      desc: Whether or not to get the class by its Kubernetes name (the default is
+        by external name)
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
     - name: scope
       desc: 'Limit the command to a particular scope: cluster, namespace or all'
-    - name: uuid
-      shorthand: u
-      desc: Whether or not to get the class by UUID (the default is by name)
   - name: instances
     use: instances [NAME]
     shortDesc: List instances, optionally filtered by name
@@ -262,11 +265,11 @@ tree:
         svcat get plans --scope namespace --namespace dev
         svcat get plan PLAN_NAME
         svcat get plan CLASS_NAME/PLAN_NAME
-        svcat get plan --uuid PLAN_UUID
+        svcat get plan --kube-name PLAN_KUBE_NAME
         svcat get plans --class CLASS_NAME
         svcat get plan --class CLASS_NAME PLAN_NAME
-        svcat get plans --uuid --class CLASS_UUID
-        svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+        svcat get plans --kube-name --class CLASS_KUBE_NAME
+        svcat get plan --kube-name --class CLASS_KUBE_NAME PLAN_KUBE_NAME
     command: ./svcat get plans
     flags:
     - name: all-namespaces
@@ -274,17 +277,18 @@ tree:
         in current context is ignored even if specified with --namespace
     - name: class
       shorthand: c
-      desc: Filter plans based on class. When --uuid is specified, the class name
-        is interpreted as a uuid.
+      desc: Filter plans based on class. When --kube-name is specified, the class
+        name is interpreted as a kubernetes name.
+    - name: kube-name
+      shorthand: k
+      desc: Whether or not to get the plan by its Kubernetes name (the default is
+        by external name)
     - name: output
       shorthand: o
       desc: The output format to use. Valid options are table, json or yaml. If not
         present, defaults to table
     - name: scope
       desc: 'Limit the command to a particular scope: cluster, namespace or all'
-    - name: uuid
-      shorthand: u
-      desc: Whether or not to get the plan by UUID (the default is by name)
 - name: marketplace
   use: marketplace
   shortDesc: List available service offerings

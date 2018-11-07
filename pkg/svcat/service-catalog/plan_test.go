@@ -213,7 +213,7 @@ var _ = Describe("Plan", func() {
 		})
 	})
 	Describe("RetrievePlanByID", func() {
-		It("Calls the generated v1beta1 get method with the passed in uuid for cluster-scoped plans", func() {
+		It("Calls the generated v1beta1 get method with the passed in Kubernetes name for cluster-scoped plans", func() {
 			planID := csp.Name
 			_, err := sdk.RetrievePlanByID(planID, ScopeOptions{Scope: ClusterScope})
 			Expect(err).NotTo(HaveOccurred())
@@ -222,7 +222,7 @@ var _ = Describe("Plan", func() {
 			Expect(actions[0].Matches("get", "clusterserviceplans")).To(BeTrue())
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(planID))
 		})
-		It("Calls the generated v1beta1 get method with the passed in uuid for cluster-scoped plans", func() {
+		It("Calls the generated v1beta1 get method with the passed in Kubernetes name for cluster-scoped plans", func() {
 			planID := sp.Name
 			_, err := sdk.RetrievePlanByID(planID, ScopeOptions{Scope: NamespaceScope, Namespace: "default"})
 			Expect(err).NotTo(HaveOccurred())

@@ -87,7 +87,7 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 	t.AppendBulk([][]string{
 		{"Scope:", scope},
 		{"Description:", spec.Description},
-		{"UUID:", class.GetName()},
+		{"Kubernetes Name:", class.GetName()},
 		{"Status:", class.GetStatusText()},
 		{"Tags:", strings.Join(spec.Tags, ", ")},
 		{"Broker:", class.GetServiceBrokerName()},

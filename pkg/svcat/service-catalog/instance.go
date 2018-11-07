@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	// FieldServicePlanRef is the jsonpath to an instance's plan name (uuid).
+	// FieldServicePlanRef is the jsonpath to an instance's plan name (Kubernetes name).
 	FieldServicePlanRef = "spec.clusterServicePlanRef.name"
 )
 
