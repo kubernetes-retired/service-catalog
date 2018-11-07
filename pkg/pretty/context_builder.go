@@ -131,20 +131,22 @@ func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 
 func (pcb ContextBuilder) String() string {
 	var buffer bytes.Buffer
-	space := " "
 	if pcb.Kind > 0 {
-		buffer.WriteString(fmt.Sprintf("%s", pcb.Kind))
+		buffer.WriteString(pcb.Kind.String())
+		if pcb.Name != "" || pcb.Namespace != "" {
+			buffer.WriteString(" ")
+		}
+	}
+	if pcb.Namespace != "" && pcb.Name != "" {
+		buffer.WriteString("\"" + pcb.Namespace + "/" + pcb.Name + "\"")
+	} else if pcb.Namespace != "" {
+		buffer.WriteString("\"" + pcb.Namespace + "\"")
+	} else if pcb.Name != "" {
+		buffer.WriteString("\"" + pcb.Name + "\"")
 	}
 
-	if pcb.Namespace != "" && pcb.Name != "" {
-		buffer.WriteString(fmt.Sprintf(`%s"%s/%s"`, space, pcb.Namespace, pcb.Name))
-	} else if pcb.Namespace != "" {
-		buffer.WriteString(fmt.Sprintf(`%s"%s"`, space, pcb.Namespace))
-	} else if pcb.Name != "" {
-		buffer.WriteString(fmt.Sprintf(`%s"%s"`, space, pcb.Name))
-	}
 	if pcb.ResourceVersion != "" {
-		buffer.WriteString(fmt.Sprintf(" v%s", pcb.ResourceVersion))
+		buffer.WriteString("v" + pcb.ResourceVersion)
 	}
 	return buffer.String()
 }
