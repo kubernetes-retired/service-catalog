@@ -120,9 +120,8 @@ func (pcb ContextBuilder) String() string {
 	} else if pcb.Namespace != "" {
 		s += `"` + pcb.Namespace + `"`
 	} else if pcb.Name != "" {
-		s += `"`+ pcb.Name + `"`
+		s += `"` + pcb.Name + `"`
 	}
-
 	if pcb.ResourceVersion != "" {
 		s += " v" + pcb.ResourceVersion
 	}
