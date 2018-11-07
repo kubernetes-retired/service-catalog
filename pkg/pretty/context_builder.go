@@ -17,6 +17,7 @@ limitations under the License.
 package pretty
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -108,24 +109,43 @@ func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 
 // TODO(n3wscott): Support <type> (K8S: <K8S-Type-Name> ExternalName: <External-Type-Name>)
 
+//func (pcb ContextBuilder) String() string {
+//	s := ""
+//	space := ""
+//	if pcb.Kind > 0 {
+//		s += fmt.Sprintf("%s", pcb.Kind)
+//		space = " "
+//	}
+//	if pcb.Namespace != "" && pcb.Name != "" {
+//		s += fmt.Sprintf(`%s"%s/%s"`, space, pcb.Namespace, pcb.Name)
+//	} else if pcb.Namespace != "" {
+//		s += fmt.Sprintf(`%s"%s"`, space, pcb.Namespace)
+//	} else if pcb.Name != "" {
+//		s += fmt.Sprintf(`%s"%s"`, space, pcb.Name)
+//	}
+//	if pcb.ResourceVersion != "" {
+//		s += fmt.Sprintf(" v%s", pcb.ResourceVersion)
+//	}
+//	return s
+//}
+
 func (pcb ContextBuilder) String() string {
-	s := ""
+	var buffer bytes.Buffer
+	space := " "
 	if pcb.Kind > 0 {
-		s += pcb.Kind.String()
-		if pcb.Name != "" || pcb.Namespace != "" {
-			s += " "
-		}
+		buffer.WriteString(fmt.Sprintf("%s", pcb.Kind))
 	}
+
 	if pcb.Namespace != "" && pcb.Name != "" {
-		s += string('"') + pcb.Namespace + "/" + pcb.Name + string('"')
+		buffer.WriteString(fmt.Sprintf(`%s"%s/%s"`, space, pcb.Namespace, pcb.Name))
 	} else if pcb.Namespace != "" {
-		s += string('"') + pcb.Namespace + string('"')
+		buffer.WriteString(fmt.Sprintf(`%s"%s"`, space, pcb.Namespace))
 	} else if pcb.Name != "" {
-		s += string('"') + pcb.Name + string('"')
+		buffer.WriteString(fmt.Sprintf(`%s"%s"`, space, pcb.Name))
 	}
 
 	if pcb.ResourceVersion != "" {
-		s += " v" + pcb.ResourceVersion
+		buffer.WriteString(fmt.Sprintf(" v%s", pcb.ResourceVersion))
 	}
-	return s
+	return buffer.String()
 }
