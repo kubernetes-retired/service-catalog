@@ -17,9 +17,7 @@ limitations under the License.
 package pretty
 
 import (
-	"fmt"
 	"testing"
-	"time"
 )
 
 func TestPrettyContextBuilderKind(t *testing.T) {
@@ -168,16 +166,16 @@ func TestPrettyContextBuilderNamespaceNameAndResourceVersion(t *testing.T) {
 	}
 }
 
-func TestBenchmark(t *testing.T) {
-	t1 := time.Now()
-	count := 10000000
+var bResult string
+
+func BenchmarkPCB(b *testing.B) {
 	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
 
-	for i := 0; i < count; i++ {
-		g := pcb.String()
-		fmt.Printf("ContextBuilder string: %s", g)
+	b.ResetTimer()
+	var s string
+	for i := 0; i <= b.N; i++ {
+		s = pcb.String()
 	}
 
-	elapsed := time.Since(t1)
-	fmt.Printf("pcb String() count %s in %d times", elapsed, count)
+	bResult = s
 }
