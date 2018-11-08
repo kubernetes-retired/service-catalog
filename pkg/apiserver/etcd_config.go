@@ -113,7 +113,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 		if err := s.GenericAPIServer.InstallAPIGroup(groupInfo); err != nil {
 			glog.Fatalf("Error installing API group %v: %v", provider.GroupName(), err)
 		} else {
-			// we've sucessfully installed, so hook the stopCh to the destroy func of all the sucessfully installed apigroups
+			// we've successfully installed, so hook the stopCh to the destroy func of all the sucessfully installed apigroups
 			for _, mappings := range groupInfo.VersionedResourcesStorageMap { // gv to resource mappings
 				for _, storage := range mappings { // resource name (brokers, brokers/status) to backing storage
 					go func(store rest.Storage) {
