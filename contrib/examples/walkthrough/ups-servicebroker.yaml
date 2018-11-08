@@ -1,7 +1,11 @@
+# Use this yaml file to register a namespace-scoped UPS Broker
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBroker
 metadata:
   name: ups-broker
+  # If you do not specify the namespace, the broker will be registered in a default namespace.
+  # You may also specify the namespace using the -n flag in the kubectl create command.
+  namespace: ups-broker
 spec:
   url: http://ups-broker-ups-broker.ups-broker.svc.cluster.local
   #####
