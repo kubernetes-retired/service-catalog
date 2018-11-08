@@ -40,14 +40,14 @@ var _ = Describe("Describe Command", func() {
 			Expect(cmd.Use).To(Equal("plan NAME"))
 			Expect(cmd.Short).To(ContainSubstring("Show details of a specific plan"))
 			Expect(cmd.Example).To(ContainSubstring("svcat describe plan standard800"))
-			Expect(cmd.Example).To(ContainSubstring("svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c"))
+			Expect(cmd.Example).To(ContainSubstring("svcat describe plan --kube-name 08e4b43a-36bc-447e-a81f-8202b13e339c"))
 			Expect(cmd.Example).To(ContainSubstring("svcat describe plan PLAN_NAME --scope cluster"))
 			Expect(cmd.Example).To(ContainSubstring("svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME"))
 			Expect(len(cmd.Aliases)).To(Equal(2))
 
-			uuidFlag := cmd.Flags().Lookup("uuid")
-			Expect(uuidFlag).NotTo(BeNil())
-			Expect(uuidFlag.Usage).To(ContainSubstring("Whether or not to get the class by UUID (the default is by name)"))
+			kubeNameFlag := cmd.Flags().Lookup("kube-name")
+			Expect(kubeNameFlag).NotTo(BeNil())
+			Expect(kubeNameFlag.Usage).To(ContainSubstring("Whether or not to get the class by its Kubernetes name (the default is by external name)"))
 
 			showSchemaFlag := cmd.Flags().Lookup("show-schemas")
 			Expect(showSchemaFlag).NotTo(BeNil())
@@ -103,7 +103,7 @@ var _ = Describe("Describe Command", func() {
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.ClusterScope
-			cmd.lookupByUUID = false
+			cmd.lookupByKubeName = false
 			cmd.name = planName
 			err := cmd.Run()
 
@@ -155,7 +155,7 @@ var _ = Describe("Describe Command", func() {
 			}
 			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Namespace = namespaceName
-			cmd.lookupByUUID = false
+			cmd.lookupByKubeName = false
 			cmd.name = planName
 			err := cmd.Run()
 
@@ -203,7 +203,7 @@ var _ = Describe("Describe Command", func() {
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.ClusterScope
-			cmd.lookupByUUID = false
+			cmd.lookupByKubeName = false
 			s := []string{className, planName}
 			cmd.name = strings.Join(s, "/")
 			err := cmd.Run()
@@ -257,7 +257,7 @@ var _ = Describe("Describe Command", func() {
 			}
 			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Namespace = namespaceName
-			cmd.lookupByUUID = false
+			cmd.lookupByKubeName = false
 			s := []string{className, planName}
 			cmd.name = strings.Join(s, "/")
 			err := cmd.Run()
@@ -308,8 +308,8 @@ var _ = Describe("Describe Command", func() {
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.ClusterScope
-			cmd.lookupByUUID = true
-			cmd.uuid = planID
+			cmd.lookupByKubeName = true
+			cmd.kubeName = planID
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
@@ -361,8 +361,8 @@ var _ = Describe("Describe Command", func() {
 			}
 			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Namespace = namespaceName
-			cmd.lookupByUUID = true
-			cmd.uuid = planID
+			cmd.lookupByKubeName = true
+			cmd.kubeName = planID
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())

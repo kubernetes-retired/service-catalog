@@ -186,27 +186,27 @@ func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOpti
 	return plans[0], nil
 }
 
-// RetrievePlanByID gets a plan by its UUID.
-func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
+// RetrievePlanByID gets a plan by its Kubernetes name.
+func (sdk *SDK) RetrievePlanByID(kubeName string, opts ScopeOptions) (Plan, error) {
 	if opts.Scope == AllScope {
 		return nil, errors.New("invalid scope: all")
 	}
 
 	if opts.Scope.Matches(ClusterScope) {
-		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, metav1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(kubeName, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("unable to get cluster-scoped plan by uuid '%s' (%s)", uuid, err)
+			return nil, fmt.Errorf("unable to get cluster-scoped plan by Kubernetes name'%s' (%s)", kubeName, err)
 		}
 		return p, nil
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(uuid, metav1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(kubeName, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("unable to get plan by uuid '%s' (%s)", uuid, err)
+			return nil, fmt.Errorf("unable to get plan by Kubernetes name'%s' (%s)", kubeName, err)
 		}
 		return p, nil
 	}
 
-	return nil, fmt.Errorf("unable to get plan by uuid '%s'", uuid)
+	return nil, fmt.Errorf("unable to get plan by Kubernetes name'%s'", kubeName)
 }
