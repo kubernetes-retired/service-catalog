@@ -239,8 +239,14 @@ var _ = Describe("Instances", func() {
 			secrets["username"] = "admin"
 			secrets["password"] = "abc123"
 			retries := 3
+			opts := &ProvisionOptions{
+				ExternalID: "",
+				Namespace:  namespace,
+				Params:     params,
+				Secrets:    secrets,
+			}
 
-			provisionedInstance, err := sdk.Provision(namespace, instanceName, "", className, planName, params, secrets)
+			provisionedInstance, err := sdk.Provision(instanceName, className, planName, opts)
 			Expect(err).To(BeNil())
 			// once for the provision request
 			actions := svcCatClient.Actions()
@@ -492,8 +498,14 @@ var _ = Describe("Instances", func() {
 			secrets := make(map[string]string)
 			secrets["username"] = "admin"
 			secrets["password"] = "abc123"
+			opts := &ProvisionOptions{
+				ExternalID: externalID,
+				Namespace:  namespace,
+				Params:     params,
+				Secrets:    secrets,
+			}
 
-			service, err := sdk.Provision(namespace, instanceName, externalID, className, planName, params, secrets)
+			service, err := sdk.Provision(instanceName, className, planName, opts)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(service.Namespace).To(Equal(namespace))
@@ -541,8 +553,14 @@ var _ = Describe("Instances", func() {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
+			opts := &ProvisionOptions{
+				ExternalID: "",
+				Namespace:  namespace,
+				Params:     params,
+				Secrets:    secrets,
+			}
 
-			service, err := sdk.Provision(namespace, instanceName, "", className, planName, params, secrets)
+			service, err := sdk.Provision(instanceName, className, planName, opts)
 			Expect(service).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))

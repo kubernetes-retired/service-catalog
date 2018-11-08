@@ -165,26 +165,24 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 }
 
 // Provision creates an instance of a service class and plan.
-func (sdk *SDK) Provision(namespace, instanceName, externalID, className, planName string,
-	params interface{}, secrets map[string]string) (*v1beta1.ServiceInstance, error) {
-
+func (sdk *SDK) Provision(instanceName, className, planName string, opts *ProvisionOptions) (*v1beta1.ServiceInstance, error) {
 	request := &v1beta1.ServiceInstance{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      instanceName,
-			Namespace: namespace,
+			Namespace: opts.Namespace,
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
-			ExternalID: externalID,
+			ExternalID: opts.ExternalID,
 			PlanReference: v1beta1.PlanReference{
 				ClusterServiceClassExternalName: className,
 				ClusterServicePlanExternalName:  planName,
 			},
-			Parameters:     BuildParameters(params),
-			ParametersFrom: BuildParametersFrom(secrets),
+			Parameters:     BuildParameters(opts.Params),
+			ParametersFrom: BuildParametersFrom(opts.Secrets),
 		},
 	}
 
-	result, err := sdk.ServiceCatalog().ServiceInstances(namespace).Create(request)
+	result, err := sdk.ServiceCatalog().ServiceInstances(opts.Namespace).Create(request)
 	if err != nil {
 		return nil, fmt.Errorf("provision request failed (%s)", err)
 	}

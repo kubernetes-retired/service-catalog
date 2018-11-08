@@ -37,6 +37,7 @@ var _ = Describe("Plan", func() {
 		sdk          *SDK
 		svcCatClient *fake.Clientset
 		csc          *v1beta1.ClusterServiceClass
+		sc           *v1beta1.ServiceClass
 		csp          *v1beta1.ClusterServicePlan
 		csp2         *v1beta1.ClusterServicePlan
 		sp           *v1beta1.ServicePlan
@@ -52,9 +53,15 @@ var _ = Describe("Plan", func() {
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: csc.Name},
 			},
 		}
-		sp = &v1beta1.ServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "default"}}
+		sc = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{Name: "somenamespacedclass", Namespace: "default"}}
+		sp = &v1beta1.ServicePlan{
+			ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: sc.Namespace},
+			Spec: v1beta1.ServicePlanSpec{
+				ServiceClassRef: v1beta1.LocalObjectReference{Name: sc.Name},
+			},
+		}
 		sp2 = &v1beta1.ServicePlan{ObjectMeta: metav1.ObjectMeta{Name: "namespacescopedplan", Namespace: "ns2"}}
-		svcCatClient = fake.NewSimpleClientset(csc, csp, csp2, sp, sp2)
+		svcCatClient = fake.NewSimpleClientset(csc, csp, csp2, sc, sp, sp2)
 		sdk = &SDK{
 			ServiceCatalogClient: svcCatClient,
 		}
@@ -210,6 +217,111 @@ var _ = Describe("Plan", func() {
 			Expect(len(actions)).To(Equal(2))
 			Expect(actions[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
 			Expect(actions[1].Matches("list", "clusterserviceplans")).To(BeTrue())
+		})
+	})
+	Describe("RetrievePlanByClassIDAndName", func() {
+		It("Calls the generated v1beta1 List method with the passed in class kube name and plan external name for cluster-scoped plans", func() {
+			classKubeName := csc.Name
+			planName := csp2.Name
+			singleClient := &fake.Clientset{}
+			singleClient.AddReactor("list", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, &v1beta1.ClusterServiceClassList{Items: []v1beta1.ClusterServiceClass{*csc}}, nil
+			})
+			singleClient.AddReactor("list", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, &v1beta1.ClusterServicePlanList{Items: []v1beta1.ClusterServicePlan{*csp2}}, nil
+			})
+			sdk.ServiceCatalogClient = singleClient
+
+			plan, err := sdk.RetrievePlanByClassIDAndName(classKubeName, planName, ScopeOptions{Namespace: sp.Namespace, Scope: AllScope})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(plan.GetName()).To(Equal(planName))
+			Expect(plan.GetClassID()).To(Equal(classKubeName))
+			Expect(plan.GetNamespace()).To(Equal(""))
+			actions := singleClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			fieldSelector := fields.OneTermEqualSelector(FieldClusterServiceClassRef, classKubeName)
+			Expect(actions[0].Matches("list", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[0].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(fieldSelector))
+			Expect(actions[1].Matches("list", "serviceplans")).To(BeTrue())
+			Expect(actions[1].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(fieldSelector))
+		})
+		It("Calls the generated v1beta1 List method with the passed in class kube name and plan external name for namespace-scoped plans", func() {
+			classKubeName := sc.Name
+			planName := sp.Name
+			returnPlanCalled := 0
+			singleClient := &fake.Clientset{}
+			singleClient.AddReactor("list", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, &v1beta1.ServiceClassList{Items: []v1beta1.ServiceClass{*sc}}, nil
+			})
+			singleClient.AddReactor("list", "serviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+				if returnPlanCalled > 0 {
+					return true, &v1beta1.ServicePlanList{Items: []v1beta1.ServicePlan{*sp}}, nil
+				}
+				returnPlanCalled++
+				return true, &v1beta1.ServicePlanList{Items: []v1beta1.ServicePlan{}}, nil
+			})
+			sdk.ServiceCatalogClient = singleClient
+
+			plan, err := sdk.RetrievePlanByClassIDAndName(classKubeName, planName, ScopeOptions{Namespace: sp.Namespace, Scope: AllScope})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(plan.GetName()).To(Equal(planName))
+			Expect(plan.GetClassID()).To(Equal(classKubeName))
+			Expect(plan.GetNamespace()).To(Equal(sp.Namespace))
+			actions := singleClient.Actions()
+			Expect(len(actions)).To(Equal(4))
+			fieldSelector := fields.OneTermEqualSelector(FieldClusterServiceClassRef, classKubeName)
+			Expect(actions[0].Matches("list", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[0].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(fieldSelector))
+			Expect(actions[1].Matches("list", "serviceplans")).To(BeTrue())
+			Expect(actions[1].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(fieldSelector))
+			namespacedFieldSelector := fields.OneTermEqualSelector(FieldServiceClassRef, classKubeName)
+			Expect(actions[2].Matches("list", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[2].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(namespacedFieldSelector))
+			Expect(actions[3].Matches("list", "serviceplans")).To(BeTrue())
+			Expect(actions[3].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(namespacedFieldSelector))
+		})
+		It("Bubbles up errors", func() {
+			classKubeName := csc.Name
+			planName := csp.Name
+			clusterErrorMessage := "clusterplan error"
+			namespacedErrorMessage := "namespaceplan error"
+			badClient := &fake.Clientset{}
+			cspCalled := 0
+			spCalled := 0
+			badClient.AddReactor("list", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+				if cspCalled > 0 {
+					return true, &v1beta1.ClusterServicePlanList{Items: []v1beta1.ClusterServicePlan{}}, nil
+				}
+				cspCalled++
+				return true, nil, fmt.Errorf(clusterErrorMessage)
+			})
+			badClient.AddReactor("list", "serviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+				if cspCalled > 0 {
+					return true, nil, fmt.Errorf(namespacedErrorMessage)
+				}
+				spCalled++
+				return true, &v1beta1.ServicePlanList{Items: []v1beta1.ServicePlan{}}, nil
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			plan, err := sdk.RetrievePlanByClassIDAndName(classKubeName, planName, ScopeOptions{Scope: AllScope})
+
+			Expect(plan).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring(clusterErrorMessage))
+			Expect(err.Error()).Should(ContainSubstring(namespacedErrorMessage))
+			actions := badClient.Actions()
+			Expect(len(actions)).To(Equal(3))
+			fieldSelector := fields.OneTermEqualSelector(FieldClusterServiceClassRef, classKubeName)
+			Expect(actions[0].Matches("list", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[0].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(fieldSelector))
+			namespacedFieldSelector := fields.OneTermEqualSelector(FieldServiceClassRef, classKubeName)
+			Expect(actions[1].Matches("list", "clusterserviceplans")).To(BeTrue())
+			Expect(actions[1].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(namespacedFieldSelector))
+			Expect(actions[2].Matches("list", "serviceplans")).To(BeTrue())
+			Expect(actions[2].(testing.ListAction).GetListRestrictions().Fields).To(ContainElement(namespacedFieldSelector))
 		})
 	})
 	Describe("RetrievePlanByID", func() {
