@@ -33,7 +33,7 @@ Otherwise, to install with sensible defaults, run the following command:
 ```console
 helm install ./chart/ups-broker --name ups-broker --namespace ups-broker
 ```
-Note that the walkthrough installs a [cluster-wide UPS Broker](../contrib/examples/walkthrough/ups-clusterservicebroker.yaml). For a namespace-scoped service broker, see [this](../contrib/examples/walkthrough/ups-servicebroker.yaml) file.
+**NOTE:** The walkthrough installs a [cluster-wide UPS Broker](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/examples/walkthrough/ups-clusterservicebroker.yaml). For a namespace-scoped service broker, see [this](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/examples/walkthrough/ups-servicebroker.yaml) file.
 
 # Step 2 - Creating a ClusterServiceBroker Resource
 
