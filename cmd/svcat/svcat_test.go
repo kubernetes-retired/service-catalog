@@ -325,9 +325,6 @@ func TestNamespacedCommands(t *testing.T) {
 		{name: "describe instance with flag namespace", cmd: "describe instance NAME --namespace " + flagNS, wantNS: flagNS},
 		{name: "describe instance with context namespace", cmd: "describe instances NAME", wantNS: contextNS},
 
-		{name: "provision with flag namespace", cmd: "provision --class CLASS --plan PLAN NAME --namespace " + flagNS, wantNS: flagNS},
-		{name: "provision with context namespace", cmd: "provision --class CLASS --plan PLAN NAME", wantNS: contextNS},
-
 		{name: "deprovision with flag namespace", cmd: "deprovision NAME --namespace " + flagNS, wantNS: flagNS},
 		{name: "deprovision with context namespace", cmd: "deprovision NAME", wantNS: contextNS},
 

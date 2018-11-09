@@ -1,0 +1,32 @@
+{
+  "kind": "ServicePlanList",
+  "apiVersion": "servicecatalog.k8s.io/v1beta1",
+  "metadata": {
+    "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/serviceplans",
+    "resourceVersion": "114"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "86064792-7ea2-467b-af93-ac9694d96d52",
+        "selfLink": "/apis/servicecatalog.k8s.io/v1beta1/serviceplans/86064792-7ea2-467b-af93-ac9694d96d52",
+        "uid": "7b3d0190-f711-11e7-aa44-0242ac110005",
+        "resourceVersion": "4",
+        "creationTimestamp": "2018-01-11T20:53:31Z"
+      },
+      "spec": {
+        "serviceBrokerName": "ups-broker",
+        "externalName": "namespacedplan",
+        "externalID": "86064792-7ea2-467b-af93-ac9694d96d52",
+        "description": "Sample plan description",
+        "free": true,
+        "serviceClassRef": {
+          "name": "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+        }
+      },
+      "status": {
+        "removedFromBrokerCatalog": false
+      }
+    }
+  ]
+}
