@@ -2382,8 +2382,8 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 		}
 		rh.inProgressProperties = instance.Status.InProgressProperties
 	} else if instance.Status.CurrentOperation == "" && instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
-		// terminal provisioing failure
-		// we don't have neither ExternalProperties nor InProgressProperties in Status anymore, so we have to build tme
+		// terminal provisioning failure
+		// we don't have ExternalProperties and InProgressProperties in Status anymore, so we have to build them
 		if instance.Spec.ClusterServiceClassSpecified() {
 			servicePlan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 			if nil != err {
