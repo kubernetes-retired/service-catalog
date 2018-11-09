@@ -3,7 +3,7 @@
   Kubernetes Name:   cc0d7529-18e8-416d-8946-6f7456acd589  
   Status:            Active                                
   Free:              false                                 
-  Class:             user-provided-service                
+  Class:             user-provided-service                 
   Source:            user                                  
 
 Instances:

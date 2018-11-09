@@ -4,7 +4,7 @@
   Kubernetes Name:   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468  
   Status:            Active                                
   Tags:                                                    
-  Broker:            ups-broker                        
+  Broker:            ups-broker                            
   Source:            user                                  
 
 Plans:

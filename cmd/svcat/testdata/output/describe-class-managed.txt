@@ -3,7 +3,7 @@
   Description:       A user provided service               
   Kubernetes Name:   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2469  
   Status:            Active                                
-  Tags:                                                
+  Tags:                                                    
   Broker:            ups-broker                            
   Source:            broker                                
 
