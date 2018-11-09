@@ -1435,3 +1435,8 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 	// The broker didn't have a ready condition; we should reconcile it.
 	return true
 }
+
+func toJSON(obj interface{}) string {
+	bytes, _ := json.Marshal(obj)
+	return string(bytes)
+}
