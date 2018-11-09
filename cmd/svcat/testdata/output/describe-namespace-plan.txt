@@ -1,10 +1,10 @@
-  Name:          namespacedplan                        
-  Description:   Sample plan description               
-  UUID:          86064792-7ea2-467b-af93-ac9694d96d52  
-  Status:        Active                                
-  Free:          true                                  
-  Class:         user-provided-service                 
-  Source:        user                                  
+  Name:              namespacedplan                        
+  Description:       Sample plan description               
+  Kubernetes Name:   86064792-7ea2-467b-af93-ac9694d96d52  
+  Status:            Active                                
+  Free:              true                                  
+  Class:             user-provided-service                 
+  Source:            user                                  
 
 Instances:
       NAME       NAMESPACE   STATUS  
