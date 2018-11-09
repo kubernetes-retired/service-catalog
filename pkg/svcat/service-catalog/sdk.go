@@ -63,7 +63,7 @@ type SvcatClient interface {
 	InstanceToServiceClassAndPlan(*apiv1beta1.ServiceInstance) (*apiv1beta1.ClusterServiceClass, *apiv1beta1.ClusterServicePlan, error)
 	IsInstanceFailed(*apiv1beta1.ServiceInstance) bool
 	IsInstanceReady(*apiv1beta1.ServiceInstance) bool
-	Provision(string, string, string, string, string, interface{}, map[string]string) (*apiv1beta1.ServiceInstance, error)
+	Provision(string, string, string, *ProvisionOptions) (*apiv1beta1.ServiceInstance, error)
 	RetrieveInstance(string, string) (*apiv1beta1.ServiceInstance, error)
 	RetrieveInstanceByBinding(*apiv1beta1.ServiceBinding) (*apiv1beta1.ServiceInstance, error)
 	RetrieveInstances(string, string, string) (*apiv1beta1.ServiceInstanceList, error)
@@ -75,6 +75,7 @@ type SvcatClient interface {
 	RetrievePlans(string, ScopeOptions) ([]Plan, error)
 	RetrievePlanByName(string, ScopeOptions) (Plan, error)
 	RetrievePlanByClassAndName(string, string, ScopeOptions) (Plan, error)
+	RetrievePlanByClassIDAndName(string, string, ScopeOptions) (Plan, error)
 	RetrievePlanByID(string, ScopeOptions) (Plan, error)
 
 	RetrieveSecretByBinding(*apiv1beta1.ServiceBinding) (*apicorev1.Secret, error)

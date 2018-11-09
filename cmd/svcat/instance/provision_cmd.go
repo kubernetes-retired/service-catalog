@@ -22,6 +22,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/parameters"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -124,7 +125,13 @@ func (c *provisonCmd) Run() error {
 }
 
 func (c *provisonCmd) Provision() error {
-	instance, err := c.App.Provision(c.Namespace, c.instanceName, c.externalID, c.className, c.planName, c.params, c.secrets)
+	opts := &servicecatalog.ProvisionOptions{
+		ExternalID: c.externalID,
+		Namespace:  c.Namespace,
+		Params:     c.params,
+		Secrets:    c.secrets,
+	}
+	instance, err := c.App.Provision(c.instanceName, c.className, c.planName, opts)
 	if err != nil {
 		return err
 	}
