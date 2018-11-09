@@ -30,13 +30,13 @@ type getCmd struct {
 	*command.Namespaced
 	*command.Scoped
 	*command.Formatted
-	lookupByUUID bool
-	uuid         string
-	name         string
+	lookupByKubeName bool
+	kubeName         string
+	name             string
 
-	classFilter string
-	classUUID   string
-	className   string
+	classFilter   string
+	classKubeName string
+	className     string
 }
 
 // NewGetCmd builds a "svcat get plans" command
@@ -56,28 +56,28 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
   svcat get plans --scope namespace --namespace dev
   svcat get plan PLAN_NAME
   svcat get plan CLASS_NAME/PLAN_NAME
-  svcat get plan --uuid PLAN_UUID
+  svcat get plan --kube-name PLAN_KUBE_NAME
   svcat get plans --class CLASS_NAME
   svcat get plan --class CLASS_NAME PLAN_NAME
-  svcat get plans --uuid --class CLASS_UUID
-  svcat get plan --uuid --class CLASS_UUID PLAN_UUID
+  svcat get plans --kube-name --class CLASS_KUBE_NAME
+  svcat get plan --kube-name --class CLASS_KUBE_NAME PLAN_KUBE_NAME
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&getCmd.lookupByUUID,
-		"uuid",
-		"u",
+		&getCmd.lookupByKubeName,
+		"kube-name",
+		"k",
 		false,
-		"Whether or not to get the plan by UUID (the default is by name)",
+		"Whether or not to get the plan by its Kubernetes name (the default is by external name)",
 	)
 	cmd.Flags().StringVarP(
 		&getCmd.classFilter,
 		"class",
 		"c",
 		"",
-		"Filter plans based on class. When --uuid is specified, the class name is interpreted as a uuid.",
+		"Filter plans based on class. When --kube-name is specified, the class name is interpreted as a kubernetes name.",
 	)
 	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
@@ -87,8 +87,8 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
 
 func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
-		if c.lookupByUUID {
-			c.uuid = args[0]
+		if c.lookupByKubeName {
+			c.kubeName = args[0]
 		} else if strings.Contains(args[0], "/") {
 			names := strings.Split(args[0], "/")
 			if len(names) != 2 {
@@ -101,8 +101,8 @@ func (c *getCmd) Validate(args []string) error {
 		}
 	}
 	if c.classFilter != "" {
-		if c.lookupByUUID {
-			c.classUUID = c.classFilter
+		if c.lookupByKubeName {
+			c.classKubeName = c.classFilter
 		} else {
 			c.className = c.classFilter
 		}
@@ -112,7 +112,11 @@ func (c *getCmd) Validate(args []string) error {
 }
 
 func (c *getCmd) Run() error {
-	if c.uuid == "" && c.name == "" {
+	fmt.Println("KUBENAME: ", c.kubeName)
+	fmt.Println("EXTERNAL NAME: ", c.name)
+	fmt.Println("CLASS EXTERNAL NAME: ", c.className)
+	fmt.Println("CLASS NAME: ", c.classKubeName)
+	if c.kubeName == "" && c.name == "" {
 		return c.getAll()
 	}
 
@@ -137,19 +141,20 @@ func (c *getCmd) getAll() error {
 		Scope:     c.Scope,
 	}
 	if c.classFilter != "" {
-		if !c.lookupByUUID {
+		if !c.lookupByKubeName {
 			// Map the external class name to the class name.
 			for _, class := range classes {
 				if c.className == class.GetExternalName() {
-					c.classUUID = class.GetName()
+					c.classKubeName = class.GetName()
 					break
 				}
 			}
 		}
-		classID = c.classUUID
+		classID = c.classKubeName
 	}
 
 	plans, err := c.App.RetrievePlans(classID, opts)
+	fmt.Println("PLANS: ", plans)
 	if err != nil {
 		return fmt.Errorf("unable to list plans (%s)", err)
 	}
@@ -168,8 +173,8 @@ func (c *getCmd) get() error {
 	}
 
 	switch {
-	case c.lookupByUUID:
-		plan, err = c.App.RetrievePlanByID(c.uuid, opts)
+	case c.lookupByKubeName:
+		plan, err = c.App.RetrievePlanByID(c.kubeName, opts)
 
 	case c.className != "":
 		plan, err = c.App.RetrievePlanByClassAndName(c.className, c.name, opts)

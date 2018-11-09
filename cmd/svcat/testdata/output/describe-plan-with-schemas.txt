@@ -1,3 +1,4 @@
+<<<<<<< HEAD
   Name:          premium                               
   Description:   Premium plan                          
   UUID:          cc0d7529-18e8-416d-8946-6f7456acd589  
@@ -5,6 +6,14 @@
   Free:          false                                 
   Class:         user-provided-service                 
   Source:        user                                  
+=======
+  Name:              premium                               
+  Description:       Premium plan                          
+  Kubernetes Name:   cc0d7529-18e8-416d-8946-6f7456acd589  
+  Status:            Active                                
+  Free:              false                                 
+  Class:             user-provided-service                 
+>>>>>>> upstream/master
 
 Instances:
 No instances defined

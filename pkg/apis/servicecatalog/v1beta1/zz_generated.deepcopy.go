@@ -600,6 +600,11 @@ func (in *CommonServiceClassSpec) DeepCopyInto(out *CommonServiceClassSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.DefaultProvisionParameters != nil {
+		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
+		*out = new(runtime.RawExtension)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

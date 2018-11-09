@@ -22,7 +22,7 @@ I now get paid to play with my service which is cool, but now I’m starting to 
 
 Now I need to maintain multiple instances of this.  I have test and staging instances.  I also have two to three versions 
 under development at any given time.  I can deploy this thing with my eyes closed, but the interns have been accidentally 
-creating some difficulties for me.  They sometimes do strange configuration of test instances.  When I ask them to be be 
+creating some difficulties for me.  They sometimes do strange configuration of test instances.  When I ask them to be 
 more mindful about deployment, they push back on me.  They tell me that the company has adopted a standardized way to 
 expose services to others that (a) handles parameterization and (b) creates a standard provisioning API so that they can
 deploy my chat service the same way that they deploy everything else in the company.  I check it out and it’s pretty cool -

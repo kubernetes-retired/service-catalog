@@ -1235,6 +1235,7 @@ func autoConvert_v1beta1_CommonServiceClassSpec_To_servicecatalog_CommonServiceC
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
+	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
 	return nil
 }
 
@@ -1253,6 +1254,7 @@ func autoConvert_servicecatalog_CommonServiceClassSpec_To_v1beta1_CommonServiceC
 	out.ExternalMetadata = (*runtime.RawExtension)(unsafe.Pointer(in.ExternalMetadata))
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	out.Requires = *(*[]string)(unsafe.Pointer(&in.Requires))
+	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
 	return nil
 }
 

@@ -160,8 +160,8 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions, s
 				CommonServiceBrokerSpec: commonServiceBrokerSpec,
 			},
 		}
-		request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{}
 		if opts.BasicSecret != "" {
+			request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{}
 			request.Spec.AuthInfo.Basic = &v1beta1.ClusterBasicAuthConfig{
 				SecretRef: &v1beta1.ObjectReference{
 					Name:      opts.BasicSecret,
@@ -169,6 +169,7 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions, s
 				},
 			}
 		} else if opts.BearerSecret != "" {
+			request.Spec.AuthInfo = &v1beta1.ClusterServiceBrokerAuthInfo{}
 			request.Spec.AuthInfo.Bearer = &v1beta1.ClusterBearerTokenAuthConfig{
 				SecretRef: &v1beta1.ObjectReference{
 					Name:      opts.BearerSecret,

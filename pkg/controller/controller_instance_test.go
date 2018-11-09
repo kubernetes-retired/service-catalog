@@ -318,7 +318,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
 	assertNumberOfBrokerActions(t, brokerActions, 0)
 
-	// ensure that there is only one action to to set the condition on the
+	// ensure that there is only one action to set the condition on the
 	// instance to indicate that the service plan doesn't exist
 	actions := fakeCatalogClient.Actions()
 
@@ -783,9 +783,11 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(sc)
 	sp := getTestClusterServicePlan()
 
-	// Setup default parameters on the plan
-	defaultProvParams := `{"secure": true}`
-	sp.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(defaultProvParams)}
+	// Setup default parameters on the class and plan
+	classParams := `{"secure": false, "class-default": 1}`
+	sc.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(classParams)}
+	planParams := `{"secure": true, "plan-default": 2}`
+	sp.Spec.DefaultProvisionParameters = &runtime.RawExtension{Raw: []byte(planParams)}
 
 	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(sp)
 
@@ -817,10 +819,11 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
+	wantParams := `{"class-default":1,"plan-default":2,"secure":true}`
 	gotParams := string(updateObject.Spec.Parameters.Raw)
-	if gotParams != defaultProvParams {
+	if gotParams != wantParams {
 		t.Fatalf("DefaultProvisioningParameters was not applied to the service instance during reconcile.\n\nWANT: %v\nGOT: %v",
-			defaultProvParams, gotParams)
+			wantParams, gotParams)
 	}
 
 	// Check that the default parameters were saved on the status
@@ -830,9 +833,9 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
 	gotParams = string(updateObject.Status.DefaultProvisionParameters.Raw)
-	if gotParams != defaultProvParams {
+	if gotParams != wantParams {
 		t.Fatalf("DefaultProvisioningParameters was not persisted to the service instance status during reconcile.\n\nWANT: %v\nGOT: %v",
-			defaultProvParams, gotParams)
+			wantParams, gotParams)
 	}
 }
 
@@ -880,8 +883,8 @@ func TestReconcileServiceInstanceRespectsServicePlanDefaultsFeatureGate(t *testi
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	// Check that the default provisioning parameters defined on the plan is
-	// Check that the default parameters were saved on the status
+	// Check that the default parameters were not saved on the status
+	// because the feature is disabled
 	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
@@ -2235,7 +2238,7 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	assertEmptyFinalizers(t, updatedServiceInstance)
 }
 
-// TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker verfies that if an instance
+// TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker verifies that if an instance
 // is created that is never actually provisioned the instance is able to be
 // deleted and is not blocked by any interaction with a broker (since its very
 // likely that a broker never actually existed).
@@ -2282,7 +2285,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumEvents(t, events, 0)
 }
 
-// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verfies that the finalizer
+// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verifies that the finalizer
 // is removed even when the status update gets back a 409 Conflict from the API server
 // because the controller is working with an old version of the ServiceInstance
 func TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate(t *testing.T) {

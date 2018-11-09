@@ -381,7 +381,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_AddKeysFromTransform(ref common.Refe
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "AddKeysFromTransform specifies that Service Catalog should merge an existing secret into the the Secret associated with the ServiceBinding. For example, given the following AddKeysFromTransform:\n    {\"secretRef\": {\"namespace\": \"foo\", \"name\": \"bar\"}}\nthe entries of the Secret \"bar\" from Namespace \"foo\" will be merged into the credentials Secret.",
+				Description: "AddKeysFromTransform specifies that Service Catalog should merge an existing secret into the Secret associated with the ServiceBinding. For example, given the following AddKeysFromTransform:\n    {\"secretRef\": {\"namespace\": \"foo\", \"name\": \"bar\"}}\nthe entries of the Secret \"bar\" from Namespace \"foo\" will be merged into the credentials Secret.",
 				Properties: map[string]spec.Schema{
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
@@ -593,7 +593,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerAuthInfo(ref com
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ClusterServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
+				Description: "ClusterServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
 				Properties: map[string]spec.Schema{
 					"basic": {
 						SchemaProps: spec.SchemaProps{
@@ -952,6 +952,12 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassSpec(ref common.R
 									},
 								},
 							},
+						},
+					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence over the class defaults.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
 					"clusterServiceBrokerName": {
@@ -1396,6 +1402,12 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassSpec(ref common.Re
 									},
 								},
 							},
+						},
+					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence over the class defaults.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
 				},
@@ -2208,7 +2220,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerAuthInfo(ref common.Ref
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
+				Description: "ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
 				Properties: map[string]spec.Schema{
 					"basic": {
 						SchemaProps: spec.SchemaProps{
@@ -2611,6 +2623,12 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassSpec(ref common.Referenc
 									},
 								},
 							},
+						},
+					},
+					"defaultProvisionParameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this class is provisioned. Any parameters defined on the plan and instance are merged with these defaults, with plan and then instance-defined parameters taking precedence over the class defaults.",
+							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
 					"serviceBrokerName": {

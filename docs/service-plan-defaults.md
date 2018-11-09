@@ -4,13 +4,15 @@ layout: docwithnav
 ---
 
 Service Plan Defaults is a new feature in Service Catalog that gives operators
-the ability to configure default provision parameters for a plan. When a new
-instance of that plan is created, the default provision parameters defined
-on the plan are merged with parameters defined on the instance before it is
-provisioned
+the ability to configure default provision parameters on classes and plans. When a new
+instance of that class or plan is created, the default provision parameters defined
+are merged with parameters defined on the instance before it is
+provisioned.
 
 For example, the operator could define a default set of IP addresses allowed to
 connect to databases, or require TLS by default.
+
+The precedence order for parameters is: class defaults &lt; plan defaults &lt; instance parameters.
 
 ## Enable Service Plan Defaults
 
@@ -28,8 +30,9 @@ helm install svc-cat/catalog --name catalog --set servicePlanDefaultsEnabled=tru
 
 ## Define Default Provision Parameters
 
-You can either define default provision parameters on an existing plan,
-or create a custom plan with the parameters defined.
+Copy an existing class or plan and then define `defaultProvisionParameters`.
+Directly modifying the original resource managed by the service broker is not
+recommended because your changes may be lost the next time the catalog syncs.
 
 ### Create and modify a copy of an existing plan
 
@@ -61,35 +64,73 @@ or create a custom plan with the parameters defined.
     ```
     kubectl apply -f custom-plan.yaml
     ```
+
+### Create and modify a copy of an existing class
+
+1. Create a copy of an existing class and give it a new name:
     
-### Modify an existing plan
-
-1. Use kubectl to modify the spec of an existing plan:
-
     ```
-    kubectl edit clusterserviceplan mysql-5-7-14
+    svcat create class custom-mysql --from mysql --scope cluster
     ```
+
+1. Use kubectl to modify the spec of the new class:
+   
+   ```
+   kubectl edit clusterserviceclass custom-mysql
+   ```
+
 1. Add a `defaultProvisionParameters` node to the spec and define the default
     parameters:
                                 
     ```yaml
     apiVersion: servicecatalog.k8s.io/v1beta1
-    kind: ClusterServicePlan
+    kind: ClusterServiceClass
     metadata:
-      name: 5-7-14
+      name: custom-mysql
     spec:
       clusterServiceBrokerName: minibroker
       externalID: mysql-5-7-14
-      externalName: 5-7-14
+      externalName: custom-mysql
       defaultProvisionParameters:
         port: 5000
     ```
-1. Save the updated resource definition.
+    
+1. Save the class after editing it.
+1. [Create and modify a copy of an existing plan](#create-and-modify-a-copy-of-an-existing-plan).
+1. Use kubectl to edit the new plan and modify the class reference 
+    (`clusterServiceClassRef` or `serviceClassRef`) to use the name of the new class.
+    
+    ```
+    kubectl edit clusterserviceplan tiny-plan
+    ```
+    
+    ```yaml
+    kind: ClusterServicePlan
+    metadata:
+      name: tiny-plan
+    spec:
+      clusterServiceBrokerName: minibroker
+      clusterServiceClassRef:
+        name: custom-mysql
+      externalID: mysql-5-7-14
+      externalName: tiny-plan
+    ```
+    
+1. Run `svcat get plans --class custom-mysql` and verify that the new custom plan is
+    properly associated with the new class.
+
+    ```console
+    $ svcat get plans --class custom-mysql
+         NAME      NAMESPACE      CLASS                   DESCRIPTION
+    +------------+-----------+--------------+-------------------------------------+
+      tiny-plan                custom-mysql   Fast, reliable, scalable, and
+                                              easy to use open-source relational
+                                              database system.
+    ```
 
 ## Provision a service instance with default parameters
 
-Once you have a plan with default provision parameters set, provision an instance
-of that plan:
+Once you have a class or plan with default provision parameters set, provision an instance:
 
 ```console
 $ svcat provision mydb --class mysql --plan custom-mysql

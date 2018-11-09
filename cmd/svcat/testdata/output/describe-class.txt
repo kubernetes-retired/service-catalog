@@ -1,3 +1,4 @@
+<<<<<<< HEAD
   Name:          user-provided-service                 
   Scope:         cluster                               
   Description:   A user provided service               
@@ -6,6 +7,15 @@
   Tags:                                                
   Broker:        ups-broker                            
   Source:        user                                  
+=======
+  Name:              user-provided-service                 
+  Scope:             cluster                               
+  Description:       A user provided service               
+  Kubernetes Name:   4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468  
+  Status:            Active                                
+  Tags:                                                    
+  Broker:            ups-broker                            
+>>>>>>> upstream/master
 
 Plans:
    NAME           DESCRIPTION        

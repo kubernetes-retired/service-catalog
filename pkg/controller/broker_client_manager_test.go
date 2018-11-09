@@ -38,13 +38,13 @@ func TestBrokerClientManager_CreateBrokerClient(t *testing.T) {
 
 	// THEN
 	if !exists1 {
-		t.Fatal("Broker client osb-1 does not exists")
+		t.Fatal("Broker client osb-1 does not exist")
 	}
 	if !exists2 {
-		t.Fatal("Broker client osb-2 does not exists")
+		t.Fatal("Broker client osb-2 does not exist")
 	}
 	if exists3 {
-		t.Fatal("Broker client for namespace 'stage' must not exists")
+		t.Fatal("Broker client for namespace 'stage' must not exist")
 	}
 
 	if osbCl1 != createdClient1 {
@@ -78,10 +78,10 @@ func TestBrokerClientManager_RemoveBrokerClient(t *testing.T) {
 
 	// THEN
 	if exists1 {
-		t.Fatal("Broker client for 'broker1' must not exists")
+		t.Fatal("Broker client for 'broker1' must not exist")
 	}
 	if !exists2 {
-		t.Fatal("Broker client osb-2 does not exists")
+		t.Fatal("Broker client osb-2 does not exist")
 	}
 }
 
@@ -116,7 +116,7 @@ func TestBrokerClientManager_UpdateBrokerClient(t *testing.T) {
 	// THEN
 	gotClient, exists := manager.BrokerClient(controller.NewClusterServiceBrokerKey("broker1"))
 	if !exists {
-		t.Fatal("Broker client osb-2 does not exists")
+		t.Fatal("Broker client osb-2 does not exist")
 	}
 	if gotClient != osbCl3 {
 		t.Fatalf("Broker client must have updated auth config")

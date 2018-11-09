@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-// SvcatClient is an interface containing the variuos actions in the svcat pkg lib
+// SvcatClient is an interface containing the various actions in the svcat pkg lib
 // This interface is then faked with Counterfeiter for the cmd/svcat unit tests
 type SvcatClient interface {
 	Bind(string, string, string, string, string, interface{}, map[string]string) (*apiv1beta1.ServiceBinding, error)

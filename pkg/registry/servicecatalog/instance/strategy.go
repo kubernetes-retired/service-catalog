@@ -259,7 +259,7 @@ func (instanceReferenceRESTStrategy) PrepareForUpdate(ctx context.Context, new, 
 	newServiceClassRef := newServiceInstance.Spec.ServiceClassRef
 	newServicePlanRef := newServiceInstance.Spec.ServicePlanRef
 
-	// Lock down the spec to the the original values
+	// Lock down the spec to the original values
 	newServiceInstance.Spec = oldServiceInstance.Spec
 
 	// Explicitly update the reference fields to the new ones submitted
