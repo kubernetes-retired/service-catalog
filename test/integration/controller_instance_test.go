@@ -1060,7 +1060,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 		nonHTTPResponseError error
 		// expected reason used in the instance condition to indiciate that the provision failed
 		provisionErrorReason string
-		// expected reason used in the instance condiiton to indicate that the provision failed terminally
+		// expected reason used in the instance condition to indicate that the provision failed terminally
 		failReason string
 		// true if the failed provision is expected to trigger orphan mitigation
 		triggersOrphanMitigation bool
