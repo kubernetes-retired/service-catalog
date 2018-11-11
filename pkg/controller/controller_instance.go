@@ -2381,12 +2381,12 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 			return nil, nil, stderrors.New("InProgressProperties must be set when there is an operation or orphan mitigation in progress")
 		}
 		rh.inProgressProperties = instance.Status.InProgressProperties
-	} else if instance.Status.CurrentOperation == "" && instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
+	} else if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
 		// terminal provisioning failure
 		// we don't have ExternalProperties and InProgressProperties in Status anymore, so we have to build them
 		if instance.Spec.ClusterServiceClassSpecified() {
 			servicePlan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
-			if nil != err {
+			if err != nil {
 				return nil, nil, &operationError{
 					reason: errorNonexistentClusterServicePlanReason,
 					message: fmt.Sprintf(
@@ -2401,7 +2401,7 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 			}
 		} else {
 			servicePlan, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
-			if nil != err {
+			if err != nil {
 				return nil, nil, &operationError{
 					reason: errorNonexistentServicePlanReason,
 					message: fmt.Sprintf(
