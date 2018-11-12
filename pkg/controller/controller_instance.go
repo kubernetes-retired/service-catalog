@@ -2381,6 +2381,40 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 			return nil, nil, stderrors.New("InProgressProperties must be set when there is an operation or orphan mitigation in progress")
 		}
 		rh.inProgressProperties = instance.Status.InProgressProperties
+	} else if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
+		// terminal provisioning failure
+		// we don't have ExternalProperties and InProgressProperties in Status anymore, so we have to build them
+		if instance.Spec.ClusterServiceClassSpecified() {
+			servicePlan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
+			if err != nil {
+				return nil, nil, &operationError{
+					reason: errorNonexistentClusterServicePlanReason,
+					message: fmt.Sprintf(
+						"The instance references a non-existent ClusterServicePlan %q - %v",
+						instance.Spec.ClusterServicePlanRef.Name, instance.Spec.PlanReference,
+					),
+				}
+			}
+			rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+				ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
+				ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
+			}
+		} else {
+			servicePlan, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
+			if err != nil {
+				return nil, nil, &operationError{
+					reason: errorNonexistentServicePlanReason,
+					message: fmt.Sprintf(
+						"The instance references a non-existent ServicePlan %q - %v",
+						instance.Spec.ServicePlanRef.Name, instance.Spec.PlanReference,
+					),
+				}
+			}
+			rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+				ServicePlanExternalName: servicePlan.Spec.ExternalName,
+				ServicePlanExternalID:   servicePlan.Spec.ExternalID,
+			}
+		}
 	} else {
 		if instance.Status.ExternalProperties == nil {
 			return nil, nil, stderrors.New("ExternalProperties must be set before deprovisioning")
