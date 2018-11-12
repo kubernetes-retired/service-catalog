@@ -156,7 +156,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 		if !apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a, err)
 		}
-		msg := fmt.Sprintf("ServiceClass %c does not exist, can not figure out the default ServicePlan.",
+		msg := fmt.Sprintf("ServiceClass %+v does not exist, can not figure out the default ServicePlan.",
 			instance.Spec.PlanReference)
 		glog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
