@@ -1379,7 +1379,7 @@ func TestReconcileUpdatesManagedClassesAndPlans(t *testing.T) {
 	}
 }
 
-// TestReconcileMarksNewResourcesAsManaged
+// TestReconcileCreatesManagedClassesAndPlans
 // verifies that when new service classes and plans are created during relist
 // that they are flagged as service catalog managed.
 func TestReconcileCreatesManagedClassesAndPlans(t *testing.T) {
