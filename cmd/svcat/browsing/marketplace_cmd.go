@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package extra
+package browsing
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
