@@ -1175,9 +1175,8 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToProvision {
 								return &osb.ProvisionResponse{}, nil
-							} else {
-								return nil, reactionError
 							}
+							return nil, reactionError
 						})
 					respondSuccessfullyToDeprovision := false
 					blockDeprovision := true
@@ -1192,11 +1191,10 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToDeprovision {
 								return &osb.DeprovisionResponse{}, nil
-							} else {
-								return nil, osb.HTTPStatusCodeError{
-									StatusCode:   500,
-									ErrorMessage: strPtr("temporary deprovision error"),
-								}
+							}
+							return nil, osb.HTTPStatusCodeError{
+								StatusCode:   500,
+								ErrorMessage: strPtr("temporary deprovision error"),
 							}
 						})
 				},
