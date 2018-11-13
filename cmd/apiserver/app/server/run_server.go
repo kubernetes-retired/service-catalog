@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
+	"k8s.io/apiserver/pkg/server/healthz"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage/etcd3/preflight"
 
@@ -102,9 +103,15 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 	etcdChecker := checkEtcdConnectable{
 		ServerList: etcdOpts.StorageConfig.ServerList,
 	}
-	// PingHealtz is installed by the default config, so it will
-	// run in addition the checkers being installed here.
-	server.GenericAPIServer.AddHealthzChecks(etcdChecker)
+
+	// The liveness probe is registered at /healthz for us by the k8s genericapiserver and indicates
+	// if the container is responding to http requests (we don't need to register it, it is done
+	// for us).
+
+	// The readiness probe will be registered at /healthz/ready and indicates if traffic should
+	// be routed to this container.  Add the etcdChecker as we only want to handle requests
+	// if we have connectivity with etcd
+	healthz.InstallPathHandler(server.GenericAPIServer.Handler.NonGoRestfulMux, "/healthz/ready", etcdChecker)
 
 	// do we need to do any post api installation setup? We should have set up the api already?
 	glog.Infoln("Running the API server")
