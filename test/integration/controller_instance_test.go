@@ -1175,9 +1175,8 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToProvision {
 								return &osb.ProvisionResponse{}, nil
-							} else {
-								return nil, reactionError
 							}
+							return nil, reactionError
 						})
 					respondSuccessfullyToDeprovision := false
 					blockDeprovision := true
