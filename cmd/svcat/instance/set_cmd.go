@@ -70,7 +70,7 @@ func NewSetCmd(cxt *command.Context) *cobra.Command {
 	cmd.Flags().StringVar(&setCmd.planName, "plan", "",
 		"The plan name (Required)")
 	cmd.Flags().StringSliceVarP(&setCmd.rawParams, "param", "p", nil,
-		"Additional parameter to use when updating the service instance, format: NAME=VALUE. Cannot be combined with --params-json, Sensitive information should be placed in a secret and specified with --secret")
+		"Replaces existing parameters on the service instance, format: NAME=VALUE. Cannot be combined with --params-json, Sensitive information should be placed in a secret and specified with --secret")
 	cmd.Flags().StringSliceVarP(&setCmd.rawSecrets, "secret", "s", nil,
 		"Additional parameter, whose value is stored in a secret, to use when updating the service instance, format: SECRET[KEY]")
 	cmd.Flags().StringVar(&setCmd.jsonParams, "params-json", "",
@@ -149,7 +149,7 @@ func (c *setCmd) Update() error {
 func (c *setCmd) configureCmdProperties() error {
 	instance, err := c.App.RetrieveInstance(c.Namespace, c.instanceName)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if c.planName == "" {
