@@ -64,7 +64,6 @@ subset of properties on service class and service plan resources. The following
 
 | Property Key    | Description   | 
 | -------------   | ------------- |
-| name |  This key will match the ClusterServiceClass.Name property |
 | spec.externalName | This key will match the ClusterServiceClass.Spec.ExternalName property |
 | spec.externalID | This key will match the ClusterServiceClass.Spec.ExternalID property |
 
@@ -72,7 +71,6 @@ subset of properties on service class and service plan resources. The following
 
 | Property Key    | Description  |
 | ------------    | ------------ |
-| name |  This key will match the ServiceClass.Name |
 | spec.externalName | This key will match the ServiceClass.Spec.ExternalName property |
 | spec.externalID | This key will match the ServiceClass.Spec.ExternalID property |
 
@@ -80,7 +78,6 @@ subset of properties on service class and service plan resources. The following
 
 | Property Key    | Description  |
 | ------------    | ------------ |
-| name | This key will match the ClusterServicePlan.Name |
 | spec.externalName | This key will match the ClusterServicePlan.Spec.ExternalName property |
 | spec.externalID | This key will match the ClusterServicePlan.Spec.ExternalID property |
 | spec.free | This key will match the ClusterServicePlan.Spec.Free property |
@@ -90,7 +87,6 @@ subset of properties on service class and service plan resources. The following
 
 | Property Key    | Description  |
 | ------------    | ------------ |
-| name | This key will match the ServicePlan.Name property |
 | spec.externalName | This key will match the ServicePlan.Spec.ExternalName property |
 | spec.externalID | This key will match the ServicePlan.Spec.ExternalID property |
 | spec.free | This key will match the ServicePlan.Spec.Free property |
@@ -175,7 +171,7 @@ spec:
 
 You can also combine restrictions on classes and plans. An example that 
 allow all free plans with the externalName `Demo`, and not a specific service
- named `AABBB-CCDD-EEGG-HIJK`, you would create a YAML like:
+class with the externalName `MySQL`, you would create a YAML like:
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
@@ -190,7 +186,7 @@ spec:
         namespace: brokers
   catalogRestrictions:
     serviceClass:
-    - "name!=AABBB-CCDD-EEGG-HIJK"
+    - "spec.externalName!=MySQL"
     servicePlan:
     - "spec.externalName in (Demo)"
     - "spec.free=true"

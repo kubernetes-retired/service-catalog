@@ -164,11 +164,9 @@ type CommonServiceBrokerSpec struct {
 // Multiple predicates are allowed to be chained with a comma (,)
 //
 // ServiceClass allowed property names:
-//   name - the value set to [Cluster]ServiceClass.Name
 //   spec.externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName
 //   spec.externalID - the value set to [Cluster]ServiceClass.Spec.ExternalID
 // ServicePlan allowed property names:
-//   name - the value set to [Cluster]ServicePlan.Name
 //   spec.externalName - the value set to [Cluster]ServicePlan.Spec.ExternalName
 //   spec.externalID - the value set to [Cluster]ServicePlan.Spec.ExternalID
 //   spec.free - the value set to [Cluster]ServicePlan.Spec.Free

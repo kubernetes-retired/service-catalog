@@ -1149,7 +1149,7 @@ func verifyBrokerCreated(t *testing.T, client clientsetsc.ServicecatalogV1beta1I
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	if err := util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID); err != nil {
+	if err := util.WaitForClusterServiceClassToExist(client, testClassExternalID); err != nil {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
@@ -1167,7 +1167,7 @@ func deleteBroker(t *testing.T, client clientsetsc.ServicecatalogV1beta1Interfac
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	if err := util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName); err != nil {
+	if err := util.WaitForClusterServiceClassToNotExist(client, testClassExternalID); err != nil {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 

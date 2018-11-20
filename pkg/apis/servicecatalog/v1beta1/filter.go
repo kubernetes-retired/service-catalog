@@ -34,7 +34,6 @@ func ConvertServiceClassToProperties(serviceClass *ServiceClass) filter.Properti
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:             serviceClass.Name,
 		FilterSpecExternalName: serviceClass.Spec.ExternalName,
 		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
 	}
@@ -54,7 +53,6 @@ func ConvertServicePlanToProperties(servicePlan *ServicePlan) filter.Properties 
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:                 servicePlan.Name,
 		FilterSpecExternalName:     servicePlan.Spec.ExternalName,
 		FilterSpecExternalID:       servicePlan.Spec.ExternalID,
 		FilterSpecServiceClassName: servicePlan.Spec.ServiceClassRef.Name,
@@ -65,7 +63,7 @@ func ConvertServicePlanToProperties(servicePlan *ServicePlan) filter.Properties 
 // IsValidServicePlanProperty returns true if the specified property
 // is a valid filterable property of ServicePlans
 func IsValidServicePlanProperty(p string) bool {
-	return p == FilterName || p == FilterSpecExternalName || p == FilterSpecExternalID || p == FilterSpecServiceClassName || p == FilterSpecFree
+	return p == FilterSpecExternalName || p == FilterSpecExternalID || p == FilterSpecServiceClassName || p == FilterSpecFree
 }
 
 // ConvertClusterServiceClassToProperties takes a Service Class and pulls out the
@@ -76,7 +74,6 @@ func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) f
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:             serviceClass.Name,
 		FilterSpecExternalName: serviceClass.Spec.ExternalName,
 		FilterSpecExternalID:   serviceClass.Spec.ExternalID,
 	}
@@ -85,7 +82,7 @@ func ConvertClusterServiceClassToProperties(serviceClass *ClusterServiceClass) f
 // IsValidClusterServiceClassProperty returns true if the specified property
 // is a valid filterable property of ClusterServiceClasses
 func IsValidClusterServiceClassProperty(p string) bool {
-	return p == FilterName || p == FilterSpecExternalName || p == FilterSpecExternalID
+	return p == FilterSpecExternalName || p == FilterSpecExternalID
 }
 
 // ConvertClusterServicePlanToProperties takes a Service Plan and pulls out the
@@ -96,7 +93,6 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 		return labels.Set{}
 	}
 	return labels.Set{
-		FilterName:                        servicePlan.Name,
 		FilterSpecExternalName:            servicePlan.Spec.ExternalName,
 		FilterSpecExternalID:              servicePlan.Spec.ExternalID,
 		FilterSpecClusterServiceClassName: servicePlan.Spec.ClusterServiceClassRef.Name,
@@ -107,5 +103,5 @@ func ConvertClusterServicePlanToProperties(servicePlan *ClusterServicePlan) filt
 // IsValidClusterServicePlanProperty returns true if the specified property
 // is a valid filterable property of ServicePlans
 func IsValidClusterServicePlanProperty(p string) bool {
-	return p == FilterName || p == FilterSpecExternalName || p == FilterSpecExternalID || p == FilterSpecClusterServiceClassName || p == FilterSpecFree
+	return p == FilterSpecExternalName || p == FilterSpecExternalID || p == FilterSpecClusterServiceClassName || p == FilterSpecFree
 }

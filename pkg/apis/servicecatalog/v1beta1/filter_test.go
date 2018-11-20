@@ -44,7 +44,7 @@ func TestConvertServiceClassToProperties(t *testing.T) {
 					},
 				},
 			},
-			json: `{"name":"service-class","spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
+			json: `{"spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -90,7 +90,7 @@ func TestConvertServicePlanToProperties(t *testing.T) {
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.free":"true","spec.serviceClass.name":"service-class-name"}`,
+			json: `{"spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.free":"true","spec.serviceClass.name":"service-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -132,7 +132,7 @@ func TestConvertClusterServiceClassToProperties(t *testing.T) {
 					},
 				},
 			},
-			json: `{"name":"service-class","spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
+			json: `{"spec.externalID":"external-id","spec.externalName":"external-class-name"}`,
 		},
 	}
 	for _, tc := range cases {
@@ -178,7 +178,7 @@ func TestConvertClusterServicePlanToProperties(t *testing.T) {
 					},
 				},
 			},
-			json: `{"name":"service-plan","spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.free":"true"}`,
+			json: `{"spec.clusterServiceClass.name":"cluster-service-class-name","spec.externalID":"external-id","spec.externalName":"external-plan-name","spec.free":"true"}`,
 		},
 	}
 	for _, tc := range cases {

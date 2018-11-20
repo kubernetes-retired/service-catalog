@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 
@@ -212,10 +213,21 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			}
 		}
 
+		// get the existing services and plans for this broker so that we can
+		// detect when services and plans are removed from the broker's
+		// catalog
+		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForNamespacedBroker(broker)
+		if err != nil {
+			return err
+		}
+
+		existingServiceClassMap := convertServiceClassListToMap(existingServiceClasses)
+		existingServicePlanMap := convertServicePlanListToMap(existingServicePlans)
+
 		// convert the broker's catalog payload into our API objects
 		glog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
 
-		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalogToNamespacedTypes(broker.Namespace, brokerCatalog, broker.Spec.CatalogRestrictions)
+		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalogToNamespacedTypes(broker.Namespace, brokerCatalog, broker.Spec.CatalogRestrictions, existingServiceClassMap, existingServicePlanMap)
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(pcb.Message(s))
@@ -227,17 +239,6 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		}
 
 		glog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
-
-		// get the existing services and plans for this broker so that we can
-		// detect when services and plans are removed from the broker's
-		// catalog
-		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForNamespacedBroker(broker)
-		if err != nil {
-			return err
-		}
-
-		existingServiceClassMap := convertServiceClassListToMap(existingServiceClasses)
-		existingServicePlanMap := convertServicePlanListToMap(existingServicePlans)
 
 		// reconcile the serviceClasses that were part of the broker's catalog
 		// payload
@@ -438,21 +439,33 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 	serviceClass.Spec.ServiceBrokerName = broker.Name
 
 	if existingServiceClass == nil {
-		otherServiceClass, err := c.serviceClassLister.ServiceClasses(broker.Namespace).Get(serviceClass.Name)
+		selector := labels.NewSelector()
+		requirement, err := labels.NewRequirement("Spec.ExternalID", "==", []string{serviceClass.Spec.ExternalID})
 		if err != nil {
-			// we expect _not_ to find a service class this way, so a not-
-			// found error is expected and legitimate.
-			if !errors.IsNotFound(err) {
-				return err
-			}
-		} else {
+			errMsg := fmt.Sprintf("Error building requirement for reconciling class %q from broker %q: %s",
+				pretty.ServiceClassName(serviceClass), broker.Name, err.Error(),
+			)
+			glog.Error(pcb.Message(errMsg))
+			return fmt.Errorf(errMsg)
+		}
+		selector.Add(*requirement)
+		otherServiceClasses, err := c.serviceClassLister.List(selector)
+		if err != nil {
+			return err
+		}
+		if len(otherServiceClasses) > 0 {
 			// we do not expect to find an existing service class if we were
 			// not already passed one; the following if statement will almost
 			// certainly evaluate to true.
-			if otherServiceClass.Spec.ServiceBrokerName != broker.Name {
-				errMsg := fmt.Sprintf("%s already exists for Broker %q",
-					pretty.ServiceClassName(serviceClass), otherServiceClass.Spec.ServiceBrokerName,
-				)
+			errMsg := ""
+			for _, otherServiceClass := range otherServiceClasses {
+				if otherServiceClass.Spec.ServiceBrokerName != broker.Name {
+					errMsg = errMsg + fmt.Sprintf("%s already exists for Broker %q",
+						pretty.ServiceClassName(serviceClass), otherServiceClasses[0].Spec.ServiceBrokerName,
+					)
+				}
+			}
+			if errMsg != "" {
 				glog.Error(pcb.Message(errMsg))
 				return fmt.Errorf(errMsg)
 			}
@@ -735,7 +748,7 @@ func convertServiceClassListToMap(list []v1beta1.ServiceClass) map[string]*v1bet
 	ret := make(map[string]*v1beta1.ServiceClass, len(list))
 
 	for i := range list {
-		ret[list[i].Name] = &list[i]
+		ret[list[i].Spec.ExternalID] = &list[i]
 	}
 
 	return ret
@@ -745,7 +758,7 @@ func convertServicePlanListToMap(list []v1beta1.ServicePlan) map[string]*v1beta1
 	ret := make(map[string]*v1beta1.ServicePlan, len(list))
 
 	for i := range list {
-		ret[list[i].Name] = &list[i]
+		ret[list[i].Spec.ExternalID] = &list[i]
 	}
 
 	return ret

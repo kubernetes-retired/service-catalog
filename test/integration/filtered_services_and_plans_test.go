@@ -35,12 +35,12 @@ import (
 func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {
 
 	name := "Archonei"
-	uuid := generator.IDFrom(name)
+	externalID := generator.IDFrom(name)
 
 	broker := getTestBroker()
 	broker.Spec.RelistDuration = &metav1.Duration{Duration: time.Millisecond * 100}
 	broker.Spec.CatalogRestrictions = &v1beta1.CatalogRestrictions{
-		ServiceClass: []string{"name!=" + uuid},
+		ServiceClass: []string{"spec.externalID!=" + externalID},
 	}
 
 	ct := &controllerTest{
@@ -56,7 +56,7 @@ func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {
 
 		time.Sleep(time.Millisecond * 300)
 
-		err := util.WaitForClusterServiceClassToNotExist(ct.client, uuid)
+		err := util.WaitForClusterServiceClassToNotExist(ct.client, externalID)
 		if err != nil {
 			t.Fatalf("error waiting for remove ClusterServiceClass to not exist: %v", err)
 		}

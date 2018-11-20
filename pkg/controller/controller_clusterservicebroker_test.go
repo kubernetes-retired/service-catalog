@@ -18,6 +18,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -32,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	"strings"
 
@@ -497,14 +497,16 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorSyncingCatalogReason).msgf(
-		"Error reconciling ClusterServiceClass (K8S: %q ExternalName: %q) (broker %q):",
-		testClusterServiceClassGUID, testClusterServiceClassName, testClusterServiceBrokerName,
-	).msgf(
-		"ClusterServiceClass (K8S: %q ExternalName: %q) already exists for Broker %q",
-		testClusterServiceClassGUID, testClusterServiceClassName, "notTheSame",
-	)
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+	if len(events) < 1 {
+		t.Fatal(errors.New("no events detected"))
+	}
+	if err := checkEventContains(events[0], "Warning ErrorSyncingCatalog Error reconciling ClusterServiceClass"); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkEventContains(events[0], fmt.Sprintf("ExternalName: \"%s\"", testClusterServiceClassName)); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkEventContains(events[0], "already exists for Broker \"notTheSame\""); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -550,14 +552,16 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorSyncingCatalogReason).msgf(
-		"Error reconciling ClusterServicePlan (K8S: %q ExternalName: %q):",
-		testClusterServicePlanGUID, testClusterServicePlanName,
-	).msgf(
-		"ClusterServicePlan (K8S: %q ExternalName: %q) already exists for Broker %q",
-		testClusterServicePlanGUID, testClusterServicePlanName, "notTheSame",
-	)
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+	if len(events) < 1 {
+		t.Fatal(errors.New("no events detected"))
+	}
+	if err := checkEventContains(events[0], "Warning ErrorSyncingCatalog Error reconciling ClusterServicePlan"); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkEventContains(events[0], fmt.Sprintf("ExternalName: \"%s\"", testClusterServicePlanName)); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkEventContains(events[0], "already exists for Broker \"notTheSame\""); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -938,9 +942,7 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't convert to a ClusterServiceClass: %+v", createSCAction.GetObject())
 	}
-	if e, a := getTestClusterServiceClass(), createdSC; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected diff for created ClusterServiceClass: %v,\n\nEXPECTED: %+v\n\nACTUAL:  %+v", diff.ObjectReflectDiff(e, a), e, a)
-	}
+	assertClusterServiceClassesAreEqual(t, getTestClusterServiceClass(), createdSC)
 	updatedClusterServiceBroker := assertUpdateStatus(t, actions[3], broker)
 	assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
 
@@ -948,12 +950,16 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	events := getRecordedEvents(testController)
-
-	expectedEvent := warningEventBuilder(errorSyncingCatalogReason).msgf(
-		"Error reconciling ClusterServiceClass (K8S: %q ExternalName: %q) (broker %q):",
-		testClusterServiceClassGUID, testClusterServiceClassName, testClusterServiceBrokerName,
-	).msg("error creating serviceclass")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+	if len(events) != 1 {
+		t.Fatalf("No controller events found")
+	}
+	if err := checkEventContains(events[0], "Warning ErrorSyncingCatalog Error reconciling ClusterServiceClass"); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkEventContains(events[0], "error creating serviceclass"); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkEventContains(events[0], fmt.Sprintf("ExternalName: \"%s\"", testClusterServiceClassName)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1452,22 +1458,12 @@ func TestReconcileMarksExistingClassesAndPlansAsManaged(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 
 	// Verify that the existing class and plan are now marked as managed
-	c := assertUpdate(t, actions[2], testClusterServiceClass)
-	updatedClass, ok := c.(metav1.Object)
-	if !ok {
-		t.Fatalf("could not cast %T to metav1.Object", c)
-	}
-	if !isServiceCatalogManagedResource(updatedClass) {
-		t.Error("expected the class to have a service catalog controller reference")
-	}
-
-	p := assertUpdate(t, actions[3], testClusterServicePlan)
-	updatedPlan, ok := p.(metav1.Object)
-	if !ok {
-		t.Fatalf("could not cast %T to metav1.Object", p)
-	}
-	if !isServiceCatalogManagedResource(updatedPlan) {
-		t.Error("expected the plan to have a service catalog controller reference")
+	for _, a := range actions {
+		r := a.GetResource().Resource
+		if a.GetVerb() == "update" &&
+			(r == "clusterserviceclasses" || r == "clusterserviceplans") {
+			t.Errorf("expected user-defined classes and plans to be ignored but found action %+v", a)
+		}
 	}
 }
 
@@ -1511,10 +1507,11 @@ func TestReconcileDoesNotUpdateUserDefinedClassesAndPlans(t *testing.T) {
 
 	// Verify none of the actions affected the user-defined class and plan
 	for _, a := range actions {
-		r := a.GetResource().Resource
-		if a.GetVerb() == "update" &&
-			(r == "clusterserviceclasses" || r == "clusterserviceplans") {
-			t.Errorf("expected user-defined classes and plans to be ignored but found action %+v", a)
+		if a.GetVerb() == "update" {
+			o := a.(clientgotesting.UpdateAction).GetObject()
+			if o == testClusterServiceClass || o == testClusterServicePlan {
+				t.Errorf("expected user-defined classes and plans to be ignored but found action %+v", a)
+			}
 		}
 	}
 }

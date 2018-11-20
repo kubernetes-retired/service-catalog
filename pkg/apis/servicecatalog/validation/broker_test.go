@@ -370,26 +370,6 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "valid clusterservicebroker - catalogRequirements.serviceClass",
-			broker: &servicecatalog.ClusterServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
-				},
-				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL:            "http://example.com",
-						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
-						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
-							ServiceClass: []string{
-								"name==foobar",
-							},
-						},
-					},
-				},
-			},
-			valid: true,
-		},
-		{
 			name: "valid clusterservicebroker - complex catalogRequirements.serviceClass",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
@@ -401,7 +381,6 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
 						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
 							ServiceClass: []string{
-								"name==foobar",
 								"spec.externalName in (foobar, bazboof, wizzbang)",
 							},
 						},
@@ -451,47 +430,6 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "valid clusterservicebroker - catalogRequirements.servicePlan",
-			broker: &servicecatalog.ClusterServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
-				},
-				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL:            "http://example.com",
-						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
-						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
-							ServicePlan: []string{
-								"name==foobar",
-							},
-						},
-					},
-				},
-			},
-			valid: true,
-		},
-		{
-			name: "valid clusterservicebroker - complex catalogRequirements.servicePlan",
-			broker: &servicecatalog.ClusterServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
-				},
-				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL:            "http://example.com",
-						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
-						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
-							ServicePlan: []string{
-								"name==foobar",
-								"spec.externalName in (foobar, bazboof, wizzbang)",
-							},
-						},
-					},
-				},
-			},
-			valid: true,
-		},
-		{
 			name: "invalid clusterservicebroker - catalogRequirements.servicePlan",
 			broker: &servicecatalog.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
@@ -530,31 +468,6 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 				},
 			},
 			valid: false,
-		},
-		{
-			name: "valid clusterservicebroker - catalogRequirements with serviceClass and servicePlan",
-			broker: &servicecatalog.ClusterServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-broker",
-				},
-				Spec: servicecatalog.ClusterServiceBrokerSpec{
-					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL:            "http://example.com",
-						RelistBehavior: servicecatalog.ServiceBrokerRelistBehaviorManual,
-						CatalogRestrictions: &servicecatalog.CatalogRestrictions{
-							ServiceClass: []string{
-								"name=barfoobar",
-								"spec.externalName in (barfoobar, batbazboof, batwizzbang)",
-							},
-							ServicePlan: []string{
-								"name==foobar",
-								"spec.externalName in (foobar, bazboof, wizzbang)",
-							},
-						},
-					},
-				},
-			},
-			valid: true,
 		},
 	}
 

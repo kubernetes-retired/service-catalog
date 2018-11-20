@@ -1250,7 +1250,9 @@ type bindingParameters struct {
 }
 
 func TestEmptyCatalogConversion(t *testing.T) {
-	serviceClasses, servicePlans, err := convertAndFilterCatalog(&osb.CatalogResponse{}, nil)
+	emptyServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+	emptyServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(&osb.CatalogResponse{}, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1268,7 +1270,9 @@ func TestCatalogConversion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
-	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil)
+	emptyServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+	emptyServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1292,7 +1296,9 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
-	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil)
+	emptyServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+	emptyServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1352,9 +1358,6 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 }
 
 func checkPlan(plan *v1beta1.ClusterServicePlan, planID, planName, planDescription string, t *testing.T) {
-	if plan.Name != planID {
-		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
-	}
 	if plan.Spec.ExternalID != planID {
 		t.Errorf("Expected plan ExternalID to be %q, but was: %q", planID, plan.Spec.ExternalID)
 	}
@@ -1505,15 +1508,6 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 			catalog: largeTestCatalog,
 		},
 		{
-			name: "by name",
-			restrictions: &v1beta1.CatalogRestrictions{
-				ServiceClass: []string{"name=41727261-7841-4272-a178-417272617841"},
-			},
-			classes: []string{"Arrax"},
-			plans:   []string{"Eastwatch-by-the-Sea", "OldOak"},
-			catalog: largeTestCatalog,
-		},
-		{
 			name: "whitelist by externalName",
 			restrictions: &v1beta1.CatalogRestrictions{
 				ServiceClass: []string{"spec.externalName in (Archonei, Arrax)"},
@@ -1540,6 +1534,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 			plans:   []string{"Goldengrove"},
 			catalog: largeTestCatalog,
 		},
+		/**
 		{
 			name: "whitelist plans by name",
 			restrictions: &v1beta1.CatalogRestrictions{
@@ -1549,10 +1544,11 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 			plans:   []string{"Goldengrove", "Eastwatch-by-the-Sea", "Ironrath"},
 			catalog: largeTestCatalog,
 		},
+		**/
 		{
 			name: "two restrictions for plans",
 			restrictions: &v1beta1.CatalogRestrictions{
-				ServicePlan: []string{"name!=45617374-7761-4463-a82d-62792d746865", "spec.externalName notin (OldOak)"},
+				ServicePlan: []string{"spec.externalID!=45617374-7761-4463-a82d-62792d746865", "spec.externalName notin (OldOak)"},
 			},
 			classes: []string{"Archonei", "Balerion"},
 			plans:   []string{"Goldengrove", "Ironrath", "Queensgate"},
@@ -1594,7 +1590,9 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal test catalog: %v", err)
 			}
-			classes, plans, err := convertAndFilterCatalog(catalog, tc.restrictions)
+			emptyServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+			emptyServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+			classes, plans, err := convertAndFilterCatalog(catalog, tc.restrictions, emptyServiceClasses, emptyServicePlans)
 			if err != nil {
 				if tc.error {
 					return
@@ -1670,7 +1668,9 @@ func TestFilterServicePlans(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal test catalog: %v", err)
 			}
-			_, servicePlans, err := convertAndFilterCatalog(catalog, nil)
+			emptyServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+			emptyServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+			_, servicePlans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 			if err != nil {
 				t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 			}
@@ -1746,11 +1746,6 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 	err := json.Unmarshal([]byte(testCatalogForClusterServicePlanBindableOverride), &catalog)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
-	}
-
-	aclasses, aplans, err := convertAndFilterCatalog(catalog, nil)
-	if err != nil {
-		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
 
 	eclasses := []*v1beta1.ClusterServiceClass{
@@ -1841,6 +1836,28 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	preexistingServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+	for _, eclass := range eclasses {
+		preexistingServiceClasses[eclass.Spec.ExternalID] = &v1beta1.ClusterServiceClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: eclass.Name,
+			},
+		}
+	}
+	preexistingServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+	for _, eplan := range eplans {
+		preexistingServicePlans[eplan.Spec.ExternalID] = &v1beta1.ClusterServicePlan{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: eplan.Name,
+			},
+		}
+	}
+
+	aclasses, aplans, err := convertAndFilterCatalog(catalog, nil, preexistingServiceClasses, preexistingServicePlans)
+	if err != nil {
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
 
 	if !reflect.DeepEqual(eclasses, aclasses) {
@@ -2209,10 +2226,15 @@ func assertActionFor(t *testing.T, action clientgotesting.Action, verb, subresou
 		}
 	}
 
-	if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
-		fatalf(t, "Unexpected name: expected %q, got %q", e, a)
-		return nil
-	}
+	if resource != "serviceclasses" &&
+		resource != "serviceplans" &&
+		resource != "clusterserviceclasses" &&
+		resource != "clusterserviceplans" {
+		if e, a := paramAccessor.GetName(), objectMeta.GetName(); e != a {
+			fatalf(t, "Unexpected name: expected %q, got %q", e, a)
+			return nil
+		}
+	} // check that names DONT match for classes/plans
 
 	fakeValue := reflect.ValueOf(fakeRtObject)
 	paramValue := reflect.ValueOf(obj)
@@ -2296,6 +2318,20 @@ func assertClusterServiceBrokerOperationStartTimeSet(t *testing.T, obj runtime.O
 		} else {
 			fatalf(t, "expected OperationStartTime to be nil, but was not")
 		}
+	}
+}
+
+// this purposely does not compare metadata.names as they are dynamically generated
+// during broker reconciliation, and thus cannot be guessed ahead of time
+func assertClusterServiceClassesAreEqual(t *testing.T, expected *v1beta1.ClusterServiceClass, actual *v1beta1.ClusterServiceClass) {
+	if !reflect.DeepEqual(expected.Spec, actual.Spec) {
+		t.Fatalf("Classes not equal: %s", expectedGot(expected, actual))
+	}
+	if !reflect.DeepEqual(expected.Status, actual.Status) {
+		t.Fatalf("Classes not equal: %s", expectedGot(expected, actual))
+	}
+	if !reflect.DeepEqual(expected.OwnerReferences, actual.OwnerReferences) {
+		t.Fatalf("Classes not equal: %s", expectedGot(expected, actual))
 	}
 }
 

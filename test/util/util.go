@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/authentication/user"
 
@@ -87,14 +88,21 @@ func WaitForBrokerToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1I
 	)
 }
 
-// WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given name
+// WaitForClusterServiceClassToExist waits for the ClusterServiceClass with the given externalID
 // to exist.
-func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
+func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, externalID string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			glog.V(5).Infof("Waiting for serviceClass %v to exist", name)
-			_, err := client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
-			if nil == err {
+			glog.V(5).Infof("Waiting for serviceClass %v to exist", externalID)
+			fieldSet := fields.Set{
+				"spec.externalID": externalID,
+			}
+			fieldSelector := fields.SelectorFromSet(fieldSet).String()
+			listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
+			serviceClassList, err := client.ClusterServiceClasses().List(listOpts)
+			serviceClasses := serviceClassList.Items
+
+			if nil == err && len(serviceClasses) == 1 && serviceClasses[0].Spec.ExternalID == externalID {
 				return true, nil
 			}
 
@@ -104,13 +112,20 @@ func WaitForClusterServiceClassToExist(client v1beta1servicecatalog.Servicecatal
 }
 
 // WaitForClusterServicePlanToExist waits for the ClusterServicePlan
-// with the given name to exist.
-func WaitForClusterServicePlanToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
+// with the given externalID to exist.
+func WaitForClusterServicePlanToExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, externalID string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			glog.V(5).Infof("Waiting for ClusterServicePlan %v to exist", name)
-			_, err := client.ClusterServicePlans().Get(name, metav1.GetOptions{})
-			if nil == err {
+			glog.V(5).Infof("Waiting for ClusterServicePlan %v to exist", externalID)
+			fieldSet := fields.Set{
+				"spec.externalID": externalID,
+			}
+			fieldSelector := fields.SelectorFromSet(fieldSet).String()
+			listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
+			servicePlanList, err := client.ClusterServicePlans().List(listOpts)
+			servicePlans := servicePlanList.Items
+
+			if nil == err && len(servicePlans) == 1 && servicePlans[0].Spec.ExternalID == externalID {
 				return true, nil
 			}
 
@@ -119,18 +134,21 @@ func WaitForClusterServicePlanToExist(client v1beta1servicecatalog.Servicecatalo
 	)
 }
 
-// WaitForClusterServicePlanToNotExist waits for the ClusterServicePlan with the given name
+// WaitForClusterServicePlanToNotExist waits for the ClusterServicePlan with the given externalID
 // to not exist.
-func WaitForClusterServicePlanToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
+func WaitForClusterServicePlanToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, externalID string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			glog.V(5).Infof("Waiting for ClusterServicePlan %q to not exist", name)
-			_, err := client.ClusterServicePlans().Get(name, metav1.GetOptions{})
-			if nil == err {
-				return false, nil
+			glog.V(5).Infof("Waiting for ClusterServicePlan %q to not exist", externalID)
+			fieldSet := fields.Set{
+				"spec.externalID": externalID,
 			}
+			fieldSelector := fields.SelectorFromSet(fieldSet).String()
+			listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
+			servicePlanList, err := client.ClusterServicePlans().List(listOpts)
+			servicePlans := servicePlanList.Items
 
-			if errors.IsNotFound(err) {
+			if err == nil && len(servicePlans) == 0 {
 				return true, nil
 			}
 
@@ -140,17 +158,20 @@ func WaitForClusterServicePlanToNotExist(client v1beta1servicecatalog.Servicecat
 }
 
 // WaitForClusterServiceClassToNotExist waits for the ClusterServiceClass with the given
-// name to no longer exist.
-func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, name string) error {
+// externalID to no longer exist.
+func WaitForClusterServiceClassToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1Interface, externalID string) error {
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
-			glog.V(5).Infof("Waiting for serviceClass %v to not exist", name)
-			_, err := client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
-			if nil == err {
-				return false, nil
+			glog.V(5).Infof("Waiting for serviceClass %v to not exist", externalID)
+			fieldSet := fields.Set{
+				"spec.externalID": externalID,
 			}
+			fieldSelector := fields.SelectorFromSet(fieldSet).String()
+			listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
+			serviceClassList, err := client.ClusterServiceClasses().List(listOpts)
+			serviceClasses := serviceClassList.Items
 
-			if errors.IsNotFound(err) {
+			if err == nil && len(serviceClasses) == 0 {
 				return true, nil
 			}
 

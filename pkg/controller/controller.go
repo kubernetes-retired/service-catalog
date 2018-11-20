@@ -802,7 +802,7 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 // into an array of ServiceClasses and an array of ServicePlans and filters
 // these through the restrictions provided. The ServiceClasses and
 // ServicePlans returned by this method are named in K8S with the OSB ID.
-func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ServiceClass, []*v1beta1.ServicePlan, error) {
+func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions, existingServiceClasses map[string]*v1beta1.ServiceClass, existingServicePlans map[string]*v1beta1.ServicePlan) ([]*v1beta1.ServiceClass, []*v1beta1.ServicePlan, error) {
 	var predicate filter.Predicate
 	var err error
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
@@ -844,13 +844,18 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
-		serviceClass.SetName(svc.ID)
+		existingServiceClass := existingServiceClasses[serviceClass.Spec.ExternalID]
+		if existingServiceClass != nil {
+			serviceClass.Name = existingServiceClass.Name
+		} else {
+			serviceClass.Name = string(uuid.NewUUID())
+		}
 		serviceClass.SetNamespace(namespace)
 
 		// If this service class passes the predicate, process the plans for the class.
 		if fields := v1beta1.ConvertServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ServiceClass Name
-			plans, err := convertServicePlans(namespace, svc.Plans, serviceClass.Name)
+			plans, err := convertServicePlans(namespace, svc.Plans, serviceClass.Name, existingServicePlans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -873,8 +878,9 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 // convertAndFilterCatalog converts a service broker catalog into an array of
 // ClusterServiceClasses and an array of ClusterServicePlans and filters these
 // through the restrictions provided. The ClusterServiceClasses and
-// ClusterServicePlans returned by this method are named in K8S with the OSB ID.
-func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+// ClusterServicePlans returned by this method are named in K8S with randomly genereated UUIDs
+// or the name of the prexisting resource, if it exists
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions, existingServiceClasses map[string]*v1beta1.ClusterServiceClass, existingServicePlans map[string]*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
 	var predicate filter.Predicate
 	var err error
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
@@ -916,12 +922,18 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Cata
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
-		serviceClass.SetName(svc.ID)
+
+		existingServiceClass := existingServiceClasses[serviceClass.Spec.ExternalID]
+		if existingServiceClass != nil {
+			serviceClass.Name = existingServiceClass.Name
+		} else {
+			serviceClass.Name = string(uuid.NewUUID())
+		}
 
 		// If this service class passes the predicate, process the plans for the class.
 		if fields := v1beta1.ConvertClusterServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ClusterServiceClass Name
-			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name)
+			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name, existingServicePlans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1003,7 +1015,7 @@ func filterServicePlans(restrictions *v1beta1.CatalogRestrictions, servicePlans 
 	return accepted, rejected, nil
 }
 
-func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID string) ([]*v1beta1.ServicePlan, error) {
+func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID string, existingServicePlans map[string]*v1beta1.ServicePlan) ([]*v1beta1.ServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ServiceClass (K8S: %q) must have at least one plan", serviceClassID)
 	}
@@ -1021,7 +1033,12 @@ func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID stri
 			},
 		}
 		servicePlans[i] = servicePlan
-		servicePlan.SetName(plan.ID)
+		existingServicePlan := existingServicePlans[servicePlans[i].Spec.ExternalID]
+		if existingServicePlan != nil {
+			servicePlans[i].SetName(existingServicePlan.Name)
+		} else {
+			servicePlans[i].SetName(string(uuid.NewUUID()))
+		}
 		servicePlan.SetNamespace(namespace)
 
 		err := convertCommonServicePlan(plan, &servicePlan.Spec.CommonServicePlanSpec)
@@ -1095,7 +1112,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 	return nil
 }
 
-func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {
+func convertClusterServicePlans(plans []osb.Plan, serviceClassID string, existingServicePlans map[string]*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ClusterServiceClass (K8S: %q) must have at least one plan", serviceClassID)
 	}
@@ -1109,10 +1126,17 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 					Free:         plan.Free != nil && *plan.Free,
 					Description:  plan.Description,
 				},
-				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: serviceClassID},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: serviceClassID,
+				},
 			},
 		}
-		servicePlans[i].SetName(plan.ID)
+		existingServicePlan := existingServicePlans[servicePlans[i].Spec.ExternalID]
+		if existingServicePlan != nil {
+			servicePlans[i].SetName(existingServicePlan.Name)
+		} else {
+			servicePlans[i].SetName(string(uuid.NewUUID()))
+		}
 
 		if plan.Bindable != nil {
 			b := *plan.Bindable

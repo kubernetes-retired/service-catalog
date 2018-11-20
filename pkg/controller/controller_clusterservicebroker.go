@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 
@@ -219,10 +220,19 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			}
 		}
 
+		// get the existing services and plans for this broker so that we can
+		// detect when services and plans are removed from the broker's
+		// catalog
+		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForBroker(broker)
+		if err != nil {
+			return err
+		}
+		existingServiceClassMap := convertAndFilterClusterServiceClassListToMap(existingServiceClasses)
+		existingServicePlanMap := convertAndFilterClusterServicePlanListToMap(existingServicePlans)
+
 		// convert the broker's catalog payload into our API objects
 		glog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
-
-		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions)
+		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions, existingServiceClassMap, existingServicePlanMap)
 		if err != nil {
 			s := fmt.Sprintf("Error converting catalog payload for broker %q to service-catalog API: %s", broker.Name, err)
 			glog.Warning(pcb.Message(s))
@@ -235,23 +245,11 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		glog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
 
-		// get the existing services and plans for this broker so that we can
-		// detect when services and plans are removed from the broker's
-		// catalog
-		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForBroker(broker)
-		if err != nil {
-			return err
-		}
-
-		existingServiceClassMap := convertClusterServiceClassListToMap(existingServiceClasses)
-		existingServicePlanMap := convertClusterServicePlanListToMap(existingServicePlans)
-
 		// reconcile the serviceClasses that were part of the broker's catalog
 		// payload
 		for _, payloadServiceClass := range payloadServiceClasses {
-			existingServiceClass, _ := existingServiceClassMap[payloadServiceClass.Name]
-			delete(existingServiceClassMap, payloadServiceClass.Name)
-
+			existingServiceClass, _ := existingServiceClassMap[payloadServiceClass.Spec.ExternalID]
+			delete(existingServiceClassMap, payloadServiceClass.Spec.ExternalID)
 			glog.V(4).Info(pcb.Messagef("Reconciling %s", pretty.ClusterServiceClassName(payloadServiceClass)))
 			if err := c.reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker, payloadServiceClass, existingServiceClass); err != nil {
 				s := fmt.Sprintf(
@@ -277,11 +275,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				continue
 			}
 
-			// Do not delete user-defined classes
-			if !isServiceCatalogManagedResource(existingServiceClass) {
-				continue
-			}
-
 			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServiceClassName(existingServiceClass)))
 			existingServiceClass.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(existingServiceClass)
@@ -302,8 +295,8 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		// reconcile the plans that were part of the broker's catalog payload
 		for _, payloadServicePlan := range payloadServicePlans {
-			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
-			delete(existingServicePlanMap, payloadServicePlan.Name)
+			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Spec.ExternalID]
+			delete(existingServicePlanMap, payloadServicePlan.Spec.ExternalID)
 
 			glog.V(4).Infof(
 				"ClusterServiceBroker %q: reconciling %s",
@@ -328,11 +321,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		// mark these as deleted
 		for _, existingServicePlan := range existingServicePlanMap {
 			if existingServicePlan.Status.RemovedFromBrokerCatalog {
-				continue
-			}
-
-			// Do not delete user-defined plans
-			if !isServiceCatalogManagedResource(existingServicePlan) {
 				continue
 			}
 
@@ -456,26 +444,38 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	serviceClass.Spec.ClusterServiceBrokerName = broker.Name
 
 	if existingServiceClass == nil {
-		otherServiceClass, err := c.clusterServiceClassLister.Get(serviceClass.Name)
+		//otherServiceClass, err := c.clusterServiceClassLister.Get(serviceClass.Name)
+		selector := labels.NewSelector()
+		requirement, err := labels.NewRequirement("Spec.ExternalID", "==", []string{serviceClass.Spec.ExternalID})
 		if err != nil {
-			// we expect _not_ to find a service class this way, so a not-
-			// found error is expected and legitimate.
-			if !errors.IsNotFound(err) {
-				return err
-			}
-		} else {
+			errMsg := fmt.Sprintf("Error building requirement for reconciling class %q from broker %q: %s",
+				pretty.ClusterServiceClassName(serviceClass), broker.Name, err.Error(),
+			)
+			glog.Error(pcb.Message(errMsg))
+			return fmt.Errorf(errMsg)
+		}
+		selector.Add(*requirement)
+		otherServiceClasses, err := c.clusterServiceClassLister.List(selector)
+		if err != nil {
+			return err
+		}
+		if len(otherServiceClasses) > 0 {
 			// we do not expect to find an existing service class if we were
 			// not already passed one; the following if statement will almost
 			// certainly evaluate to true.
-			if otherServiceClass.Spec.ClusterServiceBrokerName != broker.Name {
-				errMsg := fmt.Sprintf("%s already exists for Broker %q",
-					pretty.ClusterServiceClassName(serviceClass), otherServiceClass.Spec.ClusterServiceBrokerName,
-				)
+			errMsg := ""
+			for _, otherServiceClass := range otherServiceClasses {
+				if otherServiceClass.Spec.ClusterServiceBrokerName != broker.Name {
+					errMsg = errMsg + fmt.Sprintf("%s already exists for Broker %q",
+						pretty.ClusterServiceClassName(serviceClass), otherServiceClasses[0].Spec.ClusterServiceBrokerName,
+					)
+				}
+			}
+			if errMsg != "" {
 				glog.Error(pcb.Message(errMsg))
 				return fmt.Errorf(errMsg)
 			}
 		}
-
 		markAsServiceCatalogManagedResource(serviceClass, broker)
 
 		glog.V(5).Info(pcb.Messagef("Fresh %s; creating", pretty.ClusterServiceClassName(serviceClass)))
@@ -490,7 +490,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	if existingServiceClass.Spec.ExternalID != serviceClass.Spec.ExternalID {
 		errMsg := fmt.Sprintf(
 			"%s already exists with OSB guid %q, received different guid %q",
-			pretty.ClusterServiceClassName(serviceClass), existingServiceClass.Name, serviceClass.Name,
+			pretty.ClusterServiceClassName(serviceClass), existingServiceClass.Spec.ExternalID, serviceClass.Spec.ExternalID,
 		)
 		glog.Error(pcb.Message(errMsg))
 		return fmt.Errorf(errMsg)
@@ -543,24 +543,35 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 	servicePlan.Spec.ClusterServiceBrokerName = broker.Name
 
 	if existingServicePlan == nil {
-		otherServicePlan, err := c.clusterServicePlanLister.Get(servicePlan.Name)
+		//otherServicePlan, err := c.clusterServicePlanLister.Get(servicePlan.Name)
+
+		selector := labels.NewSelector()
+		requirement, err := labels.NewRequirement("Spec.ExternalID", "==", []string{servicePlan.Spec.ExternalID})
 		if err != nil {
-			// we expect _not_ to find a service class this way, so a not-
-			// found error is expected and legitimate.
-			if !errors.IsNotFound(err) {
-				return err
-			}
-		} else {
+			errMsg := fmt.Sprintf("Error building requirement for reconciling class %q from broker %q: %s",
+				pretty.ClusterServicePlanName(servicePlan), broker.Name, err.Error(),
+			)
+			glog.Error(pcb.Message(errMsg))
+			return fmt.Errorf(errMsg)
+		}
+		selector.Add(*requirement)
+		otherServicePlans, err := c.clusterServicePlanLister.List(selector)
+		if err != nil {
+			return err
+		}
+		if len(otherServicePlans) > 0 {
 			// we do not expect to find an existing service class if we were
 			// not already passed one; the following if statement will almost
 			// certainly evaluate to true.
-			if otherServicePlan.Spec.ClusterServiceBrokerName != broker.Name {
-				errMsg := fmt.Sprintf(
-					"%s already exists for Broker %q",
-					pretty.ClusterServicePlanName(servicePlan), otherServicePlan.Spec.ClusterServiceBrokerName,
-				)
-				glog.Error(pcb.Message(errMsg))
-				return fmt.Errorf(errMsg)
+			for _, otherServicePlan := range otherServicePlans {
+				if otherServicePlan.Spec.ClusterServiceBrokerName != broker.Name {
+					errMsg := fmt.Sprintf(
+						"%s already exists for Broker %q",
+						pretty.ClusterServicePlanName(servicePlan), otherServicePlan.Spec.ClusterServiceBrokerName,
+					)
+					glog.Error(pcb.Message(errMsg))
+					return fmt.Errorf(errMsg)
+				}
 			}
 		}
 
@@ -751,23 +762,26 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.C
 	return existingServiceClasses.Items, existingServicePlans.Items, nil
 }
 
-func convertClusterServiceClassListToMap(list []v1beta1.ClusterServiceClass) map[string]*v1beta1.ClusterServiceClass {
+func convertAndFilterClusterServiceClassListToMap(list []v1beta1.ClusterServiceClass) map[string]*v1beta1.ClusterServiceClass {
 	ret := make(map[string]*v1beta1.ClusterServiceClass, len(list))
-
 	for i := range list {
-		ret[list[i].Name] = &list[i]
+		//we don't want to change user-created classes when reconciling brokers
+		if isServiceCatalogManagedResource(&list[i]) {
+			ret[list[i].Spec.ExternalID] = &list[i]
+		}
 	}
-
 	return ret
 }
 
-func convertClusterServicePlanListToMap(list []v1beta1.ClusterServicePlan) map[string]*v1beta1.ClusterServicePlan {
+func convertAndFilterClusterServicePlanListToMap(list []v1beta1.ClusterServicePlan) map[string]*v1beta1.ClusterServicePlan {
 	ret := make(map[string]*v1beta1.ClusterServicePlan, len(list))
 
 	for i := range list {
-		ret[list[i].Name] = &list[i]
+		//we don't want to change user-created plans when reconciling brokers
+		if isServiceCatalogManagedResource(&list[i]) {
+			ret[list[i].Spec.ExternalID] = &list[i]
+		}
 	}
-
 	return ret
 }
 
