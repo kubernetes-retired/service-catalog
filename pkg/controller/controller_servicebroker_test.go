@@ -19,13 +19,19 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
+
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientgotesting "k8s.io/client-go/testing"
@@ -50,6 +56,142 @@ func TestReconcileServiceBrokerUpdatesBrokerClient(t *testing.T) {
 	_, found := testController.brokerClientManager.BrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name))
 	if !found {
 		t.Error("expected predefined OSB client")
+	}
+}
+
+func getServiceBrokerReactor(broker *v1beta1.ServiceBroker) (string, string, clientgotesting.ReactionFunc) {
+	return "get", "servicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, broker, nil
+	}
+}
+
+func listServiceClassesReactor(classes []v1beta1.ServiceClass) (string, string, clientgotesting.ReactionFunc) {
+	return "list", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ServiceClassList{
+			Items: classes,
+		}, nil
+	}
+}
+
+func listServicePlansReactor(plans []v1beta1.ServicePlan) (string, string, clientgotesting.ReactionFunc) {
+	return "list", "serviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ServicePlanList{
+			Items: plans,
+		}, nil
+	}
+}
+
+func reconcileServiceBroker(t *testing.T, testController *controller, broker *v1beta1.ServiceBroker) error {
+	clone := broker.DeepCopy()
+	err := testController.reconcileServiceBroker(broker)
+	if !reflect.DeepEqual(broker, clone) {
+		t.Errorf("reconcileServiceBroker shouldn't mutate input, but it does: %s", expectedGot(clone, broker))
+	}
+	return err
+}
+
+// TestReconcileServiceBrokerDelete simulates a broker reconciliation where broker was marked for deletion.
+// Results in service class and broker both being deleted.
+func TestReconcileServiceBrokerDelete(t *testing.T) {
+	cases := []struct {
+		name     string
+		authInfo *v1beta1.ServiceBrokerAuthInfo
+		secret   *corev1.Secret
+	}{
+		{
+			name:     "no auth",
+			authInfo: nil,
+			secret:   nil,
+		},
+		{
+			name:     "basic auth",
+			authInfo: getTestBrokerBasicAuthInfo(),
+			secret:   getTestBasicAuthSecret(),
+		},
+		{
+			name:     "bearer auth",
+			authInfo: getTestBrokerBearerAuthInfo(),
+			secret:   getTestBearerAuthSecret(),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, _ := newTestController(t, getTestCatalogConfig())
+
+			testServiceClass := getTestServiceClass()
+			testServicePlan := getTestServicePlan()
+
+			addGetSecretReaction(fakeKubeClient, tc.secret)
+
+			broker := getTestServiceBrokerWithAuth(tc.authInfo)
+			broker.DeletionTimestamp = &metav1.Time{}
+			broker.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+
+			updateBrokerClientCalled := false
+			testController.brokerClientManager = NewBrokerClientManager(func(_ *osb.ClientConfiguration) (osb.Client, error) {
+				updateBrokerClientCalled = true
+				return nil, nil
+			})
+
+			fakeCatalogClient.AddReactor(getServiceBrokerReactor(broker))
+			fakeCatalogClient.AddReactor(listServiceClassesReactor([]v1beta1.ServiceClass{*testServiceClass}))
+			fakeCatalogClient.AddReactor(listServicePlansReactor([]v1beta1.ServicePlan{*testServicePlan}))
+
+			// when
+			err := reconcileServiceBroker(t, testController, broker)
+			if err != nil {
+				t.Fatalf("This should not fail : %v", err)
+			}
+
+			// then
+			if updateBrokerClientCalled {
+				t.Errorf("Unexpected broker client update action")
+			}
+
+			brokerActions := fakeServiceBrokerClient.Actions()
+			assertNumberOfBrokerActions(t, brokerActions, 0)
+
+			kubeActions := fakeKubeClient.Actions()
+			assertNumberOfActions(t, kubeActions, 0)
+
+			catalogActions := fakeCatalogClient.Actions()
+			// The actions should be:
+			// - list serviceplans
+			// - delete serviceplans
+			// - list serviceclasses
+			// - delete serviceclass
+			// - update the ready condition
+			// - get the broker
+			// - remove the finalizer
+			assertNumberOfActions(t, catalogActions, 7)
+
+			listRestrictions := clientgotesting.ListRestrictions{
+				Labels: labels.Everything(),
+				Fields: fields.OneTermEqualSelector("spec.serviceBrokerName", broker.Name),
+			}
+			assertList(t, catalogActions[0], &v1beta1.ServiceClass{}, listRestrictions)
+			assertList(t, catalogActions[1], &v1beta1.ServicePlan{}, listRestrictions)
+			assertDelete(t, catalogActions[2], testServicePlan)
+			assertDelete(t, catalogActions[3], testServiceClass)
+			updatedServiceBroker := assertUpdateStatus(t, catalogActions[4], broker)
+			assertServiceBrokerReadyFalse(t, updatedServiceBroker)
+
+			assertGet(t, catalogActions[5], broker)
+
+			updatedServiceBroker = assertUpdateStatus(t, catalogActions[6], broker)
+			assertEmptyFinalizers(t, updatedServiceBroker)
+
+			events := getRecordedEvents(testController)
+
+			expectedEvent := normalEventBuilder(successServiceBrokerDeletedReason).msg(
+				"The servicebroker test-servicebroker was deleted successfully.",
+			)
+			if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

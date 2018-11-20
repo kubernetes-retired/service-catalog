@@ -562,81 +562,130 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 	}
 }
 
+func getClusterServiceBrokerReactor(broker *v1beta1.ClusterServiceBroker) (string, string, clientgotesting.ReactionFunc) {
+	return "get", "clusterservicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, broker, nil
+	}
+}
+
+func listClusterServiceClassesReactor(classes []v1beta1.ClusterServiceClass) (string, string, clientgotesting.ReactionFunc) {
+	return "list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ClusterServiceClassList{
+			Items: classes,
+		}, nil
+	}
+}
+
+func listClusterServicePlansReactor(plans []v1beta1.ClusterServicePlan) (string, string, clientgotesting.ReactionFunc) {
+	return "list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ClusterServicePlanList{
+			Items: plans,
+		}, nil
+	}
+}
+
 // TestReconcileClusterServiceBrokerDelete simulates a broker reconciliation where broker was marked for deletion.
 // Results in service class and broker both being deleted.
 func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, getTestCatalogConfig())
-
-	testClusterServiceClass := getTestClusterServiceClass()
-	testClusterServicePlan := getTestClusterServicePlan()
-
-	broker := getTestClusterServiceBroker()
-	broker.DeletionTimestamp = &metav1.Time{}
-	broker.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
-	fakeCatalogClient.AddReactor("get", "clusterservicebrokers", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, broker, nil
-	})
-	fakeCatalogClient.AddReactor("list", "clusterserviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1beta1.ClusterServiceClassList{
-			Items: []v1beta1.ClusterServiceClass{
-				*testClusterServiceClass,
-			},
-		}, nil
-	})
-	fakeCatalogClient.AddReactor("list", "clusterserviceplans", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, &v1beta1.ClusterServicePlanList{
-			Items: []v1beta1.ClusterServicePlan{
-				*testClusterServicePlan,
-			},
-		}, nil
-	})
-
-	err := reconcileClusterServiceBroker(t, testController, broker)
-	if err != nil {
-		t.Fatalf("This should not fail : %v", err)
+	cases := []struct {
+		name     string
+		authInfo *v1beta1.ClusterServiceBrokerAuthInfo
+		secret   *corev1.Secret
+	}{
+		{
+			name:     "no auth",
+			authInfo: nil,
+			secret:   nil,
+		},
+		{
+			name:     "basic auth",
+			authInfo: getTestClusterBrokerBasicAuthInfo(),
+			secret:   getTestBasicAuthSecret(),
+		},
+		{
+			name:     "bearer auth",
+			authInfo: getTestClusterBrokerBearerAuthInfo(),
+			secret:   getTestBearerAuthSecret(),
+		},
 	}
 
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 0)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// given
+			fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, getTestCatalogConfig())
 
-	// Verify no core kube actions occurred
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+			testClusterServiceClass := getTestClusterServiceClass()
+			testClusterServicePlan := getTestClusterServicePlan()
 
-	actions := fakeCatalogClient.Actions()
-	// The four actions should be:
-	// - list serviceplans
-	// - delete serviceplans
-	// - list serviceclasses
-	// - delete serviceclass
-	// - update the ready condition
-	// - get the broker
-	// - remove the finalizer
-	assertNumberOfActions(t, actions, 7)
+			addGetSecretReaction(fakeKubeClient, tc.secret)
 
-	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", broker.Name),
-	}
-	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
-	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
-	assertDelete(t, actions[2], testClusterServicePlan)
-	assertDelete(t, actions[3], testClusterServiceClass)
-	updatedClusterServiceBroker := assertUpdateStatus(t, actions[4], broker)
-	assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
+			broker := getTestClusterServiceBrokerWithAuth(tc.authInfo)
+			broker.DeletionTimestamp = &metav1.Time{}
+			broker.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
 
-	assertGet(t, actions[5], broker)
+			updateBrokerClientCalled := false
+			testController.brokerClientManager = NewBrokerClientManager(func(_ *osb.ClientConfiguration) (osb.Client, error) {
+				updateBrokerClientCalled = true
+				return nil, nil
+			})
 
-	updatedClusterServiceBroker = assertUpdateStatus(t, actions[6], broker)
-	assertEmptyFinalizers(t, updatedClusterServiceBroker)
+			fakeCatalogClient.AddReactor(getClusterServiceBrokerReactor(broker))
+			fakeCatalogClient.AddReactor(listClusterServiceClassesReactor([]v1beta1.ClusterServiceClass{*testClusterServiceClass}))
+			fakeCatalogClient.AddReactor(listClusterServicePlansReactor([]v1beta1.ClusterServicePlan{*testClusterServicePlan}))
 
-	events := getRecordedEvents(testController)
+			// when
+			err := reconcileClusterServiceBroker(t, testController, broker)
+			if err != nil {
+				t.Fatalf("This should not fail : %v", err)
+			}
 
-	expectedEvent := normalEventBuilder(successClusterServiceBrokerDeletedReason).msg(
-		"The broker test-clusterservicebroker was deleted successfully.",
-	)
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
+			// then
+			if updateBrokerClientCalled {
+				t.Errorf("Unexpected broker client update action")
+			}
+
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			assertNumberOfBrokerActions(t, brokerActions, 0)
+
+			kubeActions := fakeKubeClient.Actions()
+			assertNumberOfActions(t, kubeActions, 0)
+
+			catalogActions := fakeCatalogClient.Actions()
+			// The actions should be:
+			// - list serviceplans
+			// - delete serviceplans
+			// - list serviceclasses
+			// - delete serviceclass
+			// - update the ready condition
+			// - get the broker
+			// - remove the finalizer
+			assertNumberOfActions(t, catalogActions, 7)
+
+			listRestrictions := clientgotesting.ListRestrictions{
+				Labels: labels.Everything(),
+				Fields: fields.OneTermEqualSelector("spec.clusterServiceBrokerName", broker.Name),
+			}
+			assertList(t, catalogActions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
+			assertList(t, catalogActions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
+			assertDelete(t, catalogActions[2], testClusterServicePlan)
+			assertDelete(t, catalogActions[3], testClusterServiceClass)
+			updatedClusterServiceBroker := assertUpdateStatus(t, catalogActions[4], broker)
+			assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
+
+			assertGet(t, catalogActions[5], broker)
+
+			updatedClusterServiceBroker = assertUpdateStatus(t, catalogActions[6], broker)
+			assertEmptyFinalizers(t, updatedClusterServiceBroker)
+
+			events := getRecordedEvents(testController)
+
+			expectedEvent := normalEventBuilder(successClusterServiceBrokerDeletedReason).msg(
+				"The broker test-clusterservicebroker was deleted successfully.",
+			)
+			if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
@@ -741,34 +790,6 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 }
 
 func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
-	basicAuthInfo := &v1beta1.ClusterServiceBrokerAuthInfo{
-		Basic: &v1beta1.ClusterBasicAuthConfig{
-			SecretRef: &v1beta1.ObjectReference{
-				Namespace: "test-ns",
-				Name:      "auth-secret",
-			},
-		},
-	}
-	bearerAuthInfo := &v1beta1.ClusterServiceBrokerAuthInfo{
-		Bearer: &v1beta1.ClusterBearerTokenAuthConfig{
-			SecretRef: &v1beta1.ObjectReference{
-				Namespace: "test-ns",
-				Name:      "auth-secret",
-			},
-		},
-	}
-	basicAuthSecret := &corev1.Secret{
-		Data: map[string][]byte{
-			v1beta1.BasicAuthUsernameKey: []byte("foo"),
-			v1beta1.BasicAuthPasswordKey: []byte("bar"),
-		},
-	}
-	bearerAuthSecret := &corev1.Secret{
-		Data: map[string][]byte{
-			v1beta1.BearerTokenKey: []byte("token"),
-		},
-	}
-
 	// The test cases here are testing the correctness of authentication with broker
 	//
 	// Anonymous struct fields:
@@ -784,37 +805,37 @@ func TestReconcileClusterServiceBrokerWithAuth(t *testing.T) {
 	}{
 		{
 			name:          "basic auth - normal",
-			authInfo:      basicAuthInfo,
-			secret:        basicAuthSecret,
+			authInfo:      getTestClusterBrokerBasicAuthInfo(),
+			secret:        getTestBasicAuthSecret(),
 			shouldSucceed: true,
 		},
 		{
 			name:          "basic auth - invalid secret",
-			authInfo:      basicAuthInfo,
-			secret:        bearerAuthSecret,
+			authInfo:      getTestClusterBrokerBasicAuthInfo(),
+			secret:        getTestBearerAuthSecret(),
 			shouldSucceed: false,
 		},
 		{
 			name:          "basic auth - secret not found",
-			authInfo:      basicAuthInfo,
+			authInfo:      getTestClusterBrokerBasicAuthInfo(),
 			secret:        nil,
 			shouldSucceed: false,
 		},
 		{
 			name:          "bearer auth - normal",
-			authInfo:      bearerAuthInfo,
-			secret:        bearerAuthSecret,
+			authInfo:      getTestClusterBrokerBearerAuthInfo(),
+			secret:        getTestBearerAuthSecret(),
 			shouldSucceed: true,
 		},
 		{
 			name:          "bearer auth - invalid secret",
-			authInfo:      bearerAuthInfo,
-			secret:        basicAuthSecret,
+			authInfo:      getTestClusterBrokerBearerAuthInfo(),
+			secret:        getTestBasicAuthSecret(),
 			shouldSucceed: false,
 		},
 		{
 			name:          "bearer auth - secret not found",
-			authInfo:      bearerAuthInfo,
+			authInfo:      getTestClusterBrokerBearerAuthInfo(),
 			secret:        nil,
 			shouldSucceed: false,
 		},
