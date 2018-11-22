@@ -239,7 +239,6 @@ var _ = Describe("Instances", func() {
 			secrets["username"] = "admin"
 			secrets["password"] = "abc123"
 			retries := 3
-
 			opts := &ProvisionOptions{
 				ExternalID: "",
 				Namespace:  namespace,
@@ -299,8 +298,14 @@ var _ = Describe("Instances", func() {
 			secrets := make(map[string]string)
 			secrets["username"] = "admin"
 			secrets["password"] = "abc123"
+			opts := &ProvisionOptions{
+				ExternalID: externalID,
+				Namespace:  namespace,
+				Params:     params,
+				Secrets:    secrets,
+			}
 
-			_, err := sdk.Provision(namespace, instanceName, externalID, className, planName, params, secrets)
+			_, err := sdk.Provision(instanceName, className, planName, opts)
 			Expect(err).To(BeNil())
 			// once for the provision request
 			actions := svcCatClient.Actions()
