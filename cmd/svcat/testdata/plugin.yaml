@@ -405,9 +405,9 @@ tree:
     - desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
         1h'
       name: interval
-    - desc: 'Additional parameter to use when updating the service instance, format:
-        NAME=VALUE. Cannot be combined with --params-json, Sensitive information should
-        be placed in a secret and specified with --secret'
+    - desc: 'Replaces existing parameters on the service instance, format: NAME=VALUE.
+        Cannot be combined with --params-json, Sensitive information should be placed
+        in a secret and specified with --secret'
       name: param
       shorthand: p
     - desc: Additional parameters to use when updating the service instance, provided
