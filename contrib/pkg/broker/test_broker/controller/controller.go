@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
@@ -36,28 +37,28 @@ func (e errNoSuchInstance) Error() string {
 }
 
 type testServiceInstance struct {
-	Name       string
-	Credential *brokerapi.Credential
+	Name          string
+	Credential    *brokerapi.Credential
+	provisionedAt time.Time
+}
+
+type testService struct {
+	brokerapi.Service
+	Asynchronous bool
 }
 
 type testController struct {
 	rwMutex     sync.RWMutex
+	serviceMap  map[string]*testService
 	instanceMap map[string]*testServiceInstance
 }
 
 // CreateController creates an instance of a Test service broker controller.
 func CreateController() controller.Controller {
 	var instanceMap = make(map[string]*testServiceInstance)
-	return &testController{
-		instanceMap: instanceMap,
-	}
-}
-
-func (c *testController) Catalog() (*brokerapi.Catalog, error) {
-	glog.Info("Catalog()")
-	return &brokerapi.Catalog{
-		Services: []*brokerapi.Service{
-			{
+	services := []*testService{
+		{
+			Service: brokerapi.Service{
 				Name:        "test-service",
 				ID:          "fe43b7d8-f0d4-11e8-bdba-54ee754ec85f",
 				Description: "A test service",
@@ -76,7 +77,9 @@ func (c *testController) Catalog() (*brokerapi.Catalog, error) {
 				Bindable:       true,
 				PlanUpdateable: true,
 			},
-			{
+		},
+		{
+			Service: brokerapi.Service{
 				Name:        "test-service-single-plan",
 				ID:          "4458dd64-8b63-4f84-9c1b-6a127614e122",
 				Description: "A test service that only has a single plan",
@@ -91,7 +94,27 @@ func (c *testController) Catalog() (*brokerapi.Catalog, error) {
 				Bindable:       true,
 				PlanUpdateable: true,
 			},
-			{
+		},
+		{
+			Service: brokerapi.Service{
+				Name:        "test-service-async",
+				ID:          "b4073486-4759-4055-840a-f5f8b07231ff",
+				Description: "A test service that is asynchronously provisioned",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "4f6741a8-2451-43c7-b473-a4f8e9f89a87",
+						Description: "Sample plan description",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
+			Asynchronous: true,
+		},
+		{
+			Service: brokerapi.Service{
 				Name:        "test-service-with-schemas",
 				ID:          "c57f5b14-804e-4a3b-9047-755a7f145961",
 				Description: "A test service with parameter and response schemas",
@@ -182,6 +205,27 @@ func (c *testController) Catalog() (*brokerapi.Catalog, error) {
 				PlanUpdateable: true,
 			},
 		},
+	}
+
+	var serviceMap = make(map[string]*testService)
+	for _, s := range services {
+		serviceMap[s.ID] = s
+	}
+
+	return &testController{
+		instanceMap: instanceMap,
+		serviceMap:  serviceMap,
+	}
+}
+
+func (c *testController) Catalog() (*brokerapi.Catalog, error) {
+	glog.Info("Catalog()")
+	services := []*brokerapi.Service{}
+	for _, s := range c.serviceMap {
+		services = append(services, &s.Service)
+	}
+	return &brokerapi.Catalog{
+		Services: services,
 	}, nil
 }
 
@@ -220,8 +264,21 @@ func (c *testController) CreateServiceInstance(
 		}
 	}
 
+	service, ok := c.serviceMap[req.ServiceID]
+	async := false
+	if ok && service.Asynchronous {
+		async = true
+		c.instanceMap[id].provisionedAt = time.Now().Add(1 * time.Minute)
+	}
+
 	glog.Infof("Created Test Service Instance:\n%v\n", c.instanceMap[id])
-	return &brokerapi.CreateServiceInstanceResponse{}, nil
+	if async {
+		return &brokerapi.CreateServiceInstanceResponse{
+			Operation: "provision",
+		}, nil
+	} else {
+		return &brokerapi.CreateServiceInstanceResponse{}, nil
+	}
 }
 
 func (c *testController) GetServiceInstanceLastOperation(
@@ -231,6 +288,29 @@ func (c *testController) GetServiceInstanceLastOperation(
 	operation string,
 ) (*brokerapi.LastOperationResponse, error) {
 	glog.Info("GetServiceInstanceLastOperation()")
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+
+	instance, ok := c.instanceMap[instanceID]
+
+	switch operation {
+	case "provision":
+		if !ok {
+			return nil, errors.New("Not found")
+		}
+		if instance.provisionedAt.Before(time.Now()) {
+			return &brokerapi.LastOperationResponse{
+				State:       brokerapi.StateSucceeded,
+				Description: "Succeeded",
+			}, nil
+		} else {
+			return &brokerapi.LastOperationResponse{
+				State:       brokerapi.StateInProgress,
+				Description: "Still provisioning...",
+			}, nil
+		}
+	}
+
 	return nil, errors.New("Unimplemented")
 }
 

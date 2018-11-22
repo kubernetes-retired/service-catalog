@@ -151,7 +151,11 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if result, err := s.controller.CreateServiceInstance(id, &req); err == nil {
-		util.WriteResponse(w, http.StatusCreated, result)
+		if result.Operation == "" {
+			util.WriteResponse(w, http.StatusCreated, result) // TODO: return StatusOK if instance already exists
+		} else {
+			util.WriteResponse(w, http.StatusAccepted, result)
+		}
 	} else {
 		util.WriteErrorResponse(w, http.StatusBadRequest, err)
 	}
