@@ -87,132 +87,48 @@ func CreateController() controller.Controller {
 				PlanUpdateable: true,
 			},
 		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-single-plan",
-				ID:          "4458dd64-8b63-4f84-9c1b-6a127614e122",
-				Description: "A test service that only has a single plan",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "35b6030d-f81e-49cd-9d1f-2f5eaec57048",
-						Description: "Sample plan description",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-async",
-				ID:          "b4073486-4759-4055-840a-f5f8b07231ff",
-				Description: "A test service that is asynchronously provisioned",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "4f6741a8-2451-43c7-b473-a4f8e9f89a87",
-						Description: "Sample plan description",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-			Asynchronous: true,
-		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-provision-fail",
-				ID:          "15619930-5f4f-476a-87cd-7690901874c6",
-				Description: "Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "525a787c-78d8-42af-8800-e9bf4bd71117",
-						Description: "Default plan",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-			ProvisionFailTimes: failAlways,
-		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-provision-fail-5x",
-				ID:          "226f24e0-def0-491d-a5b3-cd484bb6a4cf",
-				Description: "Provisioning of this service fails 5 times, then succeeds.",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
-						Description: "Default plan",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-			ProvisionFailTimes: 5,
-		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-deprovision-fail",
-				ID:          "8207d20b-e428-44cd-bff4-20926aa19327",
-				Description: "Provisioning of this service always succeeds, but deprovisiong always fails.",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "27ac655b-864e-4447-8bea-eb38a0e0cf79",
-						Description: "Default plan",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-			DeprovisionFailTimes: failAlways,
-		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-deprovision-fail-5x",
-				ID:          "07668858-b210-4101-916e-2627165af174",
-				Description: "Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
-						Description: "Default plan",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-			DeprovisionFailTimes: 5,
-		},
-		{
-			Service: brokerapi.Service{
-				Name:        "test-service-provision-fail-5x-deprovision-fail-5x",
-				ID:          "38f9a4a1-c206-411b-ad33-71a1af979993",
-				Description: "Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
-				Plans: []brokerapi.ServicePlan{
-					{
-						Name:        "default",
-						ID:          "1179dfe7-9dbb-4d23-987f-2f722ca4f733",
-						Description: "Default plan",
-						Free:        true,
-					},
-				},
-				Bindable:       true,
-				PlanUpdateable: true,
-			},
-			ProvisionFailTimes:   5,
-			DeprovisionFailTimes: 5,
-		},
+		newTestService(
+			"test-service-single-plan",
+			"4458dd64-8b63-4f84-9c1b-6a127614e122",
+			"A test service that only has a single plan",
+			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
+			false, 0, 0),
+		newTestService(
+			"test-service-async",
+			"b4073486-4759-4055-840a-f5f8b07231ff",
+			"A test service that is asynchronously provisioned",
+			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
+			true, 0, 0),
+		newTestService(
+			"test-service-provision-fail",
+			"15619930-5f4f-476a-87cd-7690901874c6",
+			"Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
+			"525a787c-78d8-42af-8800-e9bf4bd71117",
+			false, failAlways, 0),
+		newTestService(
+			"test-service-provision-fail-5x",
+			"226f24e0-def0-491d-a5b3-cd484bb6a4cf",
+			"Provisioning of this service fails 5 times, then succeeds.",
+			"21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
+			false, 5, 0),
+		newTestService(
+			"test-service-deprovision-fail",
+			"8207d20b-e428-44cd-bff4-20926aa19327",
+			"Provisioning of this service always succeeds, but deprovisiong always fails.",
+			"27ac655b-864e-4447-8bea-eb38a0e0cf79",
+			false, 0, failAlways),
+		newTestService(
+			"test-service-deprovision-fail-5x",
+			"07668858-b210-4101-916e-2627165af174",
+			"Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
+			"3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
+			false, 0, 5),
+		newTestService(
+			"test-service-provision-fail-5x-deprovision-fail-5x",
+			"38f9a4a1-c206-411b-ad33-71a1af979993",
+			"Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
+			"1179dfe7-9dbb-4d23-987f-2f722ca4f733",
+			false, 5, 5),
 		{
 			Service: brokerapi.Service{
 				Name:        "test-service-with-schemas",
@@ -316,6 +232,29 @@ func CreateController() controller.Controller {
 		instanceMap:       instanceMap,
 		serviceMap:        serviceMap,
 		provisionCountMap: make(map[string]int),
+	}
+}
+
+func newTestService(name string, id string, description string, planID string, async bool, provisionFailTimes int, deprovisionFailTimes int) *testService {
+	return &testService{
+		Service: brokerapi.Service{
+			Name:        name,
+			ID:          id,
+			Description: description,
+			Plans: []brokerapi.ServicePlan{
+				{
+					Name:        "default",
+					ID:          planID,
+					Description: "Default plan",
+					Free:        true,
+				},
+			},
+			Bindable:       true,
+			PlanUpdateable: true,
+		},
+		Asynchronous:         async,
+		ProvisionFailTimes:   provisionFailTimes,
+		DeprovisionFailTimes: deprovisionFailTimes,
 	}
 }
 
