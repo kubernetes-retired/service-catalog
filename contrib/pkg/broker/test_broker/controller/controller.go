@@ -20,13 +20,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
+	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
 )
+
+const failAlways = math.MaxInt32
 
 type errNoSuchInstance struct {
 	instanceID string
@@ -37,20 +42,24 @@ func (e errNoSuchInstance) Error() string {
 }
 
 type testServiceInstance struct {
-	Name          string
-	Credential    *brokerapi.Credential
-	provisionedAt time.Time
+	Name                         string
+	Credential                   *brokerapi.Credential
+	provisionedAt                time.Time
+	remainingDeprovisionFailures int
 }
 
 type testService struct {
 	brokerapi.Service
-	Asynchronous bool
+	Asynchronous         bool
+	ProvisionFailTimes   int
+	DeprovisionFailTimes int
 }
 
 type testController struct {
-	rwMutex     sync.RWMutex
-	serviceMap  map[string]*testService
-	instanceMap map[string]*testServiceInstance
+	rwMutex           sync.RWMutex
+	serviceMap        map[string]*testService
+	instanceMap       map[string]*testServiceInstance
+	provisionCountMap map[string]int
 }
 
 // CreateController creates an instance of a Test service broker controller.
@@ -112,6 +121,97 @@ func CreateController() controller.Controller {
 				PlanUpdateable: true,
 			},
 			Asynchronous: true,
+		},
+		{
+			Service: brokerapi.Service{
+				Name:        "test-service-provision-fail",
+				ID:          "15619930-5f4f-476a-87cd-7690901874c6",
+				Description: "Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "525a787c-78d8-42af-8800-e9bf4bd71117",
+						Description: "Default plan",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
+			ProvisionFailTimes: failAlways,
+		},
+		{
+			Service: brokerapi.Service{
+				Name:        "test-service-provision-fail-5x",
+				ID:          "226f24e0-def0-491d-a5b3-cd484bb6a4cf",
+				Description: "Provisioning of this service fails 5 times, then succeeds.",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
+						Description: "Default plan",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
+			ProvisionFailTimes: 5,
+		},
+		{
+			Service: brokerapi.Service{
+				Name:        "test-service-deprovision-fail",
+				ID:          "8207d20b-e428-44cd-bff4-20926aa19327",
+				Description: "Provisioning of this service always succeeds, but deprovisiong always fails.",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "27ac655b-864e-4447-8bea-eb38a0e0cf79",
+						Description: "Default plan",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
+			DeprovisionFailTimes: failAlways,
+		},
+		{
+			Service: brokerapi.Service{
+				Name:        "test-service-deprovision-fail-5x",
+				ID:          "07668858-b210-4101-916e-2627165af174",
+				Description: "Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
+						Description: "Default plan",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
+			DeprovisionFailTimes: 5,
+		},
+		{
+			Service: brokerapi.Service{
+				Name:        "test-service-provision-fail-5x-deprovision-fail-5x",
+				ID:          "38f9a4a1-c206-411b-ad33-71a1af979993",
+				Description: "Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
+				Plans: []brokerapi.ServicePlan{
+					{
+						Name:        "default",
+						ID:          "1179dfe7-9dbb-4d23-987f-2f722ca4f733",
+						Description: "Default plan",
+						Free:        true,
+					},
+				},
+				Bindable:       true,
+				PlanUpdateable: true,
+			},
+			ProvisionFailTimes:   5,
+			DeprovisionFailTimes: 5,
 		},
 		{
 			Service: brokerapi.Service{
@@ -213,8 +313,9 @@ func CreateController() controller.Controller {
 	}
 
 	return &testController{
-		instanceMap: instanceMap,
-		serviceMap:  serviceMap,
+		instanceMap:       instanceMap,
+		serviceMap:        serviceMap,
+		provisionCountMap: make(map[string]int),
 	}
 }
 
@@ -233,6 +334,12 @@ func (c *testController) CreateServiceInstance(
 	id string,
 	req *brokerapi.CreateServiceInstanceRequest,
 ) (*brokerapi.CreateServiceInstanceResponse, error) {
+
+	service, ok := c.serviceMap[req.ServiceID]
+	if !ok {
+		return nil, fmt.Errorf("Service %q does not exist", req.ServiceID)
+	}
+
 	glog.Info("CreateServiceInstance()")
 	credString, ok := req.Parameters["credentials"]
 	c.rwMutex.Lock()
@@ -251,8 +358,9 @@ func (c *testController) CreateServiceInstance(
 		}
 
 		c.instanceMap[id] = &testServiceInstance{
-			Name:       id,
-			Credential: &cred,
+			Name:                         id,
+			Credential:                   &cred,
+			remainingDeprovisionFailures: service.DeprovisionFailTimes,
 		}
 	} else {
 		c.instanceMap[id] = &testServiceInstance{
@@ -261,12 +369,14 @@ func (c *testController) CreateServiceInstance(
 				"special-key-1": "special-value-1",
 				"special-key-2": "special-value-2",
 			},
+			remainingDeprovisionFailures: service.DeprovisionFailTimes,
 		}
 	}
 
-	service, ok := c.serviceMap[req.ServiceID]
+	c.provisionCountMap[id]++
+
 	async := false
-	if ok && service.Asynchronous {
+	if service.Asynchronous {
 		async = true
 		c.instanceMap[id].provisionedAt = time.Now().Add(1 * time.Minute)
 	}
@@ -277,7 +387,12 @@ func (c *testController) CreateServiceInstance(
 			Operation: "provision",
 		}, nil
 	} else {
-		return &brokerapi.CreateServiceInstanceResponse{}, nil
+		provisionCount, _ := c.provisionCountMap[id]
+		if provisionCount <= service.ProvisionFailTimes {
+			return nil, server.NewErrorWithHttpStatus("Service is configured to fail provisioning", http.StatusInternalServerError)
+		} else {
+			return &brokerapi.CreateServiceInstanceResponse{}, nil
+		}
 	}
 }
 
@@ -323,10 +438,15 @@ func (c *testController) RemoveServiceInstance(
 	glog.Info("RemoveServiceInstance()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
-	_, ok := c.instanceMap[instanceID]
+	instance, ok := c.instanceMap[instanceID]
 	if ok {
-		delete(c.instanceMap, instanceID)
-		return &brokerapi.DeleteServiceInstanceResponse{}, nil
+		if instance.remainingDeprovisionFailures > 0 {
+			instance.remainingDeprovisionFailures--
+			return nil, server.NewErrorWithHttpStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
+		} else {
+			delete(c.instanceMap, instanceID)
+			return &brokerapi.DeleteServiceInstanceResponse{}, nil
+		}
 	}
 
 	return &brokerapi.DeleteServiceInstanceResponse{}, nil

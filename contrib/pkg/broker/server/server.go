@@ -36,6 +36,23 @@ type server struct {
 	controller controller.Controller
 }
 
+type ErrorWithHttpStatus struct {
+	err        string
+	httpStatus int
+}
+
+func NewErrorWithHttpStatus(err string, httpStatus int) ErrorWithHttpStatus {
+	return ErrorWithHttpStatus{err, httpStatus}
+}
+
+func (e ErrorWithHttpStatus) Error() string {
+	return e.err
+}
+
+func (e ErrorWithHttpStatus) HttpStatus() int {
+	return e.httpStatus
+}
+
 // CreateHandler creates Broker HTTP handler based on an implementation
 // of a controller.Controller interface.
 func createHandler(c controller.Controller) http.Handler {
@@ -113,7 +130,7 @@ func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.Catalog(); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
 }
 
@@ -128,7 +145,7 @@ func (s *server) getServiceInstanceLastOperation(w http.ResponseWriter, r *http.
 	if result, err := s.controller.GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
 }
 
@@ -139,7 +156,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	var req brokerapi.CreateServiceInstanceRequest
 	if err := util.BodyToObject(r, &req); err != nil {
 		klog.Errorf("error unmarshalling: %v", err)
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 		return
 	}
 
@@ -157,7 +174,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 			util.WriteResponse(w, http.StatusAccepted, result)
 		}
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
 }
 
@@ -172,8 +189,15 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.RemoveServiceInstance(instanceID, serviceID, planID, acceptsIncomplete); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
+}
+
+func getHttpStatus(err error) int {
+	if err, ok := err.(ErrorWithHttpStatus); ok {
+		return err.HttpStatus()
+	}
+	return http.StatusBadRequest
 }
 
 func (s *server) bind(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +210,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 
 	if err := util.BodyToObject(r, &req); err != nil {
 		klog.Errorf("Failed to unmarshall request: %v", err)
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 		return
 	}
 
@@ -203,7 +227,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.Bind(instanceID, bindingID, &req); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
 }
 
@@ -220,6 +244,6 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, "{}") //id)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
 }
