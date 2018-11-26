@@ -45,6 +45,7 @@ type testServiceInstance struct {
 	Name                         string
 	Credential                   *brokerapi.Credential
 	provisionedAt                time.Time
+	deprovisionedAt              time.Time
 	remainingDeprovisionFailures int
 }
 
@@ -96,7 +97,7 @@ func CreateController() controller.Controller {
 		newTestService(
 			"test-service-async",
 			"b4073486-4759-4055-840a-f5f8b07231ff",
-			"A test service that is asynchronously provisioned",
+			"A test service that is asynchronously provisioned & deprovisioned",
 			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
 			true, 0, 0),
 		newTestService(
@@ -345,13 +346,13 @@ func (c *testController) GetServiceInstanceLastOperation(
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
-	instance, ok := c.instanceMap[instanceID]
+	instance, exists := c.instanceMap[instanceID]
+	if !exists {
+		return nil, server.NewErrorWithHttpStatus("Instance not found", http.StatusGone)
+	}
 
 	switch operation {
 	case "provision":
-		if !ok {
-			return nil, errors.New("Not found")
-		}
 		if instance.provisionedAt.Before(time.Now()) {
 			return &brokerapi.LastOperationResponse{
 				State:       brokerapi.StateSucceeded,
@@ -361,6 +362,19 @@ func (c *testController) GetServiceInstanceLastOperation(
 			return &brokerapi.LastOperationResponse{
 				State:       brokerapi.StateInProgress,
 				Description: "Still provisioning...",
+			}, nil
+		}
+	case "deprovision":
+		if instance.deprovisionedAt.Before(time.Now()) {
+			delete(c.instanceMap, instanceID)
+			return &brokerapi.LastOperationResponse{
+				State:       brokerapi.StateSucceeded,
+				Description: "Succeeded",
+			}, nil
+		} else {
+			return &brokerapi.LastOperationResponse{
+				State:       brokerapi.StateInProgress,
+				Description: "Still deprovisioning...",
 			}, nil
 		}
 	}
@@ -379,12 +393,22 @@ func (c *testController) RemoveServiceInstance(
 	defer c.rwMutex.Unlock()
 	instance, ok := c.instanceMap[instanceID]
 	if ok {
-		if instance.remainingDeprovisionFailures > 0 {
-			instance.remainingDeprovisionFailures--
-			return nil, server.NewErrorWithHttpStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
-		} else {
-			delete(c.instanceMap, instanceID)
-			return &brokerapi.DeleteServiceInstanceResponse{}, nil
+		service, ok := c.serviceMap[serviceID]
+		if ok {
+			if service.Asynchronous {
+				instance.deprovisionedAt = time.Now().Add(1 * time.Minute)
+				return &brokerapi.DeleteServiceInstanceResponse{
+					Operation: "deprovision",
+				}, nil
+			} else {
+				if instance.remainingDeprovisionFailures > 0 {
+					instance.remainingDeprovisionFailures--
+					return nil, server.NewErrorWithHttpStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
+				} else {
+					delete(c.instanceMap, instanceID)
+					return &brokerapi.DeleteServiceInstanceResponse{}, nil
+				}
+			}
 		}
 	}
 

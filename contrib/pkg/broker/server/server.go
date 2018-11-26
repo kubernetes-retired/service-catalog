@@ -187,7 +187,11 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	klog.Infof("RemoveServiceInstance %s...\n", instanceID)
 
 	if result, err := s.controller.RemoveServiceInstance(instanceID, serviceID, planID, acceptsIncomplete); err == nil {
-		util.WriteResponse(w, http.StatusOK, result)
+		if result.Operation == "" {
+			util.WriteResponse(w, http.StatusOK, result)
+		} else {
+			util.WriteResponse(w, http.StatusAccepted, result)
+		}
 	} else {
 		util.WriteErrorResponse(w, getHttpStatus(err), err)
 	}
