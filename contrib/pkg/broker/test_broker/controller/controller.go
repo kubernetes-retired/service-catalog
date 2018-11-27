@@ -103,6 +103,36 @@ func CreateController() controller.Controller {
 			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
 			true, 0, 0, 0),
 		newTestService(
+			"test-service-async-provision-fail",
+			"413db4f6-cec2-4e3a-8e83-f98aa95ac6f0",
+			"A test service that is asynchronously provisioned, but provisioning always returns HTTP status 500 (provisioning never succeeds)",
+			"9aca0b9a-192e-416a-a809-67e592bfa681",
+			false, failAlways, 0, 0),
+		newTestService(
+			"test-service-async-provision-fail-5x",
+			"5900edb0-b300-4e43-b0aa-4cfb2d1ee093",
+			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds.",
+			"a1027080-966d-4ec3-b4e1-abc3f52b7de2",
+			false, 5, 0, 0),
+		newTestService(
+			"test-service-async-deprovision-fail",
+			"34acacee-8272-40ed-935d-7374ea8c2046",
+			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisiong always fails.",
+			"1a5c2a06-28db-4b05-a386-3dad81dec931",
+			false, 0, failAlways, 0),
+		newTestService(
+			"test-service-async-deprovision-fail-5x",
+			"fd60b52d-f8fc-4af7-a60d-260335ef5e4f",
+			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisioning fails 5 times, then succeeds.",
+			"dce5da49-fc42-4490-a053-8415fd569461",
+			false, 0, 5, 0),
+		newTestService(
+			"test-service-async-provision-fail-5x-deprovision-fail-5x",
+			"0a822e40-d330-494e-b059-c5e84421d463",
+			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
+			"35234488-830f-4efe-ae16-a36bb0092cce",
+			false, 5, 5, 0),
+		newTestService(
 			"test-service-async-last-operation-fail",
 			"40b0dff1-2180-460e-98f1-890c127e3613",
 			"A test service that is asynchronously provisioned, but lastOperation never succeeds",
