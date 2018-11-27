@@ -38,3 +38,11 @@ type RegisterOptions struct {
 	RelistDuration    *metav1.Duration
 	SkipTLS           bool
 }
+
+// ProvisionOptions allows for the passing of optional fields to the instance Provision method.
+type ProvisionOptions struct {
+	ExternalID string
+	Namespace  string
+	Params     interface{}
+	Secrets    map[string]string
+}

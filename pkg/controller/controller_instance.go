@@ -105,6 +105,8 @@ const (
 
 	minBrokerOperationRetryDelay time.Duration = time.Second * 1
 	maxBrokerOperationRetryDelay time.Duration = time.Minute * 20
+
+	eventHandlerLogLevel = 4 // TODO: move all logLevel settings to a central location
 )
 
 type backoffEntry struct {
@@ -122,8 +124,8 @@ type instanceOperationBackoff struct {
 
 // ServiceInstance handlers and control-loop
 
-// instanceAdd adds the instance key to the work queue
-func (c *controller) instanceAdd(obj interface{}) {
+// enqueueInstance adds the instance key to the work queue
+func (c *controller) enqueueInstance(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
@@ -132,9 +134,9 @@ func (c *controller) instanceAdd(obj interface{}) {
 	c.instanceQueue.Add(key)
 }
 
-// instanceAddAfter adds the instance key to the work queue after the specified
+// enqueueInstanceAfter adds the instance key to the work queue after the specified
 // duration elapses
-func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
+func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
 		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
@@ -143,24 +145,42 @@ func (c *controller) instanceAddAfter(obj interface{}, d time.Duration) {
 	c.instanceQueue.AddAfter(key, d)
 }
 
+// instanceAdd handles the ServiceInstance ADDED watch event
+func (c *controller) instanceAdd(obj interface{}) {
+	if glog.V(eventHandlerLogLevel) {
+		instance := obj.(*v1beta1.ServiceInstance)
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		glog.Info(pcb.Message("Received ADD event"))
+	}
+	c.enqueueInstance(obj)
+}
+
+// instanceUpdate handles the ServiceInstance UPDATED watch event
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
+	instance := newObj.(*v1beta1.ServiceInstance)
+	if glog.V(eventHandlerLogLevel) {
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		glog.Info(pcb.Message("Received UPDATE event"))
+	}
 	// Instances with ongoing asynchronous operations will be manually added
 	// to the polling queue by the reconciler. They should be ignored here in
 	// order to enforce polling rate-limiting.
-	instance := newObj.(*v1beta1.ServiceInstance)
 	if !instance.Status.AsyncOpInProgress {
-		c.instanceAdd(newObj)
+		c.enqueueInstance(newObj)
 	}
 }
 
+// instanceDelete handles the ServiceInstance DELETED watch event
 func (c *controller) instanceDelete(obj interface{}) {
 	instance, ok := obj.(*v1beta1.ServiceInstance)
 	if instance == nil || !ok {
 		return
 	}
 
-	pcb := pretty.NewInstanceContextBuilder(instance)
-	glog.V(4).Info(pcb.Message("Received delete event; no further processing will occur"))
+	if glog.V(eventHandlerLogLevel) {
+		pcb := pretty.NewInstanceContextBuilder(instance)
+		glog.Info(pcb.Message("Received DELETE event; no further processing will occur"))
+	}
 }
 
 // Async operations on instances have a somewhat convoluted flow in order to
@@ -434,7 +454,7 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 			glog.V(2).Info(pcb.Messagef("BrokerOpRetry: %s", msg))
 
 			// add back to worker queue to retry at the specified time
-			c.instanceAddAfter(instance, delay)
+			c.enqueueInstanceAfter(instance, delay)
 			return true
 		}
 	}
@@ -1143,7 +1163,7 @@ func (c *controller) processServiceInstancePollingTerminalFailure(instance *v1be
 	return c.finishPollingServiceInstance(instance)
 }
 
-// processServiceInstancePollingTerminalFailure marks the instance as having
+// processServiceInstancePollingTemporaryFailure marks the instance as having
 // failed polling with a temporary error
 func (c *controller) processServiceInstancePollingTemporaryFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
 	c.recorder.Event(instance, corev1.EventTypeWarning, readyCond.Reason, readyCond.Message)
@@ -1666,7 +1686,7 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) 
 		return request, inProgressProperties, nil
 	}
 
-	// If we're hitting this retun, it means we couldn't tell whether the class
+	// If we're hitting this return, it means we couldn't tell whether the class
 	// and plan were cluster or namespace scoped
 	return nil, nil, stderrors.New(errorAmbiguousPlanReferenceScope)
 }
@@ -2108,7 +2128,7 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 	toUpdate.Status.InProgressProperties = nil
 }
 
-// serviceInstanceHasExistingBindings returns true if there are any existing
+// checkServiceInstanceHasExistingBindings returns true if there are any existing
 // bindings associated with the given ServiceInstance.
 func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.ServiceInstance) error {
 	bindingLister := c.bindingLister.ServiceBindings(instance.Namespace)
@@ -2361,6 +2381,40 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 			return nil, nil, stderrors.New("InProgressProperties must be set when there is an operation or orphan mitigation in progress")
 		}
 		rh.inProgressProperties = instance.Status.InProgressProperties
+	} else if instance.Status.ProvisionStatus != v1beta1.ServiceInstanceProvisionStatusProvisioned {
+		// terminal provisioning failure
+		// we don't have ExternalProperties and InProgressProperties in Status anymore, so we have to build them
+		if instance.Spec.ClusterServiceClassSpecified() {
+			servicePlan, err := c.clusterServicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
+			if err != nil {
+				return nil, nil, &operationError{
+					reason: errorNonexistentClusterServicePlanReason,
+					message: fmt.Sprintf(
+						"The instance references a non-existent ClusterServicePlan %q - %v",
+						instance.Spec.ClusterServicePlanRef.Name, instance.Spec.PlanReference,
+					),
+				}
+			}
+			rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+				ClusterServicePlanExternalName: servicePlan.Spec.ExternalName,
+				ClusterServicePlanExternalID:   servicePlan.Spec.ExternalID,
+			}
+		} else {
+			servicePlan, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanRef.Name)
+			if err != nil {
+				return nil, nil, &operationError{
+					reason: errorNonexistentServicePlanReason,
+					message: fmt.Sprintf(
+						"The instance references a non-existent ServicePlan %q - %v",
+						instance.Spec.ServicePlanRef.Name, instance.Spec.PlanReference,
+					),
+				}
+			}
+			rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
+				ServicePlanExternalName: servicePlan.Spec.ExternalName,
+				ServicePlanExternalID:   servicePlan.Spec.ExternalID,
+			}
+		}
 	} else {
 		if instance.Status.ExternalProperties == nil {
 			return nil, nil, stderrors.New("ExternalProperties must be set before deprovisioning")
@@ -2387,7 +2441,7 @@ func (c *controller) prepareDeprovisionRequest(instance *v1beta1.ServiceInstance
 	return request, rh.inProgressProperties, nil
 }
 
-// preparePollServiceInstanceRequest creates a request object to be passed to
+// prepareServiceInstanceLastOperationRequest creates a request object to be passed to
 // the broker client to query the given instance's last operation endpoint.
 func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta1.ServiceInstance) (*osb.LastOperationRequest, error) {
 

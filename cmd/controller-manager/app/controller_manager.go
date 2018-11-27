@@ -37,6 +37,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy"
@@ -61,6 +62,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 
 	"context"
+
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -282,28 +284,35 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 // returns a map of them.
 func getAvailableResources(clientBuilder controller.ClientBuilder, version schema.GroupVersion) (map[schema.GroupVersionResource]struct{}, error) {
 	var apiResourceList *metav1.APIResourceList
+	var clientError error
 
 	// If apiserver is not running we should wait for some time and fail only then. This is particularly
 	// important when we start apiserver and controller manager at the same time.
-	err := wait.PollImmediate(time.Second, 10*time.Second, func() (bool, error) {
-		client, err := clientBuilder.Client(controllerDiscoveryAgentName)
-		if err != nil {
-			glog.Errorf("Failed to get api versions from server: %v", err)
+	err := wait.PollImmediate(time.Second, 60*time.Second, func() (bool, error) {
+		var client clientset.Interface
+		client, clientError = clientBuilder.Client(controllerDiscoveryAgentName)
+		if clientError != nil {
+			glog.Errorf("Failed to get api versions from server: %v", clientError)
 			return false, nil
 		}
 
 		glog.V(4).Info("Created client for API discovery")
 
 		discoveryClient := client.Discovery()
-		apiResourceList, err = discoveryClient.ServerResourcesForGroupVersion(version.String())
-		if err != nil {
-			return false, fmt.Errorf("failed to get supported resources from server: %v", err)
+		apiResourceList, clientError = discoveryClient.ServerResourcesForGroupVersion(version.String())
+		if clientError != nil {
+			glog.Errorf("Failed to get supported resources from server: %v", clientError)
+			return false, nil
 		}
 
 		return true, nil
 	})
 
+	// err will be nil or indicate timeout
 	if err != nil {
+		if clientError != nil {
+			return nil, fmt.Errorf("failed to get api versions from server: %q, %q", err, clientError)
+		}
 		return nil, fmt.Errorf("failed to get api versions from server: %v", err)
 	}
 

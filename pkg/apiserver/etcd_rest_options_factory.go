@@ -33,7 +33,7 @@ type etcdRESTOptionsFactory struct {
 	storageDecorator        generic.StorageDecorator
 }
 
-// NewFor returns the RESTOptions for a particular GroupResource.
+// GetRESTOptions returns the RESTOptions for a particular GroupResource.
 func (f etcdRESTOptionsFactory) GetRESTOptions(resource schema.GroupResource) (generic.RESTOptions, error) {
 	storageConfig, err := f.storageFactory.NewConfig(resource)
 	if err != nil {

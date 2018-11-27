@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package extra
+package browsing
 
 import (
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
@@ -59,7 +59,7 @@ func (c *MarketplaceCmd) Validate(args []string) error {
 }
 
 // Run retrieves all service classes visible in the current namespace,
-// retrieves the plans belonging to those classses, and then displays
+// retrieves the plans belonging to those classes, and then displays
 // that to the user
 func (c *MarketplaceCmd) Run() error {
 	opts := servicecatalog.ScopeOptions{

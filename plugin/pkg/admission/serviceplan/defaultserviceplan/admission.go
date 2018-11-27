@@ -47,7 +47,7 @@ func Register(plugins *admission.Plugins) {
 	})
 }
 
-// exists is an implementation of admission.Interface.
+// defaultServicePlan is an implementation of admission.Interface.
 // It checks to see if Service Instance is being created without
 // a Service Plan if there is only one Service Plan for the
 // specified Service and defaults to that value.

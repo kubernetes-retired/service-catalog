@@ -9,7 +9,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
-Conditionally print out rbac api verison.
+Conditionally print out rbac api version.
 This will select v1 before v1beta1 if both are available.
 */}}
 {{- define "rbacApiVersion" -}}
