@@ -42,18 +42,20 @@ func (e errNoSuchInstance) Error() string {
 }
 
 type testServiceInstance struct {
-	Name                         string
-	Credential                   *brokerapi.Credential
-	provisionedAt                time.Time
-	deprovisionedAt              time.Time
-	remainingDeprovisionFailures int
+	Name                           string
+	Credential                     *brokerapi.Credential
+	provisionedAt                  time.Time
+	deprovisionedAt                time.Time
+	remainingDeprovisionFailures   int
+	remainingLastOperationFailures int
 }
 
 type testService struct {
 	brokerapi.Service
-	Asynchronous         bool
-	ProvisionFailTimes   int
-	DeprovisionFailTimes int
+	Asynchronous           bool
+	ProvisionFailTimes     int
+	DeprovisionFailTimes   int
+	LastOperationFailTimes int
 }
 
 type testController struct {
@@ -93,43 +95,55 @@ func CreateController() controller.Controller {
 			"4458dd64-8b63-4f84-9c1b-6a127614e122",
 			"A test service that only has a single plan",
 			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
-			false, 0, 0),
+			false, 0, 0, 0),
 		newTestService(
 			"test-service-async",
 			"b4073486-4759-4055-840a-f5f8b07231ff",
 			"A test service that is asynchronously provisioned & deprovisioned",
 			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
-			true, 0, 0),
+			true, 0, 0, 0),
+		newTestService(
+			"test-service-async-last-operation-fail",
+			"40b0dff1-2180-460e-98f1-890c127e3613",
+			"A test service that is asynchronously provisioned, but lastOperation never succeeds",
+			"624eea7a-4fb1-4e67-9ec8-379f0c855c3b",
+			true, 0, 0, failAlways),
+		newTestService(
+			"test-service-async-last-operation-fail-5x",
+			"c3bb2dda-8946-4f84-a66e-e4957d8f0e07",
+			"A test service that is asynchronously provisioned, but lastOperation only succeeds on the 5th attempt.",
+			"4254a380-4e3d-4cc1-b2b6-3c7e55b63ea2",
+			true, 0, 0, 5),
 		newTestService(
 			"test-service-provision-fail",
 			"15619930-5f4f-476a-87cd-7690901874c6",
 			"Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
 			"525a787c-78d8-42af-8800-e9bf4bd71117",
-			false, failAlways, 0),
+			false, failAlways, 0, 0),
 		newTestService(
 			"test-service-provision-fail-5x",
 			"226f24e0-def0-491d-a5b3-cd484bb6a4cf",
 			"Provisioning of this service fails 5 times, then succeeds.",
 			"21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
-			false, 5, 0),
+			false, 5, 0, 0),
 		newTestService(
 			"test-service-deprovision-fail",
 			"8207d20b-e428-44cd-bff4-20926aa19327",
 			"Provisioning of this service always succeeds, but deprovisiong always fails.",
 			"27ac655b-864e-4447-8bea-eb38a0e0cf79",
-			false, 0, failAlways),
+			false, 0, failAlways, 0),
 		newTestService(
 			"test-service-deprovision-fail-5x",
 			"07668858-b210-4101-916e-2627165af174",
 			"Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
 			"3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
-			false, 0, 5),
+			false, 0, 5, 0),
 		newTestService(
 			"test-service-provision-fail-5x-deprovision-fail-5x",
 			"38f9a4a1-c206-411b-ad33-71a1af979993",
 			"Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
 			"1179dfe7-9dbb-4d23-987f-2f722ca4f733",
-			false, 5, 5),
+			false, 5, 5, 0),
 		{
 			Service: brokerapi.Service{
 				Name:        "test-service-with-schemas",
@@ -236,7 +250,7 @@ func CreateController() controller.Controller {
 	}
 }
 
-func newTestService(name string, id string, description string, planID string, async bool, provisionFailTimes int, deprovisionFailTimes int) *testService {
+func newTestService(name string, id string, description string, planID string, async bool, provisionFailTimes int, deprovisionFailTimes int, lastOperationFailTimes int) *testService {
 	return &testService{
 		Service: brokerapi.Service{
 			Name:        name,
@@ -253,9 +267,10 @@ func newTestService(name string, id string, description string, planID string, a
 			Bindable:       true,
 			PlanUpdateable: true,
 		},
-		Asynchronous:         async,
-		ProvisionFailTimes:   provisionFailTimes,
-		DeprovisionFailTimes: deprovisionFailTimes,
+		Asynchronous:           async,
+		ProvisionFailTimes:     provisionFailTimes,
+		DeprovisionFailTimes:   deprovisionFailTimes,
+		LastOperationFailTimes: lastOperationFailTimes,
 	}
 }
 
@@ -298,9 +313,10 @@ func (c *testController) CreateServiceInstance(
 		}
 
 		c.instanceMap[id] = &testServiceInstance{
-			Name:                         id,
-			Credential:                   &cred,
-			remainingDeprovisionFailures: service.DeprovisionFailTimes,
+			Name:                           id,
+			Credential:                     &cred,
+			remainingDeprovisionFailures:   service.DeprovisionFailTimes,
+			remainingLastOperationFailures: service.LastOperationFailTimes,
 		}
 	} else {
 		c.instanceMap[id] = &testServiceInstance{
@@ -309,7 +325,8 @@ func (c *testController) CreateServiceInstance(
 				"special-key-1": "special-value-1",
 				"special-key-2": "special-value-2",
 			},
-			remainingDeprovisionFailures: service.DeprovisionFailTimes,
+			remainingDeprovisionFailures:   service.DeprovisionFailTimes,
+			remainingLastOperationFailures: service.LastOperationFailTimes,
 		}
 	}
 
@@ -349,6 +366,17 @@ func (c *testController) GetServiceInstanceLastOperation(
 	instance, exists := c.instanceMap[instanceID]
 	if !exists {
 		return nil, server.NewErrorWithHttpStatus("Instance not found", http.StatusGone)
+	}
+
+	if instance.remainingLastOperationFailures > 0 {
+		instance.remainingLastOperationFailures--
+		return nil, server.NewErrorWithHttpStatus("Service is configured to fail lastOperation", http.StatusInternalServerError)
+	} else {
+		// reset remainingLastOperationFalures
+		service, ok := c.serviceMap[serviceID]
+		if ok {
+			instance.remainingLastOperationFailures = service.LastOperationFailTimes
+		}
 	}
 
 	switch operation {
