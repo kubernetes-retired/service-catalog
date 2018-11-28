@@ -69,10 +69,94 @@ type testController struct {
 func CreateController() controller.Controller {
 	var instanceMap = make(map[string]*testServiceInstance)
 	services := []*testService{
+		newTestService(
+			"test-service",
+			"2f2e85b5-030d-4776-ba7e-e26eb312f10f",
+			"A test service that only has a single plan",
+			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
+			false, 0, 0, 0),
+		newTestService(
+			"test-service-provision-fail",
+			"308c0ff6-2edb-45d6-a63e-67f18226a404",
+			"Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
+			"525a787c-78d8-42af-8800-e9bf4bd71117",
+			false, failAlways, 0, 0),
+		newTestService(
+			"test-service-provision-fail-5x",
+			"389e6930-93f9-49b4-bbe4-76e304cad22c",
+			"Provisioning of this service fails 5 times, then succeeds.",
+			"21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
+			false, 5, 0, 0),
+		newTestService(
+			"test-service-provision-fail-5x-deprovision-fail-5x",
+			"41f7fcec-118c-4f22-a4e9-fc56c02046c0",
+			"Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
+			"1179dfe7-9dbb-4d23-987f-2f722ca4f733",
+			false, 5, 5, 0),
+		newTestService(
+			"test-service-deprovision-fail",
+			"43e24cc7-93ae-4c7d-bfd3-7cd03f051872",
+			"Provisioning of this service always succeeds, but deprovisiong always fails.",
+			"27ac655b-864e-4447-8bea-eb38a0e0cf79",
+			false, 0, failAlways, 0),
+		newTestService(
+			"test-service-deprovision-fail-5x",
+			"4ed5a173-35ed-4748-be64-5007951373ab",
+			"Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
+			"3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
+			false, 0, 5, 0),
+		newTestService(
+			"test-service-async",
+			"5a680caf-807e-4157-85af-552dc71b72d6",
+			"A test service that is asynchronously provisioned & deprovisioned",
+			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
+			true, 0, 0, 0),
+		newTestService(
+			"test-service-async-provision-fail",
+			"7aac966a-c42a-46f4-86d6-df21437d4c7f",
+			"A test service that is asynchronously provisioned, but provisioning always returns HTTP status 500 (provisioning never succeeds)",
+			"9aca0b9a-192e-416a-a809-67e592bfa681",
+			false, failAlways, 0, 0),
+		newTestService(
+			"test-service-async-provision-fail-5x",
+			"7f73e71b-1ba0-4882-94c7-7624b4219520",
+			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds.",
+			"a1027080-966d-4ec3-b4e1-abc3f52b7de2",
+			false, 5, 0, 0),
+		newTestService(
+			"test-service-async-provision-fail-5x-deprovision-fail-5x",
+			"867092ae-1acb-473b-baa8-899e4dce12dc",
+			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
+			"35234488-830f-4efe-ae16-a36bb0092cce",
+			false, 5, 5, 0),
+		newTestService(
+			"test-service-async-deprovision-fail",
+			"9bee1762-e5f7-4bd8-94de-eb65c811be83",
+			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisiong always fails.",
+			"1a5c2a06-28db-4b05-a386-3dad81dec931",
+			false, 0, failAlways, 0),
+		newTestService(
+			"test-service-async-deprovision-fail-5x",
+			"acddd53a-97e5-4c69-99e2-d1a056b1ad25",
+			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisioning fails 5 times, then succeeds.",
+			"dce5da49-fc42-4490-a053-8415fd569461",
+			false, 0, 5, 0),
+		newTestService(
+			"test-service-async-last-operation-fail",
+			"c594a1f2-ec7f-494b-a266-d540cf977382",
+			"A test service that is asynchronously provisioned, but lastOperation never succeeds",
+			"624eea7a-4fb1-4e67-9ec8-379f0c855c3b",
+			true, 0, 0, failAlways),
+		newTestService(
+			"test-service-async-last-operation-fail-5x",
+			"cce99844-3f6e-42f1-8100-5408a7b79e43",
+			"A test service that is asynchronously provisioned, but lastOperation only succeeds on the 5th attempt.",
+			"4254a380-4e3d-4cc1-b2b6-3c7e55b63ea2",
+			true, 0, 0, 5),
 		{
 			Service: brokerapi.Service{
-				Name:        "test-service",
-				ID:          "fe43b7d8-f0d4-11e8-bdba-54ee754ec85f",
+				Name:        "test-service-multiple-plans",
+				ID:          "f1b57a42-8035-4291-a555-51c461df6072",
 				Description: "A test service",
 				Plans: []brokerapi.ServicePlan{{
 					Name:        "default",
@@ -90,94 +174,10 @@ func CreateController() controller.Controller {
 				PlanUpdateable: true,
 			},
 		},
-		newTestService(
-			"test-service-single-plan",
-			"4458dd64-8b63-4f84-9c1b-6a127614e122",
-			"A test service that only has a single plan",
-			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
-			false, 0, 0, 0),
-		newTestService(
-			"test-service-async",
-			"b4073486-4759-4055-840a-f5f8b07231ff",
-			"A test service that is asynchronously provisioned & deprovisioned",
-			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
-			true, 0, 0, 0),
-		newTestService(
-			"test-service-async-provision-fail",
-			"413db4f6-cec2-4e3a-8e83-f98aa95ac6f0",
-			"A test service that is asynchronously provisioned, but provisioning always returns HTTP status 500 (provisioning never succeeds)",
-			"9aca0b9a-192e-416a-a809-67e592bfa681",
-			false, failAlways, 0, 0),
-		newTestService(
-			"test-service-async-provision-fail-5x",
-			"5900edb0-b300-4e43-b0aa-4cfb2d1ee093",
-			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds.",
-			"a1027080-966d-4ec3-b4e1-abc3f52b7de2",
-			false, 5, 0, 0),
-		newTestService(
-			"test-service-async-deprovision-fail",
-			"34acacee-8272-40ed-935d-7374ea8c2046",
-			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisiong always fails.",
-			"1a5c2a06-28db-4b05-a386-3dad81dec931",
-			false, 0, failAlways, 0),
-		newTestService(
-			"test-service-async-deprovision-fail-5x",
-			"fd60b52d-f8fc-4af7-a60d-260335ef5e4f",
-			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisioning fails 5 times, then succeeds.",
-			"dce5da49-fc42-4490-a053-8415fd569461",
-			false, 0, 5, 0),
-		newTestService(
-			"test-service-async-provision-fail-5x-deprovision-fail-5x",
-			"0a822e40-d330-494e-b059-c5e84421d463",
-			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
-			"35234488-830f-4efe-ae16-a36bb0092cce",
-			false, 5, 5, 0),
-		newTestService(
-			"test-service-async-last-operation-fail",
-			"40b0dff1-2180-460e-98f1-890c127e3613",
-			"A test service that is asynchronously provisioned, but lastOperation never succeeds",
-			"624eea7a-4fb1-4e67-9ec8-379f0c855c3b",
-			true, 0, 0, failAlways),
-		newTestService(
-			"test-service-async-last-operation-fail-5x",
-			"c3bb2dda-8946-4f84-a66e-e4957d8f0e07",
-			"A test service that is asynchronously provisioned, but lastOperation only succeeds on the 5th attempt.",
-			"4254a380-4e3d-4cc1-b2b6-3c7e55b63ea2",
-			true, 0, 0, 5),
-		newTestService(
-			"test-service-provision-fail",
-			"15619930-5f4f-476a-87cd-7690901874c6",
-			"Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
-			"525a787c-78d8-42af-8800-e9bf4bd71117",
-			false, failAlways, 0, 0),
-		newTestService(
-			"test-service-provision-fail-5x",
-			"226f24e0-def0-491d-a5b3-cd484bb6a4cf",
-			"Provisioning of this service fails 5 times, then succeeds.",
-			"21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
-			false, 5, 0, 0),
-		newTestService(
-			"test-service-deprovision-fail",
-			"8207d20b-e428-44cd-bff4-20926aa19327",
-			"Provisioning of this service always succeeds, but deprovisiong always fails.",
-			"27ac655b-864e-4447-8bea-eb38a0e0cf79",
-			false, 0, failAlways, 0),
-		newTestService(
-			"test-service-deprovision-fail-5x",
-			"07668858-b210-4101-916e-2627165af174",
-			"Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
-			"3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
-			false, 0, 5, 0),
-		newTestService(
-			"test-service-provision-fail-5x-deprovision-fail-5x",
-			"38f9a4a1-c206-411b-ad33-71a1af979993",
-			"Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
-			"1179dfe7-9dbb-4d23-987f-2f722ca4f733",
-			false, 5, 5, 0),
 		{
 			Service: brokerapi.Service{
 				Name:        "test-service-with-schemas",
-				ID:          "c57f5b14-804e-4a3b-9047-755a7f145961",
+				ID:          "f485442d-319b-43d4-80ef-bdf7ae200b09",
 				Description: "A test service with parameter and response schemas",
 				Plans: []brokerapi.ServicePlan{
 					{
