@@ -320,44 +320,41 @@ func (c *testController) CreateServiceInstance(
 	req *brokerapi.CreateServiceInstanceRequest,
 ) (*brokerapi.CreateServiceInstanceResponse, error) {
 
+	glog.Info("CreateServiceInstance()")
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+
 	service, ok := c.serviceMap[req.ServiceID]
 	if !ok {
 		return nil, fmt.Errorf("Service %q does not exist", req.ServiceID)
 	}
 
-	glog.Info("CreateServiceInstance()")
+	var cred brokerapi.Credential
+
 	credString, ok := req.Parameters["credentials"]
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
 	if ok {
 		jsonCred, err := json.Marshal(credString)
 		if err != nil {
 			glog.Errorf("Failed to marshal credentials: %v", err)
 			return nil, err
 		}
-		var cred brokerapi.Credential
 		err = json.Unmarshal(jsonCred, &cred)
 		if err != nil {
 			glog.Errorf("Failed to unmarshal credentials: %v", err)
 			return nil, err
 		}
-
-		c.instanceMap[id] = &testServiceInstance{
-			Name:                           id,
-			Credential:                     &cred,
-			remainingDeprovisionFailures:   service.DeprovisionFailTimes,
-			remainingLastOperationFailures: service.LastOperationFailTimes,
-		}
 	} else {
-		c.instanceMap[id] = &testServiceInstance{
-			Name: id,
-			Credential: &brokerapi.Credential{
-				"special-key-1": "special-value-1",
-				"special-key-2": "special-value-2",
-			},
-			remainingDeprovisionFailures:   service.DeprovisionFailTimes,
-			remainingLastOperationFailures: service.LastOperationFailTimes,
+		cred = brokerapi.Credential{
+			"special-key-1": "special-value-1",
+			"special-key-2": "special-value-2",
 		}
+	}
+
+	c.instanceMap[id] = &testServiceInstance{
+		Name:                           id,
+		Credential:                     &cred,
+		remainingDeprovisionFailures:   service.DeprovisionFailTimes,
+		remainingLastOperationFailures: service.LastOperationFailTimes,
 	}
 
 	c.provisionCountMap[id]++
