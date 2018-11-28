@@ -36,20 +36,25 @@ type server struct {
 	controller controller.Controller
 }
 
-type ErrorWithHttpStatus struct {
+// ErrorWithHTTPStatus is an error that also defines the HTTP status code
+// that should be returned to the client making the request
+type ErrorWithHTTPStatus struct {
 	err        string
 	httpStatus int
 }
 
-func NewErrorWithHttpStatus(err string, httpStatus int) ErrorWithHttpStatus {
-	return ErrorWithHttpStatus{err, httpStatus}
+// NewErrorWithHTTPStatus creates a new ErrorWithHTTPStatus with the given
+// error message and HTTP status code
+func NewErrorWithHTTPStatus(err string, httpStatus int) ErrorWithHTTPStatus {
+	return ErrorWithHTTPStatus{err, httpStatus}
 }
 
-func (e ErrorWithHttpStatus) Error() string {
+func (e ErrorWithHTTPStatus) Error() string {
 	return e.err
 }
 
-func (e ErrorWithHttpStatus) HttpStatus() int {
+// HTTPStatus returns the HTTP status code that should be returned to the client
+func (e ErrorWithHTTPStatus) HTTPStatus() int {
 	return e.httpStatus
 }
 
@@ -130,7 +135,7 @@ func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.Catalog(); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -145,7 +150,7 @@ func (s *server) getServiceInstanceLastOperation(w http.ResponseWriter, r *http.
 	if result, err := s.controller.GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -156,7 +161,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	var req brokerapi.CreateServiceInstanceRequest
 	if err := util.BodyToObject(r, &req); err != nil {
 		klog.Errorf("error unmarshalling: %v", err)
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 		return
 	}
 
@@ -174,7 +179,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 			util.WriteResponse(w, http.StatusAccepted, result)
 		}
 	} else {
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -193,13 +198,13 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 			util.WriteResponse(w, http.StatusAccepted, result)
 		}
 	} else {
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
-func getHttpStatus(err error) int {
-	if err, ok := err.(ErrorWithHttpStatus); ok {
-		return err.HttpStatus()
+func getHTTPStatus(err error) int {
+	if err, ok := err.(ErrorWithHTTPStatus); ok {
+		return err.HTTPStatus()
 	}
 	return http.StatusBadRequest
 }
@@ -214,7 +219,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 
 	if err := util.BodyToObject(r, &req); err != nil {
 		klog.Errorf("Failed to unmarshall request: %v", err)
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 		return
 	}
 
@@ -231,7 +236,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.Bind(instanceID, bindingID, &req); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -248,6 +253,6 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, "{}") //id)
 	} else {
-		util.WriteErrorResponse(w, getHttpStatus(err), err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }

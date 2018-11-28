@@ -373,7 +373,7 @@ func (c *testController) CreateServiceInstance(
 	} else {
 		provisionCount, _ := c.provisionCountMap[id]
 		if provisionCount <= service.ProvisionFailTimes {
-			return nil, server.NewErrorWithHttpStatus("Service is configured to fail provisioning", http.StatusInternalServerError)
+			return nil, server.NewErrorWithHTTPStatus("Service is configured to fail provisioning", http.StatusInternalServerError)
 		} else {
 			return &brokerapi.CreateServiceInstanceResponse{}, nil
 		}
@@ -392,12 +392,12 @@ func (c *testController) GetServiceInstanceLastOperation(
 
 	instance, exists := c.instanceMap[instanceID]
 	if !exists {
-		return nil, server.NewErrorWithHttpStatus("Instance not found", http.StatusGone)
+		return nil, server.NewErrorWithHTTPStatus("Instance not found", http.StatusGone)
 	}
 
 	if instance.remainingLastOperationFailures > 0 {
 		instance.remainingLastOperationFailures--
-		return nil, server.NewErrorWithHttpStatus("Service is configured to fail lastOperation", http.StatusInternalServerError)
+		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail lastOperation", http.StatusInternalServerError)
 	} else {
 		// reset remainingLastOperationFalures
 		service, ok := c.serviceMap[serviceID]
@@ -458,7 +458,7 @@ func (c *testController) RemoveServiceInstance(
 			} else {
 				if instance.remainingDeprovisionFailures > 0 {
 					instance.remainingDeprovisionFailures--
-					return nil, server.NewErrorWithHttpStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
+					return nil, server.NewErrorWithHTTPStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
 				} else {
 					delete(c.instanceMap, instanceID)
 					return &brokerapi.DeleteServiceInstanceResponse{}, nil
