@@ -370,14 +370,13 @@ func (c *testController) CreateServiceInstance(
 		return &brokerapi.CreateServiceInstanceResponse{
 			Operation: "provision",
 		}, nil
-	} else {
-		provisionCount, _ := c.provisionCountMap[id]
-		if provisionCount <= service.ProvisionFailTimes {
-			return nil, server.NewErrorWithHTTPStatus("Service is configured to fail provisioning", http.StatusInternalServerError)
-		} else {
-			return &brokerapi.CreateServiceInstanceResponse{}, nil
-		}
 	}
+
+	provisionCount, _ := c.provisionCountMap[id]
+	if provisionCount <= service.ProvisionFailTimes {
+		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail provisioning", http.StatusInternalServerError)
+	}
+	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
 func (c *testController) GetServiceInstanceLastOperation(
@@ -398,12 +397,12 @@ func (c *testController) GetServiceInstanceLastOperation(
 	if instance.remainingLastOperationFailures > 0 {
 		instance.remainingLastOperationFailures--
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail lastOperation", http.StatusInternalServerError)
-	} else {
-		// reset remainingLastOperationFalures
-		service, ok := c.serviceMap[serviceID]
-		if ok {
-			instance.remainingLastOperationFailures = service.LastOperationFailTimes
-		}
+	}
+
+	// reset remainingLastOperationFalures
+	service, ok := c.serviceMap[serviceID]
+	if ok {
+		instance.remainingLastOperationFailures = service.LastOperationFailTimes
 	}
 
 	switch operation {
@@ -413,12 +412,11 @@ func (c *testController) GetServiceInstanceLastOperation(
 				State:       brokerapi.StateSucceeded,
 				Description: "Succeeded",
 			}, nil
-		} else {
-			return &brokerapi.LastOperationResponse{
-				State:       brokerapi.StateInProgress,
-				Description: "Still provisioning...",
-			}, nil
 		}
+		return &brokerapi.LastOperationResponse{
+			State:       brokerapi.StateInProgress,
+			Description: "Still provisioning...",
+		}, nil
 	case "deprovision":
 		if instance.deprovisionedAt.Before(time.Now()) {
 			delete(c.instanceMap, instanceID)
@@ -426,12 +424,11 @@ func (c *testController) GetServiceInstanceLastOperation(
 				State:       brokerapi.StateSucceeded,
 				Description: "Succeeded",
 			}, nil
-		} else {
-			return &brokerapi.LastOperationResponse{
-				State:       brokerapi.StateInProgress,
-				Description: "Still deprovisioning...",
-			}, nil
 		}
+		return &brokerapi.LastOperationResponse{
+			State:       brokerapi.StateInProgress,
+			Description: "Still deprovisioning...",
+		}, nil
 	}
 
 	return nil, errors.New("Unimplemented")
@@ -455,15 +452,13 @@ func (c *testController) RemoveServiceInstance(
 				return &brokerapi.DeleteServiceInstanceResponse{
 					Operation: "deprovision",
 				}, nil
-			} else {
-				if instance.remainingDeprovisionFailures > 0 {
-					instance.remainingDeprovisionFailures--
-					return nil, server.NewErrorWithHTTPStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
-				} else {
-					delete(c.instanceMap, instanceID)
-					return &brokerapi.DeleteServiceInstanceResponse{}, nil
-				}
 			}
+			if instance.remainingDeprovisionFailures > 0 {
+				instance.remainingDeprovisionFailures--
+				return nil, server.NewErrorWithHTTPStatus("Service is configured to fail deprovisioning", http.StatusInternalServerError)
+			}
+			delete(c.instanceMap, instanceID)
+			return &brokerapi.DeleteServiceInstanceResponse{}, nil
 		}
 	}
 
