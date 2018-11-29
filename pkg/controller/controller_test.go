@@ -2351,7 +2351,7 @@ func assertServiceInstanceConditionMissing(t *testing.T, obj runtime.Object, con
 
 	for _, condition := range instance.Status.Conditions {
 		if condition.Type == conditionType {
-			fatalf(t, "%v condition expected to be missing", conditionType)
+			fatalf(t, "%v condition expected to be missing, but was present with the reason %q and message %q", conditionType, condition.Reason, condition.Message)
 			return
 		}
 	}
