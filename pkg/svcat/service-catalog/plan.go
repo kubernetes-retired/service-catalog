@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -172,6 +173,53 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 	return sdk.retrieveSinglePlanByListOptions(strings.Join(ss, "/"), opts, listOpts)
 }
 
+// RetrievePlanByClassIDAndName gets a plan by its external name and class kube name combination.
+func (sdk *SDK) RetrievePlanByClassIDAndName(classKubeName, planName string, scopeOpts ScopeOptions) (Plan, error) {
+	var classRefSelector fields.Selector
+	findError := &multierror.Error{
+		ErrorFormat: func(errors []error) string {
+			return joinErrors("error:", errors, "\n  ")
+		},
+	}
+
+	//we run through both of these to support AllScope (i.e. we don't know if its a cluster or namespaced plan)
+	if scopeOpts.Scope.Matches(ClusterScope) {
+		classRefSelector = fields.OneTermEqualSelector(FieldClusterServiceClassRef, classKubeName)
+		listOpts := metav1.ListOptions{
+			FieldSelector: fields.AndSelectors(
+				classRefSelector,
+				fields.OneTermEqualSelector(FieldExternalPlanName, planName),
+			).String(),
+		}
+
+		ss := []string{classKubeName, planName}
+		plan, err := sdk.retrieveSinglePlanByListOptions(strings.Join(ss, "/"), scopeOpts, listOpts)
+		if err != nil {
+			findError = multierror.Append(findError, err)
+		} else if plan != nil {
+			return plan, nil
+		}
+	}
+	if scopeOpts.Scope.Matches(NamespaceScope) {
+		classRefSelector = fields.OneTermEqualSelector(FieldServiceClassRef, classKubeName)
+		listOpts := metav1.ListOptions{
+			FieldSelector: fields.AndSelectors(
+				classRefSelector,
+				fields.OneTermEqualSelector(FieldExternalPlanName, planName),
+			).String(),
+		}
+
+		ss := []string{classKubeName, planName}
+		plan, err := sdk.retrieveSinglePlanByListOptions(strings.Join(ss, "/"), scopeOpts, listOpts)
+		if err != nil {
+			findError = multierror.Append(findError, err)
+		} else if plan != nil {
+			return plan, nil
+		}
+	}
+	return nil, fmt.Errorf("plan '%s' not found:%s", planName, findError.Error())
+}
+
 func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOptions, listOpts metav1.ListOptions) (Plan, error) {
 	plans, err := sdk.retrievePlansByListOptions(scopeOpts, listOpts)
 	if err != nil {
@@ -186,27 +234,27 @@ func (sdk *SDK) retrieveSinglePlanByListOptions(name string, scopeOpts ScopeOpti
 	return plans[0], nil
 }
 
-// RetrievePlanByID gets a plan by its UUID.
-func (sdk *SDK) RetrievePlanByID(uuid string, opts ScopeOptions) (Plan, error) {
+// RetrievePlanByID gets a plan by its Kubernetes name.
+func (sdk *SDK) RetrievePlanByID(kubeName string, opts ScopeOptions) (Plan, error) {
 	if opts.Scope == AllScope {
 		return nil, errors.New("invalid scope: all")
 	}
 
 	if opts.Scope.Matches(ClusterScope) {
-		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(uuid, metav1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(kubeName, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("unable to get cluster-scoped plan by uuid '%s' (%s)", uuid, err)
+			return nil, fmt.Errorf("unable to get cluster-scoped plan by Kubernetes name'%s' (%s)", kubeName, err)
 		}
 		return p, nil
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(uuid, metav1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(kubeName, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("unable to get plan by uuid '%s' (%s)", uuid, err)
+			return nil, fmt.Errorf("unable to get plan by Kubernetes name'%s' (%s)", kubeName, err)
 		}
 		return p, nil
 	}
 
-	return nil, fmt.Errorf("unable to get plan by uuid '%s'", uuid)
+	return nil, fmt.Errorf("unable to get plan by Kubernetes name'%s'", kubeName)
 }

@@ -755,17 +755,17 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 			deleteParams:                true,
 		},
 		{
-			name: "add secret param",
+			name:                        "add secret param",
 			createdWithParamsFromSecret: false,
 			updateParamsFromSecret:      true,
 		},
 		{
-			name: "update secret param",
+			name:                        "update secret param",
 			createdWithParamsFromSecret: true,
 			updateParamsFromSecret:      true,
 		},
 		{
-			name: "delete secret param",
+			name:                        "delete secret param",
 			createdWithParamsFromSecret: true,
 			deleteParamsFromSecret:      true,
 		},
@@ -788,7 +788,7 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 			deleteParamsFromSecret:      true,
 		},
 		{
-			name: "update secret",
+			name:                        "update secret",
 			createdWithParamsFromSecret: true,
 			updateSecret:                true,
 		},
@@ -928,15 +928,14 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 // with/without retries.
 func TestCreateServiceInstanceWithRetries(t *testing.T) {
 	cases := []struct {
-		name                        string
-		setup                func(ct *controllerTest)
+		name  string
+		setup func(ct *controllerTest)
 	}{
 		{
 			name: "no retry",
 			setup: func(ct *controllerTest) {
 				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-					},
+					Response: &osb.ProvisionResponse{},
 				}
 			},
 		},
@@ -953,8 +952,7 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 							},
 						},
 						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-							},
+							Response: &osb.ProvisionResponse{},
 						},
 					}))
 			},
@@ -972,8 +970,7 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 							},
 						},
 						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-							},
+							Response: &osb.ProvisionResponse{},
 						},
 					}))
 			},
@@ -984,8 +981,8 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			ct := &controllerTest{
-				t:      t,
-				broker: getTestBroker(),
+				t:        t,
+				broker:   getTestBroker(),
 				instance: getTestInstance(),
 			}
 			ct.setup = tc.setup
@@ -1060,7 +1057,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 		nonHTTPResponseError error
 		// expected reason used in the instance condition to indiciate that the provision failed
 		provisionErrorReason string
-		// expected reason used in the instance condiiton to indicate that the provision failed terminally
+		// expected reason used in the instance condition to indicate that the provision failed terminally
 		failReason string
 		// true if the failed provision is expected to trigger orphan mitigation
 		triggersOrphanMitigation bool
@@ -1175,9 +1172,8 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToProvision {
 								return &osb.ProvisionResponse{}, nil
-							} else {
-								return nil, reactionError
 							}
+							return nil, reactionError
 						})
 					respondSuccessfullyToDeprovision := false
 					blockDeprovision := true
@@ -1192,11 +1188,10 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToDeprovision {
 								return &osb.DeprovisionResponse{}, nil
-							} else {
-								return nil, osb.HTTPStatusCodeError{
-									StatusCode:   500,
-									ErrorMessage: strPtr("temporary deprovision error"),
-								}
+							}
+							return nil, osb.HTTPStatusCodeError{
+								StatusCode:   500,
+								ErrorMessage: strPtr("temporary deprovision error"),
 							}
 						})
 				},
@@ -1507,7 +1502,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 			},
 		},
 		{
-			name: "deprovision instance after in progress provision",
+			name:                         "deprovision instance after in progress provision",
 			skipVerifyingInstanceSuccess: true,
 			setup: func(ct *controllerTest) {
 				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
@@ -1555,7 +1550,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 				binding:                      tc.binding,
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup: tc.setup,
+				setup:                        tc.setup,
 			}
 			ct.run(tc.testFunction)
 		})
@@ -1718,10 +1713,10 @@ func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 				broker:                       getTestBroker(),
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup:              tc.setup,
-				preDeleteBroker:    tc.preDeleteBroker,
-				preCreateInstance:  tc.preCreateInstance,
-				postCreateInstance: tc.postCreateInstance,
+				setup:                        tc.setup,
+				preDeleteBroker:              tc.preDeleteBroker,
+				preCreateInstance:            tc.preCreateInstance,
+				postCreateInstance:           tc.postCreateInstance,
 			}
 			ct.run(func(ct *controllerTest) {
 				if tc.verifyCondition != nil {
@@ -1811,7 +1806,7 @@ func TestPollServiceInstanceLastOperationFailure(t *testing.T) {
 				broker:                       getTestBroker(),
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup: tc.setup,
+				setup:                        tc.setup,
 			}
 			ct.run(func(ct *controllerTest) {
 				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, *tc.successCondition); err != nil {

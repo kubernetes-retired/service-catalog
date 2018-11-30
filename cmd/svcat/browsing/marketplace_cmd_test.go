@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package extra_test
+package browsing_test
 
 import (
 	"bytes"
 
+	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/browsing"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/extra"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"

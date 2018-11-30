@@ -1379,7 +1379,7 @@ func TestReconcileUpdatesManagedClassesAndPlans(t *testing.T) {
 	}
 }
 
-// TestReconcileMarksNewResourcesAsManaged
+// TestReconcileCreatesManagedClassesAndPlans
 // verifies that when new service classes and plans are created during relist
 // that they are flagged as service catalog managed.
 func TestReconcileCreatesManagedClassesAndPlans(t *testing.T) {
@@ -1414,8 +1414,8 @@ func TestReconcileCreatesManagedClassesAndPlans(t *testing.T) {
 	}
 }
 
-// TestReconcileDoesNotUpdateUserDefinedClassesAndPlans
-// verifies that user-defined classes and plans are not modified
+// TestReconcileMarksExistingClassesAndPlansAsManaged
+// verifies that existing classes and plans are marked as managed
 // during relist.
 func TestReconcileMarksExistingClassesAndPlansAsManaged(t *testing.T) {
 	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
@@ -1471,8 +1471,9 @@ func TestReconcileMarksExistingClassesAndPlansAsManaged(t *testing.T) {
 	}
 }
 
-// TestReconcileDoesNotDeleteUserDefinedClassesAndPlans
-// verifies that user-defined plans are not marked with RemovedFromBrokerCatalog during a list.
+// TestReconcileDoesNotUpdateUserDefinedClassesAndPlans
+// verifies that user-defined classes and plans are not modified
+// during relist.
 func TestReconcileDoesNotUpdateUserDefinedClassesAndPlans(t *testing.T) {
 	_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 

@@ -128,7 +128,7 @@ echo 'Creating broker...'
 # Defined in ../pkg/broker/user_provided/controller/controller.go
 USER_PROVIDED_SERVICE_ID="4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
 
-kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-broker.yaml" \
+kubectl create -f "${ROOT}/contrib/examples/walkthrough/ups-clusterservicebroker.yaml" \
   || error_exit 'Error when creating ups-broker.'
 
 wait_for_expected_output -e 'FetchedCatalog' \

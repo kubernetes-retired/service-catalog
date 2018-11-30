@@ -95,7 +95,7 @@ func newClusterServiceClass(name string, plan string, updateablePlan bool) *serv
 }
 
 // setupInstanceLister creates a Service Instance and sets up a Instance Lister that
-// retuns the instance
+// returns the instance
 func setupInstanceLister(fakeClient *fake.Clientset) {
 	instance := newServiceInstance("dummy", "foo", "original-plan-name")
 	scList := &servicecatalog.ServiceInstanceList{

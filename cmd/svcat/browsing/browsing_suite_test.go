@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package extra_test
+package browsing_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -25,5 +25,5 @@ import (
 
 func TestExtra(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Extra Suite")
+	RunSpecs(t, "Browsing Suite")
 }

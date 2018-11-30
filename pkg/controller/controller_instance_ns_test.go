@@ -785,7 +785,7 @@ func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
 	}
 }
 
-// TestResolveNamespacedReferences tests that resolveReferences works
+// TestResolveNamespacedReferencesWorks tests that resolveReferences works
 // correctly and resolves references when the references are of namespaced.
 func TestResolveNamespacedReferencesWorks(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())

@@ -1957,71 +1957,91 @@ func TestReconcileServiceInstanceDeleteAsynchronous(t *testing.T) {
 // instance that failed to provision but for which a provision request was
 // made will have a deprovision request sent to the broker.
 func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		DeprovisionReaction: &fakeosb.DeprovisionReaction{
-			Response: &osb.DeprovisionResponse{},
+	cases := []struct {
+		name                 string
+		currentOperation     v1beta1.ServiceInstanceOperation
+		inProgressProperties *v1beta1.ServiceInstancePropertiesState
+	}{
+		{
+			name:             "With failed provisioning operation in progress",
+			currentOperation: v1beta1.ServiceInstanceOperationProvision,
+			inProgressProperties: &v1beta1.ServiceInstancePropertiesState{
+				ClusterServicePlanExternalName: testClusterServicePlanName,
+				ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+			},
 		},
-	})
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	instance := getTestServiceInstanceWithFailedStatus()
-	instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
-	instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
-	instance.Status.CurrentOperation = v1beta1.ServiceInstanceOperationProvision
-	instance.Status.InProgressProperties = &v1beta1.ServiceInstancePropertiesState{
-		ClusterServicePlanExternalName: testClusterServicePlanName,
-		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
+		{
+			name:                 "With terminally failed provisioning",
+			currentOperation:     "",
+			inProgressProperties: nil,
+		},
 	}
-	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				DeprovisionReaction: &fakeosb.DeprovisionReaction{
+					Response: &osb.DeprovisionResponse{},
+				},
+			})
 
-	instance.Generation = 2
-	instance.Status.ReconciledGeneration = 1
-	instance.Status.ObservedGeneration = 1
-	instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
-		return true, instance, nil
-	})
+			instance := getTestServiceInstanceWithFailedStatus()
+			instance.ObjectMeta.DeletionTimestamp = &metav1.Time{}
+			instance.ObjectMeta.Finalizers = []string{v1beta1.FinalizerServiceCatalog}
+			instance.Status.CurrentOperation = tc.currentOperation
+			instance.Status.InProgressProperties = tc.inProgressProperties
+			instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
 
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
+			instance.Generation = 2
+			instance.Status.ReconciledGeneration = 1
+			instance.Status.ObservedGeneration = 1
+			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 
-	err := reconcileServiceInstance(t, testController, instance)
-	if err != nil {
-		t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
-	}
+			fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+				return true, instance, nil
+			})
 
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 1)
-	assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
-		AcceptsIncomplete: true,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            testClusterServicePlanGUID,
-	})
+			if err := reconcileServiceInstance(t, testController, instance); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			instance = assertServiceInstanceDeprovisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+			fakeCatalogClient.ClearActions()
+			fakeKubeClient.ClearActions()
 
-	// Verify no core kube actions occurred
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 0)
+			err := reconcileServiceInstance(t, testController, instance)
+			if err != nil {
+				t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
+			}
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			assertNumberOfBrokerActions(t, brokerActions, 1)
+			assertDeprovision(t, brokerActions[0], &osb.DeprovisionRequest{
+				AcceptsIncomplete: true,
+				InstanceID:        testServiceInstanceGUID,
+				ServiceID:         testClusterServiceClassGUID,
+				PlanID:            testClusterServicePlanGUID,
+			})
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+			// Verify no core kube actions occurred
+			kubeActions := fakeKubeClient.Actions()
+			assertNumberOfActions(t, kubeActions, 0)
 
-	events := getRecordedEvents(testController)
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
 
-	expectedEvent := normalEventBuilder(successDeprovisionReason).msg("The instance was deprovisioned successfully")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
+			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+			assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
+
+			events := getRecordedEvents(testController)
+
+			expectedEvent := normalEventBuilder(successDeprovisionReason).msg("The instance was deprovisioned successfully")
+			if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
@@ -2238,7 +2258,7 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	assertEmptyFinalizers(t, updatedServiceInstance)
 }
 
-// TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker verfies that if an instance
+// TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker verifies that if an instance
 // is created that is never actually provisioned the instance is able to be
 // deleted and is not blocked by any interaction with a broker (since its very
 // likely that a broker never actually existed).
@@ -2285,7 +2305,7 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumEvents(t, events, 0)
 }
 
-// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verfies that the finalizer
+// TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate verifies that the finalizer
 // is removed even when the status update gets back a 409 Conflict from the API server
 // because the controller is working with an old version of the ServiceInstance
 func TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate(t *testing.T) {
