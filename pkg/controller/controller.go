@@ -539,10 +539,6 @@ func (c *controller) getServiceClassAndServiceBroker(instance *v1beta1.ServiceIn
 			),
 		}
 	}
-	if err != nil {
-		return nil, "", nil, err
-	}
-
 	return serviceClass, broker.Name, brokerClient, nil
 }
 
