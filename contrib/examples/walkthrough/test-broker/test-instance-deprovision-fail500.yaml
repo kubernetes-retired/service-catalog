@@ -1,10 +1,10 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
-  name: test-instance-update-fail-5x
+  name: test-instance-deprovision-fail500
   namespace: test-ns
 spec:
-  clusterServiceClassExternalName: test-service-update-fail-5x
+  clusterServiceClassExternalName: test-service-deprovision-fail500
   clusterServicePlanExternalName: default
   parameters:
     param-1: value-1
