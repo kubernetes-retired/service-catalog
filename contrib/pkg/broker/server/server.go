@@ -70,6 +70,7 @@ func createHandler(c controller.Controller) http.Handler {
 	router.HandleFunc("/v2/catalog", s.catalog).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{instance_id}/last_operation", s.getServiceInstanceLastOperation).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{instance_id}", s.createServiceInstance).Methods("PUT")
+	router.HandleFunc("/v2/service_instances/{instance_id}", s.updateServiceInstance).Methods("PATCH")
 	router.HandleFunc("/v2/service_instances/{instance_id}", s.removeServiceInstance).Methods("DELETE")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.bind).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.unBind).Methods("DELETE")
@@ -175,6 +176,35 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.CreateServiceInstance(id, &req); err == nil {
 		if result.Operation == "" {
 			util.WriteResponse(w, http.StatusCreated, result) // TODO: return StatusOK if instance already exists
+		} else {
+			util.WriteResponse(w, http.StatusAccepted, result)
+		}
+	} else {
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
+	}
+}
+
+func (s *server) updateServiceInstance(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["instance_id"]
+	glog.Infof("UpdateServiceInstance %s...\n", id)
+
+	var req brokerapi.UpdateServiceInstanceRequest
+	if err := util.BodyToObject(r, &req); err != nil {
+		glog.Errorf("error unmarshalling: %v", err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
+		return
+	}
+
+	// TODO: Check if parameters are required, if not, this thing below is ok to leave in,
+	// if they are ,they should be checked. Because if no parameters are passed in, this will
+	// fail because req.Parameters is nil.
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]interface{})
+	}
+
+	if result, err := s.controller.UpdateServiceInstance(id, &req); err == nil {
+		if result.Operation == "" {
+			util.WriteResponse(w, http.StatusOK, result)
 		} else {
 			util.WriteResponse(w, http.StatusAccepted, result)
 		}

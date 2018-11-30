@@ -45,15 +45,18 @@ type testServiceInstance struct {
 	Name                           string
 	Credential                     *brokerapi.Credential
 	provisionedAt                  time.Time
+	updatedAt                      time.Time
 	deprovisionedAt                time.Time
 	remainingDeprovisionFailures   int
 	remainingLastOperationFailures int
+	updateCount                    int
 }
 
 type testService struct {
 	brokerapi.Service
 	Asynchronous           bool
 	ProvisionFailTimes     int
+	UpdateFailTimes        int
 	DeprovisionFailTimes   int
 	LastOperationFailTimes int
 }
@@ -74,85 +77,109 @@ func CreateController() controller.Controller {
 			"2f2e85b5-030d-4776-ba7e-e26eb312f10f",
 			"A test service that only has a single plan",
 			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
-			false, 0, 0, 0),
+			false, 0, 0, 0, 0),
 		newTestService(
 			"test-service-provision-fail",
 			"308c0ff6-2edb-45d6-a63e-67f18226a404",
 			"Provisioning of this service always returns HTTP status 500 (provisioning never succeeds)",
 			"525a787c-78d8-42af-8800-e9bf4bd71117",
-			false, failAlways, 0, 0),
+			false, failAlways, 0, 0, 0),
 		newTestService(
 			"test-service-provision-fail-5x",
 			"389e6930-93f9-49b4-bbe4-76e304cad22c",
 			"Provisioning of this service fails 5 times, then succeeds.",
 			"21f83e68-0f4d-4377-bf5a-a5dddfaf7a5c",
-			false, 5, 0, 0),
+			false, 5, 0, 0, 0),
 		newTestService(
 			"test-service-provision-fail-5x-deprovision-fail-5x",
 			"41f7fcec-118c-4f22-a4e9-fc56c02046c0",
 			"Provisioning of this service fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
 			"1179dfe7-9dbb-4d23-987f-2f722ca4f733",
-			false, 5, 5, 0),
+			false, 5, 0, 5, 0),
 		newTestService(
 			"test-service-deprovision-fail",
 			"43e24cc7-93ae-4c7d-bfd3-7cd03f051872",
 			"Provisioning of this service always succeeds, but deprovisiong always fails.",
 			"27ac655b-864e-4447-8bea-eb38a0e0cf79",
-			false, 0, failAlways, 0),
+			false, 0, 0, failAlways, 0),
 		newTestService(
 			"test-service-deprovision-fail-5x",
 			"4ed5a173-35ed-4748-be64-5007951373ab",
 			"Provisioning of this service always succeeds, while deprovisioning fails 5 times, then succeeds.",
 			"3dab1aa9-4004-4252-b1ff-3d0bff42b36b",
-			false, 0, 5, 0),
+			false, 0, 0, 5, 0),
+		newTestService(
+			"test-service-update-fail",
+			"4efa9d36-aafb-4738-94ab-e6e10a2f4af8",
+			"Update of this service always returns HTTP status 500 (update never succeeds)",
+			"e3d738b6-8d5c-4f40-ba5b-2613e02af41d",
+			false, 0, failAlways, 0, 0),
+		newTestService(
+			"test-service-update-fail-5x",
+			"4f1eb1ec-6762-4605-917a-cfca0eaa9b01",
+			"Update of this service fails 5 times, then succeeds.",
+			"eb5a24ba-69ab-4acb-964a-dcad600ba4d3",
+			false, 0, 5, 0, 0),
 		newTestService(
 			"test-service-async",
 			"5a680caf-807e-4157-85af-552dc71b72d6",
 			"A test service that is asynchronously provisioned & deprovisioned",
 			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
-			true, 0, 0, 0),
+			true, 0, 0, 0, 0),
 		newTestService(
 			"test-service-async-provision-fail",
 			"7aac966a-c42a-46f4-86d6-df21437d4c7f",
 			"A test service that is asynchronously provisioned, but provisioning always returns HTTP status 500 (provisioning never succeeds)",
 			"9aca0b9a-192e-416a-a809-67e592bfa681",
-			true, failAlways, 0, 0),
+			true, failAlways, 0, 0, 0),
 		newTestService(
 			"test-service-async-provision-fail-5x",
 			"7f73e71b-1ba0-4882-94c7-7624b4219520",
 			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds.",
 			"a1027080-966d-4ec3-b4e1-abc3f52b7de2",
-			true, 5, 0, 0),
+			true, 5, 0, 0, 0),
 		newTestService(
 			"test-service-async-provision-fail-5x-deprovision-fail-5x",
 			"867092ae-1acb-473b-baa8-899e4dce12dc",
 			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
 			"35234488-830f-4efe-ae16-a36bb0092cce",
-			true, 5, 5, 0),
+			true, 5, 0, 5, 0),
 		newTestService(
 			"test-service-async-deprovision-fail",
 			"9bee1762-e5f7-4bd8-94de-eb65c811be83",
 			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisiong always fails.",
 			"1a5c2a06-28db-4b05-a386-3dad81dec931",
-			true, 0, failAlways, 0),
+			true, 0, 0, failAlways, 0),
 		newTestService(
 			"test-service-async-deprovision-fail-5x",
 			"acddd53a-97e5-4c69-99e2-d1a056b1ad25",
 			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisioning fails 5 times, then succeeds.",
 			"dce5da49-fc42-4490-a053-8415fd569461",
-			true, 0, 5, 0),
+			true, 0, 0, 5, 0),
+		newTestService(
+			"test-service-async-update-fail",
+			"ad6ab935-c287-4090-a9ab-6d49b1204496",
+			"Update of this service always returns HTTP status 500 (update never succeeds)",
+			"94f9a5fd-6a99-440d-9315-ddb144755349",
+			true, 0, failAlways, 0, 0),
+		newTestService(
+			"test-service-async-update-fail-5x",
+			"aec243b0-f8a5-4c95-a02b-92b297bf7805",
+			"Update of this service fails 5 times, then succeeds.",
+			"e11860e1-f62f-4383-9eb4-30d8641fe2f0",
+			true, 0, 5, 0, 0),
 		newTestService(
 			"test-service-async-last-operation-fail",
 			"c594a1f2-ec7f-494b-a266-d540cf977382",
 			"A test service that is asynchronously provisioned, but lastOperation never succeeds",
 			"624eea7a-4fb1-4e67-9ec8-379f0c855c3b",
-			true, 0, 0, failAlways),
+			true, 0, 0, 0, failAlways),
 		newTestService(
 			"test-service-async-last-operation-fail-5x",
 			"cce99844-3f6e-42f1-8100-5408a7b79e43",
 			"A test service that is asynchronously provisioned, but lastOperation only succeeds on the 5th attempt.",
 			"4254a380-4e3d-4cc1-b2b6-3c7e55b63ea2",
-			true, 0, 0, 5),
+			true, 0, 0, 0, 5),
 		{
 			Service: brokerapi.Service{
 				Name:        "test-service-multiple-plans",
@@ -280,7 +307,7 @@ func CreateController() controller.Controller {
 	}
 }
 
-func newTestService(name string, id string, description string, planID string, async bool, provisionFailTimes int, deprovisionFailTimes int, lastOperationFailTimes int) *testService {
+func newTestService(name string, id string, description string, planID string, async bool, provisionFailTimes int, updateFailTimes int, deprovisionFailTimes int, lastOperationFailTimes int) *testService {
 	return &testService{
 		Service: brokerapi.Service{
 			Name:        name,
@@ -299,6 +326,7 @@ func newTestService(name string, id string, description string, planID string, a
 		},
 		Asynchronous:           async,
 		ProvisionFailTimes:     provisionFailTimes,
+		UpdateFailTimes:        updateFailTimes,
 		DeprovisionFailTimes:   deprovisionFailTimes,
 		LastOperationFailTimes: lastOperationFailTimes,
 	}
@@ -329,25 +357,9 @@ func (c *testController) CreateServiceInstance(
 		return nil, fmt.Errorf("Service %q does not exist", req.ServiceID)
 	}
 
-	var cred brokerapi.Credential
-
-	credString, ok := req.Parameters["credentials"]
-	if ok {
-		jsonCred, err := json.Marshal(credString)
-		if err != nil {
-			glog.Errorf("Failed to marshal credentials: %v", err)
-			return nil, err
-		}
-		err = json.Unmarshal(jsonCred, &cred)
-		if err != nil {
-			glog.Errorf("Failed to unmarshal credentials: %v", err)
-			return nil, err
-		}
-	} else {
-		cred = brokerapi.Credential{
-			"special-key-1": "special-value-1",
-			"special-key-2": "special-value-2",
-		}
+	cred, err := getCredentials(req.Parameters)
+	if err != nil {
+		return nil, err
 	}
 
 	c.instanceMap[id] = &testServiceInstance{
@@ -377,6 +389,76 @@ func (c *testController) CreateServiceInstance(
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail provisioning", http.StatusInternalServerError)
 	}
 	return &brokerapi.CreateServiceInstanceResponse{}, nil
+}
+
+func (c *testController) UpdateServiceInstance(
+	id string,
+	req *brokerapi.UpdateServiceInstanceRequest,
+) (*brokerapi.UpdateServiceInstanceResponse, error) {
+	glog.Info("UpdateServiceInstance()")
+	c.rwMutex.Lock()
+	defer c.rwMutex.Unlock()
+
+	instance, exists := c.instanceMap[id]
+	if !exists {
+		return nil, server.NewErrorWithHTTPStatus("Instance not found", http.StatusGone)
+	}
+
+	service, ok := c.serviceMap[req.ServiceID]
+	if !ok {
+		return nil, fmt.Errorf("Service %q does not exist", req.ServiceID)
+	}
+
+	async := false
+	if service.Asynchronous {
+		async = true
+		instance.updatedAt = time.Now().Add(1 * time.Minute)
+	}
+
+	mustFail := instance.updateCount < service.UpdateFailTimes
+	if mustFail && !async {
+		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail update", http.StatusInternalServerError)
+	}
+
+	cred, err := getCredentials(req.Parameters)
+	if err != nil {
+		return nil, err
+	}
+	instance.Credential = &cred
+
+	instance.updateCount++
+
+	glog.Infof("Updated Test Service Instance:\n%v\n", instance)
+	if async {
+		return &brokerapi.UpdateServiceInstanceResponse{
+			Operation: "update",
+		}, nil
+	}
+
+	return &brokerapi.UpdateServiceInstanceResponse{}, nil
+}
+
+func getCredentials(requestParameters map[string]interface{}) (brokerapi.Credential, error) {
+	credString, found := requestParameters["credentials"]
+	if !found {
+		return brokerapi.Credential{
+			"special-key-1": "special-value-1",
+			"special-key-2": "special-value-2",
+		}, nil
+	}
+
+	jsonCred, err := json.Marshal(credString)
+	if err != nil {
+		glog.Errorf("Failed to marshal credentials: %v", err)
+		return nil, err
+	}
+	var cred brokerapi.Credential
+	err = json.Unmarshal(jsonCred, &cred)
+	if err != nil {
+		glog.Errorf("Failed to unmarshal credentials: %v", err)
+		return nil, err
+	}
+	return cred, nil
 }
 
 func (c *testController) GetServiceInstanceLastOperation(
@@ -416,6 +498,17 @@ func (c *testController) GetServiceInstanceLastOperation(
 		return &brokerapi.LastOperationResponse{
 			State:       brokerapi.StateInProgress,
 			Description: "Still provisioning...",
+		}, nil
+	case "update":
+		if instance.updatedAt.Before(time.Now()) {
+			return &brokerapi.LastOperationResponse{
+				State:       brokerapi.StateSucceeded,
+				Description: "Succeeded",
+			}, nil
+		}
+		return &brokerapi.LastOperationResponse{
+			State:       brokerapi.StateInProgress,
+			Description: "Still updating...",
 		}, nil
 	case "deprovision":
 		if instance.deprovisionedAt.Before(time.Now()) {
