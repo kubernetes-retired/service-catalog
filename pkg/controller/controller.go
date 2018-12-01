@@ -495,9 +495,6 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 			),
 		}
 	}
-	if err != nil {
-		return nil, "", nil, err
-	}
 
 	return serviceClass, broker.Name, brokerClient, nil
 }
