@@ -41,7 +41,7 @@ import (
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
-	generator "github.com/pmorie/go-open-service-broker-client/v2/generator"
+	"github.com/pmorie/go-open-service-broker-client/v2/generator"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -609,6 +609,38 @@ func TestServiceBindingDeleteWithAsyncBindInProgress(t *testing.T) {
 	}
 }
 
+func timeLoggingProvisionReaction(times *[]time.Time, reaction fakeosb.DynamicProvisionReaction) fakeosb.DynamicProvisionReaction {
+	return func(r *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+		now := time.Now()
+		*times = append(*times, now)
+		return reaction(r)
+	}
+}
+
+func timeLoggingUpdateInstanceReaction(times *[]time.Time, reaction fakeosb.DynamicUpdateInstanceReaction) fakeosb.DynamicUpdateInstanceReaction {
+	return func(r *osb.UpdateInstanceRequest) (*osb.UpdateInstanceResponse, error) {
+		now := time.Now()
+		*times = append(*times, now)
+		return reaction(r)
+	}
+}
+
+func timeLoggingDeprovisionReaction(times *[]time.Time, reaction fakeosb.DynamicDeprovisionReaction) fakeosb.DynamicDeprovisionReaction {
+	return func(r *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+		now := time.Now()
+		*times = append(*times, now)
+		return reaction(r)
+	}
+}
+
+func timeLoggingPollLastOperationReaction(times *[]time.Time, reaction fakeosb.DynamicPollLastOperationReaction) fakeosb.DynamicPollLastOperationReaction {
+	return func(r *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
+		now := time.Now()
+		*times = append(*times, now)
+		return reaction(r)
+	}
+}
+
 func getProvisionResponseByPollCountReactions(numOfResponses int, stateProgressions []fakeosb.ProvisionReaction) fakeosb.DynamicProvisionReaction {
 	numberOfPolls := 0
 	numberOfStates := len(stateProgressions)
@@ -700,7 +732,7 @@ func getLastOperationResponseByPollCountReactions(numOfResponses int, stateProgr
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
-			return &osb.LastOperationResponse{State: reaction.Response.State}, nil
+			return &osb.LastOperationResponse{State: reaction.Response.State, Description: reaction.Response.Description}, nil
 		}
 		return nil, reaction.Error
 	}
@@ -825,6 +857,10 @@ func newControllerTestTestController(ct *controllerTest) (
 		<-controllerStopped
 	}
 
+	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer, shutdownController
+}
+
+func createTestBroker(ct *controllerTest) {
 	if ct.broker != nil {
 		if ct.preCreateBroker != nil {
 			ct.kubeClient.Lock()
@@ -842,7 +878,9 @@ func newControllerTestTestController(ct *controllerTest) (
 			ct.postCreateBroker(ct)
 		}
 	}
+}
 
+func createTestInstance(ct *controllerTest) {
 	if ct.instance != nil {
 		if ct.preCreateInstance != nil {
 			ct.kubeClient.Lock()
@@ -859,7 +897,9 @@ func newControllerTestTestController(ct *controllerTest) (
 			ct.postCreateInstance(ct)
 		}
 	}
+}
 
+func createTestBinding(ct *controllerTest) {
 	if ct.binding != nil {
 		if ct.preCreateBinding != nil {
 			ct.kubeClient.Lock()
@@ -877,8 +917,6 @@ func newControllerTestTestController(ct *controllerTest) (
 			ct.postCreateBinding(ct)
 		}
 	}
-
-	return fakeKubeClient, catalogClient, catalogClientConfig, fakeOSBClient, testController, serviceCatalogSharedInformers, shutdownServer, shutdownController
 }
 
 // newTestController creates a new test controller injected with fake clients
@@ -1366,23 +1404,36 @@ type controllerTest struct {
 // - delete broker
 // - clean up controller and API server
 func (ct *controllerTest) run(test func(*controllerTest)) {
-	kubeClient, catalogClient, catalogClientConfig, osbClient, controller, informers, shutdownServer, shutdownController := newControllerTestTestController(ct)
+	shutdownServer, shutdownController := createTestController(ct)
 	defer shutdownController()
 	defer shutdownServer()
 
+	createTestBroker(ct)
+	createTestInstance(ct)
+	createTestBinding(ct)
+
+	if test != nil {
+		test(ct)
+	}
+
+	deleteTestBinding(ct)
+	deleteTestInstance(ct)
+	deleteTestBroker(ct)
+}
+
+func createTestController(ct *controllerTest) (shutdownServer func(), shutdownController func()) {
+	kubeClient, catalogClient, catalogClientConfig, osbClient, controller, informers, shutdownServer, shutdownController := newControllerTestTestController(ct)
 	ct.kubeClient = kubeClient
 	ct.catalogClient = catalogClient
 	ct.catalogClientConfig = catalogClientConfig
 	ct.osbClient = osbClient
 	ct.controller = controller
 	ct.informers = informers
-
 	ct.client = catalogClient.ServicecatalogV1beta1()
+	return shutdownServer, shutdownController
+}
 
-	if test != nil {
-		test(ct)
-	}
-
+func deleteTestBinding(ct *controllerTest) {
 	if ct.binding != nil {
 		if ct.preDeleteBinding != nil {
 			ct.preDeleteBinding(ct)
@@ -1392,7 +1443,9 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 			ct.postDeleteBinding(ct)
 		}
 	}
+}
 
+func deleteTestInstance(ct *controllerTest) {
 	if ct.instance != nil {
 		if ct.preDeleteInstance != nil {
 			ct.preDeleteInstance(ct)
@@ -1402,7 +1455,9 @@ func (ct *controllerTest) run(test func(*controllerTest)) {
 			ct.postDeleteInstance(ct)
 		}
 	}
+}
 
+func deleteTestBroker(ct *controllerTest) {
 	if ct.broker != nil {
 		if ct.preDeleteBroker != nil {
 			ct.preDeleteBroker(ct)

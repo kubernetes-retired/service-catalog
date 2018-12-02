@@ -23,7 +23,9 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -755,17 +757,17 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 			deleteParams:                true,
 		},
 		{
-			name:                        "add secret param",
+			name: "add secret param",
 			createdWithParamsFromSecret: false,
 			updateParamsFromSecret:      true,
 		},
 		{
-			name:                        "update secret param",
+			name: "update secret param",
 			createdWithParamsFromSecret: true,
 			updateParamsFromSecret:      true,
 		},
 		{
-			name:                        "delete secret param",
+			name: "delete secret param",
 			createdWithParamsFromSecret: true,
 			deleteParamsFromSecret:      true,
 		},
@@ -788,7 +790,7 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 			deleteParamsFromSecret:      true,
 		},
 		{
-			name:                        "update secret",
+			name: "update secret",
 			createdWithParamsFromSecret: true,
 			updateSecret:                true,
 		},
@@ -1003,6 +1005,514 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 				}
 			})
 		})
+	}
+}
+
+// TestExponentialBackOff tests whether the controller retries provision &
+// deprovision requests with an exponentially increasing delay between retries
+// Note that this test also detects duplicated calls to the broker (since
+// there will be no delay between them)
+func TestExponentialBackOff(t *testing.T) {
+	const baseDelay = 1 * time.Second
+	const pollDuration = 1 * time.Second
+	const toleration = 200 * time.Millisecond
+
+	lastOperationReturnsFailedState3TimesThenSucceeds := func(ct *controllerTest) fakeosb.DynamicPollLastOperationReaction {
+		return getLastOperationResponseByPollCountReactions(3,
+			[]fakeosb.PollLastOperationReaction{
+				fakeosb.PollLastOperationReaction{
+					Response: &osb.LastOperationResponse{
+						State:       osb.StateFailed,
+						Description: strPtr("failed"),
+					},
+				},
+				fakeosb.PollLastOperationReaction{
+					Response: &osb.LastOperationResponse{
+						State:       osb.StateSucceeded,
+						Description: strPtr("succeeded"),
+					},
+				},
+			})
+	}
+
+	cases := []struct {
+		name                                    string
+		provisionReaction                       func(ct *controllerTest) fakeosb.DynamicProvisionReaction
+		updateReaction                          func(ct *controllerTest) fakeosb.DynamicUpdateInstanceReaction
+		deprovisionReaction                     func(ct *controllerTest) fakeosb.DynamicDeprovisionReaction
+		lastOperationReaction                   func(ct *controllerTest) fakeosb.DynamicPollLastOperationReaction
+		expectedDelaysBetweenProvisions         []time.Duration
+		expectedDelaysBetweenUpdates            []time.Duration
+		expectedDelaysBetweenDeprovisions       []time.Duration
+		expectedDelaysBetweenLastOperationPolls []time.Duration
+	}{
+		{
+			name: "provision backoff without orphan mitigation",
+			provisionReaction: func(ct *controllerTest) fakeosb.DynamicProvisionReaction {
+				return getProvisionResponseByPollCountReactions(3,
+					[]fakeosb.ProvisionReaction{
+						fakeosb.ProvisionReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusUnauthorized,
+								ErrorMessage: strPtr("unauthorized; retry later"),
+								Description:  strPtr("temporary error that can be retried without orphan mitigation"),
+							},
+						},
+						fakeosb.ProvisionReaction{
+							Response: &osb.ProvisionResponse{},
+						},
+					})
+			},
+			expectedDelaysBetweenProvisions: []time.Duration{1 * baseDelay, 2 * baseDelay, 4 * baseDelay},
+		},
+		{
+			name: "provision backoff with orphan mitigation",
+			provisionReaction: func(ct *controllerTest) fakeosb.DynamicProvisionReaction {
+				return getProvisionResponseByPollCountReactions(3,
+					[]fakeosb.ProvisionReaction{
+						fakeosb.ProvisionReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusInternalServerError,
+								ErrorMessage: strPtr("something is broken"),
+								Description:  strPtr("temporary error that can be retried after orphan mitigation"),
+							},
+						},
+						fakeosb.ProvisionReaction{
+							Response: &osb.ProvisionResponse{},
+						},
+					})
+			},
+			expectedDelaysBetweenProvisions: []time.Duration{1 * baseDelay, 2 * baseDelay, 4 * baseDelay},
+		},
+		{
+			name: "orphan mitigation backoff",
+			provisionReaction: func(ct *controllerTest) fakeosb.DynamicProvisionReaction {
+				return getProvisionResponseByPollCountReactions(1,
+					[]fakeosb.ProvisionReaction{
+						fakeosb.ProvisionReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusInternalServerError,
+								ErrorMessage: strPtr("something is broken"),
+								Description:  strPtr("temporary error that can be retried after orphan mitigation"),
+							},
+						},
+						fakeosb.ProvisionReaction{
+							Response: &osb.ProvisionResponse{},
+						},
+					})
+			},
+			deprovisionReaction: func(ct *controllerTest) fakeosb.DynamicDeprovisionReaction {
+				return getDeprovisionResponseByPollCountReactions(3,
+					[]fakeosb.DeprovisionReaction{
+						fakeosb.DeprovisionReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusInternalServerError,
+								ErrorMessage: strPtr("something is broken"),
+								Description:  strPtr("temporary error that can be retried"),
+							},
+						},
+						fakeosb.DeprovisionReaction{
+							Response: &osb.DeprovisionResponse{},
+						},
+					})
+			},
+			expectedDelaysBetweenProvisions:   []time.Duration{8 * baseDelay}, // (1+2+4) for orphan mitigation + 1 for provision backoff
+			expectedDelaysBetweenDeprovisions: []time.Duration{1 * baseDelay, 2 * baseDelay, 4 * baseDelay},
+		},
+		{
+			name: "deprovision backoff",
+			deprovisionReaction: func(ct *controllerTest) fakeosb.DynamicDeprovisionReaction {
+				return getDeprovisionResponseByPollCountReactions(3,
+					[]fakeosb.DeprovisionReaction{
+						fakeosb.DeprovisionReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusInternalServerError,
+								ErrorMessage: strPtr("something is broken"),
+								Description:  strPtr("temporary error that can be retried"),
+							},
+						},
+						fakeosb.DeprovisionReaction{
+							Response: &osb.DeprovisionResponse{},
+						},
+					})
+			},
+			expectedDelaysBetweenDeprovisions: []time.Duration{1 * baseDelay, 2 * baseDelay, 4 * baseDelay},
+		},
+		{
+			name: "update backoff",
+			updateReaction: func(ct *controllerTest) fakeosb.DynamicUpdateInstanceReaction {
+				return getUpdateInstanceResponseByPollCountReactions(3,
+					[]fakeosb.UpdateInstanceReaction{
+						fakeosb.UpdateInstanceReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusInternalServerError,
+								ErrorMessage: strPtr("something is broken"),
+								Description:  strPtr("temporary error that can be retried"),
+							},
+						},
+						fakeosb.UpdateInstanceReaction{
+							Response: &osb.UpdateInstanceResponse{},
+						},
+					})
+			},
+			expectedDelaysBetweenUpdates: []time.Duration{1 * baseDelay, 2 * baseDelay, 4 * baseDelay},
+		},
+		{
+			name: "async provision backoff",
+			provisionReaction: func(ct *controllerTest) fakeosb.DynamicProvisionReaction {
+				return getProvisionResponseByPollCountReactions(1,
+					[]fakeosb.ProvisionReaction{
+						fakeosb.ProvisionReaction{
+							Response: &osb.ProvisionResponse{
+								Async:        true,
+								OperationKey: operationKeyPtr("provision"),
+							},
+						},
+					})
+			},
+			lastOperationReaction:           lastOperationReturnsFailedState3TimesThenSucceeds,
+			expectedDelaysBetweenProvisions: []time.Duration{pollDuration + 1*baseDelay, pollDuration + 2*baseDelay, pollDuration + 4*baseDelay},
+		},
+		{
+			name: "async deprovision backoff",
+			deprovisionReaction: func(ct *controllerTest) fakeosb.DynamicDeprovisionReaction {
+				return getDeprovisionResponseByPollCountReactions(1,
+					[]fakeosb.DeprovisionReaction{
+						fakeosb.DeprovisionReaction{
+							Response: &osb.DeprovisionResponse{
+								Async:        true,
+								OperationKey: operationKeyPtr("deprovision"),
+							},
+						},
+					})
+			},
+			lastOperationReaction:             lastOperationReturnsFailedState3TimesThenSucceeds,
+			expectedDelaysBetweenDeprovisions: []time.Duration{pollDuration + 1*baseDelay, pollDuration + 2*baseDelay, pollDuration + 4*baseDelay},
+		},
+		{
+			name: "async update backoff",
+			updateReaction: func(ct *controllerTest) fakeosb.DynamicUpdateInstanceReaction {
+				return getUpdateInstanceResponseByPollCountReactions(3,
+					[]fakeosb.UpdateInstanceReaction{
+						fakeosb.UpdateInstanceReaction{
+							Response: &osb.UpdateInstanceResponse{
+								Async:        true,
+								OperationKey: operationKeyPtr("update"),
+							},
+						},
+					})
+			},
+			lastOperationReaction:        lastOperationReturnsFailedState3TimesThenSucceeds,
+			expectedDelaysBetweenUpdates: []time.Duration{pollDuration + 1*baseDelay, pollDuration + 2*baseDelay, pollDuration + 4*baseDelay},
+		},
+		{
+			name: "last operation backoff",
+			provisionReaction: func(ct *controllerTest) fakeosb.DynamicProvisionReaction {
+				return getProvisionResponseByPollCountReactions(1,
+					[]fakeosb.ProvisionReaction{
+						fakeosb.ProvisionReaction{
+							Response: &osb.ProvisionResponse{
+								Async:        true,
+								OperationKey: operationKeyPtr("provision"),
+							},
+						},
+					})
+			},
+			lastOperationReaction: func(ct *controllerTest) fakeosb.DynamicPollLastOperationReaction {
+				return getLastOperationResponseByPollCountReactions(3,
+					[]fakeosb.PollLastOperationReaction{
+						fakeosb.PollLastOperationReaction{
+							Error: osb.HTTPStatusCodeError{
+								StatusCode:   http.StatusInternalServerError,
+								ErrorMessage: strPtr("something is broken"),
+								Description:  strPtr("temporary error that can be retried"),
+							},
+						},
+						fakeosb.PollLastOperationReaction{
+							Response: &osb.LastOperationResponse{
+								State:       osb.StateSucceeded,
+								Description: strPtr("succeeded"),
+							},
+						},
+					})
+			},
+			expectedDelaysBetweenLastOperationPolls: []time.Duration{2 * baseDelay, 4 * baseDelay, 8 * baseDelay}, // the rate limiter adds the 1 second delay before the first poll request, that's why the delay between the 1st and 2nd poll is 2 seconds
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var provisionTimestamps, updateTimestamps, deprovisionTimestamps, lastOperationTimestamps []time.Time
+			ct := &controllerTest{
+				t:        t,
+				broker:   getTestBroker(),
+				instance: getTestInstance(),
+			}
+			ct.setup = func(t *controllerTest) {
+				if tc.provisionReaction != nil {
+					ct.osbClient.ProvisionReaction = timeLoggingProvisionReaction(&provisionTimestamps, tc.provisionReaction(t))
+				}
+				if tc.updateReaction != nil {
+					ct.osbClient.UpdateInstanceReaction = timeLoggingUpdateInstanceReaction(&updateTimestamps, tc.updateReaction(t))
+				}
+				if tc.deprovisionReaction != nil {
+					ct.osbClient.DeprovisionReaction = timeLoggingDeprovisionReaction(&deprovisionTimestamps, tc.deprovisionReaction(t))
+				}
+				if tc.lastOperationReaction != nil {
+					ct.osbClient.PollLastOperationReaction = timeLoggingPollLastOperationReaction(&lastOperationTimestamps, tc.lastOperationReaction(t))
+				}
+			}
+
+			shutdownServer, shutdownController := createTestController(ct)
+			defer shutdownController()
+			defer shutdownServer()
+
+			createTestBroker(ct)
+
+			for provisionCycle := 1; provisionCycle <= 2; provisionCycle++ { // we perform the provision/update/deprovision sequence twice to check if the backoff timers are reset every time
+				ct.instance = getTestInstance()
+				createTestInstance(ct)
+
+				verifyCondition := v1beta1.ServiceInstanceCondition{
+					Type:   v1beta1.ServiceInstanceConditionReady,
+					Status: v1beta1.ConditionTrue,
+					Reason: "ProvisionedSuccessfully",
+				}
+				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, verifyCondition); err != nil {
+					t.Fatalf("error waiting for instance condition: %v", err)
+				}
+
+				performUpdate := len(tc.expectedDelaysBetweenUpdates) > 0
+				if performUpdate {
+					for updateAttempt := 1; updateAttempt <= 2; updateAttempt++ { // we perform two updates, so we can check if the second update backoff times start with 1s again
+						params := map[string]interface{}{
+							"foo": fmt.Sprintf("foo %v", updateAttempt),
+						}
+
+						instance, err := ct.client.ServiceInstances(testNamespace).Get(testInstanceName, metav1.GetOptions{})
+						if err != nil {
+							t.Fatalf("error getting Instance %v/%v: %v", testNamespace, testInstanceName, err)
+						}
+
+						instance.Spec.Parameters = convertParametersIntoRawExtension(t, params)
+
+						_, err = ct.client.ServiceInstances(instance.Namespace).Update(instance)
+						if err != nil {
+							t.Fatalf("error updating Instance on %v. attempt: %v", err, updateAttempt)
+						}
+
+						verifyCondition := v1beta1.ServiceInstanceCondition{
+							Type:   v1beta1.ServiceInstanceConditionReady,
+							Status: v1beta1.ConditionTrue,
+							Reason: "InstanceUpdatedSuccessfully",
+						}
+						if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, verifyCondition); err != nil {
+							t.Fatalf("error waiting for instance condition: %v", err)
+						}
+
+						assertBackOffDelaysEqual(t, fmt.Sprintf("%v. update", updateAttempt), updateTimestamps, tc.expectedDelaysBetweenUpdates, toleration)
+					}
+				}
+
+				deleteTestInstance(ct)
+
+				if len(tc.expectedDelaysBetweenProvisions) > 0 {
+					assertBackOffDelaysEqual(t, fmt.Sprintf("%v. provision", provisionCycle), provisionTimestamps, tc.expectedDelaysBetweenProvisions, toleration)
+				}
+
+				if len(tc.expectedDelaysBetweenLastOperationPolls) > 0 {
+					assertBackOffDelaysEqual(t, fmt.Sprintf("%v. pollLastOperation", provisionCycle), lastOperationTimestamps, tc.expectedDelaysBetweenLastOperationPolls, toleration)
+				}
+
+				if len(tc.expectedDelaysBetweenDeprovisions) > 0 {
+					assertBackOffDelaysEqual(t, fmt.Sprintf("%v. deprovision", provisionCycle), deprovisionTimestamps, tc.expectedDelaysBetweenDeprovisions, toleration)
+				}
+
+				t.Logf("All backoff delays were ok in the %v. provision/update/deprovision cycle", provisionCycle)
+			}
+
+			deleteTestBroker(ct)
+		})
+	}
+}
+
+// TestNoBackOffWhenInstanceUpdatedExternally tests what happens when the user
+// updates the instance while a backoff is in efect. The test checks if the
+// controller performs the provision/update/deprovision call immediately
+// instead of waiting for the backoff delay to expire.
+func TestNoBackOffWhenInstanceUpdatedExternally(t *testing.T) {
+	const toleration = 1 * time.Second // the backoff is 4 seconds, so if the operation is performed within 1 second, it was definitely performed "immediately" and not after the backoff delay had passed
+
+	cases := []struct {
+		name                  string
+		provisionReaction     *fakeosb.ProvisionReaction
+		updateReaction        fakeosb.UpdateInstanceReaction
+		deprovisionReaction   fakeosb.DeprovisionReaction
+		lastOperationReaction fakeosb.PollLastOperationReaction
+	}{
+		{
+			name: "provision backoff without orphan mitigation",
+			provisionReaction: &fakeosb.ProvisionReaction{
+				Error: osb.HTTPStatusCodeError{
+					StatusCode:   http.StatusUnauthorized,
+					ErrorMessage: strPtr("unauthorized; retry later"),
+					Description:  strPtr("temporary error that can be retried without orphan mitigation"),
+				},
+			},
+		},
+		{
+			name: "provision backoff with orphan mitigation",
+			provisionReaction: &fakeosb.ProvisionReaction{
+				Error: osb.HTTPStatusCodeError{
+					StatusCode:   http.StatusInternalServerError,
+					ErrorMessage: strPtr("something is broken"),
+					Description:  strPtr("temporary error that can be retried after orphan mitigation"),
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			featureGates := make(map[string]bool)
+			featureGates[string(scfeatures.OriginatingIdentityLocking)] = false
+			err := utilfeature.DefaultFeatureGate.SetFromMap(featureGates)
+			if err != nil {
+				t.Fatalf("Could not disable %s", scfeatures.OriginatingIdentityLocking)
+			}
+
+			provisionAttemptChan := make(chan time.Time, 2)
+
+			testInstance := getTestInstance()
+			succeedKey := "succeed"
+			testInstance.Spec.Parameters = convertParametersIntoRawExtension(t, map[string]interface{}{
+				succeedKey: false,
+			})
+
+			ct := &controllerTest{
+				t:                            t,
+				broker:                       getTestBroker(),
+				instance:                     testInstance,
+				skipVerifyingInstanceSuccess: true,
+			}
+			ct.setup = func(t *controllerTest) {
+				if tc.provisionReaction != nil {
+					ct.osbClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+						func(r *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+							provisionAttemptChan <- time.Now()
+							if r.Parameters[succeedKey] == true {
+								glog.Info("Returning successful provision response")
+								return &osb.ProvisionResponse{}, nil
+							} else {
+								glog.Info("Returning error provision response")
+								return tc.provisionReaction.Response, tc.provisionReaction.Error
+							}
+						})
+				}
+				//if tc.updateReaction != nil {
+				//	ct.osbClient.UpdateInstanceReaction = timeLoggingUpdateInstanceReaction(&updateTimestamps, tc.updateReaction(t))
+				//}
+				//if tc.deprovisionReaction != nil {
+				//	ct.osbClient.DeprovisionReaction = timeLoggingDeprovisionReaction(&deprovisionTimestamps, tc.deprovisionReaction(t))
+				//}
+				//if tc.lastOperationReaction != nil {
+				//	ct.osbClient.PollLastOperationReaction = timeLoggingPollLastOperationReaction(&lastOperationTimestamps, tc.lastOperationReaction(t))
+				//}
+			}
+
+			shutdownServer, shutdownController := createTestController(ct)
+			defer shutdownController()
+			defer shutdownServer()
+
+			createTestBroker(ct)
+			createTestInstance(ct)
+
+			// wait for three provision attempts so that the backoff delay before the next try is long enough (4 seconds)
+			for i := 0; i < 3; i++ {
+				<-provisionAttemptChan
+			}
+
+			glog.Info("Updating instance")
+
+			var timeOfUpdate time.Time
+			var updateSuccessful bool
+
+			for i := 0; i < 5 && !updateSuccessful; i++ {
+				instance, err := ct.client.ServiceInstances(testNamespace).Get(testInstanceName, metav1.GetOptions{})
+				if err != nil {
+					t.Fatalf("error getting Instance %v/%v: %v", testNamespace, testInstanceName, err)
+				}
+
+				// modify the instance so that provisioning succeeds
+				instance.Spec.Parameters = convertParametersIntoRawExtension(t, map[string]interface{}{
+					succeedKey: true,
+				})
+
+				timeOfUpdate = time.Now()
+
+				_, err = ct.client.ServiceInstances(instance.Namespace).Update(instance)
+				if err == nil {
+					updateSuccessful = true
+				} else {
+					glog.Warningf("Could not update instance: %v", err)
+				}
+			}
+
+			if !updateSuccessful {
+				t.Fatalf("Could not update instance")
+			}
+
+			verifyCondition := v1beta1.ServiceInstanceCondition{
+				Type:   v1beta1.ServiceInstanceConditionReady,
+				Status: v1beta1.ConditionTrue,
+				Reason: "ProvisionedSuccessfully",
+			}
+			if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, verifyCondition); err != nil {
+				t.Fatalf("error waiting for instance condition: %v", err)
+			}
+
+			timeOfFourthProvisionAttempt := <-provisionAttemptChan
+
+			delay := timeOfFourthProvisionAttempt.Sub(timeOfUpdate)
+			if delay > toleration {
+				t.Fatalf("Expected the provision attempt to be made immediately after updating the instance, but it was made %v after the update", delay)
+			}
+
+			deleteTestInstance(ct)
+
+			deleteTestBroker(ct)
+		})
+	}
+}
+
+func operationKeyPtr(s string) *osb.OperationKey {
+	key := osb.OperationKey(s)
+	return &key
+}
+
+func assertBackOffDelaysEqual(t *testing.T, action string, timestamps []time.Time, expectedDelays []time.Duration, toleration time.Duration) {
+	fmt.Println("Checking backoff delays ", len(expectedDelays))
+	if len(timestamps) < len(expectedDelays)+1 {
+		t.Fatalf("Only %v actions were performed, but the test expects at least %v actions to be performed", len(timestamps), len(expectedDelays)+1)
+	}
+	actualDelays := make([]time.Duration, len(timestamps)-1)
+	for i := 0; i < len(actualDelays); i++ {
+		actualDelays[i] = timestamps[i+1].Sub(timestamps[i])
+	}
+
+	for i, expectedDelay := range expectedDelays {
+		actualDelay := actualDelays[i]
+		if abs(actualDelay-expectedDelay) > toleration {
+			t.Fatalf("Actual %s back-off time doesn't match expected time; expected: %v; actual: %v; all actualDelays: %v", action, expectedDelay, actualDelay, actualDelays)
+		}
+	}
+}
+
+func abs(d time.Duration) time.Duration {
+	if d > 0 {
+		return d
+	} else {
+		return -d
 	}
 }
 
@@ -1502,7 +2012,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 			},
 		},
 		{
-			name:                         "deprovision instance after in progress provision",
+			name: "deprovision instance after in progress provision",
 			skipVerifyingInstanceSuccess: true,
 			setup: func(ct *controllerTest) {
 				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
@@ -1550,7 +2060,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 				binding:                      tc.binding,
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup:                        tc.setup,
+				setup: tc.setup,
 			}
 			ct.run(tc.testFunction)
 		})
@@ -1713,10 +2223,10 @@ func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 				broker:                       getTestBroker(),
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup:                        tc.setup,
-				preDeleteBroker:              tc.preDeleteBroker,
-				preCreateInstance:            tc.preCreateInstance,
-				postCreateInstance:           tc.postCreateInstance,
+				setup:              tc.setup,
+				preDeleteBroker:    tc.preDeleteBroker,
+				preCreateInstance:  tc.preCreateInstance,
+				postCreateInstance: tc.postCreateInstance,
 			}
 			ct.run(func(ct *controllerTest) {
 				if tc.verifyCondition != nil {
