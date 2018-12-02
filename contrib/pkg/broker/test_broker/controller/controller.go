@@ -505,63 +505,51 @@ func (c *testController) GetServiceInstanceLastOperation(
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail lastOperation", service.HTTPErrorStatus)
 	}
 
+	var completionTime time.Time
+	var attempts int
+	var attemptsToFail int
+	var deleteInstance bool
+
 	switch operation {
 	case "provision":
-		if instance.provisionedAt.Before(time.Now()) {
-			provisionCount, _ := c.provisionCountMap[instanceID]
-			if provisionCount <= service.ProvisionFailTimes {
-				return &brokerapi.LastOperationResponse{
-					State:       brokerapi.StateFailed,
-					Description: "Failed",
-				}, nil
-			}
-			return &brokerapi.LastOperationResponse{
-				State:       brokerapi.StateSucceeded,
-				Description: "Succeeded",
-			}, nil
-		}
-		return &brokerapi.LastOperationResponse{
-			State:       brokerapi.StateInProgress,
-			Description: "Still provisioning...",
-		}, nil
+		completionTime = instance.provisionedAt
+		attempts, _ = c.provisionCountMap[instanceID]
+		attemptsToFail = service.ProvisionFailTimes
 	case "update":
-		if instance.updatedAt.Before(time.Now()) {
-			if instance.updateAttempts <= service.UpdateFailTimes {
-				return &brokerapi.LastOperationResponse{
-					State:       brokerapi.StateFailed,
-					Description: "Failed",
-				}, nil
-			}
-			return &brokerapi.LastOperationResponse{
-				State:       brokerapi.StateSucceeded,
-				Description: "Succeeded",
-			}, nil
-		}
-		return &brokerapi.LastOperationResponse{
-			State:       brokerapi.StateInProgress,
-			Description: "Still updating...",
-		}, nil
+		completionTime = instance.updatedAt
+		attempts = instance.updateAttempts
+		attemptsToFail = service.UpdateFailTimes
 	case "deprovision":
-		if instance.deprovisionedAt.Before(time.Now()) {
-			if instance.deprovisionAttempts <= service.DeprovisionFailTimes {
-				return &brokerapi.LastOperationResponse{
-					State:       brokerapi.StateFailed,
-					Description: "Failed",
-				}, nil
-			}
-			delete(c.instanceMap, instanceID)
-			return &brokerapi.LastOperationResponse{
-				State:       brokerapi.StateSucceeded,
-				Description: "Succeeded",
-			}, nil
-		}
+		completionTime = instance.deprovisionedAt
+		attempts = instance.deprovisionAttempts
+		attemptsToFail = service.DeprovisionFailTimes
+		deleteInstance = true
+	default:
+		return nil, errors.New("Unimplemented")
+	}
+
+	if completionTime.After(time.Now()) {
 		return &brokerapi.LastOperationResponse{
 			State:       brokerapi.StateInProgress,
-			Description: "Still deprovisioning...",
+			Description: "Operation still in progress...",
 		}, nil
 	}
 
-	return nil, errors.New("Unimplemented")
+	if attempts <= attemptsToFail {
+		return &brokerapi.LastOperationResponse{
+			State:       brokerapi.StateFailed,
+			Description: "Failed",
+		}, nil
+	}
+
+	if deleteInstance {
+		delete(c.instanceMap, instanceID)
+	}
+
+	return &brokerapi.LastOperationResponse{
+		State:       brokerapi.StateSucceeded,
+		Description: "Succeeded",
+	}, nil
 }
 
 func (c *testController) RemoveServiceInstance(
