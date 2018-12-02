@@ -32,6 +32,7 @@ import (
 )
 
 const failAlways = math.MaxInt32
+const noHTTPError = 0
 
 type errNoSuchInstance struct {
 	instanceID string
@@ -78,7 +79,7 @@ func CreateController() controller.Controller {
 			"2f2e85b5-030d-4776-ba7e-e26eb312f10f",
 			"A test service that only has a single plan",
 			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
-			false, 0, 0, 0, 0, 0),
+			false, noHTTPError, 0, 0, 0, 0),
 		newTestService(
 			"test-service-provision-fail400",
 			"308c0400-2edb-45d6-a63e-67f18226a404",
@@ -144,59 +145,59 @@ func CreateController() controller.Controller {
 			"5a680caf-807e-4157-85af-552dc71b72d6",
 			"A test service that is asynchronously provisioned & deprovisioned",
 			"4f6741a8-2451-43c7-b473-a4f8e9f89a87",
-			true, 0, 0, 0, 0, 0),
+			true, noHTTPError, 0, 0, 0, 0),
 		newTestService(
-			"test-service-async-provision-fail500",
+			"test-service-async-provision-fail",
 			"7aac9500-c42a-46f4-86d6-df21437d4c7f",
-			"A test service that is asynchronously provisioned, but provisioning always returns HTTP status 500 (provisioning never succeeds)",
+			"A test service that is asynchronously provisioned, but provisioning always returns state:failed",
 			"9aca0b9a-192e-416a-a809-67e592bfa681",
-			true, http.StatusInternalServerError, failAlways, 0, 0, 0),
+			true, noHTTPError, failAlways, 0, 0, 0),
 		newTestService(
-			"test-service-async-provision-fail500-5x",
+			"test-service-async-provision-fail-5x",
 			"7f73e500-1ba0-4882-94c7-7624b4219520",
-			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds.",
+			"A test service that is asynchronously provisioned; provisioning returns state:failed 5 times, then succeeds.",
 			"a1027080-966d-4ec3-b4e1-abc3f52b7de2",
-			true, http.StatusInternalServerError, 5, 0, 0, 0),
+			true, noHTTPError, 5, 0, 0, 0),
 		newTestService(
-			"test-service-async-provision-fail500-5x-deprovision-fail500-5x",
+			"test-service-async-provision-fail-5x-deprovision-fail-5x",
 			"86709500-1acb-473b-baa8-899e4dce12dc",
-			"A test service that is asynchronously provisioned; provisioning fails 5 times, then succeeds; deprovisioning also fails 5 times, then succeeds.",
+			"A test service that is asynchronously provisioned; provisioning returns state:failed 5 times, then succeeds; deprovisioning also returns state:failed 5 times, then succeeds.",
 			"35234488-830f-4efe-ae16-a36bb0092cce",
-			true, http.StatusInternalServerError, 5, 0, 5, 0),
+			true, noHTTPError, 5, 0, 5, 0),
 		newTestService(
-			"test-service-async-deprovision-fail500",
+			"test-service-async-deprovision-fail",
 			"9bee1500-e5f7-4bd8-94de-eb65c811be83",
-			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisiong always fails.",
+			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisiong always returns state:failed.",
 			"6096a7e0-7ea6-4782-8246-c6e5d9eb97ca",
-			true, http.StatusInternalServerError, 0, 0, failAlways, 0),
+			true, noHTTPError, 0, 0, failAlways, 0),
 		newTestService(
-			"test-service-async-deprovision-fail500-5x",
+			"test-service-async-deprovision-fail-5x",
 			"acddd500-97e5-4c69-99e2-d1a056b1ad25",
-			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisioning fails 5 times, then succeeds.",
+			"A test service that is asynchronously provisioned; provisioning always succeeds, deprovisioning returns state:failed 5 times, then succeeds.",
 			"dce5da49-fc42-4490-a053-8415fd569461",
-			true, http.StatusInternalServerError, 0, 0, 5, 0),
+			true, noHTTPError, 0, 0, 5, 0),
 		newTestService(
-			"test-service-async-update-fail500",
+			"test-service-async-update-fail",
 			"ad6ab500-c287-4090-a9ab-6d49b1204496",
-			"Update of this service always returns HTTP status 500 (update never succeeds)",
+			"Update of this service always returns state:failed in the last operation response",
 			"94f9a5fd-6a99-440d-9315-ddb144755349",
-			true, http.StatusInternalServerError, 0, failAlways, 0, 0),
+			true, noHTTPError, 0, failAlways, 0, 0),
 		newTestService(
-			"test-service-async-update-fail500-5x",
+			"test-service-async-update-fail-5x",
 			"aec24500-f8a5-4c95-a02b-92b297bf7805",
-			"Update of this service fails 5 times, then succeeds.",
+			"Update of this service returns state:failed 5 times, then succeeds.",
 			"e11860e1-f62f-4383-9eb4-30d8641fe2f0",
-			true, http.StatusInternalServerError, 0, 5, 0, 0),
+			true, noHTTPError, 0, 5, 0, 0),
 		newTestService(
 			"test-service-async-last-operation-fail400",
 			"c594a400-ec7f-494b-a266-d540cf977382",
-			"A test service that is asynchronously provisioned, but lastOperation always wails with error 400",
+			"A test service that is asynchronously provisioned, but lastOperation always fails with error 400",
 			"e937e0b6-ddd5-4565-82e2-1cda3d16ad32",
 			true, http.StatusBadRequest, 0, 0, 0, failAlways),
 		newTestService(
 			"test-service-async-last-operation-fail500",
 			"c594a500-ec7f-494b-a266-d540cf977382",
-			"A test service that is asynchronously provisioned, but lastOperation never succeeds",
+			"A test service that is asynchronously provisioned, but lastOperation always fails with error 500",
 			"624eea7a-4fb1-4e67-9ec8-379f0c855c3b",
 			true, http.StatusInternalServerError, 0, 0, 0, failAlways),
 		newTestService(
@@ -507,6 +508,13 @@ func (c *testController) GetServiceInstanceLastOperation(
 	switch operation {
 	case "provision":
 		if instance.provisionedAt.Before(time.Now()) {
+			provisionCount, _ := c.provisionCountMap[instanceID]
+			if provisionCount <= service.ProvisionFailTimes {
+				return &brokerapi.LastOperationResponse{
+					State:       brokerapi.StateFailed,
+					Description: "Failed",
+				}, nil
+			}
 			return &brokerapi.LastOperationResponse{
 				State:       brokerapi.StateSucceeded,
 				Description: "Succeeded",
@@ -518,6 +526,12 @@ func (c *testController) GetServiceInstanceLastOperation(
 		}, nil
 	case "update":
 		if instance.updatedAt.Before(time.Now()) {
+			if instance.updateAttempts <= service.UpdateFailTimes {
+				return &brokerapi.LastOperationResponse{
+					State:       brokerapi.StateFailed,
+					Description: "Failed",
+				}, nil
+			}
 			return &brokerapi.LastOperationResponse{
 				State:       brokerapi.StateSucceeded,
 				Description: "Succeeded",
@@ -529,6 +543,12 @@ func (c *testController) GetServiceInstanceLastOperation(
 		}, nil
 	case "deprovision":
 		if instance.deprovisionedAt.Before(time.Now()) {
+			if instance.deprovisionAttempts <= service.DeprovisionFailTimes {
+				return &brokerapi.LastOperationResponse{
+					State:       brokerapi.StateFailed,
+					Description: "Failed",
+				}, nil
+			}
 			delete(c.instanceMap, instanceID)
 			return &brokerapi.LastOperationResponse{
 				State:       brokerapi.StateSucceeded,
