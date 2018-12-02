@@ -42,14 +42,14 @@ func (e errNoSuchInstance) Error() string {
 }
 
 type testServiceInstance struct {
-	Name                           string
-	Credential                     *brokerapi.Credential
-	provisionedAt                  time.Time
-	updatedAt                      time.Time
-	deprovisionedAt                time.Time
-	remainingDeprovisionFailures   int
-	remainingLastOperationFailures int
-	updateCount                    int
+	Name                  string
+	Credential            *brokerapi.Credential
+	provisionedAt         time.Time
+	updatedAt             time.Time
+	deprovisionedAt       time.Time
+	deprovisionAttempts   int
+	lastOperationAttempts int
+	updateAttempts        int
 }
 
 type testService struct {
@@ -388,23 +388,17 @@ func (c *testController) CreateServiceInstance(
 		return nil, err
 	}
 
-	c.instanceMap[id] = &testServiceInstance{
-		Name:                           id,
-		Credential:                     &cred,
-		remainingDeprovisionFailures:   service.DeprovisionFailTimes,
-		remainingLastOperationFailures: service.LastOperationFailTimes,
+	instance := &testServiceInstance{
+		Name:       id,
+		Credential: &cred,
 	}
+	c.instanceMap[id] = instance
 
 	c.provisionCountMap[id]++
 
-	async := false
 	if service.Asynchronous {
-		async = true
-		c.instanceMap[id].provisionedAt = time.Now().Add(1 * time.Minute)
-	}
-
-	glog.Infof("Created Test Service Instance:\n%v\n", c.instanceMap[id])
-	if async {
+		glog.Infof("Starting asynchronous creation of Service Instance:\n%v\n", instance)
+		instance.provisionedAt = time.Now().Add(1 * time.Minute)
 		return &brokerapi.CreateServiceInstanceResponse{
 			Operation: "provision",
 		}, nil
@@ -414,6 +408,8 @@ func (c *testController) CreateServiceInstance(
 	if provisionCount <= service.ProvisionFailTimes {
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail provisioning", service.HTTPErrorStatus)
 	}
+
+	glog.Infof("Created Test Service Instance:\n%v\n", instance)
 	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
@@ -435,32 +431,27 @@ func (c *testController) UpdateServiceInstance(
 		return nil, fmt.Errorf("Service %q does not exist", req.ServiceID)
 	}
 
-	async := false
-	if service.Asynchronous {
-		async = true
-		instance.updatedAt = time.Now().Add(1 * time.Minute)
-	}
-
-	mustFail := instance.updateCount < service.UpdateFailTimes
-	if mustFail && !async {
-		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail update", service.HTTPErrorStatus)
-	}
-
 	cred, err := getCredentials(req.Parameters)
 	if err != nil {
 		return nil, err
 	}
 	instance.Credential = &cred
 
-	instance.updateCount++
+	instance.updateAttempts++
 
-	glog.Infof("Updated Test Service Instance:\n%v\n", instance)
-	if async {
+	if service.Asynchronous {
+		glog.Infof("Starting asynchronous update of Service Instance:\n%v\n", instance)
+		instance.updatedAt = time.Now().Add(1 * time.Minute)
 		return &brokerapi.UpdateServiceInstanceResponse{
 			Operation: "update",
 		}, nil
 	}
 
+	if instance.updateAttempts <= service.UpdateFailTimes {
+		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail update", service.HTTPErrorStatus)
+	}
+
+	glog.Infof("Updated Test Service Instance:\n%v\n", instance)
 	return &brokerapi.UpdateServiceInstanceResponse{}, nil
 }
 
@@ -502,14 +493,14 @@ func (c *testController) GetServiceInstanceLastOperation(
 		return nil, server.NewErrorWithHTTPStatus("Instance not found", http.StatusGone)
 	}
 
-	// reset remainingLastOperationFalures
-	service, ok := c.serviceMap[serviceID]
-	if ok {
-		instance.remainingLastOperationFailures = service.LastOperationFailTimes
+	service, exists := c.serviceMap[serviceID]
+	if !exists {
+		return nil, errors.New("Service not found")
 	}
 
-	if instance.remainingLastOperationFailures > 0 {
-		instance.remainingLastOperationFailures--
+	instance.lastOperationAttempts++
+
+	if instance.lastOperationAttempts <= service.LastOperationFailTimes {
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail lastOperation", service.HTTPErrorStatus)
 	}
 
@@ -567,16 +558,19 @@ func (c *testController) RemoveServiceInstance(
 		service, ok := c.serviceMap[serviceID]
 		if ok {
 			if service.Asynchronous {
+				glog.Infof("Starting asynchronous deletion of Service Instance:\n%v\n", instance)
 				instance.deprovisionedAt = time.Now().Add(1 * time.Minute)
 				return &brokerapi.DeleteServiceInstanceResponse{
 					Operation: "deprovision",
 				}, nil
 			}
-			if instance.remainingDeprovisionFailures > 0 {
-				instance.remainingDeprovisionFailures--
+
+			if instance.deprovisionAttempts <= service.DeprovisionFailTimes {
 				return nil, server.NewErrorWithHTTPStatus("Service is configured to fail deprovisioning", service.HTTPErrorStatus)
 			}
+
 			delete(c.instanceMap, instanceID)
+			glog.Infof("Deleted Test Service Instance:\n%v\n", instance)
 			return &brokerapi.DeleteServiceInstanceResponse{}, nil
 		}
 	}
