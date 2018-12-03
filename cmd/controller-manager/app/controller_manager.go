@@ -169,7 +169,12 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 				ClientConfig: serviceCatalogKubeconfig,
 			},
 		}
-		healthz.InstallHandler(mux, healthz.PingHealthz, apiAvailableChecker)
+		// liveness registered at /healthz indicates if the container is responding
+		healthz.InstallHandler(mux, healthz.PingHealthz)
+
+		// readiness registered at /healthz/ready indicates if traffic should be routed to this container
+		healthz.InstallPathHandler(mux, "/healthz/ready", apiAvailableChecker)
+
 		configz.InstallHandler(mux)
 		metrics.RegisterMetricsAndInstallHandler(mux)
 
