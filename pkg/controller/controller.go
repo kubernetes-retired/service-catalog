@@ -88,12 +88,14 @@ func NewController(
 	operationPollingMaximumBackoffDuration time.Duration,
 	clusterIDConfigMapName string,
 	clusterIDConfigMapNamespace string,
+	osbAPITimeOut time.Duration,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
 		serviceCatalogClient:        serviceCatalogClient,
 		brokerRelistInterval:        brokerRelistInterval,
 		OSBAPIPreferredVersion:      osbAPIPreferredVersion,
+		OSBAPITimeOut:               osbAPITimeOut,
 		recorder:                    recorder,
 		reconciliationRetryDuration: reconciliationRetryDuration,
 		clusterServiceBrokerQueue:   workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "cluster-service-broker"),
@@ -194,6 +196,7 @@ type controller struct {
 	servicePlanLister           listers.ServicePlanLister
 	brokerRelistInterval        time.Duration
 	OSBAPIPreferredVersion      string
+	OSBAPITimeOut               time.Duration
 	recorder                    record.EventRecorder
 	reconciliationRetryDuration time.Duration
 	clusterServiceBrokerQueue   workqueue.RateLimitingInterface
@@ -1205,7 +1208,7 @@ func isServiceInstanceOrphanMitigation(instance *v1beta1.ServiceInstance) bool {
 
 // NewClientConfigurationForBroker creates a new ClientConfiguration for connecting
 // to the specified Broker
-func NewClientConfigurationForBroker(meta metav1.ObjectMeta, commonSpec *v1beta1.CommonServiceBrokerSpec, authConfig *osb.AuthConfig) *osb.ClientConfiguration {
+func NewClientConfigurationForBroker(meta metav1.ObjectMeta, commonSpec *v1beta1.CommonServiceBrokerSpec, authConfig *osb.AuthConfig, osbAPITimeOut time.Duration) *osb.ClientConfiguration {
 	clientConfig := osb.DefaultClientConfiguration()
 	clientConfig.Name = meta.Name
 	clientConfig.URL = commonSpec.URL
@@ -1213,6 +1216,7 @@ func NewClientConfigurationForBroker(meta metav1.ObjectMeta, commonSpec *v1beta1
 	clientConfig.EnableAlphaFeatures = true
 	clientConfig.Insecure = commonSpec.InsecureSkipTLSVerify
 	clientConfig.CAData = commonSpec.CABundle
+	clientConfig.TimeoutSeconds = int(osbAPITimeOut.Seconds())
 	return clientConfig
 }
 
