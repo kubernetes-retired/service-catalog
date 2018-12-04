@@ -1192,7 +1192,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool,
 		return c.resolveNamespacedReferences(instance)
 	}
 
-	return false, stderrors.New(errorAmbiguousPlanReferenceScope)
+	return false, fmt.Errorf("%v", errorAmbiguousPlanReferenceScope)
 }
 
 func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance) (bool, error) {
@@ -1213,7 +1213,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 		if sc == nil {
 			sc, err = c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 			if err != nil {
-				return false, fmt.Errorf(`Couldn't find ClusterServiceClass (K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
+				return false, fmt.Errorf(`couldn't find ClusterServiceClass "(K8S: %s)": %v`, instance.Spec.ClusterServiceClassRef.Name, err.Error())
 			}
 		}
 
@@ -1244,7 +1244,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 		if sc == nil {
 			sc, err = c.serviceClassLister.ServiceClasses(instance.Namespace).Get(instance.Spec.ServiceClassRef.Name)
 			if err != nil {
-				return false, fmt.Errorf(`Couldn't find ServiceClass (K8S: %s)": %v`, instance.Spec.ServiceClassRef.Name, err.Error())
+				return false, fmt.Errorf(`couldn't find ServiceClass "(K8S: %s)": %v`, instance.Spec.ServiceClassRef.Name, err.Error())
 			}
 		}
 
