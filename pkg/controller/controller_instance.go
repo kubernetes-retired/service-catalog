@@ -1201,7 +1201,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool,
 		return c.resolveNamespacedReferences(instance)
 	}
 
-	return false, stderrors.New(errorAmbiguousPlanReferenceScope)
+	return false, fmt.Errorf("%v", errorAmbiguousPlanReferenceScope)
 }
 
 func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance) (bool, error) {
