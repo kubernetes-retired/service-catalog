@@ -717,7 +717,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		"UNBINDABLE-CLUSTERSERVICECLASS", "test-unbindable-clusterserviceclass", "test-unbindable-clusterserviceplan",
+		"unbindable-clusterserviceclass", "test-unbindable-clusterserviceclass", "test-unbindable-clusterserviceplan",
 	).String()
 	expectedEvents := []string{expectedEvent, expectedEvent}
 	if err := checkEvents(events, expectedEvents); err != nil {
@@ -893,7 +893,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		"CSCGUID", "test-clusterserviceclass", "test-unbindable-clusterserviceplan",
+		"cscguid", "test-clusterserviceclass", "test-unbindable-clusterserviceplan",
 	).String()
 	expectedEvents := []string{
 		expectedEvent,
@@ -1499,7 +1499,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1666,7 +1666,7 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("fake creation failure")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1946,7 +1946,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -2014,7 +2014,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)

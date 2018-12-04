@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	testServiceClassGUID  = "SCGUID"
-	testServicePlanGUID   = "SPGUID"
+	testServiceClassGUID  = "scguid"
+	testServicePlanGUID   = "spguid"
 	testServiceBrokerName = "test-servicebroker"
 	testServiceClassName  = "test-serviceclass"
 	testServicePlanName   = "test-serviceplan"

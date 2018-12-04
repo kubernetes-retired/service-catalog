@@ -17,9 +17,12 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -794,8 +798,9 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 // convertAndFilterCatalogToNamespacedTypes converts a service broker catalog
 // into an array of ServiceClasses and an array of ServicePlans and filters
 // these through the restrictions provided. The ServiceClasses and
-// ServicePlans returned by this method are named in K8S with the OSB ID.
-func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ServiceClass, []*v1beta1.ServicePlan, error) {
+// ServicePlans returned by this method are named in K8S with the OSB ID
+// filtered to adhere to K8S naming restrictions.
+func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions, existingServiceClasses map[string]*v1beta1.ServiceClass, existingServicePlans map[string]*v1beta1.ServicePlan) ([]*v1beta1.ServiceClass, []*v1beta1.ServicePlan, error) {
 	var predicate filter.Predicate
 	var err error
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
@@ -837,13 +842,19 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
-		serviceClass.SetName(svc.ID)
+		// we need to preserve preexisting names from before we
+		// started generating our own names
+		if existingServiceClasses[svc.ID] != nil {
+			serviceClass.SetName(existingServiceClasses[svc.ID].Name)
+		} else {
+			serviceClass.SetName(GenerateEscapedName(svc.ID))
+		}
 		serviceClass.SetNamespace(namespace)
 
 		// If this service class passes the predicate, process the plans for the class.
 		if fields := v1beta1.ConvertServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ServiceClass Name
-			plans, err := convertServicePlans(namespace, svc.Plans, serviceClass.Name)
+			plans, err := convertServicePlans(namespace, svc.Plans, serviceClass.Name, existingServicePlans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -863,11 +874,63 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 	return serviceClasses, servicePlans, nil
 }
 
+// GenerateEscapedName takes in an OSB ID and filters
+// it to fit K8S name restrictions. It escapes all
+// characters except for lowercase alphanumerics (excluding z
+// as we use that for the escape character), hyphens, and
+// periods, changing them into their UTF-8 hex
+// equivalents separated by 'z'. Hyphens that come after periods and
+// periods that come after hyphens or periods are also escaped.
+// If the resulting string is over the K8S limit of 63 characters,
+// it appends the md5 hash of the original OSB ID to the first 31 characters
+// (minus trailing periods) of the escaped name.
+func GenerateEscapedName(externalID string) string {
+	buffer := bytes.Buffer{}
+	lenOrigin := len(externalID)
+	prevDot := false
+	prevDash := false
+
+	for i, ch := range externalID {
+		// Don't need to escape [a-y0-9.-]
+		// we use 'z' as our escape character
+		// '.' isn't ok at start, end or after '-', so escape those cases
+		// '-' isn't ok at start, end or after a '.'
+		if (ch >= 'a' && ch <= 'y') || (ch >= '0' && ch <= '9') {
+			buffer.WriteString(string(ch))
+			prevDash = false
+			prevDot = false
+		} else if ch == '.' && i != 0 && i != lenOrigin-1 && !prevDot && !prevDash {
+			buffer.WriteString(string(ch))
+			prevDash = false
+			prevDot = true
+		} else if ch == '-' && i != 0 && i != lenOrigin-1 && !prevDot {
+			buffer.WriteString(string(ch))
+			prevDash = true
+			prevDot = false
+		} else {
+			start, end := "z", "z"                                    // By default start/end escaped ch with 'z'
+			buffer.WriteString(fmt.Sprintf("%s%x%s", start, ch, end)) // append
+			prevDash = false
+			prevDot = false
+		}
+	}
+
+	escapedName := buffer.String()
+	//enforce max length constraint from core k8s name validation
+	if len(escapedName) > validation.DNS1123LabelMaxLength {
+		escapedName = escapedName[0:30]
+		escapedName = strings.TrimSuffix(escapedName, ".")
+		escapedName = escapedName + "-" + fmt.Sprintf("%x", md5.Sum([]byte(externalID)))
+	}
+
+	return escapedName
+}
+
 // convertAndFilterCatalog converts a service broker catalog into an array of
 // ClusterServiceClasses and an array of ClusterServicePlans and filters these
 // through the restrictions provided. The ClusterServiceClasses and
 // ClusterServicePlans returned by this method are named in K8S with the OSB ID.
-func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions, existingServiceClasses map[string]*v1beta1.ClusterServiceClass, existingServicePlans map[string]*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
 	var predicate filter.Predicate
 	var err error
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
@@ -909,12 +972,18 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Cata
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
-		serviceClass.SetName(svc.ID)
+		// need to check for pre-existing legacy names from
+		// before we sanitized k8s names
+		if existingServiceClasses[svc.ID] != nil {
+			serviceClass.SetName(existingServiceClasses[svc.ID].Name)
+		} else {
+			serviceClass.SetName(GenerateEscapedName(svc.ID))
+		}
 
 		// If this service class passes the predicate, process the plans for the class.
 		if fields := v1beta1.ConvertClusterServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ClusterServiceClass Name
-			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name)
+			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name, existingServicePlans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -996,7 +1065,7 @@ func filterServicePlans(restrictions *v1beta1.CatalogRestrictions, servicePlans 
 	return accepted, rejected, nil
 }
 
-func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID string) ([]*v1beta1.ServicePlan, error) {
+func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID string, existingServicePlans map[string]*v1beta1.ServicePlan) ([]*v1beta1.ServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ServiceClass (K8S: %q) must have at least one plan", serviceClassID)
 	}
@@ -1014,7 +1083,13 @@ func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID stri
 			},
 		}
 		servicePlans[i] = servicePlan
-		servicePlan.SetName(plan.ID)
+		// need to check for pre-existing legacy names from
+		// before we sanitized k8s names
+		if existingServicePlans[plan.ID] != nil {
+			servicePlans[i].SetName(existingServicePlans[plan.ID].Name)
+		} else {
+			servicePlans[i].SetName(GenerateEscapedName(plan.ID))
+		}
 		servicePlan.SetNamespace(namespace)
 
 		err := convertCommonServicePlan(plan, &servicePlan.Spec.CommonServicePlanSpec)
@@ -1088,7 +1163,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 	return nil
 }
 
-func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {
+func convertClusterServicePlans(plans []osb.Plan, serviceClassID string, existingServicePlans map[string]*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ClusterServiceClass (K8S: %q) must have at least one plan", serviceClassID)
 	}
@@ -1105,7 +1180,13 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: serviceClassID},
 			},
 		}
-		servicePlans[i].SetName(plan.ID)
+		// need to check for pre-existing legacy names from
+		// before we sanitized k8s names
+		if existingServicePlans[plan.ID] != nil {
+			servicePlans[i].SetName(existingServicePlans[plan.ID].Name)
+		} else {
+			servicePlans[i].SetName(GenerateEscapedName(plan.ID))
+		}
 
 		if plan.Bindable != nil {
 			b := *plan.Bindable

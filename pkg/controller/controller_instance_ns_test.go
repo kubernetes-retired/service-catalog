@@ -829,7 +829,7 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=scguid"),
 	}
 	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
 

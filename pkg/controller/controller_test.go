@@ -61,15 +61,15 @@ import (
 // loops for the different catalog API resources.
 
 const (
-	testClusterServiceClassGUID            = "CSCGUID"
-	testClusterServicePlanGUID             = "CSPGUID"
-	testNonbindableClusterServiceClassGUID = "UNBINDABLE-CLUSTERSERVICECLASS"
-	testNonbindableClusterServicePlanGUID  = "UNBINDABLE-CLUSTERSERVICEPLAN"
-	testServiceInstanceGUID                = "IGUID"
-	testServiceBindingGUID                 = "BGUID"
+	testClusterServiceClassGUID            = "cscguid"
+	testClusterServicePlanGUID             = "cspguid"
+	testNonbindableClusterServiceClassGUID = "unbindable-clusterserviceclass"
+	testNonbindableClusterServicePlanGUID  = "unbindable-clusterserviceplan"
+	testServiceInstanceGUID                = "iguid"
+	testServiceBindingGUID                 = "bguid"
 	testNamespaceGUID                      = "test-ns-uid"
-	testRemovedClusterServiceClassGUID     = "REMOVED-CLUSTERSERVICECLASS"
-	testRemovedClusterServicePlanGUID      = "REMOVED-CLUSTERSERVICEPLAN"
+	testRemovedClusterServiceClassGUID     = "removed-clusterserviceclass"
+	testRemovedClusterServicePlanGUID      = "removed-clusterserviceplan"
 
 	testClusterServiceBrokerName            = "test-clusterservicebroker"
 	testClusterServiceClassName             = "test-clusterserviceclass"
@@ -91,8 +91,10 @@ const (
 )
 
 var (
-	testDashboardURL = "http://dashboard"
-	testContext      = map[string]interface{}{
+	emptyServiceClasses = make(map[string]*v1beta1.ClusterServiceClass)
+	emptyServicePlans   = make(map[string]*v1beta1.ClusterServicePlan)
+	testDashboardURL    = "http://dashboard"
+	testContext         = map[string]interface{}{
 		"platform":           ContextProfilePlatformKubernetes,
 		"namespace":          testNamespace,
 		clusterIdentifierKey: testClusterID,
@@ -102,7 +104,7 @@ var (
 const testCatalog = `{
   "services": [{
     "name": "fake-service",
-    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+    "id": "acb56d7c-xxxx-xxxx-xxxx-feb140a59a66",
     "description": "fake service",
     "tags": ["no-sql", "relational"],
     "requires": ["route_forwarding"],
@@ -120,14 +122,14 @@ const testCatalog = `{
       "displayName": "The Fake ClusterServiceBroker"
     },
     "dashboard_client": {
-      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
-      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
+      "id": "398e2f8e-xxxx-xxxx-xxxx-19a71ecbcf64",
+      "secret": "277cabb0-xxxx-xxxx-xxxx-7822c0a90e5d",
       "redirect_uri": "http://localhost:1234"
     },
     "plan_updateable": true,
     "plans": [{
       "name": "fake-plan-1",
-      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+      "id": "d3031751-xxxx-xxxx-xxxx-a42377d3320e",
       "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections",
       "max_storage_tb": 5,
       "metadata": {
@@ -153,7 +155,7 @@ const testCatalog = `{
       }
     }, {
       "name": "fake-plan-2",
-      "id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
+      "id": "0f4008b5-xxxx-xxxx-xxxx-dace631cd648",
       "description": "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async",
       "max_storage_tb": 5,
       "metadata": {
@@ -182,7 +184,7 @@ const testCatalog = `{
 const alphaParameterSchemaCatalogBytes = `{
   "services": [{
     "name": "fake-service",
-    "id": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+    "id": "acb56d7c-xxxx-xxxx-xxxx-feb140a59a66",
     "description": "fake service",
     "tags": ["tag1", "tag2"],
     "requires": ["route_forwarding"],
@@ -192,14 +194,14 @@ const alphaParameterSchemaCatalogBytes = `{
     	"c": "d"
     },
     "dashboard_client": {
-      "id": "398e2f8e-XXXX-XXXX-XXXX-19a71ecbcf64",
-      "secret": "277cabb0-XXXX-XXXX-XXXX-7822c0a90e5d",
+      "id": "398e2f8e-xxxx-xxxx-xxxx-19a71ecbcf64",
+      "secret": "277cabb0-xxxx-xxxx-xxxx-7822c0a90e5d",
       "redirect_uri": "http://localhost:1234"
     },
     "plan_updateable": true,
     "plans": [{
       "name": "fake-plan-1",
-      "id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+      "id": "d3031751-xxxx-xxxx-xxxx-a42377d3320e",
       "description": "description1",
       "metadata": {
       	"b": "c",
@@ -1250,7 +1252,7 @@ type bindingParameters struct {
 }
 
 func TestEmptyCatalogConversion(t *testing.T) {
-	serviceClasses, servicePlans, err := convertAndFilterCatalog(&osb.CatalogResponse{}, nil)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(&osb.CatalogResponse{}, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1268,7 +1270,7 @@ func TestCatalogConversion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
-	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1279,8 +1281,46 @@ func TestCatalogConversion(t *testing.T) {
 		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(servicePlans))
 	}
 
-	checkPlan(servicePlans[0], "d3031751-XXXX-XXXX-XXXX-a42377d3320e", "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
-	checkPlan(servicePlans[1], "0f4008b5-XXXX-XXXX-XXXX-dace631cd648", "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
+	checkPlan(servicePlans[0], "d3031751-xxxx-xxxx-xxxx-a42377d3320e", "d3031751-xxxx-xxxx-xxxx-a42377d3320e", "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
+	checkPlan(servicePlans[1], "0f4008b5-xxxx-xxxx-xxxx-dace631cd648", "0f4008b5-xxxx-xxxx-xxxx-dace631cd648", "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
+}
+
+func TestCatalogConversionWithPreexistingClassesAndPlans(t *testing.T) {
+	catalog := &osb.CatalogResponse{}
+	err := json.Unmarshal([]byte(testCatalog), &catalog)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+	}
+	testClassExternalID := "foo-bar"
+	testPlanExternalID := "foo-bar-plan"
+	catalog.Services[0].ID = testClassExternalID
+	catalog.Services[0].Plans[0].ID = testPlanExternalID
+
+	oldServiceClasses := make(map[string]*v1beta1.ClusterServiceClass)
+	oldServiceClass := getTestClusterServiceClass()
+	oldServiceClass.Name = testClassExternalID
+	oldServiceClass.Spec.ExternalID = testClassExternalID
+	oldServiceClasses[catalog.Services[0].ID] = oldServiceClass
+
+	oldServicePlans := make(map[string]*v1beta1.ClusterServicePlan)
+	oldServicePlan := getTestClusterServicePlan()
+	oldServiceClass.Spec.ExternalID = testPlanExternalID
+	oldServicePlans[catalog.Services[0].Plans[0].ID] = oldServicePlan
+
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil, oldServiceClasses, oldServicePlans)
+	if err != nil {
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
+	}
+	if len(serviceClasses) != 1 {
+		t.Fatalf("Expected 1 serviceclasses for testCatalog, but got: %d", len(serviceClasses))
+	}
+	checkClass(serviceClasses[0], testClassExternalID, testClassExternalID, "fake-service", "fake service", t)
+
+	if len(servicePlans) != 2 {
+		t.Fatalf("Expected 2 plans for testCatalog, but got: %d", len(servicePlans))
+	}
+	checkPlan(servicePlans[0], oldServicePlan.Spec.ExternalID, testPlanExternalID, "fake-plan-1", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections", t)
+	checkPlan(servicePlans[1], "0f4008b5-xxxx-xxxx-xxxx-dace631cd648", "0f4008b5-xxxx-xxxx-xxxx-dace631cd648", "fake-plan-2", "Shared fake Server, 5tb persistent disk, 40 max concurrent connections. 100 async", t)
 }
 
 func TestCatalogConversionWithParameterSchemas(t *testing.T) {
@@ -1292,7 +1332,7 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
-	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil)
+	serviceClasses, servicePlans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1351,9 +1391,24 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	}
 }
 
-func checkPlan(plan *v1beta1.ClusterServicePlan, planID, planName, planDescription string, t *testing.T) {
-	if plan.Name != planID {
-		t.Errorf("Expected plan name to be %q, but was: %q", planID, plan.Name)
+func checkClass(class *v1beta1.ClusterServiceClass, classK8sName, classID, className, classDescription string, t *testing.T) {
+	if class.Name != classK8sName {
+		t.Errorf("Expected class name to be %q, but was: %q", classK8sName, class.Name)
+	}
+	if class.Spec.ExternalID != classID {
+		t.Errorf("Expected class ExternalID to be %q, but was: %q", classID, class.Spec.ExternalID)
+	}
+	if class.Spec.ExternalName != className {
+		t.Errorf("Expected plan ExternalName to be %q, but was: %q", className, class.Spec.ExternalName)
+	}
+	if class.Spec.Description != classDescription {
+		t.Errorf("Expected class description to be %q, but was: %q", classDescription, class.Spec.Description)
+	}
+}
+
+func checkPlan(plan *v1beta1.ClusterServicePlan, planK8sName, planID, planName, planDescription string, t *testing.T) {
+	if plan.Name != planK8sName {
+		t.Errorf("Expected plan name to be %q, but was: %q", planK8sName, plan.Name)
 	}
 	if plan.Spec.ExternalID != planID {
 		t.Errorf("Expected plan ExternalID to be %q, but was: %q", planID, plan.Spec.ExternalID)
@@ -1594,7 +1649,7 @@ func TestConvertAndFilterCatalog(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal test catalog: %v", err)
 			}
-			classes, plans, err := convertAndFilterCatalog(catalog, tc.restrictions)
+			classes, plans, err := convertAndFilterCatalog(catalog, tc.restrictions, emptyServiceClasses, emptyServicePlans)
 			if err != nil {
 				if tc.error {
 					return
@@ -1670,7 +1725,7 @@ func TestFilterServicePlans(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal test catalog: %v", err)
 			}
-			_, servicePlans, err := convertAndFilterCatalog(catalog, nil)
+			_, servicePlans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 			if err != nil {
 				t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 			}
@@ -1703,11 +1758,11 @@ const testCatalogForClusterServicePlanBindableOverride = `{
       "bindable": true,
       "plans": [{
         "name": "bindable-bindable",
-        "id": "s1_plan1_id"
+        "id": "s1-plan1-id"
       },
       {
         "name": "bindable-unbindable",
-        "id": "s1_plan2_id",
+        "id": "s1-plan2-id",
         "bindable": false
       }]
     },
@@ -1717,11 +1772,11 @@ const testCatalogForClusterServicePlanBindableOverride = `{
       "bindable": false,
       "plans": [{
         "name": "unbindable-unbindable",
-        "id": "s2_plan1_id"
+        "id": "s2-plan1-id"
       },
       {
         "name": "unbindable-bindable",
-        "id": "s2_plan2_id",
+        "id": "s2-plan2-id",
         "bindable": true
       }]
     }
@@ -1748,7 +1803,7 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		t.Fatalf("Failed to unmarshal test catalog: %v", err)
 	}
 
-	aclasses, aplans, err := convertAndFilterCatalog(catalog, nil)
+	aclasses, aplans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
 	if err != nil {
 		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
 	}
@@ -1783,11 +1838,11 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 	eplans := []*v1beta1.ClusterServicePlan{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "s1_plan1_id",
+				Name: "s1-plan1-id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
 				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
-					ExternalID:   "s1_plan1_id",
+					ExternalID:   "s1-plan1-id",
 					ExternalName: "bindable-bindable",
 					Bindable:     nil,
 				},
@@ -1798,12 +1853,12 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "s1_plan2_id",
+				Name: "s1-plan2-id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
 				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 					ExternalName: "bindable-unbindable",
-					ExternalID:   "s1_plan2_id",
+					ExternalID:   "s1-plan2-id",
 					Bindable:     falsePtr(),
 				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
@@ -1813,12 +1868,12 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "s2_plan1_id",
+				Name: "s2-plan1-id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
 				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 					ExternalName: "unbindable-unbindable",
-					ExternalID:   "s2_plan1_id",
+					ExternalID:   "s2-plan1-id",
 					Bindable:     nil,
 				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
@@ -1828,12 +1883,12 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "s2_plan2_id",
+				Name: "s2-plan2-id",
 			},
 			Spec: v1beta1.ClusterServicePlanSpec{
 				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 					ExternalName: "unbindable-bindable",
-					ExternalID:   "s2_plan2_id",
+					ExternalID:   "s2-plan2-id",
 					Bindable:     truePtr(),
 				},
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
@@ -1850,6 +1905,265 @@ func TestCatalogConversionClusterServicePlanBindable(t *testing.T) {
 		t.Errorf("Unexpected diff between expected and actual serviceplans: %v", diff.ObjectReflectDiff(eplans, aplans))
 	}
 
+}
+
+const testCatalogForClusterServiceClassAndPlanWithInvalidExternalIDCharacters = `{
+  "services": [
+    {
+      "name": "mysql",
+      "id": "mysqlclass-1234-A",
+      "plans": [{
+        "name": "normal-characters",
+        "id": "mysql-100mb"
+      },
+      {
+        "name": "contains-escape-chars",
+        "id": "abz-class"
+      },
+      {
+        "name": "invalid-internal-characters",
+        "id": "invalid/characters"
+      },
+			{
+				"name": "invalid-starting-ending-characters",
+				"id": "InvalidstarT"
+      },
+			{
+				"name": "starting-ending-periods",
+				"id": ".start."
+      },
+			{
+				"name": "period-next-to-invalid-character",
+				"id": "foo.Bar"
+      },
+			{
+				"name": "internal-period",
+				"id": "foo.bar"
+      },
+			{
+				"name": "too-long",
+				"id": "thisnameisreallyreallywaytoolonghowcouldanyonepossiblyreadthisplansname"
+      },
+			{
+				"name": "too-long-with-problem-chars",
+				"id": "thisnameisreallyreallywaytool-onghowcouldanyonepossiblyreadthisplansname"
+      },
+			{
+				"name": "too-long-with-problem-period",
+				"id": "thisnameisreallyreallywaytool.onghowcouldanyonepossiblyreadthisplansname"
+			}]
+    }
+]}`
+
+func TestCatalogConversionInvalidCharactersInExternalID(t *testing.T) {
+	catalog := &osb.CatalogResponse{}
+	err := json.Unmarshal([]byte(testCatalogForClusterServiceClassAndPlanWithInvalidExternalIDCharacters), &catalog)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal test catalog: %v", err)
+	}
+
+	aclasses, aplans, err := convertAndFilterCatalog(catalog, nil, emptyServiceClasses, emptyServicePlans)
+	if err != nil {
+		t.Fatalf("Failed to convertAndFilterCatalog: %v", err)
+	}
+
+	eclasses := []*v1beta1.ClusterServiceClass{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "mysqlclass-1234-z41z",
+			},
+			Spec: v1beta1.ClusterServiceClassSpec{
+				CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+					ExternalName: "mysql",
+					ExternalID:   "mysqlclass-1234-A",
+				},
+			},
+		},
+	}
+
+	eplans := []*v1beta1.ClusterServicePlan{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "mysql-100mb",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "normal-characters",
+					ExternalID:   "mysql-100mb",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "abz7az-class",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "contains-escape-chars",
+					ExternalID:   "abz-class",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "invalidz2fzcharacters",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "invalid-internal-characters",
+					ExternalID:   "invalid/characters",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "z49znvalidstarz54z",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "invalid-starting-ending-characters",
+					ExternalID:   "InvalidstarT",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "z2ezstartz2ez",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "starting-ending-periods",
+					ExternalID:   ".start.",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "foo.z42zar",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "period-next-to-invalid-character",
+					ExternalID:   "foo.Bar",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "foo.bar",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "internal-period",
+					ExternalID:   "foo.bar",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "thisnameisreallyreallywaytoolo-3f54131bf8c96c7d946ee1d7a32136dd",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "too-long",
+					ExternalID:   "thisnameisreallyreallywaytoolonghowcouldanyonepossiblyreadthisplansname",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "thisnameisreallyreallywaytool--ca868df5f4322294bd65bd7e81866660",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "too-long-with-problem-chars",
+					ExternalID:   "thisnameisreallyreallywaytool-onghowcouldanyonepossiblyreadthisplansname",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "thisnameisreallyreallywaytool-fa00db817d4c467b3bf3893240ed04a1",
+			},
+			Spec: v1beta1.ClusterServicePlanSpec{
+				CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+					ExternalName: "too-long-with-problem-period",
+					ExternalID:   "thisnameisreallyreallywaytool.onghowcouldanyonepossiblyreadthisplansname",
+				},
+				ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+					Name: "mysqlclass-1234-z41z",
+				},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(eclasses, aclasses) {
+		t.Errorf("Unexpected diff between expected and actual serviceclasses: %v", diff.ObjectReflectDiff(eclasses, aclasses))
+	}
+	if !reflect.DeepEqual(eplans, aplans) {
+		t.Errorf("Unexpected diff between expected and actual serviceplans: %v", diff.ObjectReflectDiff(eplans, aplans))
+	}
+
+}
+
+func TestGenerateEscapedName(t *testing.T) {
+	externalIDs := []string{
+		"simple",
+		"contains-escape-char-z",
+		"ContainsCaps",
+		".starts-and-ends-with-periods.",
+		"-starts-and-ends-with-hyphens-",
+		"adjacent.-specialchars",
+		"otherorderadjacent-.specialchars",
+		"waytoomany-.-.-.-.-adjacentspecialchars",
+		"thisnameisreallyreallywaytoolonghowcouldanyonepossiblyreadthisplansname",
+		"thisnameisreallyreallywaytool.onghowcouldanyonepossiblyreadthisplansnamewithproblemperiod",
+	}
+	eEscapedNames := []string{
+		"simple",
+		"contains-escape-char-z7az",
+		"z43zontainsz43zaps",
+		"z2ezstarts-and-ends-with-periodsz2ez",
+		"z2dzstarts-and-ends-with-hyphensz2dz",
+		"adjacent.z2dzspecialchars",
+		"otherorderadjacent-z2ezspecialchars",
+		"waytoomany-z2ez-z2ez-z2ez-z2ez-adjacentspecialchars",
+		"thisnameisreallyreallywaytoolo-3f54131bf8c96c7d946ee1d7a32136dd",
+		"thisnameisreallyreallywaytool-84b392d072a2cbe3a18f87e7f7776d94",
+	}
+	for i, v := range externalIDs {
+		aEscapedName := GenerateEscapedName(v)
+		if eEscapedNames[i] != aEscapedName {
+			t.Errorf("Unexpected diff between expected and actual escaped name: %v", diff.ObjectReflectDiff(eEscapedNames[i], aEscapedName))
+		}
+	}
 }
 
 func TestIsClusterServiceBrokerReady(t *testing.T) {
