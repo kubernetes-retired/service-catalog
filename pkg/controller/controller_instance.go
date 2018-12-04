@@ -1694,7 +1694,7 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) 
 
 	// If we're hitting this return, it means we couldn't tell whether the class
 	// and plan were cluster or namespace scoped
-	return nil, nil, stderrors.New(errorAmbiguousPlanReferenceScope)
+	return nil, nil, fmt.Errorf("%v", errorAmbiguousPlanReferenceScope)
 }
 
 // newServiceInstanceCondition is a helper function that returns a
