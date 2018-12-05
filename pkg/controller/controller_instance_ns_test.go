@@ -382,7 +382,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		startingInstanceOrphanMitigationReason,
-		"",
+		errorProvisionCallFailedReason,
 		errorProvisionCallFailedReason,
 		instance,
 	)
