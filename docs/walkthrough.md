@@ -31,7 +31,7 @@ that chart in the chart's
 Otherwise, to install with sensible defaults, run the following command:
 
 ```console
-helm install ./chart/ups-broker --name ups-broker --namespace ups-broker
+helm install ./charts/ups-broker --name ups-broker --namespace ups-broker
 ```
 **NOTE:** The walkthrough installs a [cluster-wide UPS Broker](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/examples/walkthrough/ups-clusterservicebroker.yaml). For a namespace-scoped service broker, see [this](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/examples/walkthrough/ups-servicebroker.yaml) file.
 
