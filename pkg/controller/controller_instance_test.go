@@ -616,9 +616,9 @@ func TestReconcileServiceInstanceWithParameters(t *testing.T) {
 
 			events := getRecordedEvents(testController)
 			if tc.expectedError {
-				assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParameters, instance)
+				assertServiceInstanceErrorBeforeRequest(t, updatedServiceInstance, errorWithParametersReason, instance)
 
-				expectedEvent := warningEventBuilder(errorWithParameters).msg("failed to prepare parameters")
+				expectedEvent := warningEventBuilder(errorWithParametersReason).msg("failed to prepare parameters")
 				if err := checkEventPrefixes(events, expectedEvent.stringArr()); err != nil {
 					t.Fatal(err)
 				}
