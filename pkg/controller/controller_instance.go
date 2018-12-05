@@ -58,7 +58,7 @@ const (
 	errorErrorCallingProvisionReason           string = "ErrorCallingProvision"
 	errorUpdateInstanceCallFailedReason        string = "UpdateInstanceCallFailed"
 	errorErrorCallingUpdateInstanceReason      string = "ErrorCallingUpdateInstance"
-	errorDeprovisionCalledReason               string = "DeprovisionCallFailed"
+	errorDeprovisionCallFailedReason           string = "DeprovisionCallFailed"
 	errorDeprovisionBlockedByCredentialsReason string = "DeprovisionBlockedByExistingCredentials"
 	errorPollingLastOperationReason            string = "ErrorPollingLastOperation"
 	errorWithOriginatingIdentity               string = "Error with Originating Identity"
@@ -924,7 +924,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			msg = fmt.Sprintf("Deprovision call failed; received error response from broker: %v", httpErr)
 		}
 
-		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCalledReason, msg)
+		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCallFailedReason, msg)
 
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
 			msg := "Stopping reconciliation retries because too much time has elapsed"
@@ -1070,7 +1070,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		case deleting:
 			// For deprovisioning only, we should reattempt even on failure
 			msg := "Deprovision call failed: " + description
-			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCalledReason, msg)
+			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCallFailedReason, msg)
 
 			if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
 				return c.processServiceInstancePollingFailureRetryTimeout(instance, readyCond)
