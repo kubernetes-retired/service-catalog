@@ -2809,7 +2809,7 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
-		errorDeprovisionCalledReason,
+		errorDeprovisionCallFailedReason,
 		testClusterServicePlanName,
 		testClusterServicePlanGUID,
 		instance,
@@ -2817,7 +2817,7 @@ func TestPollServiceInstanceFailureDeprovisioning(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorDeprovisionCalledReason).msg("Deprovision call failed: (no description provided)")
+	expectedEvent := warningEventBuilder(errorDeprovisionCallFailedReason).msg("Deprovision call failed: (no description provided)")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
@@ -2881,14 +2881,14 @@ func TestPollServiceInstanceFailureDeprovisioningWithReconciliationTimeout(t *te
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
-		errorDeprovisionCalledReason,
+		errorDeprovisionCallFailedReason,
 		errorReconciliationRetryTimeoutReason,
 		instance,
 	)
 
 	events := getRecordedEvents(testController)
 	expectedEvents := []string{
-		warningEventBuilder(errorDeprovisionCalledReason).msg("Deprovision call failed: (no description provided)").String(),
+		warningEventBuilder(errorDeprovisionCallFailedReason).msg("Deprovision call failed: (no description provided)").String(),
 		warningEventBuilder(errorReconciliationRetryTimeoutReason).msg("Stopping reconciliation retries because too much time has elapsed").String(),
 	}
 
@@ -4170,7 +4170,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			finishedOrphanMitigation:     false,
 			shouldError:                  true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
-			expectedReadyConditionReason: errorDeprovisionCalledReason,
+			expectedReadyConditionReason: errorDeprovisionCallFailedReason,
 		},
 		{
 			name: "sync - http error - retry duration exceeded",
@@ -4190,7 +4190,7 @@ func TestReconcileServiceInstanceOrphanMitigation(t *testing.T) {
 			finishedOrphanMitigation:     false,
 			shouldError:                  true,
 			expectedReadyConditionStatus: v1beta1.ConditionUnknown,
-			expectedReadyConditionReason: errorDeprovisionCalledReason,
+			expectedReadyConditionReason: errorDeprovisionCallFailedReason,
 		},
 		{
 			name: "sync - other error - retry duration exceeded",
