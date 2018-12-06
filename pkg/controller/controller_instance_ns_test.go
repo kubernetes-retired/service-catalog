@@ -355,7 +355,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 	}
 
 	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
-		t.Fatalf("Expected polling queue to have a record of test instance as provisioning should have retried")
+		t.Fatalf("Expected polling queue to have a record of test instance to process orphan mitigation")
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
@@ -382,7 +382,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		startingInstanceOrphanMitigationReason,
-		"",
+		errorProvisionCallFailedReason,
 		errorProvisionCallFailedReason,
 		instance,
 	)

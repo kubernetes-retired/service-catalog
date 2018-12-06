@@ -1084,12 +1084,14 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			reason := errorProvisionCallFailedReason
 			message := "Provision call failed: " + description
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
-			err = c.processTemporaryProvisionFailure(instance, readyCond, true)
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, message)
+			err = c.processTerminalProvisionFailure(instance, readyCond, failedCond, true)
 		default:
 			reason := errorUpdateInstanceCallFailedReason
 			message := "Update call failed: " + description
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
-			err = c.processTemporaryUpdateServiceInstanceFailure(instance, readyCond)
+			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, reason, message)
+			err = c.processTerminalUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 		}
 		if err != nil {
 			return c.handleServiceInstancePollingError(instance, err)
