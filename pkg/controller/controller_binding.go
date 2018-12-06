@@ -1171,7 +1171,7 @@ func (c *controller) prepareBindRequest(
 		serviceClass, err := c.getServiceClassForServiceBinding(instance, binding)
 		if err != nil {
 			return nil, nil, &operationError{
-				reason:  errorNonexistentClusterServiceClassReason,
+				reason:  errorNonexistentServiceClassReason,
 				message: err.Error(),
 			}
 		}
@@ -1179,7 +1179,7 @@ func (c *controller) prepareBindRequest(
 		servicePlan, err := c.getServicePlanForServiceBinding(instance, binding, serviceClass)
 		if err != nil {
 			return nil, nil, &operationError{
-				reason:  errorNonexistentClusterServicePlanReason,
+				reason:  errorNonexistentServicePlanReason,
 				message: err.Error(),
 			}
 		}
