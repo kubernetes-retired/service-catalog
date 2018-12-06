@@ -1201,7 +1201,7 @@ func (c *controller) resolveReferences(instance *v1beta1.ServiceInstance) (bool,
 		return c.resolveNamespacedReferences(instance)
 	}
 
-	return false, fmt.Errorf("%v", errorAmbiguousPlanReferenceScope)
+	return false, stderrors.New(errorAmbiguousPlanReferenceScope)
 }
 
 func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance) (bool, error) {
@@ -1697,7 +1697,7 @@ func (c *controller) prepareProvisionRequest(instance *v1beta1.ServiceInstance) 
 
 	// If we're hitting this return, it means we couldn't tell whether the class
 	// and plan were cluster or namespace scoped
-	return nil, nil, fmt.Errorf("%v", errorAmbiguousPlanReferenceScope)
+	return nil, nil, stderrors.New(errorAmbiguousPlanReferenceScope)
 }
 
 // newServiceInstanceCondition is a helper function that returns a
