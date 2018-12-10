@@ -166,6 +166,8 @@ $(BINDIR)/e2e.test: .init
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init generators $(TYPES_FILES)
+	chmod +x $(BUILD_DIR)/update-apiserver-gen.sh
+	chmod +x $(BUILD_DIR)/update-client-gen.sh
 	# generate apiserver deps
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apiserver-gen.sh
 	# generate all pkg/client contents
