@@ -32,10 +32,10 @@ import (
 	"k8s.io/apiserver/pkg/storage/names"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for instances
@@ -93,7 +93,7 @@ var (
 func (instanceRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to create")
+		klog.Fatal("received a non-instance object to create")
 	}
 }
 
@@ -108,7 +108,7 @@ func (instanceRESTStrategy) NamespaceScoped() bool {
 func (instanceRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	instance, ok := obj.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to create")
+		klog.Fatal("received a non-instance object to create")
 	}
 
 	if instance.Spec.ExternalID == "" {
@@ -149,11 +149,11 @@ func (instanceRESTStrategy) AllowUnconditionalUpdate() bool {
 func (instanceRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to update to")
+		klog.Fatal("received a non-instance object to update to")
 	}
 	oldServiceInstance, ok := old.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to update from")
+		klog.Fatal("received a non-instance object to update from")
 	}
 
 	// Do not allow any updates to the Status field while updating the Spec
@@ -189,11 +189,11 @@ func (instanceRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runti
 func (instanceRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to validate to")
+		klog.Fatal("received a non-instance object to validate to")
 	}
 	oldServiceInstance, ok := old.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to validate from")
+		klog.Fatal("received a non-instance object to validate from")
 	}
 
 	return scv.ValidateServiceInstanceUpdate(newServiceInstance, oldServiceInstance)
@@ -208,7 +208,7 @@ func (instanceRESTStrategy) CheckGracefulDelete(ctx context.Context, obj runtime
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		serviceInstance, ok := obj.(*sc.ServiceInstance)
 		if !ok {
-			glog.Fatal("received a non-instance object to delete")
+			klog.Fatal("received a non-instance object to delete")
 		}
 		setServiceInstanceUserInfo(ctx, serviceInstance)
 	}
@@ -219,11 +219,11 @@ func (instanceRESTStrategy) CheckGracefulDelete(ctx context.Context, obj runtime
 func (instanceStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to update to")
+		klog.Fatal("received a non-instance object to update to")
 	}
 	oldServiceInstance, ok := old.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to update from")
+		klog.Fatal("received a non-instance object to update from")
 	}
 	// Status changes are not allowed to update spec
 	newServiceInstance.Spec = oldServiceInstance.Spec
@@ -232,11 +232,11 @@ func (instanceStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old
 func (instanceStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to validate to")
+		klog.Fatal("received a non-instance object to validate to")
 	}
 	oldServiceInstance, ok := old.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to validate from")
+		klog.Fatal("received a non-instance object to validate from")
 	}
 
 	return scv.ValidateServiceInstanceStatusUpdate(newServiceInstance, oldServiceInstance)
@@ -245,11 +245,11 @@ func (instanceStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old r
 func (instanceReferenceRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to update to")
+		klog.Fatal("received a non-instance object to update to")
 	}
 	oldServiceInstance, ok := old.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to update from")
+		klog.Fatal("received a non-instance object to update from")
 	}
 	// Reference changes are not allowed to update spec, so stash the new
 	// ones away and overwrite with all the old ones and then update them
@@ -275,11 +275,11 @@ func (instanceReferenceRESTStrategy) PrepareForUpdate(ctx context.Context, new, 
 func (instanceReferenceRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceInstance, ok := new.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to validate to")
+		klog.Fatal("received a non-instance object to validate to")
 	}
 	oldServiceInstance, ok := old.(*sc.ServiceInstance)
 	if !ok {
-		glog.Fatal("received a non-instance object to validate from")
+		klog.Fatal("received a non-instance object to validate from")
 	}
 
 	return scv.ValidateServiceInstanceReferencesUpdate(newServiceInstance, oldServiceInstance)

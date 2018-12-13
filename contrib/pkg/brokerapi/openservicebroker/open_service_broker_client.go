@@ -27,9 +27,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
 )
@@ -120,13 +120,13 @@ func (c *openServiceBrokerClient) GetCatalog() (*brokerapi.Catalog, error) {
 
 	resp, err := c.Do(req)
 	if err != nil {
-		glog.Errorf("Failed to fetch catalog %q from %s: response: %v error: %#v", c.name, catalogURL, resp, err)
+		klog.Errorf("Failed to fetch catalog %q from %s: response: %v error: %#v", c.name, catalogURL, resp, err)
 		return nil, err
 	}
 
 	var catalog brokerapi.Catalog
 	if err = util.ResponseBodyToObject(resp, &catalog); err != nil {
-		glog.Errorf("Failed to unmarshal catalog from broker %q: %#v", c.name, err)
+		klog.Errorf("Failed to unmarshal catalog from broker %q: %#v", c.name, err)
 		return nil, err
 	}
 
@@ -146,7 +146,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 		req,
 	)
 	if err != nil {
-		glog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
+		klog.Errorf("Error sending create service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		errReq := errRequest{message: err.Error()}
 		if resp == nil {
 			return nil, 0, errReq
@@ -157,7 +157,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 
 	createServiceInstanceResponse := brokerapi.CreateServiceInstanceResponse{}
 	if err := util.ResponseBodyToObject(resp, &createServiceInstanceResponse); err != nil {
-		glog.Errorf("Error unmarshalling create service instance response from broker %q: %#v", c.name, err)
+		klog.Errorf("Error unmarshalling create service instance response from broker %q: %#v", c.name, err)
 		return nil, resp.StatusCode, errResponse{message: err.Error()}
 	}
 
@@ -167,7 +167,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 	case http.StatusOK:
 		return &createServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusAccepted:
-		glog.V(3).Infof("Asynchronous response received.")
+		klog.V(3).Infof("Asynchronous response received.")
 		return &createServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusConflict:
 		return nil, resp.StatusCode, errConflict
@@ -198,14 +198,14 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 		req,
 	)
 	if err != nil {
-		glog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
+		klog.Errorf("Error sending delete service instance request to broker %q at %v: response: %v error: %#v", c.name, serviceInstanceURL, resp, err)
 		return nil, resp.StatusCode, errRequest{message: err.Error()}
 	}
 	defer resp.Body.Close()
 
 	deleteServiceInstanceResponse := brokerapi.DeleteServiceInstanceResponse{}
 	if err := util.ResponseBodyToObject(resp, &deleteServiceInstanceResponse); err != nil {
-		glog.Errorf("Error unmarshalling delete service instance response from broker %q: %#v", c.name, err)
+		klog.Errorf("Error unmarshalling delete service instance response from broker %q: %#v", c.name, err)
 		return nil, resp.StatusCode, errResponse{message: err.Error()}
 	}
 
@@ -213,7 +213,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	case http.StatusOK:
 		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusAccepted:
-		glog.V(3).Infof("Asynchronous response received.")
+		klog.V(3).Infof("Asynchronous response received.")
 		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusGone:
 		return &deleteServiceInstanceResponse, resp.StatusCode, nil
@@ -227,7 +227,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID string, req *brokerapi.BindingRequest) (*brokerapi.CreateServiceBindingResponse, error) {
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
-		glog.Errorf("Failed to marshal: %#v", err)
+		klog.Errorf("Failed to marshal: %#v", err)
 		return nil, err
 	}
 
@@ -243,17 +243,17 @@ func (c *openServiceBrokerClient) CreateServiceBinding(instanceID, bindingID str
 		return nil, err
 	}
 
-	glog.Infof("Doing a request to: %s", serviceBindingURL)
+	klog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.Do(createHTTPReq)
 	if err != nil {
-		glog.Errorf("Failed to PUT: %#v", err)
+		klog.Errorf("Failed to PUT: %#v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	createServiceBindingResponse := brokerapi.CreateServiceBindingResponse{}
 	if err := util.ResponseBodyToObject(resp, &createServiceBindingResponse); err != nil {
-		glog.Errorf("Error unmarshalling create binding response from broker: %#v", err)
+		klog.Errorf("Error unmarshalling create binding response from broker: %#v", err)
 		return nil, err
 	}
 
@@ -282,14 +282,14 @@ func (c *openServiceBrokerClient) DeleteServiceBinding(instanceID, bindingID, se
 		nil,
 	)
 	if err != nil {
-		glog.Errorf("Failed to create new HTTP request: %v", err)
+		klog.Errorf("Failed to create new HTTP request: %v", err)
 		return err
 	}
 
-	glog.Infof("Doing a request to: %s", serviceBindingURL)
+	klog.Infof("Doing a request to: %s", serviceBindingURL)
 	resp, err := c.Do(deleteHTTPReq)
 	if err != nil {
-		glog.Errorf("Failed to DELETE: %#v", err)
+		klog.Errorf("Failed to DELETE: %#v", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -325,7 +325,7 @@ func (c *openServiceBrokerClient) PollServiceInstance(ID string, req *brokerapi.
 		nil,
 	)
 	if err != nil {
-		glog.Errorf("Failed to create new HTTP request: %v", err)
+		klog.Errorf("Failed to create new HTTP request: %v", err)
 		return nil, 0, err
 	}
 	defer resp.Body.Close()

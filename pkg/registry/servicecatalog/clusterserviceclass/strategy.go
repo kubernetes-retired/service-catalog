@@ -27,9 +27,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for cluster service
@@ -76,7 +76,7 @@ var (
 func (clusterServiceClassRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceclass object to create")
+		klog.Fatal("received a non-clusterserviceclass object to create")
 	}
 }
 
@@ -90,7 +90,7 @@ func (clusterServiceClassRESTStrategy) NamespaceScoped() bool {
 func (clusterServiceClassRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	clusterServiceClass, ok := obj.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceclass object to create")
+		klog.Fatal("received a non-clusterserviceclass object to create")
 	}
 	clusterServiceClass.Status = sc.ClusterServiceClassStatus{}
 }
@@ -110,11 +110,11 @@ func (clusterServiceClassRESTStrategy) AllowUnconditionalUpdate() bool {
 func (clusterServiceClassRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceclass object to update to")
+		klog.Fatal("received a non-clusterserviceclass object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceclass object to update from")
+		klog.Fatal("received a non-clusterserviceclass object to update from")
 	}
 
 	// Update should not change the status
@@ -126,11 +126,11 @@ func (clusterServiceClassRESTStrategy) PrepareForUpdate(ctx context.Context, new
 func (clusterServiceClassRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceclass object to validate to")
+		klog.Fatal("received a non-clusterserviceclass object to validate to")
 	}
 	oldServiceclass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceclass object to validate from")
+		klog.Fatal("received a non-clusterserviceclass object to validate from")
 	}
 
 	return scv.ValidateClusterServiceClassUpdate(newServiceclass, oldServiceclass)
@@ -139,11 +139,11 @@ func (clusterServiceClassRESTStrategy) ValidateUpdate(ctx context.Context, new, 
 func (clusterServiceClassStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceClass object to update to")
+		klog.Fatal("received a non-clusterserviceClass object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ClusterServiceClass)
 	if !ok {
-		glog.Fatal("received a non-clusterserviceClass object to update from")
+		klog.Fatal("received a non-clusterserviceClass object to update from")
 	}
 	// Status changes are not allowed to update spec
 	newServiceClass.Spec = oldServiceClass.Spec

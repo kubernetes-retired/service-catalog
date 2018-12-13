@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -230,7 +230,7 @@ type controller struct {
 func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	defer runtimeutil.HandleCrash()
 
-	glog.Info("Starting service-catalog controller")
+	klog.Info("Starting service-catalog controller")
 
 	var waitGroup sync.WaitGroup
 
@@ -264,7 +264,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.createPurgeExpiredRetryEntriesWorker(stopCh, &waitGroup)
 
 	<-stopCh
-	glog.Info("Shutting down service-catalog controller")
+	klog.Info("Shutting down service-catalog controller")
 
 	c.clusterServiceBrokerQueue.ShutDown()
 	c.clusterServiceClassQueue.ShutDown()
@@ -281,7 +281,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	}
 
 	waitGroup.Wait()
-	glog.Info("Shutdown service-catalog controller")
+	klog.Info("Shutdown service-catalog controller")
 }
 
 // createWorker creates and runs a worker thread that just processes items in the
@@ -321,7 +321,7 @@ func (c *controller) monitorConfigMap() {
 	// Can we ask 'through' an informer? Is it a writeback cache? I
 	// only ever want to monitor and be notified about one configmap
 	// in a hardcoded place.
-	glog.V(9).Info("cluster ID monitor loop enter")
+	klog.V(9).Info("cluster ID monitor loop enter")
 	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(c.clusterIDConfigMapName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
@@ -336,7 +336,7 @@ func (c *controller) monitorConfigMap() {
 		// it could be due to permissions
 		// or due to being already set while we were trying
 		if _, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Create(cm); err != nil {
-			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
+			klog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
 	} else if err == nil {
 		// cluster id exists and is set
@@ -353,9 +353,9 @@ func (c *controller) monitorConfigMap() {
 			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(cm)
 		}
 	} else { // some err we can't handle
-		glog.V(4).Infof("error getting the cluster info configmap: %q", err)
+		klog.V(4).Infof("error getting the cluster info configmap: %q", err)
 	}
-	glog.V(9).Info("cluster ID monitor loop exit")
+	klog.V(9).Info("cluster ID monitor loop exit")
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
@@ -384,12 +384,12 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 
 				numRequeues := queue.NumRequeues(key)
 				if numRequeues < maxRetries {
-					glog.V(4).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
+					klog.V(4).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
 					queue.AddRateLimited(key)
 					return false
 				}
 
-				glog.V(4).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
+				klog.V(4).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
 				queue.Forget(key)
 				return false
 			}()
@@ -583,7 +583,7 @@ func (c *controller) getClusterServiceClassForServiceBinding(instance *v1beta1.S
 			"References a non-existent ClusterServiceClass %q - %c",
 			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -605,7 +605,7 @@ func (c *controller) getClusterServicePlanForServiceBinding(instance *v1beta1.Se
 			"References a non-existent ClusterServicePlan %q - %v",
 			instance.Spec.ClusterServicePlanRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -625,7 +625,7 @@ func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.
 	broker, err := c.clusterServiceBrokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent ClusterServiceBroker %q", serviceClass.Spec.ClusterServiceBrokerName)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -832,7 +832,7 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
-				glog.Error(err)
+				klog.Error(err)
 				return nil, nil, err
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
@@ -904,7 +904,7 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Cata
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
-				glog.Error(err)
+				klog.Error(err)
 				return nil, nil, err
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
@@ -1035,7 +1035,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 		metadata, err := json.Marshal(plan.Metadata)
 		if err != nil {
 			err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
-			glog.Error(err)
+			klog.Error(err)
 			return err
 		}
 		commonServicePlanSpec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
@@ -1047,7 +1047,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 				schema, err := json.Marshal(instanceCreateSchema.Parameters)
 				if err != nil {
 					err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema.Parameters, err)
-					glog.Error(err)
+					klog.Error(err)
 					return err
 				}
 				commonServicePlanSpec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1056,7 +1056,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 				schema, err := json.Marshal(instanceUpdateSchema.Parameters)
 				if err != nil {
 					err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema.Parameters, err)
-					glog.Error(err)
+					klog.Error(err)
 					return err
 				}
 				commonServicePlanSpec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1068,7 +1068,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					schema, err := json.Marshal(bindingCreateSchema.Parameters)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-						glog.Error(err)
+						klog.Error(err)
 						return err
 					}
 					commonServicePlanSpec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1077,7 +1077,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					schema, err := json.Marshal(bindingCreateSchema.Response)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
-						glog.Error(err)
+						klog.Error(err)
 						return err
 					}
 					commonServicePlanSpec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
@@ -1116,7 +1116,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 			metadata, err := json.Marshal(plan.Metadata)
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
-				glog.Error(err)
+				klog.Error(err)
 				return nil, err
 			}
 			servicePlans[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
@@ -1128,7 +1128,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 					schema, err := json.Marshal(instanceCreateSchema.Parameters)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema.Parameters, err)
-						glog.Error(err)
+						klog.Error(err)
 						return nil, err
 					}
 					servicePlans[i].Spec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1137,7 +1137,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema.Parameters, err)
-						glog.Error(err)
+						klog.Error(err)
 						return nil, err
 					}
 					servicePlans[i].Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1149,7 +1149,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 						schema, err := json.Marshal(bindingCreateSchema.Parameters)
 						if err != nil {
 							err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-							glog.Error(err)
+							klog.Error(err)
 							return nil, err
 						}
 						servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1158,7 +1158,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 						schema, err := json.Marshal(bindingCreateSchema.Response)
 						if err != nil {
 							err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
-							glog.Error(err)
+							klog.Error(err)
 							return nil, err
 						}
 						servicePlans[i].Spec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
@@ -1321,7 +1321,7 @@ func (c *controller) getServiceClassForServiceBinding(instance *v1beta1.ServiceI
 			"References a non-existent ServiceClass %q - %c",
 			instance.Spec.ServiceClassRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -1343,7 +1343,7 @@ func (c *controller) getServicePlanForServiceBinding(instance *v1beta1.ServiceIn
 			"References a non-existent ServicePlan %q - %v",
 			instance.Spec.ServicePlanRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -1363,7 +1363,7 @@ func (c *controller) getServiceBrokerForServiceBinding(instance *v1beta1.Service
 	broker, err := c.serviceBrokerLister.ServiceBrokers(instance.Namespace).Get(serviceClass.Spec.ServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent ServiceBroker %q", serviceClass.Spec.ServiceBrokerName)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -1405,7 +1405,7 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 					// If a broker is configured with RelistBehaviorManual, it should
 					// ignore the Duration and only relist based on spec changes
 
-					glog.V(10).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
+					klog.V(10).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
 					return false
 				}
 
@@ -1421,7 +1421,7 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 					intervalPassed = now.After(brokerStatus.LastCatalogRetrievalTime.Time.Add(duration))
 				}
 				if intervalPassed == false {
-					glog.V(10).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
+					klog.V(10).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
 				}
 				return intervalPassed
 			}

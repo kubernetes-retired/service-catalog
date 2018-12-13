@@ -19,13 +19,13 @@ package validation
 import (
 	"fmt"
 
-	"github.com/ghodss/yaml"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"sigs.k8s.io/yaml"
 )
 
 const lastOperationMaxLength int = 10000

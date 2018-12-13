@@ -21,9 +21,11 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"k8s.io/klog"
 )
 
 func main() {
+	klog.InitFlags(nil)
 	a, _ := svcat.NewApp(nil, nil, "")
 	brokers, _ := a.RetrieveBrokers(servicecatalog.ScopeOptions{Scope: servicecatalog.AllScope})
 	for _, b := range brokers {

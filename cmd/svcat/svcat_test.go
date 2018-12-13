@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/klog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -54,6 +55,12 @@ import (
 
 var catalogRequestRegex = regexp.MustCompile("/apis/servicecatalog.k8s.io/v1beta1/(.*)")
 var coreRequestRegex = regexp.MustCompile("/api/v1/(.*)")
+
+func TestMain(m *testing.M) {
+	// Init klog flags because tests rely on flags to be globally registered
+	klog.InitFlags(nil)
+	os.Exit(m.Run())
+}
 
 // Verify that svcat gracefully handles when the namespaced broker feature flag is disabled
 // TODO: Once we take Namespaced brokers out from behind the feature flag, this test won't be necessary

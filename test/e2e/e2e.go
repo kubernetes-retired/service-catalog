@@ -24,7 +24,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/gomega"
@@ -42,6 +42,6 @@ func RunE2ETests(t *testing.T) {
 		config.GinkgoConfig.SkipString = `\[Flaky\]|\[Feature:.+\]`
 	}
 
-	glog.Infof("Starting e2e run %q on Ginkgo node %d", framework.RunId, config.GinkgoConfig.ParallelNode)
+	klog.Infof("Starting e2e run %q on Ginkgo node %d", framework.RunId, config.GinkgoConfig.ParallelNode)
 	ginkgo.RunSpecs(t, "Service Catalog e2e suite")
 }
