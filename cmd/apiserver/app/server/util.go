@@ -18,7 +18,9 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -46,6 +48,10 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/openapi"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util/kube"
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
+)
+
+const (
+	inClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 // serviceCatalogConfig is a placeholder for configuration
@@ -91,7 +97,16 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 		genericConfig.Authorization.Authorizer = authorizerfactory.NewAlwaysAllowAuthorizer()
 	}
 
-	if err := s.AuditOptions.ApplyTo(&genericConfig.Config); err != nil {
+	namespace, err := getInClusterNamespace("service-catalog")
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.AuditOptions.ApplyTo(
+		&genericConfig.Config,
+		genericConfig.ClientConfig,
+		genericConfig.SharedInformerFactory,
+		genericserveroptions.NewProcessInfo("service-catalog-apiserver", namespace),
+		nil); err != nil {
 		return nil, nil, err
 	}
 
@@ -124,8 +139,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	// FUTURE: use protobuf for communication back to itself?
 	client, err := internalclientset.NewForConfig(genericConfig.LoopbackClientConfig)
 	if err != nil {
-		glog.Errorf("Failed to create clientset for service catalog self-communication: %v", err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create clientset for service catalog self-communication: %v", err)
 	}
 	sharedInformers := informers.NewSharedInformerFactory(client, 10*time.Minute)
 
@@ -136,23 +150,20 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	if !s.StandaloneMode {
 		clusterConfig, err := kube.LoadConfig(s.KubeconfigPath, "")
 		if err != nil {
-			glog.Errorf("Failed to parse kube client config: %v", err)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to parse kube client config: %v", err)
 		}
 		// If clusterConfig is nil, look at the default in-cluster config.
 		if clusterConfig == nil {
 			clusterConfig, err = restclient.InClusterConfig()
 			if err != nil {
-				glog.Errorf("Failed to get kube client config: %v", err)
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("failed to get kube client config: %v", err)
 			}
 		}
 		clusterConfig.GroupVersion = &schema.GroupVersion{}
 
 		kubeClient, err := kubeclientset.NewForConfig(clusterConfig)
 		if err != nil {
-			glog.Errorf("Failed to create clientset interface: %v", err)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to create clientset interface: %v", err)
 		}
 
 		kubeSharedInformers := kubeinformers.NewSharedInformerFactory(kubeClient, 10*time.Minute)
@@ -237,4 +248,24 @@ func addPostStartHooks(server *genericapiserver.GenericAPIServer, scConfig *serv
 		klog.Infof("Started shared informers")
 		return nil
 	})
+}
+
+func getInClusterNamespace(defaultNamespace string) (string, error) {
+	// Check whether the namespace file exists.
+	// If not, we are not running in cluster so can't guess the namespace.
+	_, err := os.Stat(inClusterNamespacePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// not running in-cluster, using default namespace
+			return defaultNamespace, nil
+		}
+		return "", fmt.Errorf("error checking namespace file: %v", err)
+	}
+
+	// Load the namespace file and return its content
+	namespace, err := ioutil.ReadFile(inClusterNamespacePath)
+	if err != nil {
+		return "", fmt.Errorf("error reading namespace file: %v", err)
+	}
+	return string(namespace), nil
 }

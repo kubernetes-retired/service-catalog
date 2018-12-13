@@ -154,6 +154,9 @@ generators: $(GENERATORS)
 
 .SECONDEXPANSION:
 
+$(BINDIR)/openapi-gen: $$(shell find vendor/k8s.io/kube-openapi/cmd/openapi-gen vendor/k8s.io/gengo) .init
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
+
 # We specify broad dependencies for these generator binaries: each one depends
 # on everything under its source tree as well as gengo's.  This uses GNU Make's
 # secondary expansion feature to pass $* to `find`.
