@@ -131,7 +131,7 @@ func (c *FakeServiceBindings) DeleteCollection(options *v1.DeleteOptions, listOp
 // Patch applies the patch and returns the patched serviceBinding.
 func (c *FakeServiceBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceBinding, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(servicebindingsResource, c.ns, name, data, subresources...), &servicecatalog.ServiceBinding{})
+		Invokes(testing.NewPatchSubresourceAction(servicebindingsResource, c.ns, name, pt, data, subresources...), &servicecatalog.ServiceBinding{})
 
 	if obj == nil {
 		return nil, err

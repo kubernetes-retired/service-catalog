@@ -123,7 +123,7 @@ func (c *FakeClusterServiceBrokers) DeleteCollection(options *v1.DeleteOptions, 
 // Patch applies the patch and returns the patched clusterServiceBroker.
 func (c *FakeClusterServiceBrokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ClusterServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(clusterservicebrokersResource, name, data, subresources...), &v1beta1.ClusterServiceBroker{})
+		Invokes(testing.NewRootPatchSubresourceAction(clusterservicebrokersResource, name, pt, data, subresources...), &v1beta1.ClusterServiceBroker{})
 	if obj == nil {
 		return nil, err
 	}
