@@ -7,7 +7,7 @@ import (
 
 	"sort"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/pmorie/go-open-service-broker-client/v2"
 )
 
@@ -69,7 +69,7 @@ func (g *Generator) GetCatalog() (*v2.CatalogResponse, error) {
 func getSliceWithoutDuplicates(count int, seed int64, list []string) []string {
 
 	if len(list) < count {
-		glog.Error("not enough items in list")
+		klog.Error("not enough items in list")
 		return []string{""}
 	}
 
