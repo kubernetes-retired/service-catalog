@@ -2,7 +2,7 @@
 
 Test Service Broker is an example
 [Open Service Broker](https://www.openservicebrokerapi.org/)
-for manualyl testing & demonstrating the Kubernetes
+for manually testing & demonstrating the Kubernetes
 Service Catalog.
 
 For more information,
