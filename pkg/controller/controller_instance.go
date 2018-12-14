@@ -24,6 +24,7 @@ import (
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"k8s.io/klog"
+	"k8s.io/client-go/util/workqueue"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -97,6 +98,8 @@ const (
 
 	minBrokerOperationRetryDelay time.Duration = time.Second * 1
 	maxBrokerOperationRetryDelay time.Duration = time.Minute * 20
+	minLocalOperationRetryDelay  time.Duration = 5 * time.Millisecond
+	maxLocalOperationRetryDelay  time.Duration = 5 * time.Minute
 
 	eventHandlerLogLevel = 4 // TODO: move all logLevel settings to a central location
 )
@@ -284,7 +287,51 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 		return err
 	}
 
-	return c.reconcileServiceInstance(instance)
+	isExternalUpdate := instance.Generation > instance.Status.ObservedGeneration
+	if isExternalUpdate {
+		c.resetBackOff(instance)
+	} else {
+		cond := getServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady)
+		if cond != nil {
+			earliestTime, backOffInEffect := c.earliestInstanceOperationRetryTime[instance.UID]
+			if (cond.Status == v1beta1.ConditionFalse || cond.Status == v1beta1.ConditionUnknown) && backOffInEffect {
+				now := time.Now()
+				if now.Before(earliestTime) {
+					// can't retry operation yet; must re-enqueue
+					delay := earliestTime.Sub(now)
+					klog.V(5).Info(pcb.Messagef("Not processing event yet because of backoff. Retrying after %v.", delay))
+					c.enqueueInstanceAfter(instance, delay)
+					return nil
+				}
+				klog.V(5).Info(pcb.Message("Backoff delay has passed. Processing event."))
+				delete(c.earliestInstanceOperationRetryTime, instance.GetUID())
+			}
+		}
+	}
+
+	err = c.reconcileServiceInstance(instance)
+
+	if err != nil {
+		if instance.Status.AsyncOpInProgress {
+			return nil
+		}
+		if _, found := c.earliestInstanceOperationRetryTime[instance.GetUID()]; !found {
+			// neither provision, update, nor deprovision backoff was set, so this is a different type of error and
+			// we must use the internalErrorRateLimiter to calculate the retry delay
+			c.ensureBackOff(instance, c.internalErrorRateLimiter)
+		}
+		if statusWasUpdated(err) {
+			// must not return error, as that would re-enqueue the instance (since we've updated the status,
+			// we shouldn't requeue until the status update makes it back into the controller)
+			return nil
+		}
+	}
+	return err
+}
+
+func statusWasUpdated(err error) bool {
+	// TODO: change reconcileServiceInstance() so it returns an error with a boolean specifying whether it had also updated the status or not
+	return false
 }
 
 // reconcileServiceInstance is the control-loop for reconciling Instances. An
@@ -507,6 +554,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 			return c.processTerminalProvisionFailure(instance, readyCond, failedCond, false)
 		}
 
+		c.ensureBackOff(instance, c.instanceProvisionRateLimiter)
 		return c.processServiceInstanceOperationError(instance, readyCond)
 	}
 
@@ -668,6 +716,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		}
 
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, msg)
+		c.ensureBackOff(instance, c.instanceUpdateRateLimiter)
 		return c.processServiceInstanceOperationError(instance, readyCond)
 	}
 
@@ -813,6 +862,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			return c.processDeprovisionFailure(instance, readyCond, failedCond)
 		}
 
+		c.ensureBackOff(instance, c.instanceDeprovisionRateLimiter)
 		return c.processServiceInstanceOperationError(instance, readyCond)
 	}
 
@@ -960,6 +1010,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			clearServiceInstanceAsyncOsbOperation(instance)
 			c.finishPollingServiceInstance(instance)
 
+			c.ensureBackOff(instance, c.instanceDeprovisionRateLimiter)
 			return c.processServiceInstanceOperationError(instance, readyCond)
 		case provisioning:
 			reason := errorProvisionCallFailedReason
@@ -1056,11 +1107,15 @@ func (c *controller) processServiceInstancePollingTemporaryFailure(instance *v1b
 		return c.handleServiceInstancePollingError(instance, err)
 	}
 
-	// The instance will be requeued in any case, since we updated the status
-	// a few lines above.
-	// But we still need to return a non-nil error for retriable errors and
-	// orphan mitigation to avoid resetting the rate limiter.
-	return fmt.Errorf(readyCond.Message)
+	// We've updated the status a few lines above, which means the instanceUpdate()
+	// handler will get called, but it will NOT enqueue the object, since
+	// instance.Status.AsyncOpInProgress is true;
+	// We shouldn't return an error, as that would cause the poll to be retried after
+	// only 5ms (the initial delay of instanceQueue's rate limiter), while we want
+	// polling to use instancePollingQueue's rate limiter.
+	// So, instead of returning an error, we need to call continuePollingServiceInstance(),
+	// to re-enqueue the instance in the instancePollingQueue.
+	return c.continuePollingServiceInstance(instance)
 }
 
 // resolveReferences checks to see if (Cluster)ServiceClassRef and/or (Cluster)ServicePlanRef are
@@ -2370,6 +2425,8 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 	pcb := pretty.NewInstanceContextBuilder(instance)
 	klog.Info(pcb.Message("Cleared finalizer"))
 
+	c.resetBackOff(instance)
+
 	return nil
 }
 
@@ -2475,6 +2532,10 @@ func (c *controller) processProvisionFailure(instance *v1beta1.ServiceInstance, 
 		// Deprovisioning is not required for provisioning that has failed with an
 		// error that doesn't require orphan mitigation
 		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusNotRequired
+
+		if failedCond == nil {
+			c.ensureBackOff(instance, c.instanceProvisionRateLimiter)
+		}
 	}
 
 	if failedCond == nil || shouldMitigateOrphan {
@@ -2530,6 +2591,7 @@ func (c *controller) processUpdateServiceInstanceSuccess(instance *v1beta1.Servi
 		return err
 	}
 
+	c.instanceUpdateRateLimiter.Forget(instance.GetUID())
 	c.recorder.Eventf(instance, corev1.EventTypeNormal, successUpdateInstanceReason, successUpdateInstanceMessage)
 	return nil
 }
@@ -2546,6 +2608,7 @@ func (c *controller) processTerminalUpdateServiceInstanceFailure(instance *v1bet
 // processTemporaryUpdateServiceInstanceFailure handles the logging and updating of a
 // ServiceInstance that hit a temporary error during update reconciliation.
 func (c *controller) processTemporaryUpdateServiceInstanceFailure(instance *v1beta1.ServiceInstance, readyCond *v1beta1.ServiceInstanceCondition) error {
+	c.ensureBackOff(instance, c.instanceUpdateRateLimiter)
 	return c.processUpdateServiceInstanceFailure(instance, readyCond, nil)
 }
 
@@ -2570,13 +2633,6 @@ func (c *controller) processUpdateServiceInstanceFailure(instance *v1beta1.Servi
 		return err
 	}
 
-	// The instance will be requeued in any case, since we updated the status
-	// a few lines above.
-	// But we still need to return a non-nil error for retriable errors
-	// to avoid resetting the rate limiter.
-	if failedCond == nil {
-		return fmt.Errorf(readyCond.Message)
-	}
 	return nil
 }
 
@@ -2610,6 +2666,8 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 		msg = successOrphanMitigationMessage
 	}
 
+	c.instanceDeprovisionRateLimiter.Forget(instance.GetUID())
+
 	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionFalse, reason, msg)
 	clearServiceInstanceCurrentOperation(instance)
 	instance.Status.ExternalProperties = nil
@@ -2617,6 +2675,7 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 	instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusSucceeded
 
 	if mitigatingOrphan {
+		c.ensureBackOff(instance, c.instanceProvisionRateLimiter) // ensure we wait before attempting the provision again
 		if _, err := c.updateServiceInstanceStatus(instance); err != nil {
 			return err
 		}
@@ -2711,4 +2770,21 @@ func setServiceInstanceLastOperation(instance *v1beta1.ServiceInstance, operatio
 		key := string(*operationKey)
 		instance.Status.LastOperation = &key
 	}
+}
+
+func (c *controller) ensureBackOff(instance *v1beta1.ServiceInstance, rateLimiter workqueue.RateLimiter) {
+	delay := rateLimiter.When(instance.GetUID())
+	pcb := pretty.NewInstanceContextBuilder(instance)
+	klog.V(5).Info(pcb.Messagef("Backoff delay set to %v", delay))
+	c.earliestInstanceOperationRetryTime[instance.UID] = time.Now().Add(delay)
+	c.enqueueInstanceAfter(instance, delay)
+}
+
+func (c *controller) resetBackOff(instance *v1beta1.ServiceInstance) {
+	uid := instance.GetUID()
+	delete(c.earliestInstanceOperationRetryTime, uid)
+	c.instanceProvisionRateLimiter.Forget(uid)
+	c.instanceUpdateRateLimiter.Forget(uid)
+	c.instanceDeprovisionRateLimiter.Forget(uid)
+	c.internalErrorRateLimiter.Forget(uid)
 }

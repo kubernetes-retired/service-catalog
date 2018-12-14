@@ -2984,12 +2984,8 @@ func TestPollServiceInstanceClusterServiceBrokerTemporaryError(t *testing.T) {
 
 	err := testController.pollServiceInstance(instance)
 
-	if err == nil {
-		t.Fatal("Expected pollServiceInstance to return error")
-	}
-	expectedErr := "Error polling last operation: Status: 403; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>"
-	if e, a := expectedErr, err.Error(); e != a {
-		t.Fatalf("unexpected error returned: expected %q, got %q", e, a)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()
@@ -5220,7 +5216,7 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 				ErrorMessage: strPtr("OutOfQuota"),
 				Description:  strPtr("You're out of quota!"),
 			},
-			errorExpected:         true,
+			errorExpected:         false, // the status update will trigger the retry
 			expectedFailureReason: "",
 			expectedEventMessage: "ServiceBroker returned a failure for update call; update will be retried: " +
 				"Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>",
@@ -5706,7 +5702,7 @@ func TestPollServiceInstanceAsyncFailureUpdating(t *testing.T) {
 	}
 
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
-		t.Fatalf("Expected polling queue not to have a record of test instance as update should not have retried")
+		t.Fatalf("Expected polling queue not to have a record of test instance, since polling should stop due to the osb.StateFailed response returned by the broker")
 	}
 
 	brokerActions := fakeClusterServiceBrokerClient.Actions()

@@ -25,6 +25,7 @@ import (
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"k8s.io/klog"
+	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -166,6 +167,11 @@ func NewController(
 			DeleteFunc: controller.servicePlanDelete,
 		})
 	}
+	controller.instanceProvisionRateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerOperationRetryDelay, maxBrokerOperationRetryDelay)
+	controller.instanceUpdateRateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerOperationRetryDelay, maxBrokerOperationRetryDelay)
+	controller.instanceDeprovisionRateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerOperationRetryDelay, maxBrokerOperationRetryDelay)
+	controller.internalErrorRateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minLocalOperationRetryDelay, maxLocalOperationRetryDelay)
+	controller.earliestInstanceOperationRetryTime = make(map[types.UID]time.Time)
 	return controller, nil
 }
 
@@ -219,6 +225,21 @@ type controller struct {
 	// monitor writing the value from the configmap, and any
 	// readers passing the clusterID to a broker.
 	clusterIDLock sync.RWMutex
+	// instanceProvisionRateLimiter, instanceUpdateRateLimiter and
+	// instanceDeprovisionRateLimiter are used to calculate how
+	// long to wait before re-trying a failed provision/update/
+	// deprovision attempt
+	instanceProvisionRateLimiter   workqueue.RateLimiter
+	instanceUpdateRateLimiter      workqueue.RateLimiter
+	instanceDeprovisionRateLimiter workqueue.RateLimiter
+	// internalErrorRateLimiter is used ot calculate how long
+	// to wait before re-trying a failed internal operation (one
+	// that does not call the broker)
+	internalErrorRateLimiter workqueue.RateLimiter
+	// earliestInstanceOperationRetryTime holds the earliest time
+	// that the next provision/update/deprovision request can be
+	// posted to the broker
+	earliestInstanceOperationRetryTime map[types.UID]time.Time
 	// BrokerClientManager holds all OSB clients for brokers.
 	brokerClientManager *BrokerClientManager
 }
@@ -1156,13 +1177,19 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 // isServiceInstanceConditionTrue returns whether the given instance has a given condition
 // with status true.
 func isServiceInstanceConditionTrue(instance *v1beta1.ServiceInstance, conditionType v1beta1.ServiceInstanceConditionType) bool {
+	cond := getServiceInstanceCondition(instance, conditionType)
+	return cond != nil && cond.Status == v1beta1.ConditionTrue
+}
+
+// isServiceInstanceConditionTrue returns whether the given instance has a given condition
+// with status true.
+func getServiceInstanceCondition(instance *v1beta1.ServiceInstance, conditionType v1beta1.ServiceInstanceConditionType) *v1beta1.ServiceInstanceCondition {
 	for _, cond := range instance.Status.Conditions {
 		if cond.Type == conditionType {
-			return cond.Status == v1beta1.ConditionTrue
+			return &cond
 		}
 	}
-
-	return false
+	return nil
 }
 
 // isServiceInstanceReady returns whether the given instance has a ready condition
