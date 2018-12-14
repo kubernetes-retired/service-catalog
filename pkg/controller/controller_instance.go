@@ -23,8 +23,8 @@ import (
 	"time"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"k8s.io/klog"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

@@ -24,8 +24,8 @@ import (
 	"time"
 
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"k8s.io/klog"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
