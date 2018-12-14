@@ -1158,22 +1158,6 @@ func TestExponentialBackOff(t *testing.T) {
 			expectedDelaysBetweenUpdates: []time.Duration{1 * baseDelay, 2 * baseDelay, 4 * baseDelay},
 		},
 		{
-			name: "async provision backoff",
-			provisionReaction: func(ct *controllerTest) fakeosb.DynamicProvisionReaction {
-				return getProvisionResponseByPollCountReactions(1,
-					[]fakeosb.ProvisionReaction{
-						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-								Async:        true,
-								OperationKey: operationKeyPtr("provision"),
-							},
-						},
-					})
-			},
-			lastOperationReaction:           lastOperationReturnsFailedState3TimesThenSucceeds,
-			expectedDelaysBetweenProvisions: []time.Duration{pollDuration + 1*baseDelay, pollDuration + 2*baseDelay, pollDuration + 4*baseDelay},
-		},
-		{
 			name: "async deprovision backoff",
 			deprovisionReaction: func(ct *controllerTest) fakeosb.DynamicDeprovisionReaction {
 				return getDeprovisionResponseByPollCountReactions(1,
@@ -1188,22 +1172,6 @@ func TestExponentialBackOff(t *testing.T) {
 			},
 			lastOperationReaction:             lastOperationReturnsFailedState3TimesThenSucceeds,
 			expectedDelaysBetweenDeprovisions: []time.Duration{pollDuration + 1*baseDelay, pollDuration + 2*baseDelay, pollDuration + 4*baseDelay},
-		},
-		{
-			name: "async update backoff",
-			updateReaction: func(ct *controllerTest) fakeosb.DynamicUpdateInstanceReaction {
-				return getUpdateInstanceResponseByPollCountReactions(3,
-					[]fakeosb.UpdateInstanceReaction{
-						fakeosb.UpdateInstanceReaction{
-							Response: &osb.UpdateInstanceResponse{
-								Async:        true,
-								OperationKey: operationKeyPtr("update"),
-							},
-						},
-					})
-			},
-			lastOperationReaction:        lastOperationReturnsFailedState3TimesThenSucceeds,
-			expectedDelaysBetweenUpdates: []time.Duration{pollDuration + 1*baseDelay, pollDuration + 2*baseDelay, pollDuration + 4*baseDelay},
 		},
 		{
 			name: "last operation backoff",
