@@ -16,6 +16,26 @@ To install the chart with the release name `test-broker`:
 $ helm install charts/test-broker --name test-broker --namespace test-broker
 ```
 
+## Registering the broker
+
+To use the broker, register it with any of the following commands.
+
+Using `svcat`: 
+
+```bash
+$ svcat register test-broker --url http://test-broker-test-broker.test-broker.svc.cluster.local
+```
+
+Using kubectl:
+```bash
+$ kubectl apply -f contrib/examples/walkthrough/test-broker/test-clusterservicebroker.yaml
+```
+
+To register the broker into your namespace instead, use:
+```bash
+$ kubectl apply -f contrib/examples/walkthrough/test-broker/test-servicebroker.yaml
+```
+
 ## Uninstalling the Chart
 
 To uninstall/delete the `test-broker` deployment:
