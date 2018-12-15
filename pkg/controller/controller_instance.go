@@ -329,9 +329,24 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	return err
 }
 
+// ReconcilerError is an error that also specifies whether the
+// status of the ServiceInstance was updated on the API server
+// or not.
+type ReconcilerError struct {
+	ErrorMessage  string
+	StatusUpdated bool
+}
+
+func (e ReconcilerError) Error() string {
+	return e.ErrorMessage
+}
+
 func statusWasUpdated(err error) bool {
-	// TODO: change reconcileServiceInstance() so it returns an error with a boolean specifying whether it had also updated the status or not
-	return false
+	reconcilerErr, ok := err.(ReconcilerError)
+	if ok {
+		return reconcilerErr.StatusUpdated
+	}
+	return false // assume it wasn't updated (just to be safe)
 }
 
 // reconcileServiceInstance is the control-loop for reconciling Instances. An
