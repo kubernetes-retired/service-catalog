@@ -1,5 +1,5 @@
 - metadata:
-    creationTimestamp: 2018-01-11T20:53:31Z
+    creationTimestamp: "2018-01-11T20:53:31Z"
     name: 86064792-7ea2-467b-af93-ac9694d96d52
     resourceVersion: "4"
     selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/86064792-7ea2-467b-af93-ac9694d96d52
@@ -15,7 +15,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-01-11T20:53:31Z
+    creationTimestamp: "2018-01-11T20:53:31Z"
     name: cc0d7529-18e8-416d-8946-6f7456acd589
     resourceVersion: "5"
     selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/cc0d7529-18e8-416d-8946-6f7456acd589
@@ -47,7 +47,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-01-11T20:53:31Z
+    creationTimestamp: "2018-01-11T20:53:31Z"
     name: 25b9b299-b0b3-4e14-aa1a-242eeb788aca
     resourceVersion: "4"
     selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/25b9b299-b0b3-4e14-aa1a-242eeb788aca
@@ -64,7 +64,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-01-11T20:53:31Z
+    creationTimestamp: "2018-01-11T20:53:31Z"
     name: c1dbdafe-f987-4d36-8c9b-2aaaff740d4a
     resourceVersion: "5"
     selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/c1dbdafe-f987-4d36-8c9b-2aaaff740d4a
@@ -88,7 +88,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-09-04T23:11:31Z
+    creationTimestamp: "2018-09-04T23:11:31Z"
     name: ac9694d9-7ea2-af93-467b-860647926d52
     namespace: default
     resourceVersion: "4"
