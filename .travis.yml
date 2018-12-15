@@ -45,7 +45,7 @@ jobs:
           # ensure the tests build
           make verify build svcat build-integration build-e2e
         fi
-      env: GO_VERSION=1.10
+      env: GO_VERSION=1.11.3
     # Doc Site svc-cat.io
     - stage: test
       script:
