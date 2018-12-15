@@ -90,5 +90,5 @@ ${BINDIR}/openapi-gen "$@" \
 	--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 	--input-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1,k8s.io/api/core/v1,k8s.io/apimachinery/pkg/api/resource,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/version,k8s.io/apimachinery/pkg/runtime" \
 	--input-dirs "${SC_PKG}/pkg/apis/settings/v1alpha1" \
-	--output-package "${SC_PKG}/pkg/openapi" > ${REPORT_FILENAME} || true
-diff -u ${REPORT_FILENAME} ${KNOWN_VIOLATION_FILENAME} || (echo ${API_RULE_CHECK_FAILURE_MESSAGE}; exit 1)
+	--output-package "${SC_PKG}/pkg/openapi" > "${REPORT_FILENAME}" || true
+diff -u "${REPORT_FILENAME}" "${KNOWN_VIOLATION_FILENAME}" || (echo ${API_RULE_CHECK_FAILURE_MESSAGE}; exit 1)
