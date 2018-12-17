@@ -557,24 +557,30 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	}
 
 	if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
-		instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationProvision, inProgressProperties)
+		updatedInstance, err := c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationProvision, inProgressProperties)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
 			// over with a fresh view of the instance.
 			return err
 		}
-		// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-		return nil
+		if updatedInstance.ResourceVersion != instance.ResourceVersion {
+			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+			return nil
+		}
+		instance = updatedInstance
 	} else if instance.Status.DeprovisionStatus != v1beta1.ServiceInstanceDeprovisionStatusRequired {
 		instance.Status.DeprovisionStatus = v1beta1.ServiceInstanceDeprovisionStatusRequired
-		instance, err = c.updateServiceInstanceStatus(instance)
+		updatedInstance, err := c.updateServiceInstanceStatus(instance)
 		if err != nil {
 			// There has been an update to the instance. Start reconciliation
 			// over with a fresh view of the instance.
 			return err
 		}
-		// instance was updated, we will to continue in the next iteration
-		return nil
+		if updatedInstance.ResourceVersion != instance.ResourceVersion {
+			// instance has been updated, we will to continue in the next iteration
+			return nil
+		}
+		instance = updatedInstance
 	}
 
 	var prettyClass string
@@ -705,14 +711,17 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		request = req
 
 		if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
-			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
+			updatedInstance, err := c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
 			if err != nil {
 				// There has been an update to the instance. Start reconciliation
 				// over with a fresh view of the instance.
 				return err
 			}
-			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-			return nil
+			if updatedInstance.ResourceVersion != instance.ResourceVersion {
+				// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+				return nil
+			}
+			instance = updatedInstance
 		}
 
 		klog.V(4).Info(pcb.Messagef(
@@ -742,14 +751,17 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		request = req
 
 		if instance.Status.CurrentOperation == "" || !isServiceInstancePropertiesStateEqual(instance.Status.InProgressProperties, inProgressProperties) {
-			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
+			updatedInstance, err := c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationUpdate, inProgressProperties)
 			if err != nil {
 				// There has been an update to the instance. Start reconciliation
 				// over with a fresh view of the instance.
 				return err
 			}
-			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-			return nil
+			if updatedInstance.ResourceVersion != instance.ResourceVersion {
+				// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+				return nil
+			}
+			instance = updatedInstance
 		}
 
 		klog.V(4).Info(pcb.Messagef(
@@ -909,14 +921,17 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 				removeServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionOrphanMitigation)
 				instance.Status.OrphanMitigationInProgress = false
 			}
-			instance, err = c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationDeprovision, inProgressProperties)
+			updatedInstance, err := c.recordStartOfServiceInstanceOperation(instance, v1beta1.ServiceInstanceOperationDeprovision, inProgressProperties)
 			if err != nil {
 				// There has been an update to the instance. Start reconciliation
 				// over with a fresh view of the instance.
 				return err
 			}
-			// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
-			return nil
+			if updatedInstance.ResourceVersion != instance.ResourceVersion {
+				// recordStartOfServiceInstanceOperation has updated the instance, so we need to continue in the next iteration
+				return nil
+			}
+			instance = updatedInstance
 		}
 	}
 
