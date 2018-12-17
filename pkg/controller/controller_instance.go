@@ -1216,7 +1216,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 		if err != nil {
 			pcb := pretty.NewInstanceContextBuilder(instance)
 			klog.Warning(pcb.Message(err.Error()))
-			c.updateServiceInstanceCondition(
+			updatedInstance, _ := c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
 				v1beta1.ConditionFalse,
@@ -1224,7 +1224,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 				"The instance references a ClusterServiceClass that does not exist. "+err.Error(),
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, err.Error())
-			return false, err
+			return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 		}
 	}
 
@@ -1240,7 +1240,7 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 		if err != nil {
 			pcb := pretty.NewInstanceContextBuilder(instance)
 			klog.Warning(pcb.Message(err.Error()))
-			c.updateServiceInstanceCondition(
+			updatedInstance, _ := c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
 				v1beta1.ConditionFalse,
@@ -1248,11 +1248,11 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 				"The instance references a ClusterServicePlan that does not exist. "+err.Error(),
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, err.Error())
-			return false, err
+			return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 		}
 	}
-	_, err = c.updateServiceInstanceReferences(instance)
-	return err == nil, err
+	updatedInstance, err := c.updateServiceInstanceReferences(instance)
+	return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 }
 
 func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstance) (bool, error) {
@@ -1267,7 +1267,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 		if err != nil {
 			pcb := pretty.NewInstanceContextBuilder(instance)
 			klog.Warning(pcb.Message(err.Error()))
-			c.updateServiceInstanceCondition(
+			updatedInstance, _ := c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
 				v1beta1.ConditionFalse,
@@ -1275,7 +1275,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 				"The instance references a ServiceClass that does not exist. "+err.Error(),
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServiceClassReason, err.Error())
-			return false, err
+			return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 		}
 	}
 
@@ -1291,7 +1291,7 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 		if err != nil {
 			pcb := pretty.NewInstanceContextBuilder(instance)
 			klog.Warning(pcb.Message(err.Error()))
-			c.updateServiceInstanceCondition(
+			updatedInstance, _ := c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
 				v1beta1.ConditionFalse,
@@ -1299,11 +1299,11 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 				"The instance references a ServicePlan that does not exist. "+err.Error(),
 			)
 			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServicePlanReason, err.Error())
-			return false, err
+			return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 		}
 	}
-	_, err = c.updateServiceInstanceReferences(instance)
-	return err == nil, err
+	updatedInstance, err := c.updateServiceInstanceReferences(instance)
+	return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 }
 
 // resolveClusterServiceClassRef resolves a reference  to a ClusterServiceClass

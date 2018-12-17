@@ -4542,8 +4542,8 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
 
-	if modified {
-		t.Fatalf("Should have returned false")
+	if !modified {
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:
@@ -4828,8 +4828,8 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
 
-	if modified {
-		t.Fatalf("Should have returned false")
+	if !modified {
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:
