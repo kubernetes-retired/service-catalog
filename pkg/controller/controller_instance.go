@@ -365,11 +365,11 @@ func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (
 			instance.Status.ProvisionStatus = v1beta1.ServiceInstanceProvisionStatusNotProvisioned
 		}
 
-		_, err := c.updateServiceInstanceStatus(instance)
+		updatedInstance, err := c.updateServiceInstanceStatus(instance)
 		if err != nil {
 			return false, err
 		}
-		return true, nil
+		return updatedInstance.ResourceVersion != instance.ResourceVersion, nil
 	}
 	return false, nil
 }
@@ -389,11 +389,11 @@ func (c *controller) initOrphanMitigationCondition(instance *v1beta1.ServiceInst
 			reason,
 			message)
 
-		_, err := c.updateServiceInstanceStatus(instance)
+		updatedInstance, err := c.updateServiceInstanceStatus(instance)
 		if err != nil {
 			return false, err
 		}
-		return true, nil
+		return updatedInstance.ResourceVersion != instance.ResourceVersion, nil
 	}
 	return false, nil
 }
@@ -1580,8 +1580,8 @@ func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.Servic
 	}
 
 	instance.Status.DefaultProvisionParameters = defaultParams
-	_, err = c.updateServiceInstanceStatus(instance)
-	return true, err
+	updatedInstance, err := c.updateServiceInstanceStatus(instance)
+	return updatedInstance.ResourceVersion != instance.ResourceVersion, err
 }
 
 func (c *controller) getDefaultProvisioningParameters(instance *v1beta1.ServiceInstance) (*runtime.RawExtension, error) {
@@ -1908,19 +1908,19 @@ func (c *controller) updateServiceInstanceCondition(
 	conditionType v1beta1.ServiceInstanceConditionType,
 	status v1beta1.ConditionStatus,
 	reason,
-	message string) error {
+	message string) (*v1beta1.ServiceInstance, error) {
 	pcb := pretty.NewInstanceContextBuilder(instance)
 	toUpdate := instance.DeepCopy()
 
 	setServiceInstanceCondition(toUpdate, conditionType, status, reason, message)
 
 	klog.V(4).Info(pcb.Messagef("Updating %v condition to %v", conditionType, status))
-	_, err := c.serviceCatalogClient.ServiceInstances(instance.Namespace).UpdateStatus(toUpdate)
+	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(instance.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		klog.Errorf(pcb.Messagef("Failed to update condition %v to true: %v", conditionType, err))
 	}
 
-	return err
+	return updatedInstance, err
 }
 
 // prepareObservedGeneration sets the instance's observed generation
