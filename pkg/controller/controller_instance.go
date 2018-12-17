@@ -1214,6 +1214,16 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 	if instance.Spec.ClusterServiceClassRef == nil {
 		sc, err = c.resolveClusterServiceClassRef(instance)
 		if err != nil {
+			pcb := pretty.NewInstanceContextBuilder(instance)
+			klog.Warning(pcb.Message(err.Error()))
+			c.updateServiceInstanceCondition(
+				instance,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				errorNonexistentClusterServiceClassReason,
+				"The instance references a ClusterServiceClass that does not exist. "+err.Error(),
+			)
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, err.Error())
 			return false, err
 		}
 	}
@@ -1228,6 +1238,16 @@ func (c *controller) resolveClusterReferences(instance *v1beta1.ServiceInstance)
 
 		err = c.resolveClusterServicePlanRef(instance, sc.Spec.ClusterServiceBrokerName)
 		if err != nil {
+			pcb := pretty.NewInstanceContextBuilder(instance)
+			klog.Warning(pcb.Message(err.Error()))
+			c.updateServiceInstanceCondition(
+				instance,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				errorNonexistentClusterServicePlanReason,
+				"The instance references a ClusterServicePlan that does not exist. "+err.Error(),
+			)
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, err.Error())
 			return false, err
 		}
 	}
@@ -1245,6 +1265,16 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 	if instance.Spec.ServiceClassRef == nil {
 		sc, err = c.resolveServiceClassRef(instance)
 		if err != nil {
+			pcb := pretty.NewInstanceContextBuilder(instance)
+			klog.Warning(pcb.Message(err.Error()))
+			c.updateServiceInstanceCondition(
+				instance,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				errorNonexistentServiceClassReason,
+				"The instance references a ServiceClass that does not exist. "+err.Error(),
+			)
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServiceClassReason, err.Error())
 			return false, err
 		}
 	}
@@ -1259,6 +1289,16 @@ func (c *controller) resolveNamespacedReferences(instance *v1beta1.ServiceInstan
 
 		err = c.resolveServicePlanRef(instance, sc.Spec.ServiceBrokerName)
 		if err != nil {
+			pcb := pretty.NewInstanceContextBuilder(instance)
+			klog.Warning(pcb.Message(err.Error()))
+			c.updateServiceInstanceCondition(
+				instance,
+				v1beta1.ServiceInstanceConditionReady,
+				v1beta1.ConditionFalse,
+				errorNonexistentServicePlanReason,
+				"The instance references a ServicePlan that does not exist. "+err.Error(),
+			)
+			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServicePlanReason, err.Error())
 			return false, err
 		}
 	}
@@ -1293,20 +1333,10 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				instance.Spec.PlanReference, sc.Spec.ExternalName,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return nil, fmt.Errorf(
 				"References a non-existent ClusterServiceClass %c",
 				instance.Spec.PlanReference,
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentClusterServiceClassReason,
-				"The instance references a ClusterServiceClass that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-			return nil, fmt.Errorf(s)
 		}
 	} else {
 		filterField := instance.Spec.GetClusterServiceClassFilterFieldName()
@@ -1327,20 +1357,10 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				instance.Spec.PlanReference, sc.Name,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return nil, fmt.Errorf(
 				"References a non-existent ClusterServiceClass %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, len(serviceClasses.Items),
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentClusterServiceClassReason,
-				"The instance references a ClusterServiceClass that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-			return nil, fmt.Errorf(s)
 		}
 	}
 
@@ -1357,7 +1377,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 		return nil, fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ServiceClassExternalName, ServiceClassExternalID, nor ServiceClassName is set", instance.Namespace, instance.Name)
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	var sc *v1beta1.ServiceClass
 
 	if instance.Spec.ServiceClassName != "" {
@@ -1374,20 +1394,10 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 				instance.Spec.PlanReference, sc.Spec.ExternalName,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return nil, fmt.Errorf(
 				"References a non-existent ServiceClass %c",
 				instance.Spec.PlanReference,
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentServiceClassReason,
-				"The instance references a ServiceClass that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServiceClassReason, s)
-			return nil, fmt.Errorf(s)
 		}
 	} else {
 		filterField := instance.Spec.GetServiceClassFilterFieldName()
@@ -1408,20 +1418,10 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 				instance.Spec.PlanReference, sc.Name,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return nil, fmt.Errorf(
 				"References a non-existent ServiceClass %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, len(serviceClasses.Items),
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentServiceClassReason,
-				"The instance references a ServiceClass that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServiceClassReason, s)
-			return nil, fmt.Errorf(s)
 		}
 	}
 
@@ -1451,20 +1451,10 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				instance.Spec.ClusterServicePlanName, sp.Spec.ExternalName,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return fmt.Errorf(
 				"References a non-existent ClusterServicePlan %v",
 				instance.Spec.PlanReference,
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentClusterServicePlanReason,
-				"The instance references a ClusterServicePlan that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-			return fmt.Errorf(s)
 		}
 	} else {
 		fieldSet := fields.Set{
@@ -1484,20 +1474,10 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				instance.Spec.PlanReference, sp.Name,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return fmt.Errorf(
 				"References a non-existent ClusterServicePlan %b on ClusterServiceClass %s %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference, len(servicePlans.Items),
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentClusterServicePlanReason,
-				"The instance references a ClusterServicePlan that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-			return fmt.Errorf(s)
 		}
 	}
 
@@ -1514,7 +1494,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 		return fmt.Errorf("ServiceInstance %s/%s is in invalid state, neither ServicePlanExternalName, ServicePlanExternalID, nor ServicePlanName is set", instance.Namespace, instance.Name)
 	}
 
-	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
+	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	if instance.Spec.ServicePlanName != "" {
 		sp, err := c.servicePlanLister.ServicePlans(instance.Namespace).Get(instance.Spec.ServicePlanName)
@@ -1527,20 +1507,10 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				instance.Spec.ServicePlanName, sp.Spec.ExternalName,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return fmt.Errorf(
 				"References a non-existent ServicePlan %v",
 				instance.Spec.PlanReference,
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentServicePlanReason,
-				"The instance references a ServicePlan that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServicePlanReason, s)
-			return fmt.Errorf(s)
 		}
 	} else {
 		fieldSet := fields.Set{
@@ -1560,20 +1530,10 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				instance.Spec.PlanReference, sp.Name,
 			))
 		} else {
-			s := fmt.Sprintf(
+			return fmt.Errorf(
 				"References a non-existent ServicePlan %b on ServiceClass %s %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, instance.Spec.ServiceClassRef.Name, instance.Spec.PlanReference, len(servicePlans.Items),
 			)
-			klog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentServicePlanReason,
-				"The instance references a ServicePlan that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentServicePlanReason, s)
-			return fmt.Errorf(s)
 		}
 	}
 
