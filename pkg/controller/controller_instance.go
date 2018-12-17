@@ -150,7 +150,7 @@ func (c *controller) instanceAdd(obj interface{}) {
 	if glog.V(eventHandlerLogLevel) {
 		instance := obj.(*v1beta1.ServiceInstance)
 		pcb := pretty.NewInstanceContextBuilder(instance)
-		glog.Info(pcb.Message("Received ADD event"))
+		glog.Info(pcb.Messagef("Received ADD event: %v", toJSON(instance)))
 	}
 	c.enqueueInstance(obj)
 }
@@ -158,16 +158,22 @@ func (c *controller) instanceAdd(obj interface{}) {
 // instanceUpdate handles the ServiceInstance UPDATED watch event
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 	instance := newObj.(*v1beta1.ServiceInstance)
+	pcb := pretty.NewInstanceContextBuilder(instance)
 	if glog.V(eventHandlerLogLevel) {
 		pcb := pretty.NewInstanceContextBuilder(instance)
-		glog.Info(pcb.Message("Received UPDATE event"))
+		glog.Info(pcb.Messagef("Received UPDATE event: %v", toJSON(instance)))
 	}
+
 	// Instances with ongoing asynchronous operations will be manually added
 	// to the polling queue by the reconciler. They should be ignored here in
 	// order to enforce polling rate-limiting.
-	if !instance.Status.AsyncOpInProgress {
-		c.enqueueInstance(newObj)
+	if instance.Status.AsyncOpInProgress {
+		glog.V(eventHandlerLogLevel).Info(pcb.Message("NOT enqueueing instance because an async operation is in progress"))
+		return
 	}
+
+	glog.V(eventHandlerLogLevel).Info(pcb.Message("Enqueueing instance"))
+	c.enqueueInstance(newObj)
 }
 
 // instanceDelete handles the ServiceInstance DELETED watch event
@@ -179,7 +185,8 @@ func (c *controller) instanceDelete(obj interface{}) {
 
 	if glog.V(eventHandlerLogLevel) {
 		pcb := pretty.NewInstanceContextBuilder(instance)
-		glog.Info(pcb.Message("Received DELETE event; no further processing will occur"))
+		glog.Info(pcb.Messagef("Received DELETE event: %v", toJSON(instance)))
+		glog.Info(pcb.Message("no further processing will occur"))
 	}
 }
 
