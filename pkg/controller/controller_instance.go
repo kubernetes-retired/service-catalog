@@ -327,8 +327,6 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	switch reconciliationAction {
 
 	// ERIK CP
-	case reconcileAdd:
-		return c.reconcileServiceInstanceAdd(instance)
 	case reconcileUpdate:
 		return c.reconcileServiceInstanceUpdate(instance)
 	case reconcileDelete:
@@ -336,8 +334,7 @@ func (c *controller) reconcileServiceInstance(instance *v1beta1.ServiceInstance)
 	case reconcilePoll:
 		return c.pollServiceInstance(instance)
 	default:
-		pcb := pretty.NewInstanceContextBuilder(instance)
-		return fmt.Errorf(pcb.Messagef("Unknown reconciliation action %v", reconciliationAction))
+		return c.reconcileServiceInstanceAdd(instance)
 	}
 }
 
