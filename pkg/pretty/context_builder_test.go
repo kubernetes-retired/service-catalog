@@ -156,37 +156,12 @@ func TestPrettyContextBuilderContextMessagefAndContext(t *testing.T) {
 	}
 }
 
-<<<<<<< HEAD
-func TestPrettyContextBuilderNamespaceNameAndResourceVersion(t *testing.T) {
-	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
-	e := `ServiceInstance "Namespace/Name" v877`
-	g := pcb.String()
-
-=======
 func TestPrettyContextBuilderMessagefAndResourceVersion(t *testing.T) {
 	pcb := ContextBuilder{ResourceVersion: "877"}
 
 	e := ` v877`
 	g := pcb.String()
->>>>>>> add a test for ResourceVersion, use back-ticks instead of "\""
 	if g != e {
 		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
-<<<<<<< HEAD
-
-var bResult string
-
-func BenchmarkPCB(b *testing.B) {
-	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
-
-	b.ResetTimer()
-	var s string
-	for i := 0; i <= b.N; i++ {
-		s = pcb.String()
-	}
-
-	bResult = s
-}
-=======
->>>>>>> add a test for ResourceVersion, use back-ticks instead of "\""
