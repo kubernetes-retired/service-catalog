@@ -1,12 +1,9 @@
 /*
 Copyright 2017 The Kubernetes Authors.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -156,12 +153,26 @@ func TestPrettyContextBuilderContextMessagefAndContext(t *testing.T) {
 	}
 }
 
-func TestPrettyContextBuilderMessagefAndResourceVersion(t *testing.T) {
-	pcb := ContextBuilder{ResourceVersion: "877"}
-
-	e := ` v877`
+func TestPrettyContextBuilderNamespaceNameAndResourceVersion(t *testing.T) {
+	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
+	e := `ServiceInstance "Namespace/Name" v877`
 	g := pcb.String()
+
 	if g != e {
 		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
+}
+
+var bResult string
+
+func BenchmarkPCB(b *testing.B) {
+	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
+
+	b.ResetTimer()
+	var s string
+	for i := 0; i <= b.N; i++ {
+		s = pcb.String()
+	}
+
+	bResult = s
 }
