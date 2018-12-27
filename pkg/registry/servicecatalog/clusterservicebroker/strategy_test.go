@@ -106,15 +106,15 @@ func TestClusterServiceBrokerUpdate(t *testing.T) {
 		shouldGenerationIncrement bool
 	}{
 		{
-			name:  "no spec change",
-			older: clusterServiceBrokerWithOldSpec(),
-			newer: clusterServiceBrokerWithOldSpec(),
+			name:                      "no spec change",
+			older:                     clusterServiceBrokerWithOldSpec(),
+			newer:                     clusterServiceBrokerWithOldSpec(),
 			shouldGenerationIncrement: false,
 		},
 		{
-			name:  "spec change",
-			older: clusterServiceBrokerWithOldSpec(),
-			newer: clusterServiceBrokerWithNewSpec(),
+			name:                      "spec change",
+			older:                     clusterServiceBrokerWithOldSpec(),
+			newer:                     clusterServiceBrokerWithNewSpec(),
 			shouldGenerationIncrement: true,
 		},
 	}
