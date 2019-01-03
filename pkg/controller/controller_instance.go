@@ -61,7 +61,7 @@ const (
 	errorDeprovisionCallFailedReason           string = "DeprovisionCallFailed"
 	errorDeprovisionBlockedByCredentialsReason string = "DeprovisionBlockedByExistingCredentials"
 	errorPollingLastOperationReason            string = "ErrorPollingLastOperation"
-	errorWithOriginatingIdentity               string = "Error with Originating Identity"
+	errorWithOriginatingIdentity               string = "ErrorWithOriginatingIdentity"
 	errorWithOngoingAsyncOperation             string = "ErrorAsyncOperationInProgress"
 	errorWithOngoingAsyncOperationMessage      string = "Another operation for this service instance is in progress. "
 	errorNonexistentClusterServiceClassReason  string = "ReferencesNonexistentServiceClass"
