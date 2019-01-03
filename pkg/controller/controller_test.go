@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime/debug"
+	"sync"
 	"testing"
 	"time"
 
@@ -47,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 )
 
@@ -3992,4 +3994,24 @@ func addGetSecretReaction(fakeKubeClient *clientgofake.Clientset, secret *corev1
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, secret, nil
 	})
+}
+
+var detector cache.CacheMutationDetector
+var locker sync.Mutex
+
+func getMutationDetector() cache.CacheMutationDetector {
+	if detector == nil {
+		locker.Lock()
+		defer locker.Unlock()
+		if detector != nil {
+			return detector
+		}
+		detector = cache.NewCacheMutationDetector("controller")
+		ch := make(<-chan struct{})
+		go func() {
+			detector.Run(ch)
+		}()
+	}
+
+	return detector
 }

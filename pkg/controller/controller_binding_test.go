@@ -4112,10 +4112,7 @@ func assertActionEquals(t *testing.T, action clientgotesting.Action, expectedVer
 }
 
 func reconcileServiceBinding(t *testing.T, testController *controller, binding *v1beta1.ServiceBinding) error {
-	clone := binding.DeepCopy()
 	err := testController.reconcileServiceBinding(binding)
-	if !reflect.DeepEqual(binding, clone) {
-		t.Errorf("reconcileServiceBinding shouldn't mutate input, but it does: %s", expectedGot(clone, binding))
-	}
+	getMutationDetector().AddObject(binding)
 	return err
 }

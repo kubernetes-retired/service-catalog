@@ -6205,10 +6205,7 @@ func assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClien
 }
 
 func reconcileServiceInstance(t *testing.T, testController *controller, instance *v1beta1.ServiceInstance) error {
-	clone := instance.DeepCopy()
 	err := testController.reconcileServiceInstance(instance)
-	if !reflect.DeepEqual(instance, clone) {
-		t.Errorf("reconcileServiceInstance shouldn't mutate input, but it does: %s", expectedGot(clone, instance))
-	}
+	getMutationDetector().AddObject(instance)
 	return err
 }
