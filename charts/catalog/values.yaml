@@ -47,7 +47,7 @@ apiserver:
     requestHeaderCA:
   # Attributes of the apiserver's service resource
   service:
-    # Type of service; valid values are "LoadBalancer" and "NodePort"
+    # Type of service; valid values are "LoadBalancer", "NodePort" or "ClusterIP"
     # NodePort is useful if deploying on bare metal or hacking locally on
     # minikube
     type: NodePort
