@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/apiserver/pkg/server"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -4007,7 +4008,7 @@ func getMutationDetector() cache.CacheMutationDetector {
 			return detector
 		}
 		detector = cache.NewCacheMutationDetector("controller")
-		ch := make(<-chan struct{})
+		ch := server.SetupSignalHandler()
 		go func() {
 			detector.Run(ch)
 		}()
