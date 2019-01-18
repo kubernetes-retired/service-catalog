@@ -20,7 +20,6 @@ limitations under the License.
 package main
 
 import (
-	"k8s.io/klog"
 	"os"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/service-catalog/server"
@@ -28,7 +27,6 @@ import (
 )
 
 func main() {
-	klog.InitFlags(nil)
 	hk := hyperkube.HyperKube{
 		Name: "service-catalog",
 		Long: "This is an all-in-one binary that can run any of the various Kubernetes service-catalog servers.",
