@@ -131,7 +131,7 @@ func (c *FakeServicePlans) DeleteCollection(options *v1.DeleteOptions, listOptio
 // Patch applies the patch and returns the patched servicePlan.
 func (c *FakeServicePlans) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServicePlan, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(serviceplansResource, c.ns, name, data, subresources...), &servicecatalog.ServicePlan{})
+		Invokes(testing.NewPatchSubresourceAction(serviceplansResource, c.ns, name, pt, data, subresources...), &servicecatalog.ServicePlan{})
 
 	if obj == nil {
 		return nil, err

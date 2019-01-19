@@ -63,9 +63,9 @@ import (
 
 	"context"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"k8s.io/klog"
 )
 
 // NewControllerManagerCommand creates a *cobra.Command object with default
@@ -96,15 +96,15 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	// if c, err := configz.New("componentconfig"); err == nil {
 	// 	c.Set(controllerManagerOptions.KubeControllerManagerConfiguration)
 	// } else {
-	// 	glog.Errorf("unable to register configz: %s", err)
+	// 	klog.Errorf("unable to register configz: %s", err)
 	// }
 
 	if controllerManagerOptions.Port > 0 {
-		glog.Warning("program option --port is obsolete and ignored, specify --secure-port instead")
+		klog.Warning("program option --port is obsolete and ignored, specify --secure-port instead")
 	}
 
 	// Build the K8s kubeconfig / client / clientBuilder
-	glog.V(4).Info("Building k8s kubeconfig")
+	klog.V(4).Info("Building k8s kubeconfig")
 
 	var err error
 	var k8sKubeconfig *rest.Config
@@ -132,14 +132,14 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	}
 	leaderElectionClient := kubernetes.NewForConfigOrDie(rest.AddUserAgent(k8sKubeconfig, "leader-election"))
 
-	glog.V(4).Infof("Building service-catalog kubeconfig for url: %v\n", controllerManagerOptions.ServiceCatalogAPIServerURL)
+	klog.V(4).Infof("Building service-catalog kubeconfig for url: %v\n", controllerManagerOptions.ServiceCatalogAPIServerURL)
 
 	var serviceCatalogKubeconfig *rest.Config
 	// Build the service-catalog kubeconfig / clientBuilder
 	if controllerManagerOptions.ServiceCatalogAPIServerURL == "" && controllerManagerOptions.ServiceCatalogKubeconfigPath == "" {
 		// explicitly fall back to InClusterConfig, assuming we're talking to an API server which does aggregation
 		// (BuildConfigFromFlags does this, but gives a more generic warning message than we do here)
-		glog.V(4).Infof("Using inClusterConfig to talk to service catalog API server -- make sure your API server is registered with the aggregator")
+		klog.V(4).Infof("Using inClusterConfig to talk to service catalog API server -- make sure your API server is registered with the aggregator")
 		serviceCatalogKubeconfig, err = rest.InClusterConfig()
 	} else {
 		serviceCatalogKubeconfig, err = clientcmd.BuildConfigFromFlags(
@@ -160,7 +160,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		return fmt.Errorf("failed to establish SecureServingOptions %v", err)
 	}
 
-	glog.V(4).Info("Starting http server and mux")
+	klog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers
 	go func() {
 		mux := http.NewServeMux()
@@ -192,12 +192,12 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 				strconv.Itoa(int(controllerManagerOptions.SecureServingOptions.BindPort))),
 			Handler: mux,
 		}
-		glog.Fatal(server.ListenAndServeTLS(controllerManagerOptions.SecureServingOptions.ServerCert.CertKey.CertFile,
+		klog.Fatal(server.ListenAndServeTLS(controllerManagerOptions.SecureServingOptions.ServerCert.CertKey.CertFile,
 			controllerManagerOptions.SecureServingOptions.ServerCert.CertKey.KeyFile))
 	}()
 
 	// Create event broadcaster
-	glog.V(4).Info("Creating event broadcaster")
+	klog.V(4).Info("Creating event broadcaster")
 	eventsScheme := runtime.NewScheme()
 	// We use ConfigMapLock/EndpointsLock which emit events for ConfigMap/Endpoints and hence we need core/v1 types for it
 	if err = corev1.AddToScheme(eventsScheme); err != nil {
@@ -212,7 +212,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	}
 
 	eventBroadcaster := record.NewBroadcaster()
-	loggingWatch := eventBroadcaster.StartLogging(glog.Infof)
+	loggingWatch := eventBroadcaster.StartLogging(klog.Infof)
 	defer loggingWatch.Stop()
 	recordingWatch := eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: k8sKubeClient.CoreV1().Events("")})
 	defer recordingWatch.Stop()
@@ -237,7 +237,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// }
 
 		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, ctx.Done())
-		glog.Fatalf("error running controllers: %v", err)
+		klog.Fatalf("error running controllers: %v", err)
 		panic("unreachable")
 	}
 
@@ -252,7 +252,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		return err
 	}
 
-	glog.V(5).Infof("Using namespace %v for leader election lock", controllerManagerOptions.LeaderElectionNamespace)
+	klog.V(5).Infof("Using namespace %v for leader election lock", controllerManagerOptions.LeaderElectionNamespace)
 
 	// Lock required for leader election
 	rl, err := resourcelock.New(
@@ -277,7 +277,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: run,
 			OnStoppedLeading: func() {
-				glog.Fatalf("leaderelection lost")
+				klog.Fatalf("leaderelection lost")
 			},
 		},
 	})
@@ -297,16 +297,16 @@ func getAvailableResources(clientBuilder controller.ClientBuilder, version schem
 		var client clientset.Interface
 		client, clientError = clientBuilder.Client(controllerDiscoveryAgentName)
 		if clientError != nil {
-			glog.Errorf("Failed to get api versions from server: %v", clientError)
+			klog.Errorf("Failed to get api versions from server: %v", clientError)
 			return false, nil
 		}
 
-		glog.V(4).Info("Created client for API discovery")
+		klog.V(4).Info("Created client for API discovery")
 
 		discoveryClient := client.Discovery()
 		apiResourceList, clientError = discoveryClient.ServerResourcesForGroupVersion(version.String())
 		if clientError != nil {
-			glog.Errorf("Failed to get supported resources from server: %v", clientError)
+			klog.Errorf("Failed to get supported resources from server: %v", clientError)
 			return false, nil
 		}
 
@@ -364,9 +364,9 @@ func StartControllers(s *options.ControllerManagerServer,
 	coreKubeconfig = rest.AddUserAgent(coreKubeconfig, controllerManagerAgentName)
 	coreClient, err := kubernetes.NewForConfig(coreKubeconfig)
 	if err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
-	glog.V(5).Infof("Creating shared informers; resync interval: %v", s.ResyncInterval)
+	klog.V(5).Infof("Creating shared informers; resync interval: %v", s.ResyncInterval)
 
 	// Build the informer factory for service-catalog resources
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(
@@ -376,7 +376,7 @@ func StartControllers(s *options.ControllerManagerServer,
 	// All shared informers are v1beta1 API level
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
-	glog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
+	klog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
 	serviceCatalogController, err := controller.NewController(
 		coreClient,
 		serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1beta1(),
@@ -401,13 +401,13 @@ func StartControllers(s *options.ControllerManagerServer,
 		return err
 	}
 
-	glog.V(1).Info("Starting shared informers")
+	klog.V(1).Info("Starting shared informers")
 	informerFactory.Start(stop)
 
-	glog.V(5).Info("Waiting for caches to sync")
+	klog.V(5).Info("Waiting for caches to sync")
 	informerFactory.WaitForCacheSync(stop)
 
-	glog.V(5).Info("Running controller")
+	klog.V(5).Info("Running controller")
 	go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
 
 	select {}
@@ -424,7 +424,7 @@ func (c checkAPIAvailableResources) Name() string {
 }
 
 func (c checkAPIAvailableResources) Check(_ *http.Request) error {
-	glog.Info("Health-checking connection with service-catalog API server")
+	klog.Info("Health-checking connection with service-catalog API server")
 	availableResources, err := getAvailableResources(c.serviceCatalogClientBuilder, servicecatalogv1beta1.SchemeGroupVersion)
 	if err != nil {
 		return err

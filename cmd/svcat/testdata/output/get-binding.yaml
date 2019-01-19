@@ -1,5 +1,5 @@
 metadata:
-  creationTimestamp: 2018-01-11T21:00:47Z
+  creationTimestamp: "2018-01-11T21:00:47Z"
   finalizers:
   - kubernetes-incubator/service-catalog
   generation: 1
@@ -25,7 +25,7 @@ spec:
 status:
   asyncOpInProgress: false
   conditions:
-  - lastTransitionTime: 2018-01-11T21:00:47Z
+  - lastTransitionTime: "2018-01-11T21:00:47Z"
     message: Injected bind result
     reason: InjectedBindResult
     status: "True"

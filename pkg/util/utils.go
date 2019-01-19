@@ -24,7 +24,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 // WriteResponse will serialize 'object' to the HTTP ResponseWriter
@@ -76,7 +76,7 @@ func ResponseBodyToObject(r *http.Response, object interface{}) error {
 	if err != nil {
 		return err
 	}
-	glog.Info(string(body))
+	klog.Info(string(body))
 
 	err = json.Unmarshal(body, object)
 	if err != nil {

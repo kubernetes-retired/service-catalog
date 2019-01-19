@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ import (
 func (c *controller) clusterServiceClassAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		klog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
 	c.clusterServiceClassQueue.Add(key)
@@ -47,7 +47,7 @@ func (c *controller) clusterServiceClassDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for ServiceClass %v; no further processing will occur", serviceClass.Name)
+	klog.V(4).Infof("Received delete event for ServiceClass %v; no further processing will occur", serviceClass.Name)
 }
 
 // reconcileServiceClassKey reconciles a ClusterServiceClass due to controller resync
@@ -57,11 +57,11 @@ func (c *controller) clusterServiceClassDelete(obj interface{}) {
 func (c *controller) reconcileClusterServiceClassKey(key string) error {
 	class, err := c.clusterServiceClassLister.Get(key)
 	if errors.IsNotFound(err) {
-		glog.Infof("ClusterServiceClass %q: Not doing work because it has been deleted", key)
+		klog.Infof("ClusterServiceClass %q: Not doing work because it has been deleted", key)
 		return nil
 	}
 	if err != nil {
-		glog.Infof("ClusterServiceClass %q: Unable to retrieve object from store: %v", key, err)
+		klog.Infof("ClusterServiceClass %q: Unable to retrieve object from store: %v", key, err)
 		return err
 	}
 
@@ -69,13 +69,13 @@ func (c *controller) reconcileClusterServiceClassKey(key string) error {
 }
 
 func (c *controller) reconcileClusterServiceClass(serviceClass *v1beta1.ClusterServiceClass) error {
-	glog.Infof("ClusterServiceClass %q (ExternalName: %q): processing", serviceClass.Name, serviceClass.Spec.ExternalName)
+	klog.Infof("ClusterServiceClass %q (ExternalName: %q): processing", serviceClass.Name, serviceClass.Spec.ExternalName)
 
 	if !serviceClass.Status.RemovedFromBrokerCatalog {
 		return nil
 	}
 
-	glog.Infof("ClusterServiceClass %q (ExternalName: %q): has been removed from broker catalog; determining whether there are instances remaining", serviceClass.Name, serviceClass.Spec.ExternalName)
+	klog.Infof("ClusterServiceClass %q (ExternalName: %q): has been removed from broker catalog; determining whether there are instances remaining", serviceClass.Name, serviceClass.Spec.ExternalName)
 
 	serviceInstances, err := c.findServiceInstancesOnClusterServiceClass(serviceClass)
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *controller) reconcileClusterServiceClass(serviceClass *v1beta1.ClusterS
 		return nil
 	}
 
-	glog.Infof("ClusterServiceClass %q (ExternalName: %q): has been removed from broker catalog and has zero instances remaining; deleting", serviceClass.Name, serviceClass.Spec.ExternalName)
+	klog.Infof("ClusterServiceClass %q (ExternalName: %q): has been removed from broker catalog and has zero instances remaining; deleting", serviceClass.Name, serviceClass.Spec.ExternalName)
 	return c.serviceCatalogClient.ClusterServiceClasses().Delete(serviceClass.Name, &metav1.DeleteOptions{})
 }
 

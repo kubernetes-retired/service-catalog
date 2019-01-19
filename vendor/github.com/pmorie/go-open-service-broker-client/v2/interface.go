@@ -64,7 +64,7 @@ type ClientConfiguration struct {
 	// CAData holds PEM-encoded bytes (typically read from a root certificates bundle).
 	// This CA certificate will be added to any specified in TLSConfig.RootCAs.
 	CAData []byte
-	// Verbose is whether the client will log to glog.
+	// Verbose is whether the client will log to klog.
 	Verbose bool
 }
 

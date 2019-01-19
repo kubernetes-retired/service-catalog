@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"k8s.io/klog"
 )
 
 type errNoSuchInstance struct {
@@ -54,7 +54,7 @@ func CreateController() controller.Controller {
 }
 
 func (c *userProvidedController) Catalog() (*brokerapi.Catalog, error) {
-	glog.Info("Catalog()")
+	klog.Info("Catalog()")
 	return &brokerapi.Catalog{
 		Services: []*brokerapi.Service{
 			{
@@ -189,20 +189,20 @@ func (c *userProvidedController) CreateServiceInstance(
 	id string,
 	req *brokerapi.CreateServiceInstanceRequest,
 ) (*brokerapi.CreateServiceInstanceResponse, error) {
-	glog.Info("CreateServiceInstance()")
+	klog.Info("CreateServiceInstance()")
 	credString, ok := req.Parameters["credentials"]
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 	if ok {
 		jsonCred, err := json.Marshal(credString)
 		if err != nil {
-			glog.Errorf("Failed to marshal credentials: %v", err)
+			klog.Errorf("Failed to marshal credentials: %v", err)
 			return nil, err
 		}
 		var cred brokerapi.Credential
 		err = json.Unmarshal(jsonCred, &cred)
 		if err != nil {
-			glog.Errorf("Failed to unmarshal credentials: %v", err)
+			klog.Errorf("Failed to unmarshal credentials: %v", err)
 			return nil, err
 		}
 
@@ -220,7 +220,7 @@ func (c *userProvidedController) CreateServiceInstance(
 		}
 	}
 
-	glog.Infof("Created User Provided Service Instance:\n%v\n", c.instanceMap[id])
+	klog.Infof("Created User Provided Service Instance:\n%v\n", c.instanceMap[id])
 	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
@@ -230,7 +230,7 @@ func (c *userProvidedController) GetServiceInstanceLastOperation(
 	planID,
 	operation string,
 ) (*brokerapi.LastOperationResponse, error) {
-	glog.Info("GetServiceInstanceLastOperation()")
+	klog.Info("GetServiceInstanceLastOperation()")
 	return nil, errors.New("Unimplemented")
 }
 
@@ -240,7 +240,7 @@ func (c *userProvidedController) RemoveServiceInstance(
 	planID string,
 	acceptsIncomplete bool,
 ) (*brokerapi.DeleteServiceInstanceResponse, error) {
-	glog.Info("RemoveServiceInstance()")
+	klog.Info("RemoveServiceInstance()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 	_, ok := c.instanceMap[instanceID]
@@ -257,7 +257,7 @@ func (c *userProvidedController) Bind(
 	bindingID string,
 	req *brokerapi.BindingRequest,
 ) (*brokerapi.CreateServiceBindingResponse, error) {
-	glog.Info("Bind()")
+	klog.Info("Bind()")
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
 	instance, ok := c.instanceMap[instanceID]
@@ -269,7 +269,7 @@ func (c *userProvidedController) Bind(
 }
 
 func (c *userProvidedController) UnBind(instanceID, bindingID, serviceID, planID string) error {
-	glog.Info("UnBind()")
+	klog.Info("UnBind()")
 	// Since we don't persist the binding, there's nothing to do here.
 	return nil
 }

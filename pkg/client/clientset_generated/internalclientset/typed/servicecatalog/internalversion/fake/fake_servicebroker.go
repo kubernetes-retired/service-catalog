@@ -131,7 +131,7 @@ func (c *FakeServiceBrokers) DeleteCollection(options *v1.DeleteOptions, listOpt
 // Patch applies the patch and returns the patched serviceBroker.
 func (c *FakeServiceBrokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(servicebrokersResource, c.ns, name, data, subresources...), &servicecatalog.ServiceBroker{})
+		Invokes(testing.NewPatchSubresourceAction(servicebrokersResource, c.ns, name, pt, data, subresources...), &servicecatalog.ServiceBroker{})
 
 	if obj == nil {
 		return nil, err

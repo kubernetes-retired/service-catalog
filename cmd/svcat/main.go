@@ -23,9 +23,9 @@ import (
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	"k8s.io/kubectl/pkg/pluginutils"
 
-	_ "github.com/golang/glog" // Initialize glog flags
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/browsing"
@@ -52,6 +52,7 @@ var (
 )
 
 func main() {
+	klog.InitFlags(nil)
 	// root command context
 	cxt := &command.Context{
 		Viper: viper.New(),

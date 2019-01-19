@@ -1,8 +1,11 @@
 dist: trusty
 sudo: required
 
-# Install Bazel and set up GOPATH.
+# Install latest Go and Bazel and set up GOPATH.
 before_install:
+# gimme on travis is too old for .x version resolution, and gimme stable seems broken, too
+- LATEST_GO=$(gimme --known | sort -V | tail -1)
+- eval "$(gimme ${LATEST_GO})"
 - mkdir -p $GOPATH/src/k8s.io
 - mv $TRAVIS_BUILD_DIR $GOPATH/src/k8s.io
 - cd $GOPATH/src/k8s.io/repo-infra

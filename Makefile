@@ -57,7 +57,7 @@ STAT           = stat -c '%Y %n'
 endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION    ?= 1.10
+GO_VERSION    ?= 1.11.3
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
@@ -153,6 +153,9 @@ GENERATORS = $(addprefix $(BINDIR)/, defaulter-gen deepcopy-gen conversion-gen \
 generators: $(GENERATORS)
 
 .SECONDEXPANSION:
+
+$(BINDIR)/openapi-gen: $$(shell find vendor/k8s.io/kube-openapi/cmd/openapi-gen vendor/k8s.io/gengo) .init
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
 
 # We specify broad dependencies for these generator binaries: each one depends
 # on everything under its source tree as well as gengo's.  This uses GNU Make's

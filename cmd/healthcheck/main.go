@@ -19,13 +19,13 @@ package main
 import (
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/cmd/healthcheck/framework"
+	"k8s.io/klog"
 )
 
 func main() {
+	klog.InitFlags(nil)
 	err := framework.Execute()
-	glog.Flush()
 	if err != nil {
 		os.Exit(1)
 	}

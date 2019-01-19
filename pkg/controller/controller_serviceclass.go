@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +30,7 @@ import (
 func (c *controller) serviceClassAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		klog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
 	c.serviceClassQueue.Add(key)
@@ -46,7 +46,7 @@ func (c *controller) serviceClassDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for ServiceClass %v; no further processing will occur", serviceClass.Name)
+	klog.V(4).Infof("Received delete event for ServiceClass %v; no further processing will occur", serviceClass.Name)
 }
 
 // reconcileServiceClassKey reconciles a ServiceClass due to controller resync
@@ -61,11 +61,11 @@ func (c *controller) reconcileServiceClassKey(key string) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceClass, namespace, name, "")
 	class, err := c.serviceClassLister.ServiceClasses(namespace).Get(name)
 	if errors.IsNotFound(err) {
-		glog.Info(pcb.Message("Not doing work because the ServiceClass has been deleted"))
+		klog.Info(pcb.Message("Not doing work because the ServiceClass has been deleted"))
 		return nil
 	}
 	if err != nil {
-		glog.Infof(pcb.Message("Unable to retrieve"))
+		klog.Infof(pcb.Message("Unable to retrieve"))
 		return err
 	}
 
@@ -74,13 +74,13 @@ func (c *controller) reconcileServiceClassKey(key string) error {
 
 func (c *controller) reconcileServiceClass(serviceClass *v1beta1.ServiceClass) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceClass, serviceClass.Namespace, serviceClass.Name, "")
-	glog.Info(pcb.Message("Processing"))
+	klog.Info(pcb.Message("Processing"))
 
 	if !serviceClass.Status.RemovedFromBrokerCatalog {
 		return nil
 	}
 
-	glog.Info(pcb.Message("Removed from broker catalog; determining whether there are instances remaining"))
+	klog.Info(pcb.Message("Removed from broker catalog; determining whether there are instances remaining"))
 
 	serviceInstances, err := c.findServiceInstancesOnServiceClass(serviceClass)
 	if err != nil {
@@ -91,7 +91,7 @@ func (c *controller) reconcileServiceClass(serviceClass *v1beta1.ServiceClass) e
 		return nil
 	}
 
-	glog.Info(pcb.Message("Removed from broker catalog and has zero instances remaining; deleting"))
+	klog.Info(pcb.Message("Removed from broker catalog and has zero instances remaining; deleting"))
 	return c.serviceCatalogClient.ServiceClasses(serviceClass.Namespace).Delete(serviceClass.Name, &metav1.DeleteOptions{})
 }
 

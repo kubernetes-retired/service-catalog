@@ -27,9 +27,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for service
@@ -76,7 +76,7 @@ var (
 func (serviceClassRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to create")
+		klog.Fatal("received a non-serviceclass object to create")
 	}
 }
 
@@ -89,7 +89,7 @@ func (serviceClassRESTStrategy) NamespaceScoped() bool {
 func (serviceClassRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	serviceClass, ok := obj.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to create")
+		klog.Fatal("received a non-serviceclass object to create")
 	}
 	serviceClass.Status = sc.ServiceClassStatus{}
 }
@@ -109,11 +109,11 @@ func (serviceClassRESTStrategy) AllowUnconditionalUpdate() bool {
 func (serviceClassRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to update to")
+		klog.Fatal("received a non-serviceclass object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to update from")
+		klog.Fatal("received a non-serviceclass object to update from")
 	}
 
 	// Update should not change the status
@@ -125,11 +125,11 @@ func (serviceClassRESTStrategy) PrepareForUpdate(ctx context.Context, new, old r
 func (serviceClassRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceclass, ok := new.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to validate to")
+		klog.Fatal("received a non-serviceclass object to validate to")
 	}
 	oldServiceclass, ok := old.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to validate from")
+		klog.Fatal("received a non-serviceclass object to validate from")
 	}
 
 	return scv.ValidateServiceClassUpdate(newServiceclass, oldServiceclass)
@@ -138,11 +138,11 @@ func (serviceClassRESTStrategy) ValidateUpdate(ctx context.Context, new, old run
 func (serviceClassStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to update to")
+		klog.Fatal("received a non-serviceclass object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ServiceClass)
 	if !ok {
-		glog.Fatal("received a non-serviceclass object to update from")
+		klog.Fatal("received a non-serviceclass object to update from")
 	}
 	// Status changes are not allowed to update spec
 	newServiceClass.Spec = oldServiceClass.Spec

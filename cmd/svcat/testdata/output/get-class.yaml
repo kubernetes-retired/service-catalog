@@ -1,5 +1,5 @@
 metadata:
-  creationTimestamp: 2018-01-11T20:53:31Z
+  creationTimestamp: "2018-01-11T20:53:31Z"
   name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
   resourceVersion: "3"
   selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468

@@ -123,7 +123,7 @@ func (c *FakeClusterServicePlans) DeleteCollection(options *v1.DeleteOptions, li
 // Patch applies the patch and returns the patched clusterServicePlan.
 func (c *FakeClusterServicePlans) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.ClusterServicePlan, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(clusterserviceplansResource, name, data, subresources...), &servicecatalog.ClusterServicePlan{})
+		Invokes(testing.NewRootPatchSubresourceAction(clusterserviceplansResource, name, pt, data, subresources...), &servicecatalog.ClusterServicePlan{})
 	if obj == nil {
 		return nil, err
 	}

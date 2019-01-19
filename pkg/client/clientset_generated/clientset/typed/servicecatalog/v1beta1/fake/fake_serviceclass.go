@@ -131,7 +131,7 @@ func (c *FakeServiceClasses) DeleteCollection(options *v1.DeleteOptions, listOpt
 // Patch applies the patch and returns the patched serviceClass.
 func (c *FakeServiceClasses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(serviceclassesResource, c.ns, name, data, subresources...), &v1beta1.ServiceClass{})
+		Invokes(testing.NewPatchSubresourceAction(serviceclassesResource, c.ns, name, pt, data, subresources...), &v1beta1.ServiceClass{})
 
 	if obj == nil {
 		return nil, err
