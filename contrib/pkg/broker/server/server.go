@@ -186,11 +186,11 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) updateServiceInstance(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["instance_id"]
-	glog.Infof("UpdateServiceInstance %s...\n", id)
+	klog.Infof("UpdateServiceInstance %s...\n", id)
 
 	var req brokerapi.UpdateServiceInstanceRequest
 	if err := util.BodyToObject(r, &req); err != nil {
-		glog.Errorf("error unmarshalling: %v", err)
+		klog.Errorf("error unmarshalling: %v", err)
 		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 		return
 	}

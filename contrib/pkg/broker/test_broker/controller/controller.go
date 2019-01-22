@@ -25,10 +25,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"k8s.io/klog"
 )
 
 const failAlways = math.MaxInt32
@@ -360,7 +360,7 @@ func newTestService(name string, id string, description string, planID string, a
 }
 
 func (c *testController) Catalog() (*brokerapi.Catalog, error) {
-	glog.Info("Catalog()")
+	klog.Info("Catalog()")
 	services := []*brokerapi.Service{}
 	for _, s := range c.serviceMap {
 		services = append(services, &s.Service)
@@ -375,7 +375,7 @@ func (c *testController) CreateServiceInstance(
 	req *brokerapi.CreateServiceInstanceRequest,
 ) (*brokerapi.CreateServiceInstanceResponse, error) {
 
-	glog.Info("CreateServiceInstance()")
+	klog.Info("CreateServiceInstance()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -398,7 +398,7 @@ func (c *testController) CreateServiceInstance(
 	c.provisionCountMap[id]++
 
 	if service.Asynchronous {
-		glog.Infof("Starting asynchronous creation of Service Instance:\n%v\n", instance)
+		klog.Infof("Starting asynchronous creation of Service Instance:\n%v\n", instance)
 		instance.provisionedAt = time.Now().Add(1 * time.Minute)
 		return &brokerapi.CreateServiceInstanceResponse{
 			Operation: "provision",
@@ -410,7 +410,7 @@ func (c *testController) CreateServiceInstance(
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail provisioning", service.HTTPErrorStatus)
 	}
 
-	glog.Infof("Created Test Service Instance:\n%v\n", instance)
+	klog.Infof("Created Test Service Instance:\n%v\n", instance)
 	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
@@ -418,7 +418,7 @@ func (c *testController) UpdateServiceInstance(
 	id string,
 	req *brokerapi.UpdateServiceInstanceRequest,
 ) (*brokerapi.UpdateServiceInstanceResponse, error) {
-	glog.Info("UpdateServiceInstance()")
+	klog.Info("UpdateServiceInstance()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -441,7 +441,7 @@ func (c *testController) UpdateServiceInstance(
 	instance.updateAttempts++
 
 	if service.Asynchronous {
-		glog.Infof("Starting asynchronous update of Service Instance:\n%v\n", instance)
+		klog.Infof("Starting asynchronous update of Service Instance:\n%v\n", instance)
 		instance.updatedAt = time.Now().Add(1 * time.Minute)
 		return &brokerapi.UpdateServiceInstanceResponse{
 			Operation: "update",
@@ -452,7 +452,7 @@ func (c *testController) UpdateServiceInstance(
 		return nil, server.NewErrorWithHTTPStatus("Service is configured to fail update", service.HTTPErrorStatus)
 	}
 
-	glog.Infof("Updated Test Service Instance:\n%v\n", instance)
+	klog.Infof("Updated Test Service Instance:\n%v\n", instance)
 	return &brokerapi.UpdateServiceInstanceResponse{}, nil
 }
 
@@ -467,13 +467,13 @@ func getCredentials(requestParameters map[string]interface{}) (brokerapi.Credent
 
 	jsonCred, err := json.Marshal(credString)
 	if err != nil {
-		glog.Errorf("Failed to marshal credentials: %v", err)
+		klog.Errorf("Failed to marshal credentials: %v", err)
 		return nil, err
 	}
 	var cred brokerapi.Credential
 	err = json.Unmarshal(jsonCred, &cred)
 	if err != nil {
-		glog.Errorf("Failed to unmarshal credentials: %v", err)
+		klog.Errorf("Failed to unmarshal credentials: %v", err)
 		return nil, err
 	}
 	return cred, nil
@@ -485,7 +485,7 @@ func (c *testController) GetServiceInstanceLastOperation(
 	planID,
 	operation string,
 ) (*brokerapi.LastOperationResponse, error) {
-	glog.Info("GetServiceInstanceLastOperation()")
+	klog.Info("GetServiceInstanceLastOperation()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -558,7 +558,7 @@ func (c *testController) RemoveServiceInstance(
 	planID string,
 	acceptsIncomplete bool,
 ) (*brokerapi.DeleteServiceInstanceResponse, error) {
-	glog.Info("RemoveServiceInstance()")
+	klog.Info("RemoveServiceInstance()")
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 	instance, ok := c.instanceMap[instanceID]
@@ -566,7 +566,7 @@ func (c *testController) RemoveServiceInstance(
 		service, ok := c.serviceMap[serviceID]
 		if ok {
 			if service.Asynchronous {
-				glog.Infof("Starting asynchronous deletion of Service Instance:\n%v\n", instance)
+				klog.Infof("Starting asynchronous deletion of Service Instance:\n%v\n", instance)
 				instance.deprovisionedAt = time.Now().Add(1 * time.Minute)
 				return &brokerapi.DeleteServiceInstanceResponse{
 					Operation: "deprovision",
@@ -578,7 +578,7 @@ func (c *testController) RemoveServiceInstance(
 			}
 
 			delete(c.instanceMap, instanceID)
-			glog.Infof("Deleted Test Service Instance:\n%v\n", instance)
+			klog.Infof("Deleted Test Service Instance:\n%v\n", instance)
 			return &brokerapi.DeleteServiceInstanceResponse{}, nil
 		}
 	}
@@ -591,7 +591,7 @@ func (c *testController) Bind(
 	bindingID string,
 	req *brokerapi.BindingRequest,
 ) (*brokerapi.CreateServiceBindingResponse, error) {
-	glog.Info("Bind()")
+	klog.Info("Bind()")
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
 	instance, ok := c.instanceMap[instanceID]
@@ -603,7 +603,7 @@ func (c *testController) Bind(
 }
 
 func (c *testController) UnBind(instanceID, bindingID, serviceID, planID string) error {
-	glog.Info("UnBind()")
+	klog.Info("UnBind()")
 	// Since we don't persist the binding, there's nothing to do here.
 	return nil
 }

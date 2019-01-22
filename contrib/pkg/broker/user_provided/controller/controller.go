@@ -228,7 +228,7 @@ func (c *userProvidedController) UpdateServiceInstance(
 	id string,
 	req *brokerapi.UpdateServiceInstanceRequest,
 ) (*brokerapi.UpdateServiceInstanceResponse, error) {
-	glog.Info("UpdateServiceInstance()")
+	klog.Info("UpdateServiceInstance()")
 	return nil, errors.New("Unimplemented")
 }
 

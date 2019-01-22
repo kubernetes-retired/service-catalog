@@ -26,10 +26,10 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/test_broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"k8s.io/klog"
 )
 
 var options struct {
@@ -47,7 +47,7 @@ func init() {
 
 func main() {
 	if err := run(); err != nil && err != context.Canceled && err != context.DeadlineExceeded {
-		glog.Fatalln(err)
+		klog.Fatalln(err)
 	}
 }
 
