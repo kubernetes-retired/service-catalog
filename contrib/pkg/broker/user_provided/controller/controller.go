@@ -224,6 +224,14 @@ func (c *userProvidedController) CreateServiceInstance(
 	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
+func (c *userProvidedController) UpdateServiceInstance(
+	id string,
+	req *brokerapi.UpdateServiceInstanceRequest,
+) (*brokerapi.UpdateServiceInstanceResponse, error) {
+	klog.Info("UpdateServiceInstance()")
+	return nil, errors.New("Unimplemented")
+}
+
 func (c *userProvidedController) GetServiceInstanceLastOperation(
 	instanceID,
 	serviceID,

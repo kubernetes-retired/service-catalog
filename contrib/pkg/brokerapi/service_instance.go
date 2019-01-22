@@ -63,6 +63,32 @@ type CreateServiceInstanceResponse struct {
 	Operation    string `json:"operation,omitempty"`
 }
 
+// UpdateServiceInstanceRequest represents a request to a broker to update an
+// instance of a service
+type UpdateServiceInstanceRequest struct {
+	ContextProfile ContextProfile         `json:"context,omitempty"`
+	ServiceID      string                 `json:"service_id,omitempty"`
+	PlanID         string                 `json:"plan_id,omitempty"`
+	Parameters     map[string]interface{} `json:"parameters,omitempty"`
+	PreviousValues PreviousValues         `json:"previous_values,omitempty"`
+}
+
+// PreviousValues represents the information about an instance of a service prior
+// to the update the instance
+type PreviousValues struct {
+	OrgID     string `json:"organization_guid,omitempty"`
+	PlanID    string `json:"plan_id,omitempty"`
+	ServiceID string `json:"service_id,omitempty"`
+	SpaceID   string `json:"space_guid,omitempty"`
+}
+
+// UpdateServiceInstanceResponse represents the response from a broker after a
+// request to update an instance of a service
+type UpdateServiceInstanceResponse struct {
+	DashboardURL string `json:"dashboard_url,omitempty"`
+	Operation    string `json:"operation,omitempty"`
+}
+
 // DeleteServiceInstanceRequest represents a request to a broker to deprovision an
 // instance of a service
 type DeleteServiceInstanceRequest struct {

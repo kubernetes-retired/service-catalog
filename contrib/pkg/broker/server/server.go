@@ -36,6 +36,28 @@ type server struct {
 	controller controller.Controller
 }
 
+// ErrorWithHTTPStatus is an error that also defines the HTTP status code
+// that should be returned to the client making the request
+type ErrorWithHTTPStatus struct {
+	err        string
+	httpStatus int
+}
+
+// NewErrorWithHTTPStatus creates a new ErrorWithHTTPStatus with the given
+// error message and HTTP status code
+func NewErrorWithHTTPStatus(err string, httpStatus int) ErrorWithHTTPStatus {
+	return ErrorWithHTTPStatus{err, httpStatus}
+}
+
+func (e ErrorWithHTTPStatus) Error() string {
+	return e.err
+}
+
+// HTTPStatus returns the HTTP status code that should be returned to the client
+func (e ErrorWithHTTPStatus) HTTPStatus() int {
+	return e.httpStatus
+}
+
 // CreateHandler creates Broker HTTP handler based on an implementation
 // of a controller.Controller interface.
 func createHandler(c controller.Controller) http.Handler {
@@ -48,6 +70,7 @@ func createHandler(c controller.Controller) http.Handler {
 	router.HandleFunc("/v2/catalog", s.catalog).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{instance_id}/last_operation", s.getServiceInstanceLastOperation).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{instance_id}", s.createServiceInstance).Methods("PUT")
+	router.HandleFunc("/v2/service_instances/{instance_id}", s.updateServiceInstance).Methods("PATCH")
 	router.HandleFunc("/v2/service_instances/{instance_id}", s.removeServiceInstance).Methods("DELETE")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.bind).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{instance_id}/service_bindings/{binding_id}", s.unBind).Methods("DELETE")
@@ -113,7 +136,7 @@ func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.Catalog(); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -128,7 +151,7 @@ func (s *server) getServiceInstanceLastOperation(w http.ResponseWriter, r *http.
 	if result, err := s.controller.GetServiceInstanceLastOperation(instanceID, serviceID, planID, operation); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -139,7 +162,7 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	var req brokerapi.CreateServiceInstanceRequest
 	if err := util.BodyToObject(r, &req); err != nil {
 		klog.Errorf("error unmarshalling: %v", err)
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 		return
 	}
 
@@ -151,9 +174,42 @@ func (s *server) createServiceInstance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if result, err := s.controller.CreateServiceInstance(id, &req); err == nil {
-		util.WriteResponse(w, http.StatusCreated, result)
+		if result.Operation == "" {
+			util.WriteResponse(w, http.StatusCreated, result) // TODO: return StatusOK if instance already exists
+		} else {
+			util.WriteResponse(w, http.StatusAccepted, result)
+		}
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
+	}
+}
+
+func (s *server) updateServiceInstance(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["instance_id"]
+	klog.Infof("UpdateServiceInstance %s...\n", id)
+
+	var req brokerapi.UpdateServiceInstanceRequest
+	if err := util.BodyToObject(r, &req); err != nil {
+		klog.Errorf("error unmarshalling: %v", err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
+		return
+	}
+
+	// TODO: Check if parameters are required, if not, this thing below is ok to leave in,
+	// if they are ,they should be checked. Because if no parameters are passed in, this will
+	// fail because req.Parameters is nil.
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]interface{})
+	}
+
+	if result, err := s.controller.UpdateServiceInstance(id, &req); err == nil {
+		if result.Operation == "" {
+			util.WriteResponse(w, http.StatusOK, result)
+		} else {
+			util.WriteResponse(w, http.StatusAccepted, result)
+		}
+	} else {
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -166,10 +222,21 @@ func (s *server) removeServiceInstance(w http.ResponseWriter, r *http.Request) {
 	klog.Infof("RemoveServiceInstance %s...\n", instanceID)
 
 	if result, err := s.controller.RemoveServiceInstance(instanceID, serviceID, planID, acceptsIncomplete); err == nil {
-		util.WriteResponse(w, http.StatusOK, result)
+		if result.Operation == "" {
+			util.WriteResponse(w, http.StatusOK, result)
+		} else {
+			util.WriteResponse(w, http.StatusAccepted, result)
+		}
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
+}
+
+func getHTTPStatus(err error) int {
+	if err, ok := err.(ErrorWithHTTPStatus); ok {
+		return err.HTTPStatus()
+	}
+	return http.StatusBadRequest
 }
 
 func (s *server) bind(w http.ResponseWriter, r *http.Request) {
@@ -182,7 +249,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 
 	if err := util.BodyToObject(r, &req); err != nil {
 		klog.Errorf("Failed to unmarshall request: %v", err)
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 		return
 	}
 
@@ -199,7 +266,7 @@ func (s *server) bind(w http.ResponseWriter, r *http.Request) {
 	if result, err := s.controller.Bind(instanceID, bindingID, &req); err == nil {
 		util.WriteResponse(w, http.StatusOK, result)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
 
@@ -216,6 +283,6 @@ func (s *server) unBind(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, "{}") //id)
 	} else {
-		util.WriteErrorResponse(w, http.StatusBadRequest, err)
+		util.WriteErrorResponse(w, getHTTPStatus(err), err)
 	}
 }
