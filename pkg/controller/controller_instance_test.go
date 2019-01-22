@@ -3772,7 +3772,7 @@ func TestUpdateServiceInstanceCondition(t *testing.T) {
 
 			inputClone := tc.input.DeepCopy()
 
-			err := testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
+			_, err := testController.updateServiceInstanceCondition(tc.input, v1beta1.ServiceInstanceConditionReady, tc.status, tc.reason, tc.message)
 			if err != nil {
 				t.Fatalf("%v: error updating instance condition: %v", tc.name, err)
 			}
@@ -4542,8 +4542,8 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
 
-	if modified {
-		t.Fatalf("Should have returned false")
+	if !modified {
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:
@@ -4828,8 +4828,8 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 		t.Fatalf("Did not get the expected error message %q got %q", e, a)
 	}
 
-	if modified {
-		t.Fatalf("Should have returned false")
+	if !modified {
+		t.Fatalf("Should have returned true")
 	}
 
 	// We should get the following actions:

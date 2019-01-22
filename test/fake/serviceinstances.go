@@ -19,6 +19,7 @@ package fake
 import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	watch "k8s.io/apimachinery/pkg/watch"
 
 	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -37,13 +38,21 @@ func (c *ServiceInstances) Create(serviceInstance *v1beta1.ServiceInstance) (res
 }
 
 func (c *ServiceInstances) Update(serviceInstance *v1beta1.ServiceInstance) (result *v1beta1.ServiceInstance, err error) {
-	return c.ServiceInstanceInterface.Update(serviceInstance)
+	instanceCopy := serviceInstance.DeepCopy()
+	updatedInstance, err := c.ServiceInstanceInterface.Update(instanceCopy)
+	if updatedInstance != nil {
+		updatedInstance.ResourceVersion = rand.String(10)
+	}
+	return updatedInstance, err
 }
 
 func (c *ServiceInstances) UpdateStatus(serviceInstance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	instanceCopy := serviceInstance.DeepCopy()
-	_, err := c.ServiceInstanceInterface.UpdateStatus(instanceCopy)
-	return serviceInstance, err
+	updatedInstance, err := c.ServiceInstanceInterface.UpdateStatus(instanceCopy)
+	if updatedInstance != nil {
+		updatedInstance.ResourceVersion = rand.String(10)
+	}
+	return updatedInstance, err
 }
 
 func (c *ServiceInstances) Delete(name string, options *v1.DeleteOptions) error {
