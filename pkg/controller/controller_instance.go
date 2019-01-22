@@ -53,7 +53,7 @@ const (
 	successOrphanMitigationReason  string = "OrphanMitigationSuccessful"
 	successOrphanMitigationMessage string = "Orphan mitigation was completed successfully"
 
-	errorWithParameters                        string = "ErrorWithParameters"
+	errorWithParametersReason                  string = "ErrorWithParameters"
 	errorProvisionCallFailedReason             string = "ProvisionCallFailed"
 	errorErrorCallingProvisionReason           string = "ErrorCallingProvision"
 	errorUpdateInstanceCallFailedReason        string = "UpdateInstanceCallFailed"
@@ -61,30 +61,24 @@ const (
 	errorDeprovisionCallFailedReason           string = "DeprovisionCallFailed"
 	errorDeprovisionBlockedByCredentialsReason string = "DeprovisionBlockedByExistingCredentials"
 	errorPollingLastOperationReason            string = "ErrorPollingLastOperation"
-	errorWithOriginatingIdentity               string = "ErrorWithOriginatingIdentity"
-	errorWithOngoingAsyncOperation             string = "ErrorAsyncOperationInProgress"
-	errorWithOngoingAsyncOperationMessage      string = "Another operation for this service instance is in progress. "
+	errorWithOriginatingIdentityReason         string = "ErrorWithOriginatingIdentity"
+	errorWithOngoingAsyncOperationReason       string = "ErrorAsyncOperationInProgress"
 	errorNonexistentClusterServiceClassReason  string = "ReferencesNonexistentServiceClass"
 	errorNonexistentClusterServiceClassMessage string = "ReferencesNonexistentServiceClass"
 	errorNonexistentClusterServicePlanReason   string = "ReferencesNonexistentServicePlan"
 	errorNonexistentClusterServiceBrokerReason string = "ReferencesNonexistentBroker"
 	errorNonexistentServiceClassReason         string = "ReferencesNonexistentServiceClass"
-	errorNonexistentServiceClassMessage        string = "ReferencesNonexistentServiceClass"
 	errorNonexistentServicePlanReason          string = "ReferencesNonexistentServicePlan"
 	errorNonexistentServiceBrokerReason        string = "ReferencesNonexistentBroker"
 	errorDeletedClusterServiceClassReason      string = "ReferencesDeletedServiceClass"
-	errorDeletedClusterServiceClassMessage     string = "ReferencesDeletedServiceClass"
 	errorDeletedClusterServicePlanReason       string = "ReferencesDeletedServicePlan"
-	errorDeletedClusterServicePlanMessage      string = "ReferencesDeletedServicePlan"
 	errorDeletedServiceClassReason             string = "ReferencesDeletedServiceClass"
-	errorDeletedServiceClassMessage            string = "ReferencesDeletedServiceClass"
 	errorDeletedServicePlanReason              string = "ReferencesDeletedServicePlan"
-	errorDeletedServicePlanMessage             string = "ReferencesDeletedServicePlan"
 	errorFindingNamespaceServiceInstanceReason string = "ErrorFindingNamespaceForInstance"
 	errorOrphanMitigationFailedReason          string = "OrphanMitigationFailed"
 	errorInvalidDeprovisionStatusReason        string = "InvalidDeprovisionStatus"
-	errorInvalidDeprovisionStatusMessage       string = "The deprovision status is invalid"
-	errorAmbiguousPlanReferenceScope           string = "couldn't determine if the instance refers to a Cluster or Namespaced ServiceClass/Plan"
+
+	errorAmbiguousPlanReferenceScope string = "couldn't determine if the instance refers to a Cluster or Namespaced ServiceClass/Plan"
 
 	asyncProvisioningReason                 string = "Provisioning"
 	asyncProvisioningMessage                string = "The instance is being provisioned asynchronously"
@@ -1590,7 +1584,7 @@ func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.Servic
 	if err != nil {
 		s := fmt.Sprintf("error updating service instance to apply default parameters: %s", err)
 		klog.Warning(pcb.Message(s))
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorWithParameters, s)
+		c.recorder.Event(instance, corev1.EventTypeWarning, errorWithParametersReason, s)
 		return false, fmt.Errorf(s)
 	}
 
@@ -2157,7 +2151,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, pla
 		originatingIdentity, err := buildOriginatingIdentity(instance.Spec.UserInfo)
 		if err != nil {
 			return nil, &operationError{
-				reason:  errorWithOriginatingIdentity,
+				reason:  errorWithOriginatingIdentityReason,
 				message: fmt.Sprintf("Error building originating identity headers: %v", err),
 			}
 		}
@@ -2188,7 +2182,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, pla
 		)
 		if err != nil {
 			return nil, &operationError{
-				reason:  errorWithParameters,
+				reason:  errorWithParametersReason,
 				message: err.Error(),
 			}
 		}

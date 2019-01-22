@@ -414,7 +414,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 			`trying to unbind to %s "%s/%s" that has ongoing asynchronous operation`,
 			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
 		)
-		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorWithOngoingAsyncOperation, msg)
+		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorWithOngoingAsyncOperationReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
 
@@ -1205,7 +1205,7 @@ func (c *controller) prepareBindRequest(
 	)
 	if err != nil {
 		return nil, nil, &operationError{
-			reason:  errorWithParameters,
+			reason:  errorWithParametersReason,
 			message: err.Error(),
 		}
 	}
@@ -1251,7 +1251,7 @@ func (c *controller) prepareBindRequest(
 		originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
 		if err != nil {
 			return nil, nil, &operationError{
-				reason:  errorWithOriginatingIdentity,
+				reason:  errorWithOriginatingIdentityReason,
 				message: fmt.Sprintf(`Error building originating identity headers for binding: %v`, err),
 			}
 		}
@@ -1316,7 +1316,7 @@ func (c *controller) prepareUnbindRequest(
 		originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
 		if err != nil {
 			return nil, &operationError{
-				reason:  errorWithOriginatingIdentity,
+				reason:  errorWithOriginatingIdentityReason,
 				message: fmt.Sprintf(`Error building originating identity headers for binding: %v`, err),
 			}
 		}
@@ -1380,7 +1380,7 @@ func (c *controller) prepareServiceBindingLastOperationRequest(
 		originatingIdentity, err := buildOriginatingIdentity(binding.Spec.UserInfo)
 		if err != nil {
 			return nil, &operationError{
-				reason:  errorWithOriginatingIdentity,
+				reason:  errorWithOriginatingIdentityReason,
 				message: fmt.Sprintf(`Error building originating identity headers for polling binding last operation: %v`, err),
 			}
 		}
