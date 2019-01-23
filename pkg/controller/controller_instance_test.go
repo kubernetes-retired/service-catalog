@@ -5203,64 +5203,101 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 
 // TestReconcileServiceInstanceWithUpdateFailure tests that when the provision
 // call to the broker fails with an HTTP error, the ready condition becomes
-// false, and the failure condition is set.
+// false, and the failure condition is either set or not set (depending on
+// whether the failure is retriable or not).
 func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
-	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
-		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
-			Error: osb.HTTPStatusCodeError{
+	cases := []struct {
+		name                  string
+		brokerHTTPError       osb.HTTPStatusCodeError
+		errorExpected         bool
+		expectedFailureReason string
+		expectedEventMessage  string
+	}{
+		{
+			name: "retriable failure",
+			brokerHTTPError: osb.HTTPStatusCodeError{
 				StatusCode:   http.StatusConflict,
 				ErrorMessage: strPtr("OutOfQuota"),
 				Description:  strPtr("You're out of quota!"),
 			},
+			errorExpected:         true,
+			expectedFailureReason: "",
+			expectedEventMessage: "ServiceBroker returned a failure for update call; update will be retried: " +
+				"Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>",
 		},
-	})
-
-	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
-	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
-	sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
-
-	instance := getTestServiceInstanceUpdatingPlan()
-
-	if err := reconcileServiceInstance(t, testController, instance); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
-	fakeCatalogClient.ClearActions()
-	fakeKubeClient.ClearActions()
-
-	if err := reconcileServiceInstance(t, testController, instance); err == nil {
-		t.Fatal("expected error to be returned")
+		{
+			name: "terminal failure",
+			brokerHTTPError: osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusBadRequest,
+				ErrorMessage: strPtr("BadRequest"),
+				Description:  strPtr("Something's wrong with the request"),
+			},
+			errorExpected:         false,
+			expectedFailureReason: errorUpdateInstanceCallFailedReason,
+			expectedEventMessage: "ServiceBroker returned a failure for update call; update will not be retried: " +
+				"Status: 400; ErrorMessage: BadRequest; Description: Something's wrong with the request; ResponseError: <nil>",
+		},
 	}
 
-	brokerActions := fakeClusterServiceBrokerClient.Actions()
-	assertNumberOfBrokerActions(t, brokerActions, 1)
-	expectedPlanID := testClusterServicePlanGUID
-	assertUpdateInstance(t, brokerActions[0], &osb.UpdateInstanceRequest{
-		AcceptsIncomplete: true,
-		InstanceID:        testServiceInstanceGUID,
-		ServiceID:         testClusterServiceClassGUID,
-		PlanID:            &expectedPlanID,
-		Context:           testContext})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
+				UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{
+					Error: tc.brokerHTTPError,
+				},
+			})
 
-	// verify one kube action occurred
-	kubeActions := fakeKubeClient.Actions()
-	if err := checkKubeClientActions(kubeActions, []kubeClientAction{
-		{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
-	}); err != nil {
-		t.Fatal(err)
-	}
+			sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
+			sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())
+			sharedInformers.ClusterServicePlans().Informer().GetStore().Add(getTestClusterServicePlan())
 
-	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+			instance := getTestServiceInstanceUpdatingPlan()
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
-	assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, "", instance)
+			if err := reconcileServiceInstance(t, testController, instance); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			instance = assertServiceInstanceUpdateInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+			fakeCatalogClient.ClearActions()
+			fakeKubeClient.ClearActions()
 
-	events := getRecordedEvents(testController)
+			err := reconcileServiceInstance(t, testController, instance)
+			if tc.errorExpected && err == nil {
+				t.Fatal("expected error to be returned")
+			} else if !tc.errorExpected && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 
-	expectedEvent := warningEventBuilder(errorUpdateInstanceCallFailedReason).msg("ServiceBroker returned a failure for update call; update will not be retried:").msg("Status: 409; ErrorMessage: OutOfQuota; Description: You're out of quota!; ResponseError: <nil>")
-	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
-		t.Fatal(err)
+			brokerActions := fakeClusterServiceBrokerClient.Actions()
+			assertNumberOfBrokerActions(t, brokerActions, 1)
+			expectedPlanID := testClusterServicePlanGUID
+			assertUpdateInstance(t, brokerActions[0], &osb.UpdateInstanceRequest{
+				AcceptsIncomplete: true,
+				InstanceID:        testServiceInstanceGUID,
+				ServiceID:         testClusterServiceClassGUID,
+				PlanID:            &expectedPlanID,
+				Context:           testContext})
+
+			// verify one kube action occurred
+			kubeActions := fakeKubeClient.Actions()
+			if err := checkKubeClientActions(kubeActions, []kubeClientAction{
+				{verb: "get", resourceName: "namespaces", checkType: checkGetActionType},
+			}); err != nil {
+				t.Fatal(err)
+			}
+
+			actions := fakeCatalogClient.Actions()
+			assertNumberOfActions(t, actions, 1)
+
+			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+			assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, tc.expectedFailureReason, instance)
+
+			events := getRecordedEvents(testController)
+
+			expectedEvent := warningEventBuilder(errorUpdateInstanceCallFailedReason).msg(tc.expectedEventMessage)
+			if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

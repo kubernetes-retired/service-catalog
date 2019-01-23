@@ -768,14 +768,15 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	response, err := brokerClient.UpdateInstance(request)
 	if err != nil {
 		if httpErr, ok := osb.IsHTTPError(err); ok {
-			msg := fmt.Sprintf("ServiceBroker returned a failure for update call; update will not be retried: %v", httpErr)
-			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
-
 			if isRetriableHTTPStatus(httpErr.StatusCode) {
+				msg := fmt.Sprintf("ServiceBroker returned a failure for update call; update will be retried: %v", httpErr)
+				readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
 				return c.processTemporaryUpdateServiceInstanceFailure(instance, readyCond)
 			}
 			// A failure with a given HTTP response code is treated as a terminal
 			// failure.
+			msg := fmt.Sprintf("ServiceBroker returned a failure for update call; update will not be retried: %v", httpErr)
+			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, errorUpdateInstanceCallFailedReason, msg)
 			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorUpdateInstanceCallFailedReason, msg)
 			return c.processTerminalUpdateServiceInstanceFailure(instance, readyCond, failedCond)
 		}
