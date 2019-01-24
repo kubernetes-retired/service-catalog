@@ -23,6 +23,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/storage"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 // EtcdConfig contains a generic API server Config along with config specific to
@@ -85,7 +87,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 	if err != nil {
 		return nil, err
 	}
-	glog.V(4).Infoln("Created skeleton API server")
+	glog.V(common.FourthLogLevel).Infoln("Created skeleton API server")
 
 	roFactory := etcdRESTOptionsFactory{
 		deleteCollectionWorkers: c.extraConfig.deleteCollectionWorkers,
@@ -96,7 +98,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 		storageDecorator:        generic.UndecoratedStorage,
 	}
 
-	glog.V(4).Infoln("Installing API groups")
+	glog.V(common.FourthLogLevel).Infoln("Installing API groups")
 	// default namespace doesn't matter for etcd
 	providers := restStorageProviders("" /* default namespace */, nil)
 	for _, provider := range providers {
@@ -109,7 +111,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 			return nil, err
 		}
 
-		glog.V(4).Infof("Installing API group %v", provider.GroupName())
+		glog.V(common.FourthLogLevel).Infof("Installing API group %v", provider.GroupName())
 		if err := s.GenericAPIServer.InstallAPIGroup(groupInfo); err != nil {
 			glog.Fatalf("Error installing API group %v: %v", provider.GroupName(), err)
 		} else {

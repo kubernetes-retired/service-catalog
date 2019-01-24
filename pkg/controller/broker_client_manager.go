@@ -23,6 +23,8 @@ import (
 
 	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 // BrokerKey defines a key which points to a broker (cluster wide or namespaced)
@@ -85,7 +87,7 @@ func (m *BrokerClientManager) UpdateBrokerClient(brokerKey BrokerKey, clientConf
 	existing, found := m.clients[brokerKey]
 
 	if !found || configHasChanged(existing.clientConfig, clientConfig) {
-		glog.V(4).Infof("Updating OSB client for broker %q, URL: %s", brokerKey.String(), clientConfig.URL)
+		glog.V(common.FourthLogLevel).Infof("Updating OSB client for broker %q, URL: %s", brokerKey.String(), clientConfig.URL)
 		return m.createClient(brokerKey, clientConfig)
 	}
 
@@ -97,7 +99,7 @@ func (m *BrokerClientManager) RemoveBrokerClient(brokerKey BrokerKey) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	glog.V(4).Infof("Removing OSB client for broker %q", brokerKey.String())
+	glog.V(common.FourthLogLevel).Infof("Removing OSB client for broker %q", brokerKey.String())
 	delete(m.clients, brokerKey)
 }
 

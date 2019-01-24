@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -76,7 +77,7 @@ func (c *controller) serviceBrokerDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for ServiceBroker %v; no further processing will occur", broker.Name)
+	glog.V(common.FourthLogLevel).Infof("Received delete event for ServiceBroker %v; no further processing will occur", broker.Name)
 }
 
 // shouldReconcileServiceBroker determines whether a broker should be reconciled; it
@@ -149,7 +150,7 @@ func (c *controller) updateServiceBrokerClient(broker *v1beta1.ServiceBroker) (o
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error {
 	pcb := pretty.NewServiceBrokerContextBuilder(broker)
-	glog.V(4).Infof(pcb.Message("Processing"))
+	glog.V(common.FourthLogLevel).Infof(pcb.Message("Processing"))
 
 	brokerClient, err := c.updateServiceBrokerClient(broker)
 	if err != nil {
@@ -165,7 +166,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 	}
 
 	if broker.DeletionTimestamp == nil { // Add or update
-		glog.V(4).Info(pcb.Message("Processing adding/update event"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Processing adding/update event"))
 
 		// get the broker's catalog
 		now := metav1.Now()
@@ -200,7 +201,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			return err
 		}
 
-		glog.V(5).Info(pcb.Messagef("Successfully fetched %v catalog entries", len(brokerCatalog.Services)))
+		glog.V(common.FifthLogLevel).Info(pcb.Messagef("Successfully fetched %v catalog entries", len(brokerCatalog.Services)))
 
 		// set the operation start time if not already set
 		if broker.Status.OperationStartTime != nil {
@@ -213,7 +214,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		}
 
 		// convert the broker's catalog payload into our API objects
-		glog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Converting catalog response into service-catalog API"))
 
 		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalogToNamespacedTypes(broker.Namespace, brokerCatalog, broker.Spec.CatalogRestrictions)
 		if err != nil {
@@ -226,7 +227,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			return err
 		}
 
-		glog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
+		glog.V(common.FifthLogLevel).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
 
 		// get the existing services and plans for this broker so that we can
 		// detect when services and plans are removed from the broker's
@@ -245,7 +246,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			existingServiceClass, _ := existingServiceClassMap[payloadServiceClass.Name]
 			delete(existingServiceClassMap, payloadServiceClass.Name)
 
-			glog.V(4).Info(pcb.Messagef("Reconciling %s", pretty.ServiceClassName(payloadServiceClass)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("Reconciling %s", pretty.ServiceClassName(payloadServiceClass)))
 			if err := c.reconcileServiceClassFromServiceBrokerCatalog(broker, payloadServiceClass, existingServiceClass); err != nil {
 				s := fmt.Sprintf(
 					"Error reconciling %s (broker %q): %s",
@@ -260,7 +261,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 				return err
 			}
 
-			glog.V(5).Info(pcb.Messagef("Reconciled %s", pretty.ServiceClassName(payloadServiceClass)))
+			glog.V(common.FifthLogLevel).Info(pcb.Messagef("Reconciled %s", pretty.ServiceClassName(payloadServiceClass)))
 		}
 
 		// handle the serviceClasses that were not in the broker's payload;
@@ -270,7 +271,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 				continue
 			}
 
-			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ServiceClassName(existingServiceClass)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ServiceClassName(existingServiceClass)))
 			existingServiceClass.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).UpdateStatus(existingServiceClass)
 			if err != nil {
@@ -293,7 +294,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
 			delete(existingServicePlanMap, payloadServicePlan.Name)
 
-			glog.V(4).Infof(
+			glog.V(common.FourthLogLevel).Infof(
 				"ServiceBroker %q: reconciling %s",
 				broker.Name, pretty.ServicePlanName(payloadServicePlan),
 			)
@@ -308,7 +309,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 					errorSyncingCatalogMessage+s)
 				return err
 			}
-			glog.V(5).Info(pcb.Messagef("Reconciled %s", pretty.ServicePlanName(payloadServicePlan)))
+			glog.V(common.FifthLogLevel).Info(pcb.Messagef("Reconciled %s", pretty.ServicePlanName(payloadServicePlan)))
 
 		}
 
@@ -318,7 +319,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			if existingServicePlan.Status.RemovedFromBrokerCatalog {
 				continue
 			}
-			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ServicePlanName(existingServicePlan)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ServicePlanName(existingServicePlan)))
 			existingServicePlan.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).UpdateStatus(existingServicePlan)
 			if err != nil {
@@ -356,17 +357,17 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
 	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
-		glog.V(4).Info(pcb.Message("Finalizing"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Finalizing"))
 
 		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForNamespacedBroker(broker)
 		if err != nil {
 			return err
 		}
 
-		glog.V(4).Info(pcb.Messagef("Found %d ServiceClasses and %d ServicePlans to delete", len(existingServiceClasses), len(existingServicePlans)))
+		glog.V(common.FourthLogLevel).Info(pcb.Messagef("Found %d ServiceClasses and %d ServicePlans to delete", len(existingServiceClasses), len(existingServicePlans)))
 
 		for _, plan := range existingServicePlans {
-			glog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ServicePlanName(&plan)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("Deleting %s", pretty.ServicePlanName(&plan)))
 			err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Delete(plan.Name, &metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ServicePlanName(&plan), err)
@@ -384,7 +385,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		}
 
 		for _, svcClass := range existingServiceClasses {
-			glog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ServiceClassName(&svcClass)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("Deleting %s", pretty.ServiceClassName(&svcClass)))
 			err = c.serviceCatalogClient.ServiceClasses(broker.Namespace).Delete(svcClass.Name, &metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ServiceClassName(&svcClass), err)
@@ -417,7 +418,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		c.updateServiceBrokerFinalizers(broker, finalizers.List())
 
 		c.recorder.Eventf(broker, corev1.EventTypeNormal, successServiceBrokerDeletedReason, successServiceBrokerDeletedMessage, broker.Name)
-		glog.V(5).Info(pcb.Message("Successfully deleted"))
+		glog.V(common.FifthLogLevel).Info(pcb.Message("Successfully deleted"))
 
 		// delete the metrics associated with this broker
 		metrics.BrokerServiceClassCount.DeleteLabelValues(broker.Name)
@@ -458,7 +459,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 			}
 		}
 
-		glog.V(5).Info(pcb.Messagef("Fresh %s; creating", pretty.ServiceClassName(serviceClass)))
+		glog.V(common.FifthLogLevel).Info(pcb.Messagef("Fresh %s; creating", pretty.ServiceClassName(serviceClass)))
 		if _, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).Create(serviceClass); err != nil {
 			glog.Error(pcb.Messagef("Error creating %s: %v", pretty.ServiceClassName(serviceClass), err))
 			return err
@@ -476,7 +477,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Info(pcb.Messagef("Found existing %s; updating", pretty.ServiceClassName(serviceClass)))
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef("Found existing %s; updating", pretty.ServiceClassName(serviceClass)))
 
 	// There was an existing service class -- project the update onto it and
 	// update it.
@@ -497,7 +498,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 	}
 
 	if updatedServiceClass.Status.RemovedFromBrokerCatalog {
-		glog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ServiceClassName(serviceClass)))
+		glog.V(common.FourthLogLevel).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ServiceClassName(serviceClass)))
 		updatedServiceClass.Status.RemovedFromBrokerCatalog = false
 		_, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).UpdateStatus(updatedServiceClass)
 		if err != nil {
@@ -561,7 +562,7 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Info(pcb.Messagef("Found existing %s; updating", pretty.ServicePlanName(servicePlan)))
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef("Found existing %s; updating", pretty.ServicePlanName(servicePlan)))
 
 	// There was an existing service plan -- project the update onto it and
 	// update it.
@@ -583,7 +584,7 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 
 	if updatedPlan.Status.RemovedFromBrokerCatalog {
 		updatedPlan.Status.RemovedFromBrokerCatalog = false
-		glog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ServicePlanName(updatedPlan)))
+		glog.V(common.FourthLogLevel).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ServicePlanName(updatedPlan)))
 
 		_, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).UpdateStatus(updatedPlan)
 		if err != nil {
@@ -651,12 +652,12 @@ func (c *controller) updateServiceBrokerCondition(broker *v1beta1.ServiceBroker,
 	pcb := pretty.NewServiceBrokerContextBuilder(toUpdate)
 	updateCommonStatusCondition(pcb, toUpdate.ObjectMeta, &toUpdate.Status.CommonServiceBrokerStatus, conditionType, status, reason, message)
 
-	glog.V(4).Info(pcb.Messagef("Updating ready condition to %v", status))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Updating ready condition to %v", status))
 	_, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Error(pcb.Messagef("Error updating ready condition: %v", err))
 	} else {
-		glog.V(5).Info(pcb.Messagef("Updated ready condition to %v", status))
+		glog.V(common.FifthLogLevel).Info(pcb.Messagef("Updated ready condition to %v", status))
 	}
 
 	return err
@@ -681,7 +682,7 @@ func (c *controller) updateServiceBrokerFinalizers(
 
 	logContext := fmt.Sprint(pcb.Messagef("Updating finalizers to %v", finalizers))
 
-	glog.V(4).Info(pcb.Messagef("Updating %v", logContext))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Updating %v", logContext))
 	_, err = c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Error(pcb.Messagef("Error updating %v: %v", logContext, err))

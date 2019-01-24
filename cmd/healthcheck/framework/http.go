@@ -24,6 +24,8 @@ import (
 
 	"github.com/golang/glog"
 	"k8s.io/apiserver/pkg/server/healthz"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 // ServeHTTP starts a new Http Server thread for /metrics and health probing
@@ -34,7 +36,7 @@ func ServeHTTP(healthcheckOptions *HealthCheckServer) error {
 		return fmt.Errorf("failed to establish SecureServingOptions %v", err)
 	}
 
-	glog.V(3).Infof("Starting http server and mux on port %v", healthcheckOptions.SecureServingOptions.BindPort)
+	glog.V(common.ThirdLogLevel).Infof("Starting http server and mux on port %v", healthcheckOptions.SecureServingOptions.BindPort)
 
 	go func() {
 		mux := http.NewServeMux()

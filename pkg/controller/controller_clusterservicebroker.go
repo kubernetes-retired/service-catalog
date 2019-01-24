@@ -31,6 +31,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -87,7 +88,7 @@ func (c *controller) clusterServiceBrokerDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("Received delete event for ClusterServiceBroker %v; no further processing will occur", broker.Name)
+	glog.V(common.FourthLogLevel).Infof("Received delete event for ClusterServiceBroker %v; no further processing will occur", broker.Name)
 }
 
 // shouldReconcileClusterServiceBroker determines whether a broker should be reconciled; it
@@ -109,7 +110,7 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 	broker, err := c.clusterServiceBrokerLister.Get(key)
 	pcb := pretty.NewContextBuilder(pretty.ClusterServiceBroker, "", key, "")
 
-	glog.V(4).Info(pcb.Message("Processing service broker"))
+	glog.V(common.FourthLogLevel).Info(pcb.Message("Processing service broker"))
 
 	if errors.IsNotFound(err) {
 		glog.Info(pcb.Message("Not doing work because it has been deleted"))
@@ -126,7 +127,7 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 
 func (c *controller) updateClusterServiceBrokerClient(broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
-	glog.V(4).Info(pcb.Message("Updating broker client"))
+	glog.V(common.FourthLogLevel).Info(pcb.Message("Updating broker client"))
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials: %s", err)
@@ -156,7 +157,7 @@ func (c *controller) updateClusterServiceBrokerClient(broker *v1beta1.ClusterSer
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServiceBroker) error {
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
-	glog.V(4).Infof(pcb.Message("Processing"))
+	glog.V(common.FourthLogLevel).Infof(pcb.Message("Processing"))
 
 	brokerClient, err := c.updateClusterServiceBrokerClient(broker)
 	if err != nil {
@@ -172,7 +173,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	}
 
 	if broker.DeletionTimestamp == nil { // Add or update
-		glog.V(4).Info(pcb.Message("Processing adding/update event"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Processing adding/update event"))
 
 		// get the broker's catalog
 		now := metav1.Now()
@@ -207,7 +208,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			return err
 		}
 
-		glog.V(5).Info(pcb.Messagef("Successfully fetched %v catalog entries", len(brokerCatalog.Services)))
+		glog.V(common.FifthLogLevel).Info(pcb.Messagef("Successfully fetched %v catalog entries", len(brokerCatalog.Services)))
 
 		// set the operation start time if not already set
 		if broker.Status.OperationStartTime != nil {
@@ -220,7 +221,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		}
 
 		// convert the broker's catalog payload into our API objects
-		glog.V(4).Info(pcb.Message("Converting catalog response into service-catalog API"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Converting catalog response into service-catalog API"))
 
 		payloadServiceClasses, payloadServicePlans, err := convertAndFilterCatalog(brokerCatalog, broker.Spec.CatalogRestrictions)
 		if err != nil {
@@ -233,7 +234,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			return err
 		}
 
-		glog.V(5).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
+		glog.V(common.FifthLogLevel).Info(pcb.Message("Successfully converted catalog payload from to service-catalog API"))
 
 		// get the existing services and plans for this broker so that we can
 		// detect when services and plans are removed from the broker's
@@ -252,7 +253,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			existingServiceClass, _ := existingServiceClassMap[payloadServiceClass.Name]
 			delete(existingServiceClassMap, payloadServiceClass.Name)
 
-			glog.V(4).Info(pcb.Messagef("Reconciling %s", pretty.ClusterServiceClassName(payloadServiceClass)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("Reconciling %s", pretty.ClusterServiceClassName(payloadServiceClass)))
 			if err := c.reconcileClusterServiceClassFromClusterServiceBrokerCatalog(broker, payloadServiceClass, existingServiceClass); err != nil {
 				s := fmt.Sprintf(
 					"Error reconciling %s (broker %q): %s",
@@ -267,7 +268,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				return err
 			}
 
-			glog.V(5).Info(pcb.Messagef("Reconciled %s", pretty.ClusterServiceClassName(payloadServiceClass)))
+			glog.V(common.FifthLogLevel).Info(pcb.Messagef("Reconciled %s", pretty.ClusterServiceClassName(payloadServiceClass)))
 		}
 
 		// handle the serviceClasses that were not in the broker's payload;
@@ -282,7 +283,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				continue
 			}
 
-			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServiceClassName(existingServiceClass)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServiceClassName(existingServiceClass)))
 			existingServiceClass.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(existingServiceClass)
 			if err != nil {
@@ -305,7 +306,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			existingServicePlan, _ := existingServicePlanMap[payloadServicePlan.Name]
 			delete(existingServicePlanMap, payloadServicePlan.Name)
 
-			glog.V(4).Infof(
+			glog.V(common.FourthLogLevel).Infof(
 				"ClusterServiceBroker %q: reconciling %s",
 				broker.Name, pretty.ClusterServicePlanName(payloadServicePlan),
 			)
@@ -320,7 +321,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 					errorSyncingCatalogMessage+s)
 				return err
 			}
-			glog.V(5).Info(pcb.Messagef("Reconciled %s", pretty.ClusterServicePlanName(payloadServicePlan)))
+			glog.V(common.FifthLogLevel).Info(pcb.Messagef("Reconciled %s", pretty.ClusterServicePlanName(payloadServicePlan)))
 
 		}
 
@@ -336,7 +337,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				continue
 			}
 
-			glog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServicePlanName(existingServicePlan)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServicePlanName(existingServicePlan)))
 			existingServicePlan.Status.RemovedFromBrokerCatalog = true
 			_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(existingServicePlan)
 			if err != nil {
@@ -374,17 +375,17 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	// and returned early. If we reach this point, we're dealing with an update
 	// that's actually a soft delete-- i.e. we have some finalization to do.
 	if finalizers := sets.NewString(broker.Finalizers...); finalizers.Has(v1beta1.FinalizerServiceCatalog) {
-		glog.V(4).Info(pcb.Message("Finalizing"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Finalizing"))
 
 		existingServiceClasses, existingServicePlans, err := c.getCurrentServiceClassesAndPlansForBroker(broker)
 		if err != nil {
 			return err
 		}
 
-		glog.V(4).Info(pcb.Messagef("Found %d ClusterServiceClasses and %d ClusterServicePlans to delete", len(existingServiceClasses), len(existingServicePlans)))
+		glog.V(common.FourthLogLevel).Info(pcb.Messagef("Found %d ClusterServiceClasses and %d ClusterServicePlans to delete", len(existingServiceClasses), len(existingServicePlans)))
 
 		for _, plan := range existingServicePlans {
-			glog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ClusterServicePlanName(&plan)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("Deleting %s", pretty.ClusterServicePlanName(&plan)))
 			err := c.serviceCatalogClient.ClusterServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ClusterServicePlanName(&plan), err)
@@ -402,7 +403,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		}
 
 		for _, svcClass := range existingServiceClasses {
-			glog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ClusterServiceClassName(&svcClass)))
+			glog.V(common.FourthLogLevel).Info(pcb.Messagef("Deleting %s", pretty.ClusterServiceClassName(&svcClass)))
 			err = c.serviceCatalogClient.ClusterServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ClusterServiceClassName(&svcClass), err)
@@ -435,7 +436,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		c.updateClusterServiceBrokerFinalizers(broker, finalizers.List())
 
 		c.recorder.Eventf(broker, corev1.EventTypeNormal, successClusterServiceBrokerDeletedReason, successClusterServiceBrokerDeletedMessage, broker.Name)
-		glog.V(5).Info(pcb.Message("Successfully deleted"))
+		glog.V(common.FifthLogLevel).Info(pcb.Message("Successfully deleted"))
 
 		// delete the metrics associated with this broker
 		metrics.BrokerServiceClassCount.DeleteLabelValues(broker.Name)
@@ -478,7 +479,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 
 		markAsServiceCatalogManagedResource(serviceClass, broker)
 
-		glog.V(5).Info(pcb.Messagef("Fresh %s; creating", pretty.ClusterServiceClassName(serviceClass)))
+		glog.V(common.FifthLogLevel).Info(pcb.Messagef("Fresh %s; creating", pretty.ClusterServiceClassName(serviceClass)))
 		if _, err := c.serviceCatalogClient.ClusterServiceClasses().Create(serviceClass); err != nil {
 			glog.Error(pcb.Messagef("Error creating %s: %v", pretty.ClusterServiceClassName(serviceClass), err))
 			return err
@@ -496,7 +497,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Info(pcb.Messagef("Found existing %s; updating", pretty.ClusterServiceClassName(serviceClass)))
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef("Found existing %s; updating", pretty.ClusterServiceClassName(serviceClass)))
 
 	// There was an existing service class -- project the update onto it and
 	// update it.
@@ -519,7 +520,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	}
 
 	if updatedServiceClass.Status.RemovedFromBrokerCatalog {
-		glog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ClusterServiceClassName(serviceClass)))
+		glog.V(common.FourthLogLevel).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ClusterServiceClassName(serviceClass)))
 		updatedServiceClass.Status.RemovedFromBrokerCatalog = false
 		_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(updatedServiceClass)
 		if err != nil {
@@ -585,7 +586,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 		return fmt.Errorf(errMsg)
 	}
 
-	glog.V(5).Info(pcb.Messagef("Found existing %s; updating", pretty.ClusterServicePlanName(servicePlan)))
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef("Found existing %s; updating", pretty.ClusterServicePlanName(servicePlan)))
 
 	// There was an existing service plan -- project the update onto it and
 	// update it.
@@ -609,7 +610,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 
 	if updatedPlan.Status.RemovedFromBrokerCatalog {
 		updatedPlan.Status.RemovedFromBrokerCatalog = false
-		glog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ClusterServicePlanName(updatedPlan)))
+		glog.V(common.FourthLogLevel).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ClusterServicePlanName(updatedPlan)))
 
 		_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(updatedPlan)
 		if err != nil {
@@ -671,12 +672,12 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1beta1.Cluster
 		toUpdate.Status.LastCatalogRetrievalTime = &now
 	}
 
-	glog.V(4).Info(pcb.Messagef("Updating ready condition to %v", status))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Updating ready condition to %v", status))
 	_, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Error(pcb.Messagef("Error updating ready condition: %v", err))
 	} else {
-		glog.V(5).Info(pcb.Messagef("Updated ready condition to %v", status))
+		glog.V(common.FifthLogLevel).Info(pcb.Messagef("Updated ready condition to %v", status))
 	}
 
 	return err
@@ -701,7 +702,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 
 	logContext := fmt.Sprint(pcb.Messagef("Updating finalizers to %v", finalizers))
 
-	glog.V(4).Info(pcb.Messagef("Updating %v", logContext))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Updating %v", logContext))
 	_, err = c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Error(pcb.Messagef("Error updating %v: %v", logContext, err))

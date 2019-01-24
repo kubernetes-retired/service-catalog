@@ -29,6 +29,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 	"github.com/kubernetes-incubator/service-catalog/pkg/util"
 
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
@@ -167,7 +168,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 	case http.StatusOK:
 		return &createServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusAccepted:
-		glog.V(3).Infof("Asynchronous response received.")
+		glog.V(common.ThirdLogLevel).Infof("Asynchronous response received.")
 		return &createServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusConflict:
 		return nil, resp.StatusCode, errConflict
@@ -213,7 +214,7 @@ func (c *openServiceBrokerClient) DeleteServiceInstance(ID string, req *brokerap
 	case http.StatusOK:
 		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusAccepted:
-		glog.V(3).Infof("Asynchronous response received.")
+		glog.V(common.ThirdLogLevel).Infof("Asynchronous response received.")
 		return &deleteServiceInstanceResponse, resp.StatusCode, nil
 	case http.StatusGone:
 		return &deleteServiceInstanceResponse, resp.StatusCode, nil

@@ -28,6 +28,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver/options"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 // RunServer runs an API server with configuration according to opts
@@ -48,13 +49,13 @@ func RunServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error 
 
 func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error {
 	etcdOpts := opts.EtcdOptions
-	glog.V(4).Infoln("Preparing to run API server")
+	glog.V(common.FourthLogLevel).Infoln("Preparing to run API server")
 	genericConfig, scConfig, err := buildGenericConfig(opts)
 	if err != nil {
 		return err
 	}
 
-	glog.V(4).Infoln("Creating storage factory")
+	glog.V(common.FourthLogLevel).Infoln("Creating storage factory")
 
 	// The API server stores objects using a particular API version for each
 	// group, regardless of API version of the object when it was created.
@@ -92,7 +93,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 	completed := config.Complete()
 
 	// make the server
-	glog.V(4).Infoln("Completing API server configuration")
+	glog.V(common.FourthLogLevel).Infoln("Completing API server configuration")
 	server, err := completed.NewServer(stopCh)
 	if err != nil {
 		return fmt.Errorf("error completing API server configuration: %v", err)

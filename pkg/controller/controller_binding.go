@@ -26,6 +26,7 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	corev1 "k8s.io/api/core/v1"
@@ -83,7 +84,7 @@ func (c *controller) bindingAdd(obj interface{}) {
 		return
 	}
 
-	glog.V(6).Info(pcb.Messagef(
+	glog.V(common.SixthLogLevel).Info(pcb.Messagef(
 		"received ADD/UPDATE event for: resourceVersion: %v",
 		acc.GetResourceVersion()),
 	)
@@ -108,7 +109,7 @@ func (c *controller) bindingDelete(obj interface{}) {
 	}
 
 	pcb := pretty.NewBindingContextBuilder(binding)
-	glog.V(4).Info(pcb.Messagef("Received DELETE event; no further processing will occur; resourceVersion %v", binding.ResourceVersion))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Received DELETE event; no further processing will occur; resourceVersion %v", binding.ResourceVersion))
 }
 
 func (c *controller) reconcileServiceBindingKey(key string) error {
@@ -157,7 +158,7 @@ func getReconciliationActionForServiceBinding(binding *v1beta1.ServiceBinding) R
 // processed and should be resubmitted at a later time.
 func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewBindingContextBuilder(binding)
-	glog.V(6).Info(pcb.Messagef(`beginning to process resourceVersion: %v`, binding.ResourceVersion))
+	glog.V(common.SixthLogLevel).Info(pcb.Messagef(`beginning to process resourceVersion: %v`, binding.ResourceVersion))
 
 	reconciliationAction := getReconciliationActionForServiceBinding(binding)
 	switch reconciliationAction {
@@ -178,16 +179,16 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 	pcb := pretty.NewBindingContextBuilder(binding)
 
 	if isServiceBindingFailed(binding) {
-		glog.V(4).Info(pcb.Message("not processing event; status showed that it has failed"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("not processing event; status showed that it has failed"))
 		return nil
 	}
 
 	if binding.Status.ReconciledGeneration == binding.Generation {
-		glog.V(4).Info(pcb.Message("Not processing event; reconciled generation showed there is no work to do"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Not processing event; reconciled generation showed there is no work to do"))
 		return nil
 	}
 
-	glog.V(4).Info(pcb.Message("Processing"))
+	glog.V(common.FourthLogLevel).Info(pcb.Message("Processing"))
 
 	binding = binding.DeepCopy()
 
@@ -231,7 +232,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			return c.processServiceBindingOperationError(binding, readyCond)
 		}
 
-		glog.V(4).Info(pcb.Message("Adding/Updating"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Adding/Updating"))
 
 		request, inProgressProperties, err = c.prepareBindRequest(binding, instance)
 		if err != nil {
@@ -268,7 +269,7 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 			return c.processServiceBindingOperationError(binding, readyCond)
 		}
 
-		glog.V(4).Info(pcb.Message("Adding/Updating"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Adding/Updating"))
 
 		request, inProgressProperties, err = c.prepareBindRequest(binding, instance)
 		if err != nil {
@@ -360,11 +361,11 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 
 	// If unbind has failed, do not do anything more
 	if binding.Status.UnbindStatus == v1beta1.ServiceBindingUnbindStatusFailed {
-		glog.V(4).Info(pcb.Message("Not processing delete event because unbinding has failed"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Not processing delete event because unbinding has failed"))
 		return nil
 	}
 
-	glog.V(4).Info(pcb.Message("Processing Delete"))
+	glog.V(common.FourthLogLevel).Info(pcb.Message("Processing Delete"))
 
 	binding = binding.DeepCopy()
 
@@ -516,7 +517,7 @@ func isServicePlanBindable(serviceClass *v1beta1.ServiceClass, plan *v1beta1.Ser
 
 func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, credentials map[string]interface{}) error {
 	pcb := pretty.NewBindingContextBuilder(binding)
-	glog.V(5).Info(pcb.Messagef(`Creating/updating Secret "%s/%s" with %d keys`,
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef(`Creating/updating Secret "%s/%s" with %d keys`,
 		binding.Namespace, binding.Spec.SecretName, len(credentials),
 	))
 
@@ -640,7 +641,7 @@ func evaluateJSONPath(jsonPath string, credentials map[string]interface{}) (stri
 func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error {
 	var err error
 	pcb := pretty.NewBindingContextBuilder(binding)
-	glog.V(5).Info(pcb.Messagef(`Deleting Secret "%s/%s"`,
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef(`Deleting Secret "%s/%s"`,
 		binding.Namespace, binding.Spec.SecretName,
 	))
 	err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
@@ -678,7 +679,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 	t metav1.Time) {
 	pcb := pretty.NewBindingContextBuilder(toUpdate)
 	glog.Info(pcb.Message(message))
-	glog.V(5).Info(pcb.Messagef(
+	glog.V(common.FifthLogLevel).Info(pcb.Messagef(
 		"Setting condition %q to %v",
 		conditionType, status,
 	))
@@ -702,7 +703,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 	for i, cond := range toUpdate.Status.Conditions {
 		if cond.Type == conditionType {
 			if cond.Status != newCondition.Status {
-				glog.V(3).Info(pcb.Messagef(
+				glog.V(common.ThirdLogLevel).Info(pcb.Messagef(
 					"Found status change for condition %q: %q -> %q; setting lastTransitionTime to %v",
 					conditionType, cond.Status, status, t,
 				))
@@ -716,7 +717,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 		}
 	}
 
-	glog.V(3).Info(
+	glog.V(common.ThirdLogLevel).Info(
 		pcb.Messagef("Setting lastTransitionTime for condition %q to %v",
 			conditionType, t,
 		))
@@ -727,12 +728,12 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 
 func (c *controller) updateServiceBindingStatus(toUpdate *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
 	pcb := pretty.NewBindingContextBuilder(toUpdate)
-	glog.V(4).Info(pcb.Message("Updating status"))
+	glog.V(common.FourthLogLevel).Info(pcb.Message("Updating status"))
 	updatedBinding, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
 		glog.Errorf(pcb.Messagef("Error updating status: %v", err))
 	} else {
-		glog.V(6).Info(pcb.Messagef(`Updated status of resourceVersion: %v; got resourceVersion: %v`,
+		glog.V(common.SixthLogLevel).Info(pcb.Messagef(`Updated status of resourceVersion: %v; got resourceVersion: %v`,
 			toUpdate.ResourceVersion, updatedBinding.ResourceVersion),
 		)
 	}
@@ -753,7 +754,7 @@ func (c *controller) updateServiceBindingCondition(
 
 	setServiceBindingCondition(toUpdate, conditionType, status, reason, message)
 
-	glog.V(4).Info(pcb.Messagef(
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef(
 		"Updating %v condition to %v (Reason: %q, Message: %q)",
 		conditionType, status, reason, message,
 	))
@@ -829,7 +830,7 @@ func clearServiceBindingCurrentOperation(toUpdate *v1beta1.ServiceBinding) {
 // operation, see PR 1708/Issue 1587.
 func rollbackBindingReconciledGenerationOnDeletion(binding *v1beta1.ServiceBinding, currentReconciledGeneration int64) {
 	if binding.DeletionTimestamp != nil {
-		glog.V(4).Infof("Not updating ReconciledGeneration after async operation because there is a deletion pending.")
+		glog.V(common.FourthLogLevel).Infof("Not updating ReconciledGeneration after async operation because there is a deletion pending.")
 		binding.Status.ReconciledGeneration = currentReconciledGeneration
 	}
 }
@@ -876,7 +877,7 @@ func (c *controller) finishPollingServiceBinding(binding *v1beta1.ServiceBinding
 
 func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewBindingContextBuilder(binding)
-	glog.V(4).Infof(pcb.Message("Processing"))
+	glog.V(common.FourthLogLevel).Infof(pcb.Message("Processing"))
 
 	binding = binding.DeepCopy()
 
@@ -903,7 +904,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		return c.handleServiceBindingReconciliationError(binding, err)
 	}
 
-	glog.V(5).Info(pcb.Message("Polling last operation"))
+	glog.V(common.FifthLogLevel).Info(pcb.Message("Polling last operation"))
 
 	response, err := brokerClient.PollBindingLastOperation(request)
 	if err != nil {
@@ -922,7 +923,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 		// The binding's Ready condition should already be False, so we
 		// just need to record an event.
 		s := fmt.Sprintf("Error polling last operation: %v", err)
-		glog.V(4).Info(pcb.Message(s))
+		glog.V(common.FourthLogLevel).Info(pcb.Message(s))
 		c.recorder.Event(binding, corev1.EventTypeWarning, errorPollingLastOperationReason, s)
 
 		if c.reconciliationRetryDurationExceeded(binding.Status.OperationStartTime) {
@@ -936,7 +937,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 	if response.Description != nil {
 		description = *response.Description
 	}
-	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, description))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Poll returned %q : %q", response.State, description))
 
 	switch response.State {
 	case osb.StateInProgress:
@@ -962,7 +963,7 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 			}
 		}
 
-		glog.V(4).Info(pcb.Message("Last operation not completed (still in progress)"))
+		glog.V(common.FourthLogLevel).Info(pcb.Message("Last operation not completed (still in progress)"))
 		return c.continuePollingServiceBinding(binding)
 	case osb.StateSucceeded:
 		if deleting {
@@ -1589,6 +1590,6 @@ func (c *controller) handleServiceBindingPollingError(binding *v1beta1.ServiceBi
 	//		- if successful, we can return nil to avoid regular queue
 	//		- if failure, return err to fall back to regular queue
 	pcb := pretty.NewBindingContextBuilder(binding)
-	glog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
+	glog.V(common.FourthLogLevel).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceBinding(binding)
 }

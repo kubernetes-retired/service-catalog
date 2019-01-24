@@ -44,6 +44,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
@@ -321,7 +322,7 @@ func (c *controller) monitorConfigMap() {
 	// Can we ask 'through' an informer? Is it a writeback cache? I
 	// only ever want to monitor and be notified about one configmap
 	// in a hardcoded place.
-	glog.V(9).Info("cluster ID monitor loop enter")
+	glog.V(common.NineLogLevel).Info("cluster ID monitor loop enter")
 	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(c.clusterIDConfigMapName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
@@ -353,9 +354,9 @@ func (c *controller) monitorConfigMap() {
 			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(cm)
 		}
 	} else { // some err we can't handle
-		glog.V(4).Infof("error getting the cluster info configmap: %q", err)
+		glog.V(common.FourthLogLevel).Infof("error getting the cluster info configmap: %q", err)
 	}
-	glog.V(9).Info("cluster ID monitor loop exit")
+	glog.V(common.NineLogLevel).Info("cluster ID monitor loop exit")
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
@@ -384,12 +385,12 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 
 				numRequeues := queue.NumRequeues(key)
 				if numRequeues < maxRetries {
-					glog.V(4).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
+					glog.V(common.FourthLogLevel).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
 					queue.AddRateLimited(key)
 					return false
 				}
 
-				glog.V(4).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
+				glog.V(common.FourthLogLevel).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
 				queue.Forget(key)
 				return false
 			}()
@@ -1408,7 +1409,7 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 					// If a broker is configured with RelistBehaviorManual, it should
 					// ignore the Duration and only relist based on spec changes
 
-					glog.V(10).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
+					glog.V(common.DefaultLogLevel).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
 					return false
 				}
 
@@ -1424,7 +1425,7 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 					intervalPassed = now.After(brokerStatus.LastCatalogRetrievalTime.Time.Add(duration))
 				}
 				if intervalPassed == false {
-					glog.V(10).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
+					glog.V(common.DefaultLogLevel).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
 				}
 				return intervalPassed
 			}

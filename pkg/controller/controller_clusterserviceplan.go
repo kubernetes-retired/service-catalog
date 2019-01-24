@@ -19,6 +19,7 @@ package controller
 import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +48,7 @@ func (c *controller) clusterServicePlanDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("ClusterServicePlan: Received delete event for %v; no further processing will occur", clusterServicePlan.Name)
+	glog.V(common.FourthLogLevel).Infof("ClusterServicePlan: Received delete event for %v; no further processing will occur", clusterServicePlan.Name)
 }
 
 // reconcileClusterServicePlanKey reconciles a ClusterServicePlan due to resync
