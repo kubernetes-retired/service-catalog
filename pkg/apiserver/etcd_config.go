@@ -17,12 +17,14 @@ limitations under the License.
 package apiserver
 
 import (
-	"github.com/golang/glog"
+	"github.com/kubernetes/klog"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/storage"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 // EtcdConfig contains a generic API server Config along with config specific to
@@ -85,7 +87,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 	if err != nil {
 		return nil, err
 	}
-	glog.V(4).Infoln("Created skeleton API server")
+	klog.V(common.DefaultInfoLogLevel).Infoln("Created skeleton API server")
 
 	roFactory := etcdRESTOptionsFactory{
 		deleteCollectionWorkers: c.extraConfig.deleteCollectionWorkers,
@@ -96,22 +98,22 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 		storageDecorator:        generic.UndecoratedStorage,
 	}
 
-	glog.V(4).Infoln("Installing API groups")
+	klog.V(common.DefaultInfoLogLevel).Infoln("Installing API groups")
 	// default namespace doesn't matter for etcd
 	providers := restStorageProviders("" /* default namespace */, nil)
 	for _, provider := range providers {
 		groupInfo, err := provider.NewRESTStorage(c.apiResourceConfigSource, roFactory)
 		if IsErrAPIGroupDisabled(err) {
-			glog.Warningf("Skipping API group %v because it is not enabled", provider.GroupName())
+			klog.Warningf("Skipping API group %v because it is not enabled", provider.GroupName())
 			continue
 		} else if err != nil {
-			glog.Errorf("Error initializing storage for provider %v: %v", provider.GroupName(), err)
+			klog.Errorf("Error initializing storage for provider %v: %v", provider.GroupName(), err)
 			return nil, err
 		}
 
-		glog.V(4).Infof("Installing API group %v", provider.GroupName())
+		klog.V(common.DefaultInfoLogLevel).Infof("Installing API group %v", provider.GroupName())
 		if err := s.GenericAPIServer.InstallAPIGroup(groupInfo); err != nil {
-			glog.Fatalf("Error installing API group %v: %v", provider.GroupName(), err)
+			klog.Errorf("Error installing API group %v: %v", provider.GroupName(), err)
 		} else {
 			// we've successfully installed, so hook the stopCh to the destroy func of all the sucessfully installed apigroups
 			for _, mappings := range groupInfo.VersionedResourcesStorageMap { // gv to resource mappings
@@ -128,7 +130,7 @@ func (c completedEtcdConfig) NewServer(stopCh <-chan struct{}) (*ServiceCatalogA
 		}
 	}
 
-	glog.Infoln("Finished installing API groups")
+	klog.Infoln("Finished installing API groups")
 
 	return s, nil
 }

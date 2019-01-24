@@ -22,8 +22,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/golang/glog"
+	"github.com/kubernetes/klog"
 	"k8s.io/apiserver/pkg/server/healthz"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 // ServeHTTP starts a new Http Server thread for /metrics and health probing
@@ -34,7 +36,7 @@ func ServeHTTP(healthcheckOptions *HealthCheckServer) error {
 		return fmt.Errorf("failed to establish SecureServingOptions %v", err)
 	}
 
-	glog.V(3).Infof("Starting http server and mux on port %v", healthcheckOptions.SecureServingOptions.BindPort)
+	klog.V(common.StatesDetailsInfoLogLevel).Infof("Starting http server and mux on port %v", healthcheckOptions.SecureServingOptions.BindPort)
 
 	go func() {
 		mux := http.NewServeMux()
@@ -47,7 +49,7 @@ func ServeHTTP(healthcheckOptions *HealthCheckServer) error {
 				strconv.Itoa(healthcheckOptions.SecureServingOptions.BindPort)),
 			Handler: mux,
 		}
-		glog.Fatal(server.ListenAndServeTLS(healthcheckOptions.SecureServingOptions.ServerCert.CertKey.CertFile,
+		klog.Fatal(server.ListenAndServeTLS(healthcheckOptions.SecureServingOptions.ServerCert.CertKey.CertFile,
 			healthcheckOptions.SecureServingOptions.ServerCert.CertKey.KeyFile))
 	}()
 	return nil

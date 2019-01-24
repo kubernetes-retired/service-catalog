@@ -22,7 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/kubernetes/klog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -408,12 +409,12 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
 				sps := newServicePlans(1, false)
-				glog.V(4).Infof("Created Service as %+v", sc)
+				klog.V(common.DefaultInfoLogLevel).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, "" /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
 				csps := newClusterServicePlans(1, false)
-				glog.V(4).Infof("Created Service as %+v", csc)
+				klog.V(common.DefaultInfoLogLevel).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, "" /* do not use get */)
 			}
 
@@ -462,12 +463,12 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
 				sps := newServicePlans(2, false)
-				glog.V(4).Infof("Created Service as %+v", sc)
+				klog.V(common.DefaultInfoLogLevel).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, "" /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
 				csps := newClusterServicePlans(2, false)
-				glog.V(4).Infof("Created Service as %+v", csc)
+				klog.V(common.DefaultInfoLogLevel).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, "" /* do not use get */)
 			}
 			handler, informerFactory, err := newHandlerForTest(fakeClient)
@@ -525,12 +526,12 @@ func TestWithNoPlanSucceedsWithMultiplePlansFromDifferentClasses(t *testing.T) {
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
 				sps := newServicePlans(2, true)
-				glog.V(4).Infof("Created Service as %+v", sc)
+				klog.V(common.DefaultInfoLogLevel).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, classFilter /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
 				csps := newClusterServicePlans(2, true)
-				glog.V(4).Infof("Created Service as %+v", csc)
+				klog.V(common.DefaultInfoLogLevel).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, classFilter /* do not use get */)
 			}
 

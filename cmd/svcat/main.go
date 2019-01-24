@@ -25,7 +25,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubectl/pkg/pluginutils"
 
-	_ "github.com/golang/glog" // Initialize glog flags
+	_ "github.com/kubernetes/klog" // Initialize klog flags
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/browsing"
@@ -63,8 +63,8 @@ func main() {
 }
 
 func buildRootCommand(cxt *command.Context) *cobra.Command {
-	// Make cobra aware of select glog flags
-	// Enabling all flags causes unwanted deprecation warnings from glog to always print in plugin mode
+	// Make cobra aware of select klog flags
+	// Enabling all flags causes unwanted deprecation warnings from klog to always print in plugin mode
 	pflag.CommandLine.AddGoFlag(flag.CommandLine.Lookup("v"))
 	pflag.CommandLine.AddGoFlag(flag.CommandLine.Lookup("logtostderr"))
 	pflag.CommandLine.Set("logtostderr", "true")

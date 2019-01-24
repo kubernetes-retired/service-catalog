@@ -66,7 +66,7 @@ func BindEnvironmentVariables(vip *viper.Viper, cmd *cobra.Command) {
 	// computed by kubectl.
 	vip.BindEnv("namespace", EnvPluginNamespace)
 
-	// Manually bind relevant glog variables
+	// Manually bind relevant klog variables
 	vip.BindEnv("v", EnvPluginVerbose)
 
 	// kubectl intercepts all flags passed to a plugin, and replaces them

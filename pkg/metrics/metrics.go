@@ -22,9 +22,11 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/golang/glog"
+	"github.com/kubernetes/klog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 )
 
 var registerMetrics sync.Once
@@ -89,5 +91,5 @@ func RegisterMetricsAndInstallHandler(m *http.ServeMux) {
 	registry := prometheus.NewRegistry()
 	register(registry)
 	m.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
-	glog.V(4).Info("Registered /metrics with prometheus")
+	klog.V(common.DebugInfoLogLevel).Infof("Registered /metrics with prometheus")
 }

@@ -21,8 +21,10 @@ package osbclientproxy
 import (
 	"fmt"
 
-	"github.com/golang/glog"
+	"github.com/kubernetes/klog"
+	"github.com/kubernetes-incubator/service-catalog/pkg/common"
 	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
+
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
@@ -63,7 +65,7 @@ const (
 // proxying the method to the underlying implementation and capturing request
 // metrics.
 func (pc proxyclient) GetCatalog() (*osb.CatalogResponse, error) {
-	glog.V(9).Info("OSBClientProxy getCatalog()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy getCatalog()")
 	response, err := pc.realOSBClient.GetCatalog()
 	pc.updateMetrics(getCatalog, err)
 	return response, err
@@ -73,7 +75,7 @@ func (pc proxyclient) GetCatalog() (*osb.CatalogResponse, error) {
 // go-open-service-broker-client/v2/Client.ProvisionInstance by proxying the
 // method to the underlying implementation and capturing request metrics.
 func (pc proxyclient) ProvisionInstance(r *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
-	glog.V(9).Info("OSBClientProxy ProvisionInstance()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy ProvisionInstance()")
 	response, err := pc.realOSBClient.ProvisionInstance(r)
 	pc.updateMetrics(provisionInstance, err)
 	return response, err
@@ -84,7 +86,7 @@ func (pc proxyclient) ProvisionInstance(r *osb.ProvisionRequest) (*osb.Provision
 // go-open-service-broker-client/v2/Client.UpdateInstance by proxying the method
 // to the underlying implementation and capturing request metrics.
 func (pc proxyclient) UpdateInstance(r *osb.UpdateInstanceRequest) (*osb.UpdateInstanceResponse, error) {
-	glog.V(9).Info("OSBClientProxy UpdateInstance()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy UpdateInstance()")
 	response, err := pc.realOSBClient.UpdateInstance(r)
 	pc.updateMetrics(updateInstance, err)
 	return response, err
@@ -94,7 +96,7 @@ func (pc proxyclient) UpdateInstance(r *osb.UpdateInstanceRequest) (*osb.UpdateI
 // go-open-service-broker-client/v2/Client.DeprovisionInstance by proxying the
 // method to the underlying implementation and capturing request metrics.
 func (pc proxyclient) DeprovisionInstance(r *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
-	glog.V(9).Info("OSBClientProxy DeprovisionInstance()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy DeprovisionInstance()")
 	response, err := pc.realOSBClient.DeprovisionInstance(r)
 	pc.updateMetrics(deprovisionInstance, err)
 	return response, err
@@ -104,7 +106,7 @@ func (pc proxyclient) DeprovisionInstance(r *osb.DeprovisionRequest) (*osb.Depro
 // go-open-service-broker-client/v2/Client.PollLastOperation by proxying the
 // method to the underlying implementation and capturing request metrics.
 func (pc proxyclient) PollLastOperation(r *osb.LastOperationRequest) (*osb.LastOperationResponse, error) {
-	glog.V(9).Info("OSBClientProxy PollLastOperation()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy PollLastOperation()")
 	response, err := pc.realOSBClient.PollLastOperation(r)
 	pc.updateMetrics(pollLastOperation, err)
 	return response, err
@@ -114,7 +116,7 @@ func (pc proxyclient) PollLastOperation(r *osb.LastOperationRequest) (*osb.LastO
 // go-open-service-broker-client/v2/Client.PollBindingLastOperation by proxying
 // the method to the underlying implementation and capturing request metrics.
 func (pc proxyclient) PollBindingLastOperation(r *osb.BindingLastOperationRequest) (*osb.LastOperationResponse, error) {
-	glog.V(9).Info("OSBClientProxy PollBindingLastOperation()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy PollBindingLastOperation()")
 	response, err := pc.realOSBClient.PollBindingLastOperation(r)
 	pc.updateMetrics(pollBindingLastOperation, err)
 	return response, err
@@ -123,7 +125,7 @@ func (pc proxyclient) PollBindingLastOperation(r *osb.BindingLastOperationReques
 // Bind implements go-open-service-broker-client/v2/Client.Bind by proxying the
 // method to the underlying implementation and capturing request metrics.
 func (pc proxyclient) Bind(r *osb.BindRequest) (*osb.BindResponse, error) {
-	glog.V(9).Info("OSBClientProxy Bind().")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy Bind().")
 	response, err := pc.realOSBClient.Bind(r)
 	pc.updateMetrics(bind, err)
 	return response, err
@@ -132,7 +134,7 @@ func (pc proxyclient) Bind(r *osb.BindRequest) (*osb.BindResponse, error) {
 // Unbind implements go-open-service-broker-client/v2/Client.Unbind by proxying
 // the method to the underlying implementation and capturing request metrics.
 func (pc proxyclient) Unbind(r *osb.UnbindRequest) (*osb.UnbindResponse, error) {
-	glog.V(9).Info("OSBClientProxy Unbind()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy Unbind()")
 	response, err := pc.realOSBClient.Unbind(r)
 	pc.updateMetrics(unbind, err)
 	return response, err
@@ -142,7 +144,7 @@ func (pc proxyclient) Unbind(r *osb.UnbindRequest) (*osb.UnbindResponse, error) 
 // proxying the method to the underlying implementation and capturing request
 // metrics.
 func (pc proxyclient) GetBinding(r *osb.GetBindingRequest) (*osb.GetBindingResponse, error) {
-	glog.V(9).Info("OSBClientProxy GetBinding()")
+	klog.V(common.StatesInfoLogLevel).Infof("OSBClientProxy GetBinding()")
 	response, err := pc.realOSBClient.GetBinding(r)
 	pc.updateMetrics(getBinding, err)
 	return response, err

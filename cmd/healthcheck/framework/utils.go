@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/kubernetes/klog"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,7 +78,7 @@ func CreateKubeNamespace(c kubernetes.Interface) (*corev1.Namespace, error) {
 		var err error
 		got, err = c.CoreV1().Namespaces().Create(ns)
 		if err != nil {
-			glog.Errorf("Unexpected error while creating namespace: %v", err)
+			klog.Errorf("Unexpected error while creating namespace: %v", err)
 			return false, err
 		}
 		return true, nil
