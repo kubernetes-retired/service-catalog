@@ -264,7 +264,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -745,7 +745,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -755,10 +755,10 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "cscguid" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "cspguid" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
@@ -943,7 +943,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -953,10 +953,10 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "cscguid" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "cspguid" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
@@ -1132,7 +1132,7 @@ func TestReconcileServiceInstanceWithTemporaryProvisionFailure(t *testing.T) {
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
-		"CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker", 500, "InternalServerError; Description: Something went wrong!; ResponseError: <nil>",
+		"cscguid", "test-clusterserviceclass", "test-clusterservicebroker", 500, "InternalServerError; Description: Something went wrong!; ResponseError: <nil>",
 	)
 	expectedProvisionCallEvent := warningEventBuilder(errorProvisionCallFailedReason).msg(message)
 	expectedOrphanMitigationEvent := warningEventBuilder(startingInstanceOrphanMitigationReason).
@@ -1214,7 +1214,7 @@ func TestReconcileServiceInstanceWithTerminalProvisionFailure(t *testing.T) {
 
 	message := fmt.Sprintf(
 		"Error provisioning ServiceInstance of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q: Status: %v; ErrorMessage: %s",
-		"CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker", 400, "BadRequest; Description: Your parameters are incorrect!; ResponseError: <nil>",
+		"cscguid", "test-clusterserviceclass", "test-clusterservicebroker", 400, "BadRequest; Description: Your parameters are incorrect!; ResponseError: <nil>",
 	)
 	expectedEvents := []string{
 		warningEventBuilder(errorProvisionCallFailedReason).msg(message).String(),
@@ -1343,7 +1343,7 @@ func TestReconcileServiceInstanceFailsWithDeletedPlan(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorDeletedClusterServicePlanReason).msgf(
 		"ClusterServicePlan (K8S: %q ExternalName: %q) has been deleted; cannot provision.",
-		"CSPGUID", "test-clusterserviceplan",
+		"cspguid", "test-clusterserviceplan",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1393,7 +1393,7 @@ func TestReconcileServiceInstanceFailsWithDeletedClass(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorDeletedClusterServiceClassReason).msgf(
 		"ClusterServiceClass (K8S: %q ExternalName: %q) has been deleted; cannot provision.",
-		"CSCGUID", "test-clusterserviceclass",
+		"cscguid", "test-clusterserviceclass",
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1429,10 +1429,10 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
 	}
-	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "CSCGUID" {
+	if updateObject.Spec.ClusterServiceClassRef == nil || updateObject.Spec.ClusterServiceClassRef.Name != "cscguid" {
 		t.Fatalf("ClusterServiceClassRef was not resolved correctly during reconcile")
 	}
-	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "CSPGUID" {
+	if updateObject.Spec.ClusterServicePlanRef == nil || updateObject.Spec.ClusterServicePlanRef.Name != "cspguid" {
 		t.Fatalf("ClusterServicePlanRef was not resolved correctly during reconcile")
 	}
 
@@ -4848,7 +4848,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -5345,7 +5345,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -5418,7 +5418,7 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=new-plan-name,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=CSCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=new-plan-name,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 

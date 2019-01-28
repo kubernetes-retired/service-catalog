@@ -518,7 +518,7 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 // ServiceInstance.
 func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 	otherPlanName := "otherplanname"
-	otherPlanID := "other-plan-id"
+	otherPlanID := "otherplanid"
 	cases := []struct {
 		name                          string
 		useExternalNames              bool
@@ -755,17 +755,17 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 			deleteParams:                true,
 		},
 		{
-			name:                        "add secret param",
+			name: "add secret param",
 			createdWithParamsFromSecret: false,
 			updateParamsFromSecret:      true,
 		},
 		{
-			name:                        "update secret param",
+			name: "update secret param",
 			createdWithParamsFromSecret: true,
 			updateParamsFromSecret:      true,
 		},
 		{
-			name:                        "delete secret param",
+			name: "delete secret param",
 			createdWithParamsFromSecret: true,
 			deleteParamsFromSecret:      true,
 		},
@@ -788,7 +788,7 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 			deleteParamsFromSecret:      true,
 		},
 		{
-			name:                        "update secret",
+			name: "update secret",
 			createdWithParamsFromSecret: true,
 			updateSecret:                true,
 		},
@@ -1296,7 +1296,7 @@ func TestCreateServiceInstanceFailsWithNonexistentPlan(t *testing.T) {
 		skipVerifyingInstanceSuccess: true,
 		preCreateInstance: func(ct *controllerTest) {
 			otherPlanName := "otherplanname"
-			otherPlanID := "other-plan-id"
+			otherPlanID := "otherplanid"
 			catalogResponse := ct.osbClient.CatalogReaction.(*fakeosb.CatalogReaction).Response
 			catalogResponse.Services[0].PlanUpdatable = truePtr()
 			catalogResponse.Services[0].Plans = []osb.Plan{
@@ -1502,7 +1502,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 			},
 		},
 		{
-			name:                         "deprovision instance after in progress provision",
+			name: "deprovision instance after in progress provision",
 			skipVerifyingInstanceSuccess: true,
 			setup: func(ct *controllerTest) {
 				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
@@ -1550,7 +1550,7 @@ func TestDeleteServiceInstance(t *testing.T) {
 				binding:                      tc.binding,
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup:                        tc.setup,
+				setup: tc.setup,
 			}
 			ct.run(tc.testFunction)
 		})
@@ -1713,10 +1713,10 @@ func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 				broker:                       getTestBroker(),
 				instance:                     getTestInstance(),
 				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup:                        tc.setup,
-				preDeleteBroker:              tc.preDeleteBroker,
-				preCreateInstance:            tc.preCreateInstance,
-				postCreateInstance:           tc.postCreateInstance,
+				setup:              tc.setup,
+				preDeleteBroker:    tc.preDeleteBroker,
+				preCreateInstance:  tc.preCreateInstance,
+				postCreateInstance: tc.postCreateInstance,
 			}
 			ct.run(func(ct *controllerTest) {
 				if tc.verifyCondition != nil {
