@@ -62,49 +62,49 @@ var commandsToSkip = map[string]struct{}{
 
 // Manifest is the root structure of the kubectl plugin manifest.
 type Manifest struct {
-	Plugin `yaml:",inline"`
+	Plugin `json:",inline"`
 }
 
 // Plugin describes a command exposed by the plugin.
 type Plugin struct {
 	// Name of the command for the help text. Required.
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 
 	// Use is the one-line description of how the command is used.
-	Use string `yaml:"use"`
+	Use string `json:"use"`
 
 	// ShortDesc is a one-line description of the command. Required.
-	ShortDesc string `yaml:"shortDesc"`
+	ShortDesc string `json:"shortDesc"`
 
 	// LongDesc is the optional full description of the command.
-	LongDesc string `yaml:"longDesc,omitempty"`
+	LongDesc string `json:"longDesc,omitempty"`
 
 	// Example contains optional examples of how to use the command.
-	Example string `yaml:"example,omitempty"`
+	Example string `json:"example,omitempty"`
 
 	// Command that the kubectl plugin runner should execute. Required.
-	Command string `yaml:"command"`
+	Command string `json:"command"`
 
 	// Flags supported by the command.
-	Flags []Flag `yaml:"flags,omitempty"`
+	Flags []Flag `json:"flags,omitempty"`
 
 	// Tree of child commands.
-	Tree []Plugin `yaml:"tree,omitempty"`
+	Tree []Plugin `json:"tree,omitempty"`
 }
 
 // Flag describes a flag exposed by a plugin command.
 type Flag struct {
 	// Name of the flag. Required.
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 
 	// Shorthand flag, must be a single character.
-	Shorthand string `yaml:"shorthand,omitempty"`
+	Shorthand string `json:"shorthand,omitempty"`
 
 	// Desc of the flag for the help text. Required.
-	Desc string `yaml:"desc"`
+	Desc string `json:"desc"`
 
 	// DefValue is the default value to use when the flag is not specified.
-	DefValue string `yaml:"defValue,omitempty"`
+	DefValue string `json:"defValue,omitempty"`
 }
 
 // Load a cli command into the plugin manifest structure.
