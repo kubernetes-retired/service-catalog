@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 )
 
@@ -34,10 +34,10 @@ func init() {
 	framework.RegisterParseFlags()
 
 	if "" == framework.TestContext.KubeConfig {
-		glog.Fatalf("environment variable %v must be set", clientcmd.RecommendedConfigPathEnvVar)
+		klog.Fatalf("environment variable %v must be set", clientcmd.RecommendedConfigPathEnvVar)
 	}
 	if "" == framework.TestContext.ServiceCatalogConfig {
-		glog.Fatalf("environment variable %v must be set", framework.RecommendedConfigPathEnvVar)
+		klog.Fatalf("environment variable %v must be set", framework.RecommendedConfigPathEnvVar)
 	}
 }
 

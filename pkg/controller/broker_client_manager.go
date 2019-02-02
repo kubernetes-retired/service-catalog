@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
@@ -85,7 +85,7 @@ func (m *BrokerClientManager) UpdateBrokerClient(brokerKey BrokerKey, clientConf
 	existing, found := m.clients[brokerKey]
 
 	if !found || configHasChanged(existing.clientConfig, clientConfig) {
-		glog.V(4).Infof("Updating OSB client for broker %q, URL: %s", brokerKey.String(), clientConfig.URL)
+		klog.V(4).Infof("Updating OSB client for broker %q, URL: %s", brokerKey.String(), clientConfig.URL)
 		return m.createClient(brokerKey, clientConfig)
 	}
 
@@ -97,7 +97,7 @@ func (m *BrokerClientManager) RemoveBrokerClient(brokerKey BrokerKey) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	glog.V(4).Infof("Removing OSB client for broker %q", brokerKey.String())
+	klog.V(4).Infof("Removing OSB client for broker %q", brokerKey.String())
 	delete(m.clients, brokerKey)
 }
 

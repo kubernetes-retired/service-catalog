@@ -19,7 +19,7 @@ package server
 import (
 	"os"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/spf13/pflag"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
@@ -135,7 +135,7 @@ func (s *ServiceCatalogServerOptions) Validate() error {
 	// etcd options
 	etcdErrs := s.EtcdOptions.Validate()
 	if len(etcdErrs) > 0 {
-		glog.Errorln("Error validating etcd options, do you have `--etcd-servers localhost` set?")
+		klog.Errorln("Error validating etcd options, do you have `--etcd-servers localhost` set?")
 	}
 	errors = append(errors, etcdErrs...)
 	// TODO add alternative storage validation

@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -86,5 +86,5 @@ func RegisterMetricsAndInstallHandler(m *http.ServeMux) {
 	registry := prometheus.NewRegistry()
 	register(registry)
 	m.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
-	glog.V(3).Info("Registered /metrics with prometheus")
+	klog.V(3).Info("Registered /metrics with prometheus")
 }

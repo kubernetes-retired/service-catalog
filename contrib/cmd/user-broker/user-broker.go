@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/user_provided/controller"
 	"github.com/kubernetes-incubator/service-catalog/pkg"
@@ -47,7 +47,7 @@ func init() {
 
 func main() {
 	if err := run(); err != nil && err != context.Canceled && err != context.DeadlineExceeded {
-		glog.Fatalln(err)
+		klog.Fatalln(err)
 	}
 }
 

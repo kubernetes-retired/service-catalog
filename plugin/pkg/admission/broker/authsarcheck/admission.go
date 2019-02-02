@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 
 	authorizationapi "k8s.io/api/authorization/v1"
@@ -95,7 +95,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 	if secretRef == nil {
 		return nil
 	}
-	glog.V(5).Infof("ClusterServiceBroker %+v: evaluating auth secret ref, with authInfo %q", clusterServiceBroker, secretRef)
+	klog.V(5).Infof("ClusterServiceBroker %+v: evaluating auth secret ref, with authInfo %q", clusterServiceBroker, secretRef)
 	userInfo := a.GetUserInfo()
 
 	sar := &authorizationapi.SubjectAccessReview{

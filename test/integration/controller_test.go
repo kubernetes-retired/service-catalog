@@ -35,7 +35,7 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
@@ -617,11 +617,11 @@ func getProvisionResponseByPollCountReactions(numOfResponses int, stateProgressi
 		var reaction fakeosb.ProvisionReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Provision instance state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Provision instance state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Provision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Provision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -642,11 +642,11 @@ func getDeprovisionResponseByPollCountReactions(numOfResponses int, stateProgres
 		var reaction fakeosb.DeprovisionReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Deprovision instance state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Deprovision instance state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Deprovision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Deprovision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -667,11 +667,11 @@ func getUpdateInstanceResponseByPollCountReactions(numOfResponses int, stateProg
 		var reaction fakeosb.UpdateInstanceReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Update instance state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Update instance state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Update instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Update instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -692,11 +692,11 @@ func getLastOperationResponseByPollCountReactions(numOfResponses int, stateProgr
 		var reaction fakeosb.PollLastOperationReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Last operation state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Last operation state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Last operation state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Last operation state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -807,10 +807,10 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	stopCh := make(chan struct{})
 
-	glog.V(4).Info("Waiting for caches to sync")
+	klog.V(4).Info("Waiting for caches to sync")
 	informerFactory.Start(stopCh)
 
-	glog.V(4).Info("Waiting for caches to sync")
+	klog.V(4).Info("Waiting for caches to sync")
 	informerFactory.WaitForCacheSync(stopCh)
 
 	controllerStopped := make(chan struct{})

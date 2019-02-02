@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 
 	corev1 "k8s.io/api/core/v1"
@@ -128,7 +128,7 @@ type instanceOperationBackoff struct {
 func (c *controller) enqueueInstance(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		klog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
 	c.instanceQueue.Add(key)
@@ -139,7 +139,7 @@ func (c *controller) enqueueInstance(obj interface{}) {
 func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.Errorf("Couldn't get key for object %+v: %v", obj, err)
+		klog.Errorf("Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
 	c.instanceQueue.AddAfter(key, d)
@@ -147,10 +147,10 @@ func (c *controller) enqueueInstanceAfter(obj interface{}, d time.Duration) {
 
 // instanceAdd handles the ServiceInstance ADDED watch event
 func (c *controller) instanceAdd(obj interface{}) {
-	if glog.V(eventHandlerLogLevel) {
+	if klog.V(eventHandlerLogLevel) {
 		instance := obj.(*v1beta1.ServiceInstance)
 		pcb := pretty.NewInstanceContextBuilder(instance)
-		glog.Info(pcb.Message("Received ADD event"))
+		klog.Info(pcb.Message("Received ADD event"))
 	}
 	c.enqueueInstance(obj)
 }
@@ -158,9 +158,9 @@ func (c *controller) instanceAdd(obj interface{}) {
 // instanceUpdate handles the ServiceInstance UPDATED watch event
 func (c *controller) instanceUpdate(oldObj, newObj interface{}) {
 	instance := newObj.(*v1beta1.ServiceInstance)
-	if glog.V(eventHandlerLogLevel) {
+	if klog.V(eventHandlerLogLevel) {
 		pcb := pretty.NewInstanceContextBuilder(instance)
-		glog.Info(pcb.Message("Received UPDATE event"))
+		klog.Info(pcb.Message("Received UPDATE event"))
 	}
 	// Instances with ongoing asynchronous operations will be manually added
 	// to the polling queue by the reconciler. They should be ignored here in
@@ -177,9 +177,9 @@ func (c *controller) instanceDelete(obj interface{}) {
 		return
 	}
 
-	if glog.V(eventHandlerLogLevel) {
+	if klog.V(eventHandlerLogLevel) {
 		pcb := pretty.NewInstanceContextBuilder(instance)
-		glog.Info(pcb.Message("Received DELETE event; no further processing will occur"))
+		klog.Info(pcb.Message("Received DELETE event; no further processing will occur"))
 	}
 }
 
@@ -220,7 +220,7 @@ func (c *controller) beginPollingServiceInstance(instance *v1beta1.ServiceInstan
 	if err != nil {
 		pcb := pretty.NewInstanceContextBuilder(instance)
 		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
-		glog.Errorf(pcb.Message(s))
+		klog.Errorf(pcb.Message(s))
 		return fmt.Errorf(s)
 	}
 
@@ -242,7 +242,7 @@ func (c *controller) finishPollingServiceInstance(instance *v1beta1.ServiceInsta
 	if err != nil {
 		pcb := pretty.NewInstanceContextBuilder(instance)
 		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
-		glog.Errorf(pcb.Message(s))
+		klog.Errorf(pcb.Message(s))
 		return fmt.Errorf(s)
 	}
 
@@ -258,7 +258,7 @@ func (c *controller) resetPollingRateLimiterForServiceInstance(instance *v1beta1
 	if err != nil {
 		pcb := pretty.NewInstanceContextBuilder(instance)
 		s := fmt.Sprintf("Couldn't create a key for object %+v: %v", instance, err)
-		glog.Errorf(pcb.Message(s))
+		klog.Errorf(pcb.Message(s))
 		return
 	}
 
@@ -290,11 +290,11 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, namespace, name, "")
 	instance, err := c.instanceLister.ServiceInstances(namespace).Get(name)
 	if errors.IsNotFound(err) {
-		glog.Info(pcb.Messagef("Not doing work for %v because it has been deleted", key))
+		klog.Info(pcb.Messagef("Not doing work for %v because it has been deleted", key))
 		return nil
 	}
 	if err != nil {
-		glog.Errorf(pcb.Messagef("Unable to retrieve %v from store: %v", key, err))
+		klog.Errorf(pcb.Messagef("Unable to retrieve %v from store: %v", key, err))
 		return err
 	}
 
@@ -412,7 +412,7 @@ func (c *controller) setRetryBackoffRequired(instance *v1beta1.ServiceInstance) 
 	}
 	retryEntry.dirty = true
 	c.instanceOperationRetryQueue.instances[key] = retryEntry
-	glog.V(4).Info(pcb.Messagef("BrokerOpRetry: added %v (%v/%v) generation %v to backoffBeforeRetrying map", key, instance.GetNamespace(), instance.GetName(), instance.Generation))
+	klog.V(4).Info(pcb.Messagef("BrokerOpRetry: added %v (%v/%v) generation %v to backoffBeforeRetrying map", key, instance.GetNamespace(), instance.GetName(), instance.Generation))
 }
 
 // backoffAndRequeueIfRetrying returns true if this is a retry and a backoff
@@ -442,7 +442,7 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 			retryEntry.calculatedRetryTime = time.Now().Add(c.instanceOperationRetryQueue.rateLimiter.When(key))
 			retryEntry.dirty = false
 			c.instanceOperationRetryQueue.instances[key] = retryEntry
-			glog.V(4).Infof(pcb.Messagef("BrokerOpRetry: generation %v retryTime calculated as %v", instance.Generation, retryEntry.calculatedRetryTime))
+			klog.V(4).Infof(pcb.Messagef("BrokerOpRetry: generation %v retryTime calculated as %v", instance.Generation, retryEntry.calculatedRetryTime))
 		}
 
 		now := time.Now()
@@ -451,7 +451,7 @@ func (c *controller) backoffAndRequeueIfRetrying(instance *v1beta1.ServiceInstan
 		if delay > 0 {
 			msg := fmt.Sprintf("Delaying %s retry, next attempt will be after %s", operation, retryEntry.calculatedRetryTime)
 			c.recorder.Event(instance, corev1.EventTypeWarning, "RetryBackoff", msg)
-			glog.V(2).Info(pcb.Messagef("BrokerOpRetry: %s", msg))
+			klog.V(2).Info(pcb.Messagef("BrokerOpRetry: %s", msg))
 
 			// add back to worker queue to retry at the specified time
 			c.enqueueInstanceAfter(instance, delay)
@@ -477,13 +477,13 @@ func (c *controller) purgeExpiredRetryEntries() {
 	purgedEntries := 0
 	for k, v := range c.instanceOperationRetryQueue.instances {
 		if v.calculatedRetryTime.Before(overDue) {
-			glog.V(5).Infof("BrokerOpRetry: removing %s from instanceOperationRetryQueue which had retry time of %v", k, v.calculatedRetryTime)
+			klog.V(5).Infof("BrokerOpRetry: removing %s from instanceOperationRetryQueue which had retry time of %v", k, v.calculatedRetryTime)
 			delete(c.instanceOperationRetryQueue.instances, k)
 			c.instanceOperationRetryQueue.rateLimiter.Forget(k)
 			purgedEntries++
 		}
 	}
-	glog.V(5).Infof("BrokerOpRetry: purged %v expired entries from instanceOperationRetryQueue.instances, number of entries remaining: %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
+	klog.V(5).Infof("BrokerOpRetry: purged %v expired entries from instanceOperationRetryQueue.instances, number of entries remaining: %v", purgedEntries, len(c.instanceOperationRetryQueue.instances))
 
 }
 
@@ -495,7 +495,7 @@ func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstanc
 	defer c.instanceOperationRetryQueue.mutex.Unlock()
 	delete(c.instanceOperationRetryQueue.instances, key)
 	c.instanceOperationRetryQueue.rateLimiter.Forget(key)
-	glog.V(4).Infof(pcb.Message("BrokerOpRetry: removed %v from instanceOperationRetryQueue"), key)
+	klog.V(4).Infof(pcb.Message("BrokerOpRetry: removed %v from instanceOperationRetryQueue"), key)
 }
 
 // reconcileServiceInstanceAdd is responsible for handling the provisioning
@@ -504,7 +504,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	if isServiceInstanceProcessedAlready(instance) {
-		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
+		klog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
 		return nil
 	}
 
@@ -542,7 +542,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		}
 	}
 
-	glog.V(4).Info(pcb.Message("Processing adding event"))
+	klog.V(4).Info(pcb.Message("Processing adding event"))
 
 	request, inProgressProperties, err := c.prepareProvisionRequest(instance)
 	if err != nil {
@@ -583,7 +583,7 @@ func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstan
 		prettyClass = pretty.ServiceClassName(serviceClass)
 	}
 
-	glog.V(4).Info(pcb.Messagef(
+	klog.V(4).Info(pcb.Messagef(
 		"Provisioning a new ServiceInstance of %s at Broker %q",
 		prettyClass, brokerName,
 	))
@@ -645,7 +645,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 	pcb := pretty.NewInstanceContextBuilder(instance)
 
 	if isServiceInstanceProcessedAlready(instance) {
-		glog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
+		klog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
 		return nil
 	}
 
@@ -671,7 +671,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		return nil
 	}
 
-	glog.V(4).Info(pcb.Message("Processing updating event"))
+	klog.V(4).Info(pcb.Message("Processing updating event"))
 
 	var brokerClient osb.Client
 	var request *osb.UpdateInstanceRequest
@@ -708,7 +708,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			return nil
 		}
 
-		glog.V(4).Info(pcb.Messagef(
+		klog.V(4).Info(pcb.Messagef(
 			"Updating ServiceInstance of %s at ClusterServiceBroker %q",
 			pretty.ClusterServiceClassName(serviceClass), brokerName,
 		))
@@ -745,7 +745,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 			return nil
 		}
 
-		glog.V(4).Info(pcb.Messagef(
+		klog.V(4).Info(pcb.Messagef(
 			"Updating ServiceInstance of %s at ServiceBroker %q",
 			pretty.ServiceClassName(serviceClass), brokerName,
 		))
@@ -780,7 +780,7 @@ func (c *controller) reconcileServiceInstanceUpdate(instance *v1beta1.ServiceIns
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
 			// log and record the real error, but process as a
 			// failure with reconciliation retry timeout
-			glog.Info(pcb.Message(msg))
+			klog.Info(pcb.Message(msg))
 			c.recorder.Event(instance, corev1.EventTypeWarning, reason, msg)
 
 			msg = "Stopping reconciliation retries because too much time has elapsed"
@@ -816,14 +816,14 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 	// If deprovisioning has already failed, do not do anything more
 	if instance.Status.DeprovisionStatus == v1beta1.ServiceInstanceDeprovisionStatusFailed {
-		glog.V(4).Info(pcb.Message("Not processing deleting event because deprovisioning has failed"))
+		klog.V(4).Info(pcb.Message("Not processing deleting event because deprovisioning has failed"))
 		return nil
 	}
 
 	if instance.Status.OrphanMitigationInProgress {
-		glog.V(4).Info(pcb.Message("Performing orphan mitigation"))
+		klog.V(4).Info(pcb.Message("Performing orphan mitigation"))
 	} else {
-		glog.V(4).Info(pcb.Message("Processing deleting event"))
+		klog.V(4).Info(pcb.Message("Processing deleting event"))
 	}
 
 	instance = instance.DeepCopy()
@@ -913,7 +913,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		}
 	}
 
-	glog.V(4).Info(pcb.Message("Sending deprovision request to broker"))
+	klog.V(4).Info(pcb.Message("Sending deprovision request to broker"))
 	response, err := brokerClient.DeprovisionInstance(request)
 	if err != nil {
 		msg := fmt.Sprintf(
@@ -944,7 +944,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) error {
 	pcb := pretty.NewInstanceContextBuilder(instance)
-	glog.V(4).Info(pcb.Message("Processing poll event"))
+	klog.V(4).Info(pcb.Message("Processing poll event"))
 
 	instance = instance.DeepCopy()
 
@@ -971,7 +971,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
-	glog.V(5).Info(pcb.Message("Polling last operation"))
+	klog.V(5).Info(pcb.Message("Polling last operation"))
 
 	response, err := brokerClient.PollLastOperation(request)
 	if err != nil {
@@ -986,7 +986,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 
 		reason := errorPollingLastOperationReason
 		message := fmt.Sprintf("Error polling last operation: %v", err)
-		glog.V(4).Info(pcb.Message(message))
+		klog.V(4).Info(pcb.Message(message))
 		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionFalse, reason, message)
 
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
@@ -1011,7 +1011,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 	if response.Description != nil {
 		description = *response.Description
 	}
-	glog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, description))
+	klog.V(4).Info(pcb.Messagef("Poll returned %q : %q", response.State, description))
 
 	switch response.State {
 	case osb.StateInProgress:
@@ -1048,7 +1048,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 			}
 		}
 
-		glog.V(4).Info(pcb.Message("Last operation not completed (still in progress)"))
+		klog.V(4).Info(pcb.Message("Last operation not completed (still in progress)"))
 		return c.continuePollingServiceInstance(instance)
 	case osb.StateSucceeded:
 		var err error
@@ -1098,7 +1098,7 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 		return c.finishPollingServiceInstance(instance)
 	default:
 		message := pcb.Messagef("Got invalid state in LastOperationResponse: %q", response.State)
-		glog.Warning(message)
+		klog.Warning(message)
 		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
 			readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorPollingLastOperationReason, message)
 			return c.processServiceInstancePollingFailureRetryTimeout(instance, readyCond)
@@ -1271,7 +1271,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 	var sc *v1beta1.ClusterServiceClass
 
 	if instance.Spec.ClusterServiceClassName != "" {
-		glog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from K8S Name: %q", instance.Spec.ClusterServiceClassName))
+		klog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from K8S Name: %q", instance.Spec.ClusterServiceClassName))
 
 		var err error
 		sc, err = c.clusterServiceClassLister.Get(instance.Spec.ClusterServiceClassName)
@@ -1279,7 +1279,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			instance.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{
 				Name: sc.Name,
 			}
-			glog.V(4).Info(pcb.Messagef(
+			klog.V(4).Info(pcb.Messagef(
 				"resolved ClusterServiceClass %c to ClusterServiceClass with external Name %q",
 				instance.Spec.PlanReference, sc.Spec.ExternalName,
 			))
@@ -1288,7 +1288,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				"References a non-existent ClusterServiceClass %c",
 				instance.Spec.PlanReference,
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1303,7 +1303,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 		filterField := instance.Spec.GetClusterServiceClassFilterFieldName()
 		filterValue := instance.Spec.GetSpecifiedClusterServiceClass()
 
-		glog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterField, filterValue))
+		klog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterField, filterValue))
 		listOpts := metav1.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(filterField, filterValue).String(),
 		}
@@ -1313,7 +1313,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			instance.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{
 				Name: sc.Name,
 			}
-			glog.V(4).Info(pcb.Messagef(
+			klog.V(4).Info(pcb.Messagef(
 				"resolved %c to K8S ClusterServiceClass %q",
 				instance.Spec.PlanReference, sc.Name,
 			))
@@ -1322,7 +1322,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				"References a non-existent ClusterServiceClass %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, len(serviceClasses.Items),
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1352,7 +1352,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 	var sc *v1beta1.ServiceClass
 
 	if instance.Spec.ServiceClassName != "" {
-		glog.V(4).Info(pcb.Messagef("looking up a ServiceClass from K8S Name: %q", instance.Spec.ServiceClassName))
+		klog.V(4).Info(pcb.Messagef("looking up a ServiceClass from K8S Name: %q", instance.Spec.ServiceClassName))
 
 		var err error
 		sc, err = c.serviceClassLister.ServiceClasses(instance.Namespace).Get(instance.Spec.ServiceClassName)
@@ -1360,7 +1360,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 			instance.Spec.ServiceClassRef = &v1beta1.LocalObjectReference{
 				Name: sc.Name,
 			}
-			glog.V(4).Info(pcb.Messagef(
+			klog.V(4).Info(pcb.Messagef(
 				"resolved ServiceClass %c to ServiceClass with external Name %q",
 				instance.Spec.PlanReference, sc.Spec.ExternalName,
 			))
@@ -1369,7 +1369,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 				"References a non-existent ServiceClass %c",
 				instance.Spec.PlanReference,
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1384,7 +1384,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 		filterField := instance.Spec.GetServiceClassFilterFieldName()
 		filterValue := instance.Spec.GetSpecifiedServiceClass()
 
-		glog.V(4).Info(pcb.Messagef("looking up a ServiceClass from %s: %q", filterField, filterValue))
+		klog.V(4).Info(pcb.Messagef("looking up a ServiceClass from %s: %q", filterField, filterValue))
 		listOpts := metav1.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(filterField, filterValue).String(),
 		}
@@ -1394,7 +1394,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 			instance.Spec.ServiceClassRef = &v1beta1.LocalObjectReference{
 				Name: sc.Name,
 			}
-			glog.V(4).Info(pcb.Messagef(
+			klog.V(4).Info(pcb.Messagef(
 				"resolved %c to K8S ServiceClass %q",
 				instance.Spec.PlanReference, sc.Name,
 			))
@@ -1403,7 +1403,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 				"References a non-existent ServiceClass %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, len(serviceClasses.Items),
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1437,7 +1437,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 			instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
 				Name: sp.Name,
 			}
-			glog.V(4).Info(pcb.Messagef(
+			klog.V(4).Info(pcb.Messagef(
 				"resolved ClusterServicePlan with K8S name %q to ClusterServicePlan with external name %q",
 				instance.Spec.ClusterServicePlanName, sp.Spec.ExternalName,
 			))
@@ -1446,7 +1446,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				"References a non-existent ClusterServicePlan %v",
 				instance.Spec.PlanReference,
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1471,7 +1471,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 			instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
 				Name: sp.Name,
 			}
-			glog.V(4).Info(pcb.Messagef("resolved %v to ClusterServicePlan (K8S: %q)",
+			klog.V(4).Info(pcb.Messagef("resolved %v to ClusterServicePlan (K8S: %q)",
 				instance.Spec.PlanReference, sp.Name,
 			))
 		} else {
@@ -1479,7 +1479,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 				"References a non-existent ClusterServicePlan %b on ClusterServiceClass %s %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference, len(servicePlans.Items),
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1513,7 +1513,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 			instance.Spec.ServicePlanRef = &v1beta1.LocalObjectReference{
 				Name: sp.Name,
 			}
-			glog.V(4).Info(pcb.Messagef(
+			klog.V(4).Info(pcb.Messagef(
 				"resolved ServicePlan with K8S name %q to ServicePlan with external name %q",
 				instance.Spec.ServicePlanName, sp.Spec.ExternalName,
 			))
@@ -1522,7 +1522,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				"References a non-existent ServicePlan %v",
 				instance.Spec.PlanReference,
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1547,7 +1547,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 			instance.Spec.ServicePlanRef = &v1beta1.LocalObjectReference{
 				Name: sp.Name,
 			}
-			glog.V(4).Info(pcb.Messagef("resolved %v to ServicePlan (K8S: %q)",
+			klog.V(4).Info(pcb.Messagef("resolved %v to ServicePlan (K8S: %q)",
 				instance.Spec.PlanReference, sp.Name,
 			))
 		} else {
@@ -1555,7 +1555,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				"References a non-existent ServicePlan %b on ServiceClass %s %c or there is more than one (found: %d)",
 				instance.Spec.PlanReference, instance.Spec.ServiceClassRef.Name, instance.Spec.PlanReference, len(servicePlans.Items),
 			)
-			glog.Warning(pcb.Message(s))
+			klog.Warning(pcb.Message(s))
 			c.updateServiceInstanceCondition(
 				instance,
 				v1beta1.ServiceInstanceConditionReady,
@@ -1597,7 +1597,7 @@ func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.Servic
 	}
 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name, "")
-	glog.V(4).Info(pcb.Message("Applying default provisioning parameters"))
+	klog.V(4).Info(pcb.Message("Applying default provisioning parameters"))
 
 	instance.Spec.Parameters = finalParams
 	_, err = c.updateServiceInstanceWithRetries(instance, func(conflictedInstance *v1beta1.ServiceInstance) {
@@ -1605,7 +1605,7 @@ func (c *controller) applyDefaultProvisioningParameters(instance *v1beta1.Servic
 	})
 	if err != nil {
 		s := fmt.Sprintf("error updating service instance to apply default parameters: %s", err)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.recorder.Event(instance, corev1.EventTypeWarning, errorWithParameters, s)
 		return false, fmt.Errorf(s)
 	}
@@ -1723,14 +1723,14 @@ func newServiceInstanceFailedCondition(status v1beta1.ConditionStatus, reason, m
 func removeServiceInstanceCondition(toUpdate *v1beta1.ServiceInstance,
 	conditionType v1beta1.ServiceInstanceConditionType) {
 	pcb := pretty.NewInstanceContextBuilder(toUpdate)
-	glog.V(5).Info(pcb.Messagef(
+	klog.V(5).Info(pcb.Messagef(
 		"Removing condition %q", conditionType,
 	))
 
 	newStatusConditions := make([]v1beta1.ServiceInstanceCondition, 0, len(toUpdate.Status.Conditions))
 	for _, cond := range toUpdate.Status.Conditions {
 		if cond.Type == conditionType {
-			glog.V(5).Info(pcb.Messagef("Found existing condition %q: %q; removing it",
+			klog.V(5).Info(pcb.Messagef("Found existing condition %q: %q; removing it",
 				conditionType, cond.Status,
 			))
 			continue
@@ -1766,8 +1766,8 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 	t metav1.Time) {
 
 	pcb := pretty.NewInstanceContextBuilder(toUpdate)
-	glog.Info(pcb.Message(message))
-	glog.V(5).Info(pcb.Messagef(
+	klog.Info(pcb.Message(message))
+	klog.V(5).Info(pcb.Messagef(
 		"Setting condition %q to %v",
 		conditionType, status,
 	))
@@ -1780,7 +1780,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 	}
 
 	if len(toUpdate.Status.Conditions) == 0 {
-		glog.V(3).Info(pcb.Messagef(
+		klog.V(3).Info(pcb.Messagef(
 			"Setting lastTransitionTime, condition %q to %v",
 			conditionType, t,
 		))
@@ -1792,7 +1792,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 	for i, cond := range toUpdate.Status.Conditions {
 		if cond.Type == conditionType {
 			if cond.Status != newCondition.Status {
-				glog.V(3).Info(pcb.Messagef("Found status change, condition %q: %q -> %q; setting lastTransitionTime to %v",
+				klog.V(3).Info(pcb.Messagef("Found status change, condition %q: %q -> %q; setting lastTransitionTime to %v",
 					conditionType, cond.Status, status, t,
 				))
 				newCondition.LastTransitionTime = t
@@ -1805,7 +1805,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 		}
 	}
 
-	glog.V(3).Info(pcb.Messagef(
+	klog.V(3).Info(pcb.Messagef(
 		"Setting lastTransitionTime, condition %q to %v",
 		conditionType, t,
 	))
@@ -1816,11 +1816,11 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 // updateServiceInstanceReferences updates the refs for the given instance.
 func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	pcb := pretty.NewInstanceContextBuilder(toUpdate)
-	glog.V(4).Info(pcb.Message("Updating references"))
+	klog.V(4).Info(pcb.Message("Updating references"))
 	status := toUpdate.Status
 	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
 	if err != nil {
-		glog.Errorf(pcb.Messagef("Failed to update references: %v", err))
+		klog.Errorf(pcb.Messagef("Failed to update references: %v", err))
 	}
 	// The UpdateReferences method ignores status changes.
 	// Restore status that might have changed locally to be able to update it later.
@@ -1846,13 +1846,13 @@ func (c *controller) updateServiceInstanceWithRetries(
 
 	instanceToUpdate := instance
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
-		glog.V(4).Info(pcb.Message("Updating instance"))
+		klog.V(4).Info(pcb.Message("Updating instance"))
 		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).Update(instanceToUpdate)
 		if err != nil {
 			if !errors.IsConflict(err) {
 				return false, err
 			}
-			glog.V(4).Info(pcb.Message("Couldn't update instance because the resource was stale"))
+			klog.V(4).Info(pcb.Message("Couldn't update instance because the resource was stale"))
 			// Fetch a fresh instance to resolve the update conflict and retry
 			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
 			if err != nil {
@@ -1867,7 +1867,7 @@ func (c *controller) updateServiceInstanceWithRetries(
 	})
 
 	if err != nil {
-		glog.Errorf(pcb.Messagef("Failed to update instance: %v", err))
+		klog.Errorf(pcb.Messagef("Failed to update instance: %v", err))
 	}
 
 	return updatedInstance, err
@@ -1902,13 +1902,13 @@ func (c *controller) updateServiceInstanceStatusWithRetries(
 
 	instanceToUpdate := instance
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
-		glog.V(4).Info(pcb.Message("Updating status"))
+		klog.V(4).Info(pcb.Message("Updating status"))
 		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(instanceToUpdate)
 		if err != nil {
 			if !errors.IsConflict(err) {
 				return false, err
 			}
-			glog.V(4).Info(pcb.Message("Couldn't update status because the resource was stale"))
+			klog.V(4).Info(pcb.Message("Couldn't update status because the resource was stale"))
 			// Fetch a fresh instance to resolve the update conflict and retry
 			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
 			if err != nil {
@@ -1926,7 +1926,7 @@ func (c *controller) updateServiceInstanceStatusWithRetries(
 	})
 
 	if err != nil {
-		glog.Errorf(pcb.Messagef("Failed to update status: %v", err))
+		klog.Errorf(pcb.Messagef("Failed to update status: %v", err))
 	}
 
 	return updatedInstance, err
@@ -1945,10 +1945,10 @@ func (c *controller) updateServiceInstanceCondition(
 
 	setServiceInstanceCondition(toUpdate, conditionType, status, reason, message)
 
-	glog.V(4).Info(pcb.Messagef("Updating %v condition to %v", conditionType, status))
+	klog.V(4).Info(pcb.Messagef("Updating %v condition to %v", conditionType, status))
 	_, err := c.serviceCatalogClient.ServiceInstances(instance.Namespace).UpdateStatus(toUpdate)
 	if err != nil {
-		glog.Errorf(pcb.Messagef("Failed to update condition %v to true: %v", conditionType, err))
+		klog.Errorf(pcb.Messagef("Failed to update condition %v to true: %v", conditionType, err))
 	}
 
 	return err
@@ -2448,7 +2448,7 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 	if instance.Status.InProgressProperties == nil {
 		pcb := pretty.NewInstanceContextBuilder(instance)
 		err := stderrors.New("Instance.Status.InProgressProperties can not be nil")
-		glog.Error(pcb.Message(err.Error()))
+		klog.Error(pcb.Message(err.Error()))
 		return nil, err
 	}
 
@@ -2525,7 +2525,7 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 	}
 
 	pcb := pretty.NewInstanceContextBuilder(instance)
-	glog.Info(pcb.Message("Cleared finalizer"))
+	klog.Info(pcb.Message("Cleared finalizer"))
 
 	c.removeInstanceFromRetryMap(instance)
 	return nil
@@ -2854,7 +2854,7 @@ func (c *controller) handleServiceInstancePollingError(instance *v1beta1.Service
 	//		- if successful, we can return nil to avoid regular queue
 	//		- if failure, return err to fall back to regular queue
 	pcb := pretty.NewInstanceContextBuilder(instance)
-	glog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
+	klog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceInstance(instance)
 }
 
