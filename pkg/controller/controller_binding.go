@@ -191,9 +191,9 @@ func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding)
 
 	binding = binding.DeepCopy()
 
-	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
+	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
-		msg := fmt.Sprintf(`References a non-existent %s "%s/%s"`, pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name)
+		msg := fmt.Sprintf(`References a non-existent %s "%s/%s"`, pretty.ServiceInstance, binding.Namespace, binding.Spec.InstanceRef.Name)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonexistentServiceInstanceReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
@@ -399,11 +399,11 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 		}
 	}
 
-	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
+	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
 		msg := fmt.Sprintf(
 			`References a non-existent %s "%s/%s"`,
-			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+			pretty.ServiceInstance, binding.Namespace, binding.Spec.InstanceRef.Name,
 		)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonexistentServiceInstanceReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
@@ -412,7 +412,7 @@ func (c *controller) reconcileServiceBindingDelete(binding *v1beta1.ServiceBindi
 	if instance.Status.AsyncOpInProgress {
 		msg := fmt.Sprintf(
 			`trying to unbind to %s "%s/%s" that has ongoing asynchronous operation`,
-			pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+			pretty.ServiceInstance, binding.Namespace, binding.Spec.InstanceRef.Name,
 		)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorWithOngoingAsyncOperationReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
@@ -880,9 +880,9 @@ func (c *controller) pollServiceBinding(binding *v1beta1.ServiceBinding) error {
 
 	binding = binding.DeepCopy()
 
-	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.ServiceInstanceRef.Name)
+	instance, err := c.instanceLister.ServiceInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name)
 	if err != nil {
-		msg := fmt.Sprintf(`References a non-existent %s "%s/%s"`, pretty.ServiceInstance, binding.Namespace, binding.Spec.ServiceInstanceRef.Name)
+		msg := fmt.Sprintf(`References a non-existent %s "%s/%s"`, pretty.ServiceInstance, binding.Namespace, binding.Spec.InstanceRef.Name)
 		readyCond := newServiceBindingReadyCondition(v1beta1.ConditionFalse, errorNonexistentServiceInstanceReason, msg)
 		return c.processServiceBindingOperationError(binding, readyCond)
 	}
@@ -1211,9 +1211,9 @@ func (c *controller) prepareBindRequest(
 	}
 
 	inProgressProperties := &v1beta1.ServiceBindingPropertiesState{
-		Parameters:         rawParametersWithRedaction,
-		ParametersChecksum: parametersChecksum,
-		UserInfo:           binding.Spec.UserInfo,
+		Parameters:        rawParametersWithRedaction,
+		ParameterChecksum: parametersChecksum,
+		UserInfo:          binding.Spec.UserInfo,
 	}
 
 	appGUID := string(ns.UID)

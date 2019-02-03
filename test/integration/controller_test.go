@@ -1227,7 +1227,7 @@ func getTestBinding() *v1beta1.ServiceBinding {
 	return &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{
+			InstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},

@@ -1125,7 +1125,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					klog.Error(err)
 					return err
 				}
-				commonServicePlanSpec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+				commonServicePlanSpec.InstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 			}
 			if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 				schema, err := json.Marshal(instanceUpdateSchema.Parameters)
@@ -1134,7 +1134,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					klog.Error(err)
 					return err
 				}
-				commonServicePlanSpec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+				commonServicePlanSpec.InstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 			}
 		}
 		if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
@@ -1212,7 +1212,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string, existin
 						klog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].Spec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.InstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
@@ -1221,7 +1221,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string, existin
 						klog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.InstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 			if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {

@@ -62,7 +62,7 @@ func newServiceBinding() servicecatalog.ServiceBinding {
 			Namespace: "test-ns",
 		},
 		Spec: servicecatalog.ServiceBindingSpec{
-			ServiceInstanceRef: servicecatalog.LocalObjectReference{
+			InstanceRef: servicecatalog.LocalObjectReference{
 				Name: "test-instance",
 			},
 			SecretName: "test-secret",

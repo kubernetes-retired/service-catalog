@@ -49,7 +49,7 @@ func writeBindingListTable(w io.Writer, bindingList *v1beta1.ServiceBindingList)
 		t.Append([]string{
 			binding.Name,
 			binding.Namespace,
-			binding.Spec.ServiceInstanceRef.Name,
+			binding.Spec.InstanceRef.Name,
 			getBindingStatusShort(binding.Status),
 		})
 	}
@@ -91,7 +91,7 @@ func WriteBindingDetails(w io.Writer, binding *v1beta1.ServiceBinding) {
 		{"Namespace:", binding.Namespace},
 		{"Status:", getBindingStatusFull(binding.Status)},
 		{"Secret:", binding.Spec.SecretName},
-		{"Instance:", binding.Spec.ServiceInstanceRef.Name},
+		{"Instance:", binding.Spec.InstanceRef.Name},
 	})
 	t.Render()
 

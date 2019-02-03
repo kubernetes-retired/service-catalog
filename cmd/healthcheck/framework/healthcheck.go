@@ -283,7 +283,7 @@ func (h *HealthCheck) createBinding() error {
 			Namespace: h.namespace.Name,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{
+			InstanceRef: v1beta1.LocalObjectReference{
 				Name: h.instanceName,
 			},
 			SecretName: "my-secret",

@@ -176,7 +176,7 @@ func TestUnbindCommand(t *testing.T) {
 						Namespace: ns,
 						Name:      name,
 					},
-					Spec: v1beta1.ServiceBindingSpec{ServiceInstanceRef: v1beta1.LocalObjectReference{Name: tc.fakeInstance}},
+					Spec: v1beta1.ServiceBindingSpec{InstanceRef: v1beta1.LocalObjectReference{Name: tc.fakeInstance}},
 				})
 			}
 			svcatClient := svcatfake.NewSimpleClientset(fakes...)

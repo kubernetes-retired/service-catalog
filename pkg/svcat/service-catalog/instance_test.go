@@ -142,7 +142,7 @@ var _ = Describe("Instances", func() {
 			instanceName := si.Name
 			namespace := si.Namespace
 			sb := &v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Name: "banana_binding", Namespace: namespace}}
-			sb.Spec.ServiceInstanceRef.Name = instanceName
+			sb.Spec.InstanceRef.Name = instanceName
 			instance, err := sdk.RetrieveInstanceByBinding(sb)
 
 			Expect(err).NotTo(HaveOccurred())
@@ -157,7 +157,7 @@ var _ = Describe("Instances", func() {
 			namespace := si.Namespace
 			instanceName := "not_real_instance"
 			sb := &v1beta1.ServiceBinding{ObjectMeta: metav1.ObjectMeta{Name: "banana_binding", Namespace: namespace}}
-			sb.Spec.ServiceInstanceRef.Name = instanceName
+			sb.Spec.InstanceRef.Name = instanceName
 			badClient := &fake.Clientset{}
 			errorMessage := "no instance found"
 			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {

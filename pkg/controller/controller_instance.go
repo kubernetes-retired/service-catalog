@@ -1958,7 +1958,7 @@ func isServiceInstancePropertiesStateEqual(s1 *v1beta1.ServiceInstanceProperties
 	if s1.ClusterServicePlanExternalName != s2.ClusterServicePlanExternalName {
 		return false
 	}
-	if s1.ParametersChecksum != s2.ParametersChecksum {
+	if s1.ParameterChecksum != s2.ParameterChecksum {
 		return false
 	}
 	if s1.UserInfo != nil || s2.UserInfo != nil {
@@ -2122,7 +2122,7 @@ func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.S
 		// Note that as we are potentially looking at a stale binding resource
 		// and cannot rely on UnbindStatus == ServiceBindingUnbindStatusNotRequired
 		// to filter out binding requests that have yet to be sent to the broker.
-		if instance.Name == binding.Spec.ServiceInstanceRef.Name {
+		if instance.Name == binding.Spec.InstanceRef.Name {
 			return &operationError{
 				reason:  errorDeprovisionBlockedByCredentialsReason,
 				message: "All associated ServiceBindings must be removed before this ServiceInstance can be deleted",
@@ -2190,9 +2190,9 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, pla
 		rh.parameters = parameters
 
 		rh.inProgressProperties = &v1beta1.ServiceInstancePropertiesState{
-			Parameters:         rawParametersWithRedaction,
-			ParametersChecksum: parametersChecksum,
-			UserInfo:           instance.Spec.UserInfo,
+			Parameters:        rawParametersWithRedaction,
+			ParameterChecksum: parametersChecksum,
+			UserInfo:          instance.Spec.UserInfo,
 		}
 
 		if instance.Spec.ClusterServiceClassSpecified() {
@@ -2279,7 +2279,7 @@ func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInsta
 		}
 		// Only send the parameters if they have changed from what the Broker has
 		if instance.Status.ExternalProperties == nil ||
-			rh.inProgressProperties.ParametersChecksum != instance.Status.ExternalProperties.ParametersChecksum {
+			rh.inProgressProperties.ParameterChecksum != instance.Status.ExternalProperties.ParameterChecksum {
 			if rh.parameters != nil {
 				request.Parameters = rh.parameters
 			} else {
@@ -2314,7 +2314,7 @@ func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInsta
 		}
 		// Only send the parameters if they have changed from what the Broker has
 		if instance.Status.ExternalProperties == nil ||
-			rh.inProgressProperties.ParametersChecksum != instance.Status.ExternalProperties.ParametersChecksum {
+			rh.inProgressProperties.ParameterChecksum != instance.Status.ExternalProperties.ParameterChecksum {
 			if rh.parameters != nil {
 				request.Parameters = rh.parameters
 			} else {
