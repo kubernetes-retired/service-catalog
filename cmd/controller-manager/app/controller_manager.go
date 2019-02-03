@@ -49,12 +49,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	// The API groups for our API must be installed before we can use the
-	// client to work with them.  This needs to be done once per process; this
-	// is the point at which we handle this for the controller-manager
-	// process.  Please do not remove.
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/api"
-
 	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
 	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
