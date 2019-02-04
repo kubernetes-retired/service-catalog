@@ -71,42 +71,78 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 	if !s.WaitForReady() {
 		return admission.NewForbidden(a, fmt.Errorf("not yet ready to handle request"))
 	}
-	// only care about brokers
-	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("clusterservicebrokers") {
-		return nil
-	}
-	clusterServiceBroker, ok := a.GetObject().(*servicecatalog.ClusterServiceBroker)
-	if !ok {
-		return errors.NewBadRequest("Resource was marked with kind ClusterServiceBroker, but was unable to be converted")
-	}
-
-	if clusterServiceBroker.Spec.AuthInfo == nil {
-		// no auth secret to check
+	// only care about resources in our group
+	if a.GetResource().Group != servicecatalog.GroupName {
 		return nil
 	}
 
-	var secretRef *servicecatalog.ObjectReference
-	if clusterServiceBroker.Spec.AuthInfo.Basic != nil {
-		secretRef = clusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
-	} else if clusterServiceBroker.Spec.AuthInfo.Bearer != nil {
-		secretRef = clusterServiceBroker.Spec.AuthInfo.Bearer.SecretRef
-	}
+	var namespace string
+	var secretName string
+	// only care about brokers and namespace brokers
+	if a.GetResource().GroupResource() == servicecatalog.Resource("clusterservicebrokers") {
+		clusterServiceBroker, ok := a.GetObject().(*servicecatalog.ClusterServiceBroker)
+		if !ok {
+			return errors.NewBadRequest("Resource was marked with kind ClusterServiceBroker, but was unable to be converted")
+		}
 
-	if secretRef == nil {
+		if clusterServiceBroker.Spec.AuthInfo == nil {
+			// no auth secret to check
+			return nil
+		}
+
+		var secretRef *servicecatalog.ObjectReference
+		if clusterServiceBroker.Spec.AuthInfo.Basic != nil {
+			secretRef = clusterServiceBroker.Spec.AuthInfo.Basic.SecretRef
+		} else if clusterServiceBroker.Spec.AuthInfo.Bearer != nil {
+			secretRef = clusterServiceBroker.Spec.AuthInfo.Bearer.SecretRef
+		}
+
+		if secretRef == nil {
+			return nil
+		}
+		klog.V(5).Infof("ClusterServiceBroker %+v: evaluating auth secret ref, with authInfo %q", clusterServiceBroker, secretRef)
+		namespace = secretRef.Namespace
+		secretName = secretRef.Name
+	} else if a.GetResource().GroupResource() == servicecatalog.Resource("servicebrokers") {
+		serviceBroker, ok := a.GetObject().(*servicecatalog.ServiceBroker)
+		if !ok {
+			return errors.NewBadRequest("Resource was marked with kind ServiceBroker, but was unable to be converted")
+		}
+
+		if serviceBroker.Spec.AuthInfo == nil {
+			// no auth secret to check
+			return nil
+		}
+
+		var secretRef *servicecatalog.LocalObjectReference
+		if serviceBroker.Spec.AuthInfo.Basic != nil {
+			secretRef = serviceBroker.Spec.AuthInfo.Basic.SecretRef
+		} else if serviceBroker.Spec.AuthInfo.Bearer != nil {
+			secretRef = serviceBroker.Spec.AuthInfo.Bearer.SecretRef
+		}
+
+		if secretRef == nil {
+			return nil
+		}
+		klog.V(5).Infof("ServiceBroker %+v: evaluating auth secret ref, with authInfo %q", serviceBroker, secretRef)
+		namespace = serviceBroker.Namespace
+		secretName = secretRef.Name
+	}
+	// if we didn't get a namespace and name, it wasn't a clusterservicebroker or broker
+	if namespace == "" || secretName == "" {
 		return nil
 	}
-	klog.V(5).Infof("ClusterServiceBroker %+v: evaluating auth secret ref, with authInfo %q", clusterServiceBroker, secretRef)
 	userInfo := a.GetUserInfo()
 
 	sar := &authorizationapi.SubjectAccessReview{
 		Spec: authorizationapi.SubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationapi.ResourceAttributes{
-				Namespace: secretRef.Namespace,
+				Namespace: namespace,
 				Verb:      "get",
 				Group:     corev1.SchemeGroupVersion.Group,
 				Version:   corev1.SchemeGroupVersion.Version,
 				Resource:  corev1.ResourceSecrets.String(),
-				Name:      secretRef.Name,
+				Name:      secretName,
 			},
 			User:   userInfo.GetName(),
 			Groups: userInfo.GetGroups(),
@@ -120,7 +156,7 @@ func (s *sarcheck) Admit(a admission.Attributes) error {
 	}
 
 	if !sar.Status.Allowed {
-		return admission.NewForbidden(a, fmt.Errorf("broker forbidden access to auth secret (%s): Reason: %s, EvaluationError: %s", secretRef.Name, sar.Status.Reason, sar.Status.EvaluationError))
+		return admission.NewForbidden(a, fmt.Errorf("broker forbidden access to auth secret (%s): Reason: %s, EvaluationError: %s", secretName, sar.Status.Reason, sar.Status.EvaluationError))
 	}
 	return nil
 }
