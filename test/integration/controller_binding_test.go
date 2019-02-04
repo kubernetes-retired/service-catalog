@@ -91,7 +91,7 @@ func TestCreateServiceBindingInvalidInstanceFailure(t *testing.T) {
 			ct.run(func(ct *controllerTest) {
 				binding := getTestBinding()
 				if tc.instanceName != nil {
-					binding.Spec.ServiceInstanceRef.Name = *tc.instanceName
+					binding.Spec.InstanceRef.Name = *tc.instanceName
 				}
 
 				if _, err := ct.client.ServiceBindings(binding.Namespace).Create(binding); err == nil {
@@ -129,7 +129,7 @@ func TestCreateServiceBindingInvalidInstance(t *testing.T) {
 				binding: func() *v1beta1.ServiceBinding {
 					b := getTestBinding()
 					if tc.instanceName != nil {
-						b.Spec.ServiceInstanceRef.Name = *tc.instanceName
+						b.Spec.InstanceRef.Name = *tc.instanceName
 					}
 					return b
 				}(),
@@ -555,10 +555,10 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 				},
 			},
 			expectedSecretData: map[string][]byte{
-				"addedStringValue":  []byte("stringValue"),
-				"addedByteArray":    []byte("byteArray"),
-				"valueFromJSONPath": []byte("bar"),
-				"bar":               []byte("bar"),
+				"addedStringValue":      []byte("stringValue"),
+				"addedByteArray":        []byte("byteArray"),
+				"valueFromJSONPath":     []byte("bar"),
+				"bar":                   []byte("bar"),
 				"key-from-other-secret": []byte("qux"),
 			},
 		},

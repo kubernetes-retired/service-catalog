@@ -76,7 +76,7 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Admit(a admission.Attributes
 		return apierrors.NewBadRequest("Resource was marked with kind ServiceBinding but was unable to be converted")
 	}
 
-	instanceRef := credentials.Spec.ServiceInstanceRef
+	instanceRef := credentials.Spec.InstanceRef
 	instance, err := b.instanceLister.ServiceInstances(credentials.Namespace).Get(instanceRef.Name)
 
 	// block the credentials operation if the ServiceInstance is being deleted

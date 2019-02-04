@@ -83,8 +83,8 @@ func internalValidateServiceBinding(binding *sc.ServiceBinding, create bool) fie
 func validateServiceBindingSpec(spec *sc.ServiceBindingSpec, fldPath *field.Path, create bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	for _, msg := range validateServiceInstanceName(spec.ServiceInstanceRef.Name, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("instanceRef", "name"), spec.ServiceInstanceRef.Name, msg))
+	for _, msg := range validateServiceInstanceName(spec.InstanceRef.Name, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("instanceRef", "name"), spec.InstanceRef.Name, msg))
 	}
 
 	for _, msg := range apivalidation.NameIsDNSSubdomain(spec.SecretName, false /* prefix */) {
@@ -168,7 +168,7 @@ func validateServiceBindingPropertiesState(propertiesState *sc.ServiceBindingPro
 	allErrs := field.ErrorList{}
 
 	if propertiesState.Parameters == nil {
-		if propertiesState.ParametersChecksum != "" {
+		if propertiesState.ParameterChecksum != "" {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Child("parametersChecksum"), "parametersChecksum must be empty when there are no parameters"))
 		}
 	} else {
@@ -180,17 +180,17 @@ func validateServiceBindingPropertiesState(propertiesState *sc.ServiceBindingPro
 				allErrs = append(allErrs, field.Invalid(fldPath.Child("parameters").Child("raw"), propertiesState.Parameters.Raw, "raw must be valid yaml"))
 			}
 		}
-		if propertiesState.ParametersChecksum == "" {
+		if propertiesState.ParameterChecksum == "" {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Child("parametersChecksum"), "parametersChecksum must not be empty when there are parameters"))
 		}
 	}
 
-	if propertiesState.ParametersChecksum != "" {
-		if len(propertiesState.ParametersChecksum) != 64 {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParametersChecksum, "parametersChecksum must be exactly 64 digits"))
+	if propertiesState.ParameterChecksum != "" {
+		if len(propertiesState.ParameterChecksum) != 64 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParameterChecksum, "parametersChecksum must be exactly 64 digits"))
 		}
-		if !stringIsHexadecimal(propertiesState.ParametersChecksum) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParametersChecksum, "parametersChecksum must be a hexadecimal number"))
+		if !stringIsHexadecimal(propertiesState.ParameterChecksum) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParameterChecksum, "parametersChecksum must be a hexadecimal number"))
 		}
 	}
 

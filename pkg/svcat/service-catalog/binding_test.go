@@ -101,7 +101,7 @@ var _ = Describe("Binding", func() {
 	Describe("RetrieveBindingsByInstance", func() {
 		It("Calls the generated v1beta1 List method on the provided instance's namespace", func() {
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "apple_instance", Namespace: sb.Namespace}}
-			sb.Spec.ServiceInstanceRef.Name = si.Name
+			sb.Spec.InstanceRef.Name = si.Name
 			svcCatClient = fake.NewSimpleClientset(sb, sb2)
 			sdk = &SDK{
 				ServiceCatalogClient: svcCatClient,
@@ -147,7 +147,7 @@ var _ = Describe("Binding", func() {
 			Expect(binding).NotTo(BeNil())
 			Expect(binding.ObjectMeta.Namespace).To(Equal(bindingNamespace))
 			Expect(binding.ObjectMeta.Name).To(Equal(bindingName))
-			Expect(binding.Spec.ServiceInstanceRef.Name).To(Equal(instanceName))
+			Expect(binding.Spec.InstanceRef.Name).To(Equal(instanceName))
 			Expect(binding.Spec.SecretName).To(Equal(secret))
 			Expect(binding.Spec.ExternalID).To(Equal(externalID))
 			Expect(svcCatClient.Actions()[0].Matches("create", "servicebindings")).To(BeTrue())
@@ -178,7 +178,7 @@ var _ = Describe("Binding", func() {
 			instanceNamespace := sb.Namespace
 			instanceName := "apple_instance"
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: instanceName, Namespace: instanceNamespace}}
-			sb.Spec.ServiceInstanceRef.Name = si.Name
+			sb.Spec.InstanceRef.Name = si.Name
 			linkedClient := fake.NewSimpleClientset(sb, sb2, si)
 			sdk = &SDK{
 				ServiceCatalogClient: linkedClient,
@@ -197,7 +197,7 @@ var _ = Describe("Binding", func() {
 			instanceName := "apple_instance"
 			errorMessage := "error deleting binding"
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: instanceName, Namespace: instanceNamespace}}
-			sb.Spec.ServiceInstanceRef.Name = si.Name
+			sb.Spec.InstanceRef.Name = si.Name
 
 			badClient := &fake.Clientset{}
 			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
@@ -226,7 +226,7 @@ var _ = Describe("Binding", func() {
 			instanceNamespace := sb.Namespace
 			instanceName := "apple_instance"
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: instanceName, Namespace: instanceNamespace}}
-			sb.Spec.ServiceInstanceRef.Name = si.Name
+			sb.Spec.InstanceRef.Name = si.Name
 			noInstanceClient := fake.NewSimpleClientset(sb, sb2)
 			sdk = &SDK{
 				ServiceCatalogClient: noInstanceClient,
@@ -244,8 +244,8 @@ var _ = Describe("Binding", func() {
 			instanceName := "apple_instance"
 			errorMessage := "error deleting binding"
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: instanceName, Namespace: instanceNamespace}}
-			sb.Spec.ServiceInstanceRef.Name = si.Name
-			sb2.Spec.ServiceInstanceRef.Name = si.Name
+			sb.Spec.InstanceRef.Name = si.Name
+			sb2.Spec.InstanceRef.Name = si.Name
 			badClient := &fake.Clientset{}
 			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, si, nil
@@ -283,8 +283,8 @@ var _ = Describe("Binding", func() {
 	Describe("DeleteBindings", func() {
 		It("Calls the generated v1beta1 delete method for every binding", func() {
 			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "myinstance", Namespace: sb.Namespace}}
-			sb.Spec.ServiceInstanceRef.Name = si.Name
-			sb2.Spec.ServiceInstanceRef.Name = si.Name
+			sb.Spec.InstanceRef.Name = si.Name
+			sb2.Spec.InstanceRef.Name = si.Name
 			client := fake.NewSimpleClientset(sb, sb2, si)
 			sdk = &SDK{
 				ServiceCatalogClient: client,

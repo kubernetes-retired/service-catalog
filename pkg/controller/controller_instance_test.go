@@ -3233,7 +3233,7 @@ func TestReconcileServiceInstanceUpdateInProgressPropertiesOnRetry(t *testing.T)
 		Parameters: &runtime.RawExtension{
 			Raw: []byte(`{ "staleParameter": "value" }`),
 		},
-		ParametersChecksum: "staleChecksum",
+		ParameterChecksum: "staleChecksum",
 	}
 	instance.Status.ObservedGeneration = instance.Generation
 	instance.Status.Conditions = []v1beta1.ServiceInstanceCondition{
@@ -4626,7 +4626,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		Parameters:                     oldParametersRaw,
-		ParametersChecksum:             generateChecksumOfParametersOrFail(t, oldParameters),
+		ParameterChecksum:              generateChecksumOfParametersOrFail(t, oldParameters),
 	}
 
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
@@ -4749,7 +4749,7 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		ClusterServicePlanExternalName: testClusterServicePlanName,
 		ClusterServicePlanExternalID:   testClusterServicePlanGUID,
 		Parameters:                     oldParametersRaw,
-		ParametersChecksum:             generateChecksumOfParametersOrFail(t, oldParameters),
+		ParameterChecksum:              generateChecksumOfParametersOrFail(t, oldParameters),
 	}
 
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
@@ -4960,7 +4960,7 @@ func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
 			ClusterServicePlanExternalName: "old-plan-name",
 			ClusterServicePlanExternalID:   "old-plan-id",
 			Parameters:                     oldParametersRaw,
-			ParametersChecksum:             oldParametersChecksum,
+			ParameterChecksum:              oldParametersChecksum,
 		}
 
 		parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}
@@ -5071,7 +5071,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		ClusterServicePlanExternalName: "old-plan-name",
 		ClusterServicePlanExternalID:   "old-plan-id",
 		Parameters:                     oldParametersRaw,
-		ParametersChecksum:             oldParametersChecksum,
+		ParameterChecksum:              oldParametersChecksum,
 	}
 
 	parameters := instanceParameters{Name: "test-param", Args: make(map[string]string)}

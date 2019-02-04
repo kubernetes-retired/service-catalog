@@ -1060,8 +1060,8 @@ func getTestServiceBinding() *v1beta1.ServiceBinding {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
@@ -1079,8 +1079,8 @@ func getTestServiceInactiveBinding() *v1beta1.ServiceBinding {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			Conditions:   []v1beta1.ServiceBindingCondition{},
@@ -1099,9 +1099,9 @@ func getTestServiceBindingUnbinding() *v1beta1.ServiceBinding {
 			Generation:        2,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			ReconciledGeneration: 1,
@@ -1344,12 +1344,12 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 	}
 
 	plan := servicePlans[0]
-	if plan.Spec.ServiceInstanceCreateParameterSchema == nil {
-		t.Fatalf("Expected plan.ServiceInstanceCreateParameterSchema to be set, but was nil")
+	if plan.Spec.InstanceCreateParameterSchema == nil {
+		t.Fatalf("Expected plan.InstanceCreateParameterSchema to be set, but was nil")
 	}
 
 	cSchema := make(map[string]interface{})
-	if err := json.Unmarshal(plan.Spec.ServiceInstanceCreateParameterSchema.Raw, &cSchema); err == nil {
+	if err := json.Unmarshal(plan.Spec.InstanceCreateParameterSchema.Raw, &cSchema); err == nil {
 		schema := make(map[string]interface{})
 		if err := json.Unmarshal([]byte(instanceParameterSchemaBytes), &schema); err != nil {
 			t.Fatalf("Error unmarshalling schema bytes: %v", err)
@@ -1360,11 +1360,11 @@ func TestCatalogConversionWithParameterSchemas(t *testing.T) {
 		}
 	}
 
-	if plan.Spec.ServiceInstanceUpdateParameterSchema == nil {
-		t.Fatalf("Expected plan.ServiceInstanceUpdateParameterSchema to be set, but was nil")
+	if plan.Spec.InstanceUpdateParameterSchema == nil {
+		t.Fatalf("Expected plan.InstanceUpdateParameterSchema to be set, but was nil")
 	}
 	m := make(map[string]string)
-	if err := json.Unmarshal(plan.Spec.ServiceInstanceUpdateParameterSchema.Raw, &m); err == nil {
+	if err := json.Unmarshal(plan.Spec.InstanceUpdateParameterSchema.Raw, &m); err == nil {
 		if e, a := "zap", m["baz"]; e != a {
 			t.Fatalf("Unexpected value of alphaInstanceUpdateParameterSchema; expected %v, got %v", e, a)
 		}
@@ -3233,7 +3233,7 @@ func assertServiceInstancePropertiesStateParameters(t *testing.T, propsLabel str
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
 	assertPropertiesStateParameters(t, propsLabel, actualProps.Parameters, expectedParams)
-	if e, a := expectedChecksum, actualProps.ParametersChecksum; e != a {
+	if e, a := expectedChecksum, actualProps.ParameterChecksum; e != a {
 		fatalf(t, "unexpected %v properties parameters checksum: expected %v, actual %v", propsLabel, e, a)
 	}
 }
@@ -3723,7 +3723,7 @@ func assertServiceBindingPropertiesStateParameters(t *testing.T, propsLabel stri
 		fatalf(t, "expected %v properties to not be nil", propsLabel)
 	}
 	assertPropertiesStateParameters(t, propsLabel, actualProps.Parameters, expectedParams)
-	if e, a := expectedChecksum, actualProps.ParametersChecksum; e != a {
+	if e, a := expectedChecksum, actualProps.ParameterChecksum; e != a {
 		fatalf(t, "unexpected %v properties parameters checksum: expected %v, actual %v", propsLabel, e, a)
 	}
 }

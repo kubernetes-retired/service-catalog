@@ -161,7 +161,7 @@ func validServiceInstancePropertiesStateClusterPlan() *servicecatalog.ServiceIns
 		ClusterServicePlanExternalName: "plan-name",
 		ClusterServicePlanExternalID:   "plan-id",
 		Parameters:                     &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
-		ParametersChecksum:             "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		ParameterChecksum:              "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}
 }
 
@@ -170,7 +170,7 @@ func validServiceInstancePropertiesStateNamespacedPlan() *servicecatalog.Service
 		ServicePlanExternalName: "ns-plan-name",
 		ServicePlanExternalID:   "ns-plan-id",
 		Parameters:              &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
-		ParametersChecksum:      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		ParameterChecksum:       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}
 }
 
@@ -437,7 +437,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
 				i.Status.InProgressProperties.Parameters = nil
-				i.Status.InProgressProperties.ParametersChecksum = ""
+				i.Status.InProgressProperties.ParameterChecksum = ""
 				return i
 			}(),
 			valid: true,
@@ -446,7 +446,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			name: "in-progress properties parameters with missing parameters checksum",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
-				i.Status.InProgressProperties.ParametersChecksum = ""
+				i.Status.InProgressProperties.ParameterChecksum = ""
 				return i
 			}(),
 			valid: false,
@@ -482,7 +482,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			name: "in-progress properties parameters checksum too small",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
-				i.Status.InProgressProperties.ParametersChecksum = "0123456"
+				i.Status.InProgressProperties.ParameterChecksum = "0123456"
 				return i
 			}(),
 			valid: false,
@@ -491,7 +491,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			name: "in-progress properties parameters checksum malformed",
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validServiceInstanceWithInProgressProvision()
-				i.Status.InProgressProperties.ParametersChecksum = "not hex"
+				i.Status.InProgressProperties.ParameterChecksum = "not hex"
 				return i
 			}(),
 			valid: false,
@@ -572,7 +572,7 @@ func TestValidateServiceInstance(t *testing.T) {
 				i := validClusterRefServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesStateClusterPlan()
 				i.Status.ExternalProperties.Parameters = nil
-				i.Status.ExternalProperties.ParametersChecksum = ""
+				i.Status.ExternalProperties.ParameterChecksum = ""
 				return i
 			}(),
 			valid: true,
@@ -582,7 +582,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validClusterRefServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesStateClusterPlan()
-				i.Status.ExternalProperties.ParametersChecksum = ""
+				i.Status.ExternalProperties.ParameterChecksum = ""
 				return i
 			}(),
 			valid: false,
@@ -622,7 +622,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validClusterRefServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesStateClusterPlan()
-				i.Status.ExternalProperties.ParametersChecksum = "0123456"
+				i.Status.ExternalProperties.ParameterChecksum = "0123456"
 				return i
 			}(),
 			valid: false,
@@ -632,7 +632,7 @@ func TestValidateServiceInstance(t *testing.T) {
 			instance: func() *servicecatalog.ServiceInstance {
 				i := validClusterRefServiceInstance()
 				i.Status.ExternalProperties = validServiceInstancePropertiesStateClusterPlan()
-				i.Status.ExternalProperties.ParametersChecksum = "not hex"
+				i.Status.ExternalProperties.ParameterChecksum = "not hex"
 				return i
 			}(),
 			valid: false,

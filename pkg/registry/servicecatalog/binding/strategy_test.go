@@ -34,7 +34,7 @@ func getTestInstanceCredential() *servicecatalog.ServiceBinding {
 			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceBindingSpec{
-			ServiceInstanceRef: servicecatalog.LocalObjectReference{
+			InstanceRef: servicecatalog.LocalObjectReference{
 				Name: "some-string",
 			},
 		},
@@ -71,7 +71,7 @@ func TestInstanceCredentialUpdate(t *testing.T) {
 		//			older: getTestInstanceCredential(),
 		//			newer: func() *v1beta1.ServiceBinding {
 		//				ic := getTestInstanceCredential()
-		//				ic.Spec.ServiceInstanceRef = servicecatalog.LocalObjectReference{
+		//				ic.Spec.InstanceRef = servicecatalog.LocalObjectReference{
 		//					Name: "new-string",
 		//				}
 		//				return ic

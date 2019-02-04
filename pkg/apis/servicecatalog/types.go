@@ -555,17 +555,17 @@ type CommonServicePlanSpec struct {
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// ServiceInstanceCreateParameterSchema is the schema for the parameters
+	// InstanceCreateParameterSchema is the schema for the parameters
 	// that may be supplied when provisioning a new ServiceInstance on this plan.
-	ServiceInstanceCreateParameterSchema *runtime.RawExtension
+	InstanceCreateParameterSchema *runtime.RawExtension
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
 	//
-	// ServiceInstanceUpdateParameterSchema is the schema for the parameters
+	// InstanceUpdateParameterSchema is the schema for the parameters
 	// that may be updated once an ServiceInstance has been provisioned on this plan.
 	// This field only has meaning if the corresponding ServiceClassSpec is PlanUpdatable.
-	ServiceInstanceUpdateParameterSchema *runtime.RawExtension
+	InstanceUpdateParameterSchema *runtime.RawExtension
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
 	// and its data will not be migrated.
@@ -980,8 +980,8 @@ type ServiceInstancePropertiesState struct {
 	// a secret, its value will be "<redacted>" in this blob.
 	Parameters *runtime.RawExtension
 
-	// ParametersChecksum is the checksum of the parameters that were sent.
-	ParametersChecksum string
+	// ParameterChecksum is the checksum of the parameters that were sent.
+	ParameterChecksum string
 
 	// UserInfo is information about the user that made the request.
 	UserInfo *UserInfo
@@ -1052,10 +1052,10 @@ type ServiceBinding struct {
 // The spec field cannot be changed after a ServiceBinding is
 // created.  Changes submitted to the spec field will be ignored.
 type ServiceBindingSpec struct {
-	// ServiceInstanceRef is the reference to the Instance this ServiceBinding is to.
+	// InstanceRef is the reference to the Instance this ServiceBinding is to.
 	//
 	// Immutable.
-	ServiceInstanceRef LocalObjectReference
+	InstanceRef LocalObjectReference
 
 	// Parameters is a set of the parameters to be passed to the underlying
 	// broker. The inline YAML/JSON payload to be translated into equivalent
@@ -1209,8 +1209,8 @@ type ServiceBindingPropertiesState struct {
 	// sourced from a secret, its value will be "<redacted>" in this blob.
 	Parameters *runtime.RawExtension
 
-	// ParametersChecksum is the checksum of the parameters that were sent.
-	ParametersChecksum string
+	// ParameterChecksum is the checksum of the parameters that were sent.
+	ParameterChecksum string
 
 	// UserInfo is information about the user that made the request.
 	UserInfo *UserInfo
