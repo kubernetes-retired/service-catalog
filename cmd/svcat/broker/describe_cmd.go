@@ -18,20 +18,30 @@ package broker
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
-type describeCmd struct {
+// DescribeCmd contains the info needed to describe a broker in detail
+type DescribeCmd struct {
 	*command.Context
-	name string
+	*command.Namespaced
+	*command.Scoped
+
+	Name string
 }
 
 // NewDescribeCmd builds a "svcat describe broker" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Context: cxt}
+	describeCmd := &DescribeCmd{
+		Context:    cxt,
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+	}
 	cmd := &cobra.Command{
 		Use:     "broker NAME",
 		Aliases: []string{"brokers", "brk"},
@@ -42,28 +52,39 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		PreRunE: command.PreRunE(describeCmd),
 		RunE:    command.RunE(describeCmd),
 	}
+	describeCmd.AddNamespaceFlags(cmd.Flags(), false)
+	describeCmd.AddScopedFlags(cmd.Flags(), true)
 	return cmd
 }
 
-func (c *describeCmd) Validate(args []string) error {
+// Validate checks that the required arguments have been provided
+func (c *DescribeCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("a broker name is required")
 	}
-	c.name = args[0]
+	c.Name = args[0]
 
 	return nil
 }
 
-func (c *describeCmd) Run() error {
-	return c.Describe()
-}
-
-func (c *describeCmd) Describe() error {
-	broker, err := c.App.RetrieveBroker(c.name)
+// Run retrieves the broker(s) with the requested name, interprets
+// possible errors if we need to ask the user for more info, and displays
+// the found broker to the user
+func (c *DescribeCmd) Run() error {
+	if c.Namespace == "" {
+		c.Namespace = c.App.CurrentNamespace
+	}
+	scopeOpts := servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	}
+	broker, err := c.App.RetrieveBrokerByID(c.Name, scopeOpts)
 	if err != nil {
+		if strings.Contains(err.Error(), servicecatalog.MultipleBrokersFoundError) {
+			return fmt.Errorf(err.Error() + ", please specify a scope with --scope")
+		}
 		return err
 	}
-
 	output.WriteBrokerDetails(c.Output, broker)
 	return nil
 }

@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -209,17 +209,18 @@ type FakeSvcatClient struct {
 		result1 []servicecatalog.Broker
 		result2 error
 	}
-	RetrieveBrokerStub        func(string) (*apiv1beta1.ClusterServiceBroker, error)
-	retrieveBrokerMutex       sync.RWMutex
-	retrieveBrokerArgsForCall []struct {
+	RetrieveBrokerByIDStub        func(string, servicecatalog.ScopeOptions) (servicecatalog.Broker, error)
+	retrieveBrokerByIDMutex       sync.RWMutex
+	retrieveBrokerByIDArgsForCall []struct {
 		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
-	retrieveBrokerReturns struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+	retrieveBrokerByIDReturns struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}
-	retrieveBrokerReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+	retrieveBrokerByIDReturnsOnCall map[int]struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}
 	RetrieveBrokerByClassStub        func(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
@@ -1305,53 +1306,54 @@ func (fake *FakeSvcatClient) RetrieveBrokersReturnsOnCall(i int, result1 []servi
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveBroker(arg1 string) (*apiv1beta1.ClusterServiceBroker, error) {
-	fake.retrieveBrokerMutex.Lock()
-	ret, specificReturn := fake.retrieveBrokerReturnsOnCall[len(fake.retrieveBrokerArgsForCall)]
-	fake.retrieveBrokerArgsForCall = append(fake.retrieveBrokerArgsForCall, struct {
+func (fake *FakeSvcatClient) RetrieveBrokerByID(arg1 string, arg2 servicecatalog.ScopeOptions) (servicecatalog.Broker, error) {
+	fake.retrieveBrokerByIDMutex.Lock()
+	ret, specificReturn := fake.retrieveBrokerByIDReturnsOnCall[len(fake.retrieveBrokerByIDArgsForCall)]
+	fake.retrieveBrokerByIDArgsForCall = append(fake.retrieveBrokerByIDArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("RetrieveBroker", []interface{}{arg1})
-	fake.retrieveBrokerMutex.Unlock()
-	if fake.RetrieveBrokerStub != nil {
-		return fake.RetrieveBrokerStub(arg1)
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrieveBrokerByID", []interface{}{arg1, arg2})
+	fake.retrieveBrokerByIDMutex.Unlock()
+	if fake.RetrieveBrokerByIDStub != nil {
+		return fake.RetrieveBrokerByIDStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.retrieveBrokerReturns.result1, fake.retrieveBrokerReturns.result2
+	return fake.retrieveBrokerByIDReturns.result1, fake.retrieveBrokerByIDReturns.result2
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerCallCount() int {
-	fake.retrieveBrokerMutex.RLock()
-	defer fake.retrieveBrokerMutex.RUnlock()
-	return len(fake.retrieveBrokerArgsForCall)
+func (fake *FakeSvcatClient) RetrieveBrokerByIDCallCount() int {
+	fake.retrieveBrokerByIDMutex.RLock()
+	defer fake.retrieveBrokerByIDMutex.RUnlock()
+	return len(fake.retrieveBrokerByIDArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerArgsForCall(i int) string {
-	fake.retrieveBrokerMutex.RLock()
-	defer fake.retrieveBrokerMutex.RUnlock()
-	return fake.retrieveBrokerArgsForCall[i].arg1
+func (fake *FakeSvcatClient) RetrieveBrokerByIDArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
+	fake.retrieveBrokerByIDMutex.RLock()
+	defer fake.retrieveBrokerByIDMutex.RUnlock()
+	return fake.retrieveBrokerByIDArgsForCall[i].arg1, fake.retrieveBrokerByIDArgsForCall[i].arg2
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerReturns(result1 *apiv1beta1.ClusterServiceBroker, result2 error) {
-	fake.RetrieveBrokerStub = nil
-	fake.retrieveBrokerReturns = struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+func (fake *FakeSvcatClient) RetrieveBrokerByIDReturns(result1 servicecatalog.Broker, result2 error) {
+	fake.RetrieveBrokerByIDStub = nil
+	fake.retrieveBrokerByIDReturns = struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceBroker, result2 error) {
-	fake.RetrieveBrokerStub = nil
-	if fake.retrieveBrokerReturnsOnCall == nil {
-		fake.retrieveBrokerReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServiceBroker
+func (fake *FakeSvcatClient) RetrieveBrokerByIDReturnsOnCall(i int, result1 servicecatalog.Broker, result2 error) {
+	fake.RetrieveBrokerByIDStub = nil
+	if fake.retrieveBrokerByIDReturnsOnCall == nil {
+		fake.retrieveBrokerByIDReturnsOnCall = make(map[int]struct {
+			result1 servicecatalog.Broker
 			result2 error
 		})
 	}
-	fake.retrieveBrokerReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+	fake.retrieveBrokerByIDReturnsOnCall[i] = struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}{result1, result2}
 }
@@ -2880,8 +2882,8 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.deregisterMutex.RUnlock()
 	fake.retrieveBrokersMutex.RLock()
 	defer fake.retrieveBrokersMutex.RUnlock()
-	fake.retrieveBrokerMutex.RLock()
-	defer fake.retrieveBrokerMutex.RUnlock()
+	fake.retrieveBrokerByIDMutex.RLock()
+	defer fake.retrieveBrokerByIDMutex.RUnlock()
 	fake.retrieveBrokerByClassMutex.RLock()
 	defer fake.retrieveBrokerByClassMutex.RUnlock()
 	fake.registerMutex.RLock()

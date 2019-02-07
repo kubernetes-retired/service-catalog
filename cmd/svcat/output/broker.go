@@ -23,6 +23,13 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 )
 
+func getBrokerScope(broker servicecatalog.Broker) string {
+	if broker.GetNamespace() != "" {
+		return servicecatalog.NamespaceScope
+	}
+	return servicecatalog.ClusterScope
+}
+
 func getBrokerStatusCondition(status v1beta1.CommonServiceBrokerStatus) v1beta1.ServiceBrokerCondition {
 	if len(status.Conditions) > 0 {
 		return status.Conditions[len(status.Conditions)-1]
@@ -72,26 +79,28 @@ func WriteBrokerList(w io.Writer, outputFormat string, brokers ...servicecatalog
 }
 
 // WriteBroker prints a broker in the specified output format.
-func WriteBroker(w io.Writer, outputFormat string, broker v1beta1.ClusterServiceBroker) {
+func WriteBroker(w io.Writer, outputFormat string, broker servicecatalog.Broker) {
 	switch outputFormat {
 	case FormatJSON:
 		writeJSON(w, broker)
 	case FormatYAML:
 		writeYAML(w, broker, 0)
 	case FormatTable:
-		writeBrokerListTable(w, []servicecatalog.Broker{&broker})
+		writeBrokerListTable(w, []servicecatalog.Broker{broker})
 	}
 }
 
 // WriteBrokerDetails prints details for a single broker.
 func WriteBrokerDetails(w io.Writer, broker servicecatalog.Broker) {
 	t := NewDetailsTable(w)
-
-	t.AppendBulk([][]string{
-		{"Name:", broker.GetName()},
-		{"URL:", broker.GetURL()},
-		{"Status:", getBrokerStatusFull(broker.GetStatus())},
-	})
-
+	table := [][]string{}
+	table = append(table, []string{"Name:", broker.GetName()})
+	table = append(table, []string{"Scope:", getBrokerScope(broker)})
+	if broker.GetNamespace() != "" {
+		table = append(table, []string{"Namespace:", broker.GetNamespace()})
+	}
+	table = append(table, []string{"URL:", broker.GetURL()})
+	table = append(table, []string{"Status:", getBrokerStatusFull(broker.GetStatus())})
+	t.AppendBulk(table)
 	t.Render()
 }

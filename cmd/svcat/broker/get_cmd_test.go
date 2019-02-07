@@ -14,11 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package broker
+package broker_test
 
 import (
 	"bytes"
+	"fmt"
 
+	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -47,15 +49,15 @@ var _ = Describe("Get Broker Command", func() {
 	})
 	Describe("Validate", func() {
 		It("allows broker name arg to be empty", func() {
-			cmd := &getCmd{}
+			cmd := &GetCmd{}
 			err := cmd.Validate([]string{})
 			Expect(err).To(BeNil())
 		})
 		It("optionally parses the broker name argument", func() {
-			cmd := &getCmd{}
+			cmd := &GetCmd{}
 			err := cmd.Validate([]string{"minibroker"})
 			Expect(err).To(BeNil())
-			Expect(cmd.name).To(Equal("minibroker"))
+			Expect(cmd.Name).To(Equal("minibroker"))
 		})
 	})
 	Describe("Run", func() {
@@ -68,7 +70,7 @@ var _ = Describe("Get Broker Command", func() {
 				[]servicecatalog.Broker{&v1beta1.ServiceBroker{ObjectMeta: v1.ObjectMeta{Name: "minibroker", Namespace: "default"}}},
 				nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := getCmd{
+			cmd := GetCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 				Formatted:  command.NewFormatted(),
@@ -100,7 +102,7 @@ var _ = Describe("Get Broker Command", func() {
 				},
 				nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := getCmd{
+			cmd := GetCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 				Formatted:  command.NewFormatted(),
@@ -133,7 +135,7 @@ var _ = Describe("Get Broker Command", func() {
 				},
 				nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := getCmd{
+			cmd := GetCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 				Formatted:  command.NewFormatted(),
@@ -153,6 +155,92 @@ var _ = Describe("Get Broker Command", func() {
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring("global-broker"))
 			Expect(output).To(ContainSubstring("minibroker"))
+		})
+		Context("getting a single broker", func() {
+			var (
+				brokerName string
+				brokerURL  string
+				csb        *v1beta1.ClusterServiceBroker
+				namespace  string
+			)
+			BeforeEach(func() {
+				brokerName = "global-broker"
+				brokerURL = "www.foobar.com"
+				namespace = "default"
+				csb = &v1beta1.ClusterServiceBroker{
+					ObjectMeta: v1.ObjectMeta{
+						Name: brokerName,
+					},
+					Spec: v1beta1.ClusterServiceBrokerSpec{
+						CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+							URL:                 brokerURL,
+							CatalogRestrictions: &v1beta1.CatalogRestrictions{},
+						},
+					},
+				}
+			})
+			It("Calls the pkg/svcat libs RetrieveBrokerByID when getting a single broker", func() {
+				outputBuffer := &bytes.Buffer{}
+
+				fakeApp, _ := svcat.NewApp(nil, nil, "default")
+				fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+				fakeSDK.RetrieveBrokerByIDReturns(csb, nil)
+				fakeApp.SvcatClient = fakeSDK
+				cmd := GetCmd{
+					Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+					Scoped:     command.NewScoped(),
+					Formatted:  command.NewFormatted(),
+				}
+				cmd.Namespace = "default"
+				cmd.Scope = servicecatalog.AllScope
+				cmd.Name = brokerName
+				err := cmd.Run()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeSDK.RetrieveBrokerByIDCallCount()).To(Equal(1))
+				returnedName, returnedScopeOpts := fakeSDK.RetrieveBrokerByIDArgsForCall(0)
+				Expect(returnedName).To(Equal(brokerName))
+				scopeOpts := servicecatalog.ScopeOptions{
+					Scope:     servicecatalog.AllScope,
+					Namespace: namespace,
+				}
+				Expect(returnedScopeOpts).To(Equal(scopeOpts))
+
+				output := outputBuffer.String()
+				Expect(output).To(ContainSubstring(brokerName))
+				Expect(output).To(ContainSubstring(brokerURL))
+			})
+			It("prompts the user for more input when it finds multiple brokers", func() {
+				outputBuffer := &bytes.Buffer{}
+
+				fakeApp, _ := svcat.NewApp(nil, nil, "default")
+				fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+				fakeSDK.RetrieveBrokerByIDReturns(nil, fmt.Errorf(servicecatalog.MultipleBrokersFoundError+" for broker '"+brokerName+"'"))
+				fakeApp.SvcatClient = fakeSDK
+				cmd := GetCmd{
+					Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
+					Scoped:     command.NewScoped(),
+					Formatted:  command.NewFormatted(),
+				}
+				cmd.Namespace = "default"
+				cmd.Scope = servicecatalog.AllScope
+				cmd.Name = brokerName
+				err := cmd.Run()
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(servicecatalog.MultipleBrokersFoundError))
+				Expect(err.Error()).To(ContainSubstring("specify a scope with --scope"))
+
+				Expect(fakeSDK.RetrieveBrokerByIDCallCount()).To(Equal(1))
+				returnedName, returnedScopeOpts := fakeSDK.RetrieveBrokerByIDArgsForCall(0)
+				Expect(returnedName).To(Equal(brokerName))
+				scopeOpts := servicecatalog.ScopeOptions{
+					Scope:     servicecatalog.AllScope,
+					Namespace: namespace,
+				}
+				Expect(returnedScopeOpts).To(Equal(scopeOpts))
+
+			})
 		})
 	})
 })
