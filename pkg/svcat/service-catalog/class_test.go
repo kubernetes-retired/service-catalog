@@ -22,6 +22,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/testing"
@@ -149,8 +150,34 @@ var _ = Describe("Class", func() {
 		})
 	})
 	Describe("RetrieveClassByID", func() {
-		It("Calls the generated v1beta1 get method", func() {
-			classID := fmt.Sprintf("%v", csc.UID)
+		It("Calls the generated v1beta1 get methods for clusterserviceclass and serviceclass with the passed in name", func() {
+			classID := csc.Name
+			realClient := &fake.Clientset{}
+			realClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, csc, nil
+			})
+			realClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, nil
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: realClient,
+			}
+			scopeOptions := ScopeOptions{
+				Namespace: "",
+				Scope:     AllScope,
+			}
+			class, err := sdk.RetrieveClassByID(classID, scopeOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(class.GetName()).To(Equal(classID))
+			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classID))
+			Expect(actions[1].Matches("get", "serviceclasses")).To(BeTrue())
+			Expect(actions[1].(testing.GetActionImpl).Name).To(Equal(classID))
+		})
+		It("Calls only the generated v1beta1 get method for clusterserviceclass when called with cluster scope", func() {
+			classID := csc.Name
 			realClient := &fake.Clientset{}
 			realClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, csc, nil
@@ -158,11 +185,38 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: realClient,
 			}
-			class, err := sdk.RetrieveClassByID(classID)
+			scopeOptions := ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
+			class, err := sdk.RetrieveClassByID(classID, scopeOptions)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fmt.Sprintf("%v", class.UID)).To(Equal(classID))
+			Expect(class.GetName()).To(Equal(classID))
 			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(1))
 			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classID))
+		})
+		It("Calls only the generated v1beta1 get method for serviceclass when called with namespace scope", func() {
+			classID := sc.Name
+			realClient := &fake.Clientset{}
+			realClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sc, nil
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: realClient,
+			}
+			scopeOptions := ScopeOptions{
+				Namespace: sc.Namespace,
+				Scope:     NamespaceScope,
+			}
+			class, err := sdk.RetrieveClassByID(classID, scopeOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(class.GetName()).To(Equal(classID))
+			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(1))
+			Expect(actions[0].Matches("get", "serviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classID))
 		})
 		It("Bubbles up errors", func() {
 			errorMessage := "not found"
@@ -173,13 +227,97 @@ var _ = Describe("Class", func() {
 			sdk = &SDK{
 				ServiceCatalogClient: emptyClient,
 			}
-			class, err := sdk.RetrieveClassByID("not_real")
+			scopeOptions := ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
+			class, err := sdk.RetrieveClassByID("not_real", scopeOptions)
 
 			Expect(class).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("not found"))
 			actions := emptyClient.Actions()
 			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+		})
+		It("errors when it finds multiple classes", func() {
+			classID := csc.Name
+			realClient := &fake.Clientset{}
+			realClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, csc, nil
+			})
+			realClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sc, nil
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: realClient,
+			}
+			scopeOptions := ScopeOptions{
+				Namespace: sc.Namespace,
+				Scope:     AllScope,
+			}
+			class, err := sdk.RetrieveClassByID(classID, scopeOptions)
+			Expect(class).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(MultipleClassesFoundError))
+			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classID))
+			Expect(actions[1].Matches("get", "serviceclasses")).To(BeTrue())
+			Expect(actions[1].(testing.GetActionImpl).Name).To(Equal(classID))
+		})
+		It("doesn't short circuit on not-found errors", func() {
+			classID := sc.Name
+			realClient := &fake.Clientset{}
+			realClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, apierrors.NewNotFound(v1beta1.Resource("clusterserviceclass"), classID)
+			})
+			realClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, sc, nil
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: realClient,
+			}
+			scopeOptions := ScopeOptions{
+				Namespace: sc.Namespace,
+				Scope:     AllScope,
+			}
+			class, err := sdk.RetrieveClassByID(classID, scopeOptions)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(class.GetName()).To(Equal(classID))
+			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classID))
+			Expect(actions[1].Matches("get", "serviceclasses")).To(BeTrue())
+			Expect(actions[1].(testing.GetActionImpl).Name).To(Equal(classID))
+		})
+		It("errors when it recieves not-found errors for both types", func() {
+			classID := sc.Name
+			realClient := &fake.Clientset{}
+			realClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, apierrors.NewNotFound(v1beta1.Resource("clusterserviceclass"), classID)
+			})
+			realClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, apierrors.NewNotFound(v1beta1.Resource("clusterserviceclass"), classID)
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: realClient,
+			}
+			scopeOptions := ScopeOptions{
+				Namespace: sc.Namespace,
+				Scope:     AllScope,
+			}
+			class, err := sdk.RetrieveClassByID(classID, scopeOptions)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("no matching class found"))
+			Expect(class).To(BeNil())
+			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classID))
+			Expect(actions[1].Matches("get", "serviceclasses")).To(BeTrue())
+			Expect(actions[1].(testing.GetActionImpl).Name).To(Equal(classID))
 		})
 	})
 	Describe("RetrieveClassByPlan", func() {

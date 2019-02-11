@@ -18,6 +18,7 @@ package class
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
@@ -25,16 +26,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type describeCmd struct {
+// DescribeCmd contains the information needed to describe a specific class
+type DescribeCmd struct {
 	*command.Context
-	lookupByKubeName bool
-	kubeName         string
-	name             string
+	*command.Namespaced
+	*command.Scoped
+
+	LookupByKubeName bool
+	KubeName         string
+	Name             string
 }
 
 // NewDescribeCmd builds a "svcat describe class" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{Context: cxt}
+	describeCmd := &DescribeCmd{
+		Context:    cxt,
+		Namespaced: command.NewNamespaced(cxt),
+		Scoped:     command.NewScoped(),
+	}
 	cmd := &cobra.Command{
 		Use:     "class NAME",
 		Aliases: []string{"classes", "cl"},
@@ -47,44 +56,57 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(describeCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&describeCmd.lookupByKubeName,
+		&describeCmd.LookupByKubeName,
 		"kube-name",
 		"k",
 		false,
-		"Whether or not to get the class by its Kubernetes Name (the default is by external name)",
+		"Whether or not to get the class by its Kubernetes name (the default is by external name)",
 	)
+	describeCmd.AddNamespaceFlags(cmd.Flags(), true)
+	describeCmd.AddScopedFlags(cmd.Flags(), true)
+
 	return cmd
 }
 
-func (c *describeCmd) Validate(args []string) error {
+// Validate checks that the required arguments have been provided
+func (c *DescribeCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("a class name or Kubernetes name is required")
+		return fmt.Errorf("a class external name or Kubernetes name is required")
 	}
 
-	if c.lookupByKubeName {
-		c.kubeName = args[0]
+	if c.LookupByKubeName {
+		c.KubeName = args[0]
 	} else {
-		c.name = args[0]
+		c.Name = args[0]
 	}
 
 	return nil
 }
 
-func (c *describeCmd) Run() error {
-	return c.describe()
-}
-
-func (c *describeCmd) describe() error {
+// Run determines if we're getting a class by k8s name or
+// external name, gets the details of the class, and prints
+// the output to the user
+func (c *DescribeCmd) Run() error {
 	var class servicecatalog.Class
 	var err error
-	if c.lookupByKubeName {
-		class, err = c.App.RetrieveClassByID(c.kubeName)
+	if c.Namespace == "" {
+		c.Namespace = c.App.CurrentNamespace
+	}
+	scopeOpts := servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	}
+
+	if c.LookupByKubeName {
+		class, err = c.App.RetrieveClassByID(c.KubeName, scopeOpts)
 	} else {
-		class, err = c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{
-			Scope: servicecatalog.ClusterScope,
-		})
+		class, err = c.App.RetrieveClassByName(c.Name, scopeOpts)
 	}
 	if err != nil {
+		if strings.Contains(err.Error(), servicecatalog.MultipleClassesFoundError) {
+			return fmt.Errorf(err.Error() + ", please specify a scope with --scope or an exact Kubernetes name with --kube-name")
+		}
+
 		return err
 	}
 
