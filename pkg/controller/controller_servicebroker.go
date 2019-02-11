@@ -127,7 +127,6 @@ func (c *controller) updateServiceBrokerClient(broker *v1beta1.ServiceBroker) (o
 		return nil, err
 	}
 
-	// clientConfig := NewClientConfigurationForBroker(broker, authConfig)
 	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
 
 	brokerClient, err := c.brokerClientManager.UpdateBrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name), clientConfig)
@@ -151,11 +150,6 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	klog.V(4).Infof(pcb.Message("Processing"))
 
-	brokerClient, err := c.updateServiceBrokerClient(broker)
-	if err != nil {
-		return err
-	}
-
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
@@ -166,6 +160,11 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 
 	if broker.DeletionTimestamp == nil { // Add or update
 		klog.V(4).Info(pcb.Message("Processing adding/update event"))
+
+		brokerClient, err := c.updateServiceBrokerClient(broker)
+		if err != nil {
+			return err
+		}
 
 		// get the broker's catalog
 		now := metav1.Now()

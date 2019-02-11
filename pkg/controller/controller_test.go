@@ -517,6 +517,39 @@ func getTestClusterServiceBrokerWithAuth(authInfo *v1beta1.ClusterServiceBrokerA
 	return broker
 }
 
+func getTestClusterBrokerBasicAuthInfo() *v1beta1.ClusterServiceBrokerAuthInfo {
+	return &v1beta1.ClusterServiceBrokerAuthInfo{
+		Basic: &v1beta1.ClusterBasicAuthConfig{
+			SecretRef: &v1beta1.ObjectReference{Namespace: "test-ns", Name: "auth-secret"},
+		},
+	}
+}
+
+func getTestClusterBrokerBearerAuthInfo() *v1beta1.ClusterServiceBrokerAuthInfo {
+	return &v1beta1.ClusterServiceBrokerAuthInfo{
+		Bearer: &v1beta1.ClusterBearerTokenAuthConfig{
+			SecretRef: &v1beta1.ObjectReference{Namespace: "test-ns", Name: "auth-secret"},
+		},
+	}
+}
+
+func getTestBasicAuthSecret() *corev1.Secret {
+	return &corev1.Secret{
+		Data: map[string][]byte{
+			v1beta1.BasicAuthUsernameKey: []byte("foo"),
+			v1beta1.BasicAuthPasswordKey: []byte("bar"),
+		},
+	}
+}
+
+func getTestBearerAuthSecret() *corev1.Secret {
+	return &corev1.Secret{
+		Data: map[string][]byte{
+			v1beta1.BearerTokenKey: []byte("token"),
+		},
+	}
+}
+
 // a bindable service class wired to the result of getTestClusterServiceBroker()
 func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 	broker := getTestClusterServiceBroker()

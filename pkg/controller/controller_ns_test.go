@@ -17,10 +17,12 @@ limitations under the License.
 package controller
 
 import (
+	"testing"
 	"time"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -48,6 +50,45 @@ func getTestServiceBroker() *v1beta1.ServiceBroker {
 		Spec: v1beta1.ServiceBrokerSpec{
 			CommonServiceBrokerSpec: getTestCommonServiceBrokerSpec(),
 		},
+	}
+}
+
+func getTestServiceBrokerWithAuth(authInfo *v1beta1.ServiceBrokerAuthInfo) *v1beta1.ServiceBroker {
+	broker := getTestServiceBroker()
+	broker.Spec.AuthInfo = authInfo
+	return broker
+}
+
+func getTestBrokerBasicAuthInfo() *v1beta1.ServiceBrokerAuthInfo {
+	return &v1beta1.ServiceBrokerAuthInfo{
+		Basic: &v1beta1.BasicAuthConfig{
+			SecretRef: &v1beta1.LocalObjectReference{Name: "auth-secret"},
+		},
+	}
+}
+
+func getTestBrokerBearerAuthInfo() *v1beta1.ServiceBrokerAuthInfo {
+	return &v1beta1.ServiceBrokerAuthInfo{
+		Bearer: &v1beta1.BearerTokenAuthConfig{
+			SecretRef: &v1beta1.LocalObjectReference{Name: "auth-secret"},
+		},
+	}
+}
+
+func assertServiceBrokerReadyFalse(t *testing.T, obj runtime.Object) {
+	assertServiceBrokerCondition(t, obj, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse)
+}
+
+func assertServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus) {
+	broker, ok := obj.(*v1beta1.ServiceBroker)
+	if !ok {
+		fatalf(t, "Couldn't convert object %+v into a *v1beta1.ServiceBroker", obj)
+	}
+
+	for _, condition := range broker.Status.Conditions {
+		if condition.Type == conditionType && condition.Status != status {
+			fatalf(t, "%v condition had unexpected status; expected %v, got %v", conditionType, status, condition.Status)
+		}
 	}
 }
 

@@ -158,11 +158,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 	klog.V(4).Infof(pcb.Message("Processing"))
 
-	brokerClient, err := c.updateClusterServiceBrokerClient(broker)
-	if err != nil {
-		return err
-	}
-
 	// * If the broker's ready condition is true and the RelistBehavior has been
 	// set to Manual, do not reconcile it.
 	// * If the broker's ready condition is true and the relist interval has not
@@ -173,6 +168,11 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 	if broker.DeletionTimestamp == nil { // Add or update
 		klog.V(4).Info(pcb.Message("Processing adding/update event"))
+
+		brokerClient, err := c.updateClusterServiceBrokerClient(broker)
+		if err != nil {
+			return err
+		}
 
 		// get the broker's catalog
 		now := metav1.Now()
