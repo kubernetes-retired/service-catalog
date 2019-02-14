@@ -520,16 +520,14 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 		binding.Namespace, binding.Spec.SecretName, len(credentials),
 	))
 
-	err := c.transformCredentials(binding.Spec.SecretTransforms, credentials)
-	if err != nil {
+	if err := c.transformCredentials(binding.Spec.SecretTransforms, credentials); err != nil {
 		return fmt.Errorf(`Unexpected error while transforming credentials for ServiceBinding "%s/%s": %v`, binding.Namespace, binding.Name, err)
 	}
 
 	secretData := make(map[string][]byte)
 	for k, v := range credentials {
 		var err error
-		secretData[k], err = serialize(v)
-		if err != nil {
+		if secretData[k], err = serialize(v); err != nil {
 			return fmt.Errorf("Unable to serialize value for credential key %q (value is intentionally not logged): %s", k, err)
 		}
 	}
@@ -544,8 +542,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 			return fmt.Errorf(`Secret "%s/%s" is not owned by ServiceBinding, controllerRef: %v`, binding.Namespace, existingSecret.Name, controllerRef)
 		}
 		existingSecret.Data = secretData
-		_, err = secretClient.Update(existingSecret)
-		if err != nil {
+		if _, err = secretClient.Update(existingSecret); err != nil {
 			if apierrors.IsConflict(err) {
 				// Conflicting update detected, try again later
 				return fmt.Errorf(`Conflicting Secret "%s/%s" update detected`, binding.Namespace, existingSecret.Name)
@@ -558,7 +555,6 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 			return fmt.Errorf(`Unexpected error getting Secret "%s/%s": %v`, binding.Namespace, existingSecret.Name, err)
 		}
 		err = nil
-
 		// Create new secret
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -570,8 +566,8 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 			},
 			Data: secretData,
 		}
-		_, err = secretClient.Create(secret)
-		if err != nil {
+
+		if _, err = secretClient.Create(secret); err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// Concurrent controller has created secret under the same name,
 				// Update the secret at the next retry iteration
@@ -643,8 +639,8 @@ func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error 
 	klog.V(5).Info(pcb.Messagef(`Deleting Secret "%s/%s"`,
 		binding.Namespace, binding.Spec.SecretName,
 	))
-	err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
+
+	if err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
@@ -836,7 +832,6 @@ func rollbackBindingReconciledGenerationOnDeletion(binding *v1beta1.ServiceBindi
 
 func (c *controller) requeueServiceBindingForPoll(key string) error {
 	c.bindingQueue.Add(key)
-
 	return nil
 }
 
