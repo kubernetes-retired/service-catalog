@@ -1,10 +1,3 @@
- //modal close button
-(function(){
-    //π.modalCloseButton = function(closingFunction){
-    // return π.button('pi-modal-close-button', null, null, closingFunction);
-    //};
-})();
-
 // globals
 var body;
 
@@ -182,8 +175,8 @@ var kub = (function () {
         var footerTop = footer[0].getBoundingClientRect().top;
         var windowHeight = window.innerHeight;
         var maxHeight = Math.min(footerTop, windowHeight) - docsTocTop;
-        
-        docsToc.css({ 'top': docsTocTop + 'px', 'max-height': maxHeight + 'px' });
+
+        docsToc.css({ 'top': docsTocTop + 'px', 'max-height': maxHeight + 'px', 'overflow' : 'scroll' });
     }
 
     function setHomeHeaderStyles() {
