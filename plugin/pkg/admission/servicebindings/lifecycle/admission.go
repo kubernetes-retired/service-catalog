@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
@@ -76,7 +76,7 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Admit(a admission.Attributes
 		return apierrors.NewBadRequest("Resource was marked with kind ServiceBinding but was unable to be converted")
 	}
 
-	instanceRef := credentials.Spec.ServiceInstanceRef
+	instanceRef := credentials.Spec.InstanceRef
 	instance, err := b.instanceLister.ServiceInstances(credentials.Namespace).Get(instanceRef.Name)
 
 	// block the credentials operation if the ServiceInstance is being deleted
@@ -86,7 +86,7 @@ func (b *enforceNoNewCredentialsForDeletedInstance) Admit(a admission.Attributes
 			credentials.Name,
 			credentials.Namespace,
 			instanceRef.Name)
-		glog.Info(warning, err)
+		klog.Info(warning, err)
 		return admission.NewForbidden(a, fmt.Errorf(warning))
 	}
 

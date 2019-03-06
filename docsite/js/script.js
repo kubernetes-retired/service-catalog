@@ -1,10 +1,3 @@
- //modal close button
-(function(){
-    //π.modalCloseButton = function(closingFunction){
-    //	return π.button('pi-modal-close-button', null, null, closingFunction);
-    //};
-})();
-
 // globals
 var body;
 
@@ -92,7 +85,7 @@ function px(n){
 
 var kub = (function () {
     var HEADER_HEIGHT;
-    var html, header, mainNav, quickstartButton, hero, encyclopedia, footer, headlineWrapper;
+    var html, header, mainNav, quickstartButton, hero, encyclopedia, footer, headlineWrapper, docsToc;
 
     $(document).ready(function () {
         html = $('html');
@@ -104,6 +97,7 @@ var kub = (function () {
         encyclopedia = $('#encyclopedia');
         footer = $('footer');
         headlineWrapper = $('#headlineWrapper');
+        docsToc = $('#docsToc');
         HEADER_HEIGHT = header.outerHeight();
 
         resetTheView();
@@ -167,6 +161,22 @@ var kub = (function () {
         if (html[0].id == 'home') {
             setHomeHeaderStyles();
         }
+        if (html[0].id == 'docs') {
+            repositionDocsToc();
+        }
+    }
+
+    function repositionDocsToc() {
+        var headerBottom = header[0].getBoundingClientRect().bottom;
+        var heroBottom = hero[0].getBoundingClientRect().bottom;
+        var offsetForDocsTocTop = 10;
+        var docsTocTop = Math.max(headerBottom, heroBottom) + offsetForDocsTocTop;
+
+        var footerTop = footer[0].getBoundingClientRect().top;
+        var windowHeight = window.innerHeight;
+        var maxHeight = Math.min(footerTop, windowHeight) - docsTocTop;
+
+        docsToc.css({ 'top': docsTocTop + 'px', 'max-height': maxHeight + 'px', 'overflow' : 'scroll' });
     }
 
     function setHomeHeaderStyles() {

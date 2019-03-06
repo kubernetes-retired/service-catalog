@@ -37,7 +37,7 @@ Flag | Description
 --cert-dir string | The directory where the TLS certs are located. If --tls-cert-file and --tls-private-key-file are provided, this flag will be ignored. (default "/var/run/service-catalog-healthcheck")
 --http2-max-streams-per-connection int | The limit that the server gives to clients for the maximum number of streams in an HTTP/2 connection. Zero means to use golang's default.
 --kubernetes-config string | Path to config containing embedded authinfo for kubernetes. Default value is from environment variable KUBECONFIG
---kubernetes-context string | config context to use for kuberentes. If unset, will use value from 'current-context'
+--kubernetes-context string | config context to use for kubernetes. If unset, will use value from 'current-context'
 --kubernetes-host string | The kubernetes host, or apiserver, to connect to (default "http://127.0.0.1:8080")
 --log_backtrace_at traceLocation | when logging hits line file:N, emit a stack trace (default :0)
 --log_dir string | If non-empty, write log files in this directory

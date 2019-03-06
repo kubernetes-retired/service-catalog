@@ -163,7 +163,7 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage, error) {
 				binding := obj.(*servicecatalog.ServiceBinding)
 				cells := []interface{}{
 					name,
-					binding.Spec.ServiceInstanceRef.Name,
+					binding.Spec.InstanceRef.Name,
 					binding.Spec.SecretName,
 					getStatus(binding.Status),
 					age,

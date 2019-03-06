@@ -29,10 +29,10 @@ import (
 type describeCmd struct {
 	*command.Namespaced
 	*command.Scoped
-	lookupByUUID bool
-	showSchemas  bool
-	uuid         string
-	name         string
+	lookupByKubeName bool
+	showSchemas      bool
+	kubeName         string
+	name             string
 }
 
 // NewDescribeCmd builds a "svcat describe plan" command
@@ -47,7 +47,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		Short:   "Show details of a specific plan",
 		Example: command.NormalizeExamples(`
   svcat describe plan standard800
-  svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
+  svcat describe plan --kube-name 08e4b43a-36bc-447e-a81f-8202b13e339c
   svcat describe plan PLAN_NAME --scope cluster
   svcat describe plan PLAN_NAME --scope namespace --namespace NAMESPACE_NAME
 `),
@@ -55,11 +55,11 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(describeCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&describeCmd.lookupByUUID,
-		"uuid",
-		"u",
+		&describeCmd.lookupByKubeName,
+		"kube-name",
+		"k",
 		false,
-		"Whether or not to get the class by UUID (the default is by name)",
+		"Whether or not to get the class by its Kubernetes name (the default is by external name)",
 	)
 	cmd.Flags().BoolVarP(
 		&describeCmd.showSchemas,
@@ -76,11 +76,11 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 // Validate and load the arguments passed to the svcat command.
 func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("a plan name or uuid is required")
+		return fmt.Errorf("a plan name or Kubernetes name is required")
 	}
 
-	if c.lookupByUUID {
-		c.uuid = args[0]
+	if c.lookupByKubeName {
+		c.kubeName = args[0]
 	} else {
 		c.name = args[0]
 	}
@@ -102,8 +102,8 @@ func (c *describeCmd) describe() error {
 		Scope:     c.Scope,
 	}
 
-	if c.lookupByUUID {
-		plan, err = c.App.RetrievePlanByID(c.uuid, opts)
+	if c.lookupByKubeName {
+		plan, err = c.App.RetrievePlanByID(c.kubeName, opts)
 	} else if strings.Contains(c.name, "/") {
 		names := strings.Split(c.name, "/")
 		if len(names) != 2 {

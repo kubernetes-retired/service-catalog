@@ -1,5 +1,5 @@
 - metadata:
-    creationTimestamp: 2018-01-11T20:53:31Z
+    creationTimestamp: "2018-01-11T20:53:31Z"
     name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
     resourceVersion: "3"
     selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
@@ -15,7 +15,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-02-26T20:53:31Z
+    creationTimestamp: "2018-02-26T20:53:31Z"
     name: f1a80068-e366-494e-92d6-a0782337945b
     resourceVersion: "6"
     selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceclasses/f1a80068-e366-494e-92d6-a0782337945b
@@ -31,7 +31,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-01-11T20:53:31Z
+    creationTimestamp: "2018-01-11T20:53:31Z"
     name: 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468
     namespace: default
     resourceVersion: "3"
@@ -48,7 +48,7 @@
   status:
     removedFromBrokerCatalog: false
 - metadata:
-    creationTimestamp: 2018-02-26T20:53:31Z
+    creationTimestamp: "2018-02-26T20:53:31Z"
     name: f1a80068-e366-494e-92d6-a0782337945b
     namespace: default
     resourceVersion: "6"

@@ -153,9 +153,9 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 	return searchResults[0], nil
 }
 
-// RetrieveClassByID gets a class by its UUID.
-func (sdk *SDK) RetrieveClassByID(uuid string) (*v1beta1.ClusterServiceClass, error) {
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(uuid, metav1.GetOptions{})
+// RetrieveClassByID gets a class by its Kubernetes name.
+func (sdk *SDK) RetrieveClassByID(kubeName string) (*v1beta1.ClusterServiceClass, error) {
+	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(kubeName, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}

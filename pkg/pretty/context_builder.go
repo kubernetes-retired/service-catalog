@@ -18,7 +18,6 @@ package pretty
 
 import (
 	"fmt"
-
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -110,20 +109,21 @@ func (pcb *ContextBuilder) Messagef(format string, a ...interface{}) string {
 
 func (pcb ContextBuilder) String() string {
 	s := ""
-	space := ""
 	if pcb.Kind > 0 {
-		s += fmt.Sprintf("%s", pcb.Kind)
-		space = " "
+		s += pcb.Kind.String()
+		if pcb.Name != "" || pcb.Namespace != "" {
+			s += " "
+		}
 	}
 	if pcb.Namespace != "" && pcb.Name != "" {
-		s += fmt.Sprintf(`%s"%s/%s"`, space, pcb.Namespace, pcb.Name)
+		s += `"` + pcb.Namespace + "/" + pcb.Name + `"`
 	} else if pcb.Namespace != "" {
-		s += fmt.Sprintf(`%s"%s"`, space, pcb.Namespace)
+		s += `"` + pcb.Namespace + `"`
 	} else if pcb.Name != "" {
-		s += fmt.Sprintf(`%s"%s"`, space, pcb.Name)
+		s += `"` + pcb.Name + `"`
 	}
 	if pcb.ResourceVersion != "" {
-		s += fmt.Sprintf(" v%s", pcb.ResourceVersion)
+		s += " v" + pcb.ResourceVersion
 	}
 	return s
 }

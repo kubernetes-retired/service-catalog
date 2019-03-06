@@ -17,20 +17,24 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeutil "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -230,7 +234,7 @@ type controller struct {
 func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	defer runtimeutil.HandleCrash()
 
-	glog.Info("Starting service-catalog controller")
+	klog.Info("Starting service-catalog controller")
 
 	var waitGroup sync.WaitGroup
 
@@ -264,7 +268,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.createPurgeExpiredRetryEntriesWorker(stopCh, &waitGroup)
 
 	<-stopCh
-	glog.Info("Shutting down service-catalog controller")
+	klog.Info("Shutting down service-catalog controller")
 
 	c.clusterServiceBrokerQueue.ShutDown()
 	c.clusterServiceClassQueue.ShutDown()
@@ -281,7 +285,7 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	}
 
 	waitGroup.Wait()
-	glog.Info("Shutdown service-catalog controller")
+	klog.Info("Shutdown service-catalog controller")
 }
 
 // createWorker creates and runs a worker thread that just processes items in the
@@ -321,7 +325,7 @@ func (c *controller) monitorConfigMap() {
 	// Can we ask 'through' an informer? Is it a writeback cache? I
 	// only ever want to monitor and be notified about one configmap
 	// in a hardcoded place.
-	glog.V(9).Info("cluster ID monitor loop enter")
+	klog.V(9).Info("cluster ID monitor loop enter")
 	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(c.clusterIDConfigMapName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
@@ -336,7 +340,7 @@ func (c *controller) monitorConfigMap() {
 		// it could be due to permissions
 		// or due to being already set while we were trying
 		if _, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Create(cm); err != nil {
-			glog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
+			klog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
 	} else if err == nil {
 		// cluster id exists and is set
@@ -353,9 +357,9 @@ func (c *controller) monitorConfigMap() {
 			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(cm)
 		}
 	} else { // some err we can't handle
-		glog.V(4).Infof("error getting the cluster info configmap: %q", err)
+		klog.V(4).Infof("error getting the cluster info configmap: %q", err)
 	}
-	glog.V(9).Info("cluster ID monitor loop exit")
+	klog.V(9).Info("cluster ID monitor loop exit")
 }
 
 // worker runs a worker thread that just dequeues items, processes them, and marks them done.
@@ -384,12 +388,12 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 
 				numRequeues := queue.NumRequeues(key)
 				if numRequeues < maxRetries {
-					glog.V(4).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
+					klog.V(4).Infof("Error syncing %s %v (retry: %d/%d): %v", resourceType, key, numRequeues, maxRetries, err)
 					queue.AddRateLimited(key)
 					return false
 				}
 
-				glog.V(4).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
+				klog.V(4).Infof("Dropping %s %q out of the queue: %v", resourceType, key, err)
 				queue.Forget(key)
 				return false
 			}()
@@ -495,9 +499,6 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 			),
 		}
 	}
-	if err != nil {
-		return nil, "", nil, err
-	}
 
 	return serviceClass, broker.Name, brokerClient, nil
 }
@@ -539,10 +540,6 @@ func (c *controller) getServiceClassAndServiceBroker(instance *v1beta1.ServiceIn
 			),
 		}
 	}
-	if err != nil {
-		return nil, "", nil, err
-	}
-
 	return serviceClass, broker.Name, brokerClient, nil
 }
 
@@ -590,7 +587,7 @@ func (c *controller) getClusterServiceClassForServiceBinding(instance *v1beta1.S
 			"References a non-existent ClusterServiceClass %q - %c",
 			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -612,7 +609,7 @@ func (c *controller) getClusterServicePlanForServiceBinding(instance *v1beta1.Se
 			"References a non-existent ClusterServicePlan %q - %v",
 			instance.Spec.ClusterServicePlanRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -632,7 +629,7 @@ func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.
 	broker, err := c.clusterServiceBrokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent ClusterServiceBroker %q", serviceClass.Spec.ClusterServiceBrokerName)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -801,8 +798,9 @@ func getBearerConfig(secret *corev1.Secret) (*osb.BearerConfig, error) {
 // convertAndFilterCatalogToNamespacedTypes converts a service broker catalog
 // into an array of ServiceClasses and an array of ServicePlans and filters
 // these through the restrictions provided. The ServiceClasses and
-// ServicePlans returned by this method are named in K8S with the OSB ID.
-func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ServiceClass, []*v1beta1.ServicePlan, error) {
+// ServicePlans returned by this method are named in K8S with the OSB ID
+// filtered to adhere to K8S naming restrictions.
+func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions, existingServiceClasses map[string]*v1beta1.ServiceClass, existingServicePlans map[string]*v1beta1.ServicePlan) ([]*v1beta1.ServiceClass, []*v1beta1.ServicePlan, error) {
 	var predicate filter.Predicate
 	var err error
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
@@ -839,18 +837,24 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
-				glog.Error(err)
+				klog.Error(err)
 				return nil, nil, err
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
-		serviceClass.SetName(svc.ID)
+		// we need to preserve preexisting names from before we
+		// started generating our own names
+		if existingServiceClasses[svc.ID] != nil {
+			serviceClass.SetName(existingServiceClasses[svc.ID].Name)
+		} else {
+			serviceClass.SetName(GenerateEscapedName(svc.ID))
+		}
 		serviceClass.SetNamespace(namespace)
 
 		// If this service class passes the predicate, process the plans for the class.
 		if fields := v1beta1.ConvertServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ServiceClass Name
-			plans, err := convertServicePlans(namespace, svc.Plans, serviceClass.Name)
+			plans, err := convertServicePlans(namespace, svc.Plans, serviceClass.Name, existingServicePlans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -870,11 +874,63 @@ func convertAndFilterCatalogToNamespacedTypes(namespace string, in *osb.CatalogR
 	return serviceClasses, servicePlans, nil
 }
 
+// GenerateEscapedName takes in an OSB ID and filters
+// it to fit K8S name restrictions. It escapes all
+// characters except for lowercase alphanumerics (excluding z
+// as we use that for the escape character), hyphens, and
+// periods, changing them into their UTF-8 hex
+// equivalents separated by 'z'. Hyphens that come after periods and
+// periods that come after hyphens or periods are also escaped.
+// If the resulting string is over the K8S limit of 63 characters,
+// it appends the md5 hash of the original OSB ID to the first 31 characters
+// (minus trailing periods) of the escaped name.
+func GenerateEscapedName(externalID string) string {
+	buffer := bytes.Buffer{}
+	lenOrigin := len(externalID)
+	prevDot := false
+	prevDash := false
+
+	for i, ch := range externalID {
+		// Don't need to escape [a-y0-9.-]
+		// we use 'z' as our escape character
+		// '.' isn't ok at start, end or after '-', so escape those cases
+		// '-' isn't ok at start, end or after a '.'
+		if (ch >= 'a' && ch <= 'y') || (ch >= '0' && ch <= '9') {
+			buffer.WriteString(string(ch))
+			prevDash = false
+			prevDot = false
+		} else if ch == '.' && i != 0 && i != lenOrigin-1 && !prevDot && !prevDash {
+			buffer.WriteString(string(ch))
+			prevDash = false
+			prevDot = true
+		} else if ch == '-' && i != 0 && i != lenOrigin-1 && !prevDot {
+			buffer.WriteString(string(ch))
+			prevDash = true
+			prevDot = false
+		} else {
+			start, end := "z", "z"                                    // By default start/end escaped ch with 'z'
+			buffer.WriteString(fmt.Sprintf("%s%x%s", start, ch, end)) // append
+			prevDash = false
+			prevDot = false
+		}
+	}
+
+	escapedName := buffer.String()
+	//enforce max length constraint from core k8s name validation
+	if len(escapedName) > validation.DNS1123LabelMaxLength {
+		escapedName = escapedName[0:30]
+		escapedName = strings.TrimSuffix(escapedName, ".")
+		escapedName = escapedName + "-" + fmt.Sprintf("%x", md5.Sum([]byte(externalID)))
+	}
+
+	return escapedName
+}
+
 // convertAndFilterCatalog converts a service broker catalog into an array of
 // ClusterServiceClasses and an array of ClusterServicePlans and filters these
 // through the restrictions provided. The ClusterServiceClasses and
 // ClusterServicePlans returned by this method are named in K8S with the OSB ID.
-func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
+func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.CatalogRestrictions, existingServiceClasses map[string]*v1beta1.ClusterServiceClass, existingServicePlans map[string]*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServiceClass, []*v1beta1.ClusterServicePlan, error) {
 	var predicate filter.Predicate
 	var err error
 	if restrictions != nil && len(restrictions.ServiceClass) > 0 {
@@ -911,17 +967,23 @@ func convertAndFilterCatalog(in *osb.CatalogResponse, restrictions *v1beta1.Cata
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", svc.Metadata, err)
-				glog.Error(err)
+				klog.Error(err)
 				return nil, nil, err
 			}
 			serviceClass.Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
 		}
-		serviceClass.SetName(svc.ID)
+		// need to check for pre-existing legacy names from
+		// before we sanitized k8s names
+		if existingServiceClasses[svc.ID] != nil {
+			serviceClass.SetName(existingServiceClasses[svc.ID].Name)
+		} else {
+			serviceClass.SetName(GenerateEscapedName(svc.ID))
+		}
 
 		// If this service class passes the predicate, process the plans for the class.
 		if fields := v1beta1.ConvertClusterServiceClassToProperties(serviceClass); predicate.Accepts(fields) {
 			// set up the plans using the ClusterServiceClass Name
-			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name)
+			plans, err := convertClusterServicePlans(svc.Plans, serviceClass.Name, existingServicePlans)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1003,7 +1065,7 @@ func filterServicePlans(restrictions *v1beta1.CatalogRestrictions, servicePlans 
 	return accepted, rejected, nil
 }
 
-func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID string) ([]*v1beta1.ServicePlan, error) {
+func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID string, existingServicePlans map[string]*v1beta1.ServicePlan) ([]*v1beta1.ServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ServiceClass (K8S: %q) must have at least one plan", serviceClassID)
 	}
@@ -1021,7 +1083,13 @@ func convertServicePlans(namespace string, plans []osb.Plan, serviceClassID stri
 			},
 		}
 		servicePlans[i] = servicePlan
-		servicePlan.SetName(plan.ID)
+		// need to check for pre-existing legacy names from
+		// before we sanitized k8s names
+		if existingServicePlans[plan.ID] != nil {
+			servicePlans[i].SetName(existingServicePlans[plan.ID].Name)
+		} else {
+			servicePlans[i].SetName(GenerateEscapedName(plan.ID))
+		}
 		servicePlan.SetNamespace(namespace)
 
 		err := convertCommonServicePlan(plan, &servicePlan.Spec.CommonServicePlanSpec)
@@ -1042,7 +1110,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 		metadata, err := json.Marshal(plan.Metadata)
 		if err != nil {
 			err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
-			glog.Error(err)
+			klog.Error(err)
 			return err
 		}
 		commonServicePlanSpec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
@@ -1054,19 +1122,19 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 				schema, err := json.Marshal(instanceCreateSchema.Parameters)
 				if err != nil {
 					err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema.Parameters, err)
-					glog.Error(err)
+					klog.Error(err)
 					return err
 				}
-				commonServicePlanSpec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+				commonServicePlanSpec.InstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 			}
 			if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 				schema, err := json.Marshal(instanceUpdateSchema.Parameters)
 				if err != nil {
 					err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema.Parameters, err)
-					glog.Error(err)
+					klog.Error(err)
 					return err
 				}
-				commonServicePlanSpec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+				commonServicePlanSpec.InstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 			}
 		}
 		if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
@@ -1075,7 +1143,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					schema, err := json.Marshal(bindingCreateSchema.Parameters)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-						glog.Error(err)
+						klog.Error(err)
 						return err
 					}
 					commonServicePlanSpec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1084,7 +1152,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					schema, err := json.Marshal(bindingCreateSchema.Response)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
-						glog.Error(err)
+						klog.Error(err)
 						return err
 					}
 					commonServicePlanSpec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
@@ -1095,7 +1163,7 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 	return nil
 }
 
-func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1beta1.ClusterServicePlan, error) {
+func convertClusterServicePlans(plans []osb.Plan, serviceClassID string, existingServicePlans map[string]*v1beta1.ClusterServicePlan) ([]*v1beta1.ClusterServicePlan, error) {
 	if 0 == len(plans) {
 		return nil, fmt.Errorf("ClusterServiceClass (K8S: %q) must have at least one plan", serviceClassID)
 	}
@@ -1112,7 +1180,13 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 				ClusterServiceClassRef: v1beta1.ClusterObjectReference{Name: serviceClassID},
 			},
 		}
-		servicePlans[i].SetName(plan.ID)
+		// need to check for pre-existing legacy names from
+		// before we sanitized k8s names
+		if existingServicePlans[plan.ID] != nil {
+			servicePlans[i].SetName(existingServicePlans[plan.ID].Name)
+		} else {
+			servicePlans[i].SetName(GenerateEscapedName(plan.ID))
+		}
 
 		if plan.Bindable != nil {
 			b := *plan.Bindable
@@ -1123,7 +1197,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 			metadata, err := json.Marshal(plan.Metadata)
 			if err != nil {
 				err = fmt.Errorf("Failed to marshal metadata\n%+v\n %v", plan.Metadata, err)
-				glog.Error(err)
+				klog.Error(err)
 				return nil, err
 			}
 			servicePlans[i].Spec.ExternalMetadata = &runtime.RawExtension{Raw: metadata}
@@ -1135,19 +1209,19 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 					schema, err := json.Marshal(instanceCreateSchema.Parameters)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal instance create schema \n%+v\n %v", instanceCreateSchema.Parameters, err)
-						glog.Error(err)
+						klog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].Spec.ServiceInstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.InstanceCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 				if instanceUpdateSchema := instanceSchemas.Update; instanceUpdateSchema != nil && instanceUpdateSchema.Parameters != nil {
 					schema, err := json.Marshal(instanceUpdateSchema.Parameters)
 					if err != nil {
 						err = fmt.Errorf("Failed to marshal instance update schema \n%+v\n %v", instanceUpdateSchema.Parameters, err)
-						glog.Error(err)
+						klog.Error(err)
 						return nil, err
 					}
-					servicePlans[i].Spec.ServiceInstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
+					servicePlans[i].Spec.InstanceUpdateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
 			}
 			if bindingSchemas := schemas.ServiceBinding; bindingSchemas != nil {
@@ -1156,7 +1230,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 						schema, err := json.Marshal(bindingCreateSchema.Parameters)
 						if err != nil {
 							err = fmt.Errorf("Failed to marshal binding create schema \n%+v\n %v", bindingCreateSchema.Parameters, err)
-							glog.Error(err)
+							klog.Error(err)
 							return nil, err
 						}
 						servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
@@ -1165,7 +1239,7 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string) ([]*v1b
 						schema, err := json.Marshal(bindingCreateSchema.Response)
 						if err != nil {
 							err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
-							glog.Error(err)
+							klog.Error(err)
 							return nil, err
 						}
 						servicePlans[i].Spec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
@@ -1328,7 +1402,7 @@ func (c *controller) getServiceClassForServiceBinding(instance *v1beta1.ServiceI
 			"References a non-existent ServiceClass %q - %c",
 			instance.Spec.ServiceClassRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -1350,7 +1424,7 @@ func (c *controller) getServicePlanForServiceBinding(instance *v1beta1.ServiceIn
 			"References a non-existent ServicePlan %q - %v",
 			instance.Spec.ServicePlanRef.Name, instance.Spec.PlanReference,
 		)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -1370,7 +1444,7 @@ func (c *controller) getServiceBrokerForServiceBinding(instance *v1beta1.Service
 	broker, err := c.serviceBrokerLister.ServiceBrokers(instance.Namespace).Get(serviceClass.Spec.ServiceBrokerName)
 	if err != nil {
 		s := fmt.Sprintf("References a non-existent ServiceBroker %q", serviceClass.Spec.ServiceBrokerName)
-		glog.Warning(pcb.Message(s))
+		klog.Warning(pcb.Message(s))
 		c.updateServiceBindingCondition(
 			binding,
 			v1beta1.ServiceBindingConditionReady,
@@ -1412,7 +1486,7 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 					// If a broker is configured with RelistBehaviorManual, it should
 					// ignore the Duration and only relist based on spec changes
 
-					glog.V(10).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
+					klog.V(10).Info(pcb.Message("Not processing because RelistBehavior is set to Manual"))
 					return false
 				}
 
@@ -1428,7 +1502,7 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 					intervalPassed = now.After(brokerStatus.LastCatalogRetrievalTime.Time.Add(duration))
 				}
 				if intervalPassed == false {
-					glog.V(10).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
+					klog.V(10).Info(pcb.Message("Not processing because RelistDuration has not elapsed since the last relist"))
 				}
 				return intervalPassed
 			}
@@ -1441,4 +1515,9 @@ func shouldReconcileServiceBrokerCommon(pcb *pretty.ContextBuilder, brokerMeta *
 
 	// The broker didn't have a ready condition; we should reconcile it.
 	return true
+}
+
+func toJSON(obj interface{}) string {
+	bytes, _ := json.Marshal(obj)
+	return string(bytes)
 }

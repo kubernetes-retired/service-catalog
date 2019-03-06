@@ -28,9 +28,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for brokers
@@ -74,7 +74,7 @@ var (
 func (serviceBrokerRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to create")
+		klog.Fatal("received a non-servicebroker object to create")
 	}
 }
 
@@ -88,7 +88,7 @@ func (serviceBrokerRESTStrategy) NamespaceScoped() bool {
 func (serviceBrokerRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to create")
+		klog.Fatal("received a non-servicebroker object to create")
 	}
 	// Is there anything to pull out of the context `ctx`?
 
@@ -117,11 +117,11 @@ func (serviceBrokerRESTStrategy) AllowUnconditionalUpdate() bool {
 func (serviceBrokerRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to update to")
+		klog.Fatal("received a non-servicebroker object to update to")
 	}
 	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to update from")
+		klog.Fatal("received a non-servicebroker object to update from")
 	}
 
 	newServiceBroker.Status = oldServiceBroker.Status
@@ -141,11 +141,11 @@ func (serviceBrokerRESTStrategy) PrepareForUpdate(ctx context.Context, new, old 
 func (serviceBrokerRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to validate to")
+		klog.Fatal("received a non-servicebroker object to validate to")
 	}
 	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to validate from")
+		klog.Fatal("received a non-servicebroker object to validate from")
 	}
 
 	return scv.ValidateServiceBrokerUpdate(newServiceBroker, oldServiceBroker)
@@ -154,11 +154,11 @@ func (serviceBrokerRESTStrategy) ValidateUpdate(ctx context.Context, new, old ru
 func (serviceBrokerStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to update to")
+		klog.Fatal("received a non-servicebroker object to update to")
 	}
 	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to update from")
+		klog.Fatal("received a non-servicebroker object to update from")
 	}
 	// status changes are not allowed to update spec
 	newServiceBroker.Spec = oldServiceBroker.Spec
@@ -167,11 +167,11 @@ func (serviceBrokerStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new
 func (serviceBrokerStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBroker, ok := new.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to validate to")
+		klog.Fatal("received a non-servicebroker object to validate to")
 	}
 	oldServiceBroker, ok := old.(*sc.ServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-servicebroker object to validate from")
+		klog.Fatal("received a non-servicebroker object to validate from")
 	}
 
 	return scv.ValidateServiceBrokerStatusUpdate(newServiceBroker, oldServiceBroker)

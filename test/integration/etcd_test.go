@@ -25,7 +25,7 @@ import (
 
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/pkg/capnslog"
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 type EtcdContext struct {
@@ -52,10 +52,10 @@ func startEtcd() error {
 
 	select {
 	case <-etcdContext.etcd.Server.ReadyNotify():
-		glog.Info("server is ready!")
+		klog.Info("server is ready!")
 	case <-time.After(60 * time.Second):
 		etcdContext.etcd.Server.Stop() // trigger a shutdown
-		glog.Error("server took too long to start!")
+		klog.Error("server took too long to start!")
 	}
 	return nil
 }
@@ -69,9 +69,9 @@ func stopEtcd() {
 
 	select {
 	case <-etcdContext.etcd.Server.StopNotify():
-		glog.Info("server is stopped!")
+		klog.Info("server is stopped!")
 	case <-time.After(60 * time.Second):
-		glog.Error("server took too long to stop!")
+		klog.Error("server took too long to stop!")
 	}
 }
 

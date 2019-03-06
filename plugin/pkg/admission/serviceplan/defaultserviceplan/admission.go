@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +47,7 @@ func Register(plugins *admission.Plugins) {
 	})
 }
 
-// exists is an implementation of admission.Interface.
+// defaultServicePlan is an implementation of admission.Interface.
 // It checks to see if Service Instance is being created without
 // a Service Plan if there is only one Service Plan for the
 // specified Service and defaults to that value.
@@ -97,7 +97,7 @@ func (d *defaultServicePlan) handleDefaultClusterServicePlan(a admission.Attribu
 		}
 		msg := fmt.Sprintf("ClusterServiceClass %c does not exist, can not figure out the default ClusterServicePlan.",
 			instance.Spec.PlanReference)
-		glog.V(4).Info(msg)
+		klog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
@@ -112,7 +112,7 @@ func (d *defaultServicePlan) handleDefaultClusterServicePlan(a admission.Attribu
 	plans, err := d.getClusterServicePlansByClusterServiceClassName(sc.Name)
 	if err != nil {
 		msg := fmt.Sprintf("Error listing ClusterServicePlans for ClusterServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ClusterServicePlan", sc.Name, sc.Spec.ExternalName)
-		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
+		klog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
@@ -120,20 +120,20 @@ func (d *defaultServicePlan) handleDefaultClusterServicePlan(a admission.Attribu
 	// TODO: in combination with not allowing classes with no plans, this should be impossible
 	if len(plans) == 0 {
 		msg := fmt.Sprintf("no ClusterServicePlans found at all for ClusterServiceClass %q", sc.Spec.ExternalName)
-		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
+		klog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
 	// check if more than one service plan was found and error
 	if len(plans) > 1 {
 		msg := fmt.Sprintf("ClusterServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", sc.Name, sc.Spec.ExternalName)
-		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
+		klog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 	// otherwise, by default, pick the only plan that exists for the service class
 
 	p := plans[0]
-	glog.V(4).Infof(`ServiceInstance "%s/%s": Using default plan %q (K8S: %q) for Service Class %q`,
+	klog.V(4).Infof(`ServiceInstance "%s/%s": Using default plan %q (K8S: %q) for Service Class %q`,
 		instance.Namespace, instance.Name, p.Spec.ExternalName, p.Name, sc.Spec.ExternalName)
 	if instance.Spec.ClusterServiceClassExternalName != "" {
 		instance.Spec.ClusterServicePlanExternalName = p.Spec.ExternalName
@@ -158,7 +158,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 		}
 		msg := fmt.Sprintf("ServiceClass %c does not exist, can not figure out the default ServicePlan.",
 			instance.Spec.PlanReference)
-		glog.V(4).Info(msg)
+		klog.V(4).Info(msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
@@ -173,7 +173,7 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 	plans, err := d.getServicePlansByServiceClassName(sc.Name)
 	if err != nil {
 		msg := fmt.Sprintf("Error listing ServicePlans for ServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ServicePlan", sc.Name, sc.Spec.ExternalName)
-		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
+		klog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
@@ -181,20 +181,20 @@ func (d *defaultServicePlan) handleDefaultServicePlan(a admission.Attributes, in
 	// TODO: in combination with not allowing classes with no plans, this should be impossible
 	if len(plans) == 0 {
 		msg := fmt.Sprintf("no ServicePlans found at all for ServiceClass %q", sc.Spec.ExternalName)
-		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
+		klog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 
 	// check if more than one service plan was found and error
 	if len(plans) > 1 {
 		msg := fmt.Sprintf("ServiceClass (K8S: %v ExternalName: %v) has more than one plan, PlanName must be specified", sc.Name, sc.Spec.ExternalName)
-		glog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
+		klog.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
 		return admission.NewForbidden(a, errors.New(msg))
 	}
 	// otherwise, by default, pick the only plan that exists for the service class
 
 	p := plans[0]
-	glog.V(4).Infof(`ServiceInstance "%s/%s": Using default plan %q (K8S: %q) for Service Class %q`,
+	klog.V(4).Infof(`ServiceInstance "%s/%s": Using default plan %q (K8S: %q) for Service Class %q`,
 		instance.Namespace, instance.Name, p.Spec.ExternalName, p.Name, sc.Spec.ExternalName)
 	if instance.Spec.ServiceClassExternalName != "" {
 		instance.Spec.ServicePlanExternalName = p.Spec.ExternalName
@@ -250,12 +250,12 @@ func (d *defaultServicePlan) getServiceClassByPlanReference(a admission.Attribut
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByK8SName(a admission.Attributes, scK8SName string) (*servicecatalog.ClusterServiceClass, error) {
-	glog.V(4).Infof("Fetching ClusterServiceClass by k8s name %q", scK8SName)
+	klog.V(4).Infof("Fetching ClusterServiceClass by k8s name %q", scK8SName)
 	return d.cscClient.Get(scK8SName, apimachineryv1.GetOptions{})
 }
 
 func (d *defaultServicePlan) getServiceClassByK8SName(a admission.Attributes, scK8SName string) (*servicecatalog.ServiceClass, error) {
-	glog.V(4).Infof("Fetching ServiceClass by k8s name %q", scK8SName)
+	klog.V(4).Infof("Fetching ServiceClass by k8s name %q", scK8SName)
 	return d.scClient.Get(scK8SName, apimachineryv1.GetOptions{})
 }
 
@@ -263,7 +263,7 @@ func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attribute
 	filterField := ref.GetClusterServiceClassFilterFieldName()
 	filterValue := ref.GetSpecifiedClusterServiceClass()
 
-	glog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", filterField, filterValue)
+	klog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", filterField, filterValue)
 	fieldSet := fields.Set{
 		filterField: filterValue,
 	}
@@ -271,15 +271,15 @@ func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attribute
 	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	serviceClasses, err := d.cscClient.List(listOpts)
 	if err != nil {
-		glog.V(4).Infof("Listing ClusterServiceClasses failed: %q", err)
+		klog.V(4).Infof("Listing ClusterServiceClasses failed: %q", err)
 		return nil, err
 	}
 	if len(serviceClasses.Items) == 1 {
-		glog.V(4).Infof("Found single ClusterServiceClass as %+v", serviceClasses.Items[0])
+		klog.V(4).Infof("Found single ClusterServiceClass as %+v", serviceClasses.Items[0])
 		return &serviceClasses.Items[0], nil
 	}
 	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with %q = %q, found %v", filterField, filterValue, len(serviceClasses.Items))
-	glog.V(4).Info(msg)
+	klog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
 }
 
@@ -287,7 +287,7 @@ func (d *defaultServicePlan) getServiceClassByField(a admission.Attributes, ref 
 	filterField := ref.GetServiceClassFilterFieldName()
 	filterValue := ref.GetSpecifiedServiceClass()
 
-	glog.V(4).Infof("Fetching ServiceClass filtered by %q = %q", filterField, filterValue)
+	klog.V(4).Infof("Fetching ServiceClass filtered by %q = %q", filterField, filterValue)
 	fieldSet := fields.Set{
 		filterField: filterValue,
 	}
@@ -295,22 +295,22 @@ func (d *defaultServicePlan) getServiceClassByField(a admission.Attributes, ref 
 	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	serviceClasses, err := d.scClient.List(listOpts)
 	if err != nil {
-		glog.V(4).Infof("Listing ServiceClasses failed: %q", err)
+		klog.V(4).Infof("Listing ServiceClasses failed: %q", err)
 		return nil, err
 	}
 	if len(serviceClasses.Items) == 1 {
-		glog.V(4).Infof("Found single ServiceClass as %+v", serviceClasses.Items[0])
+		klog.V(4).Infof("Found single ServiceClass as %+v", serviceClasses.Items[0])
 		return &serviceClasses.Items[0], nil
 	}
 	msg := fmt.Sprintf("Could not find a single ServiceClass with %q = %q, found %v", filterField, filterValue, len(serviceClasses.Items))
-	glog.V(4).Info(msg)
+	klog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
 }
 
 // getClusterServicePlansByClusterServiceClassName() returns a list of
 // ServicePlans for the specified service class name
 func (d *defaultServicePlan) getClusterServicePlansByClusterServiceClassName(scName string) ([]servicecatalog.ClusterServicePlan, error) {
-	glog.V(4).Infof("Fetching ClusterServicePlans by class name %q", scName)
+	klog.V(4).Infof("Fetching ClusterServicePlans by class name %q", scName)
 	fieldSet := fields.Set{
 		"spec.clusterServiceClassRef.name": scName,
 	}
@@ -318,10 +318,10 @@ func (d *defaultServicePlan) getClusterServicePlansByClusterServiceClassName(scN
 	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	servicePlans, err := d.cspClient.List(listOpts)
 	if err != nil {
-		glog.Infof("Listing ClusterServicePlans failed: %q", err)
+		klog.Infof("Listing ClusterServicePlans failed: %q", err)
 		return nil, err
 	}
-	glog.V(4).Infof("ClusterServicePlans fetched by filtering classname: %+v", servicePlans.Items)
+	klog.V(4).Infof("ClusterServicePlans fetched by filtering classname: %+v", servicePlans.Items)
 	r := servicePlans.Items
 	return r, err
 }
@@ -329,7 +329,7 @@ func (d *defaultServicePlan) getClusterServicePlansByClusterServiceClassName(scN
 // getServicePlansByServiceClassName() returns a list of
 // ServicePlans for the specified service class name
 func (d *defaultServicePlan) getServicePlansByServiceClassName(scName string) ([]servicecatalog.ServicePlan, error) {
-	glog.V(4).Infof("Fetching ServicePlans by class name %q", scName)
+	klog.V(4).Infof("Fetching ServicePlans by class name %q", scName)
 	fieldSet := fields.Set{
 		"spec.serviceClassRef.name": scName,
 	}
@@ -337,10 +337,10 @@ func (d *defaultServicePlan) getServicePlansByServiceClassName(scName string) ([
 	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	servicePlans, err := d.spClient.List(listOpts)
 	if err != nil {
-		glog.Infof("Listing ServicePlans failed: %q", err)
+		klog.Infof("Listing ServicePlans failed: %q", err)
 		return nil, err
 	}
-	glog.V(4).Infof("ServicePlans fetched by filtering classname: %+v", servicePlans.Items)
+	klog.V(4).Infof("ServicePlans fetched by filtering classname: %+v", servicePlans.Items)
 	r := servicePlans.Items
 	return r, err
 }

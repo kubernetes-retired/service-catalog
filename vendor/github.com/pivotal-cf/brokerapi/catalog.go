@@ -1,85 +1,41 @@
 package brokerapi
 
 type Service struct {
-	ID              string                  `json:"id"`
-	Name            string                  `json:"name"`
-	Description     string                  `json:"description"`
-	Bindable        bool                    `json:"bindable"`
-	Tags            []string                `json:"tags,omitempty"`
-	PlanUpdatable   bool                    `json:"plan_updateable"`
-	Plans           []ServicePlan           `json:"plans"`
-	Requires        []RequiredPermission    `json:"requires,omitempty"`
-	Metadata        *ServiceMetadata        `json:"metadata,omitempty"`
-	DashboardClient *ServiceDashboardClient `json:"dashboard_client,omitempty"`
-}
-
-type ServiceDashboardClient struct {
-	ID          string `json:"id"`
-	Secret      string `json:"secret"`
-	RedirectURI string `json:"redirect_uri"`
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Bindable    bool            `json:"bindable"`
+	Plans       []ServicePlan   `json:"plans"`
+	Metadata    ServiceMetadata `json:"metadata"`
+	Tags        []string        `json:"tags"`
 }
 
 type ServicePlan struct {
-	ID          string               `json:"id"`
-	Name        string               `json:"name"`
-	Description string               `json:"description"`
-	Free        *bool                `json:"free,omitempty"`
-	Bindable    *bool                `json:"bindable,omitempty"`
-	Metadata    *ServicePlanMetadata `json:"metadata,omitempty"`
-	Schemas     *ServiceSchemas      `json:"schemas,omitempty"`
-}
-
-type ServiceSchemas struct {
-	Instance ServiceInstanceSchema `json:"service_instance,omitempty"`
-	Binding  ServiceBindingSchema  `json:"service_binding,omitempty"`
-}
-
-type ServiceInstanceSchema struct {
-	Create Schema `json:"create,omitempty"`
-	Update Schema `json:"update,omitempty"`
-}
-
-type ServiceBindingSchema struct {
-	Create Schema `json:"create,omitempty"`
-}
-
-type Schema struct {
-	Schema interface{} `json:"parameters,omitempty"`
+	ID          string              `json:"id"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	Metadata    ServicePlanMetadata `json:"metadata"`
 }
 
 type ServicePlanMetadata struct {
-	DisplayName string            `json:"displayName,omitempty"`
-	Bullets     []string          `json:"bullets,omitempty"`
-	Costs       []ServicePlanCost `json:"costs,omitempty"`
-}
-
-type ServicePlanCost struct {
-	Amount map[string]float64 `json:"amount"`
-	Unit   string             `json:"unit"`
+	Bullets     []string `json:"bullets"`
+	DisplayName string   `json:"displayName"`
 }
 
 type ServiceMetadata struct {
-	DisplayName         string `json:"displayName,omitempty"`
-	ImageUrl            string `json:"imageUrl,omitempty"`
-	LongDescription     string `json:"longDescription,omitempty"`
-	ProviderDisplayName string `json:"providerDisplayName,omitempty"`
-	DocumentationUrl    string `json:"documentationUrl,omitempty"`
-	SupportUrl          string `json:"supportUrl,omitempty"`
-	Shareable           *bool  `json:"shareable,omitempty"`
+	DisplayName      string                  `json:"displayName"`
+	LongDescription  string                  `json:"longDescription"`
+	DocumentationUrl string                  `json:"documentationUrl"`
+	SupportUrl       string                  `json:"supportUrl"`
+	Listing          ServiceMetadataListing  `json:"listing"`
+	Provider         ServiceMetadataProvider `json:"provider"`
 }
 
-func FreeValue(v bool) *bool {
-	return &v
+type ServiceMetadataListing struct {
+	Blurb    string `json:"blurb"`
+	ImageUrl string `json:"imageUrl"`
 }
 
-func BindableValue(v bool) *bool {
-	return &v
+type ServiceMetadataProvider struct {
+	Name string `json:"name"`
 }
-
-type RequiredPermission string
-
-const (
-	PermissionRouteForwarding = RequiredPermission("route_forwarding")
-	PermissionSyslogDrain     = RequiredPermission("syslog_drain")
-	PermissionVolumeMount     = RequiredPermission("volume_mount")
-)

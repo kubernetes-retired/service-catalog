@@ -355,7 +355,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 	}
 
 	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
-		t.Fatalf("Expected polling queue to have a record of test instance as provisioning should have retried")
+		t.Fatalf("Expected polling queue to have a record of test instance to process orphan mitigation")
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
@@ -382,7 +382,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		startingInstanceOrphanMitigationReason,
-		"",
+		errorProvisionCallFailedReason,
 		errorProvisionCallFailedReason,
 		instance,
 	)
@@ -771,7 +771,7 @@ func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
-		errorDeprovisionCalledReason,
+		errorDeprovisionCallFailedReason,
 		testServicePlanName,
 		testServicePlanGUID,
 		instance,
@@ -779,13 +779,13 @@ func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorDeprovisionCalledReason).msg("Deprovision call failed: (no description provided)")
+	expectedEvent := warningEventBuilder(errorDeprovisionCallFailedReason).msg("Deprovision call failed: (no description provided)")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// TestResolveNamespacedReferences tests that resolveReferences works
+// TestResolveNamespacedReferencesWorks tests that resolveReferences works
 // correctly and resolves references when the references are of namespaced.
 func TestResolveNamespacedReferencesWorks(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
@@ -829,7 +829,7 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=scguid"),
 	}
 	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
 

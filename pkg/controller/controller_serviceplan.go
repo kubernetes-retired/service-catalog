@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,7 +32,7 @@ import (
 func (c *controller) servicePlanAdd(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		glog.Errorf("ServicePlan: Couldn't get key for object %+v: %v", obj, err)
+		klog.Errorf("ServicePlan: Couldn't get key for object %+v: %v", obj, err)
 		return
 	}
 	c.servicePlanQueue.Add(key)
@@ -48,7 +48,7 @@ func (c *controller) servicePlanDelete(obj interface{}) {
 		return
 	}
 
-	glog.V(4).Infof("ServicePlan: Received delete event for %v; no further processing will occur", servicePlan.Name)
+	klog.V(4).Infof("ServicePlan: Received delete event for %v; no further processing will occur", servicePlan.Name)
 }
 
 // reconcileServicePlanKey reconciles a ServicePlan due to resync
@@ -63,11 +63,11 @@ func (c *controller) reconcileServicePlanKey(key string) error {
 	pcb := pretty.NewContextBuilder(pretty.ServicePlan, namespace, name, "")
 	plan, err := c.servicePlanLister.ServicePlans(namespace).Get(key)
 	if errors.IsNotFound(err) {
-		glog.Infof(pcb.Message("not doing work because plan has been deleted"))
+		klog.Infof(pcb.Message("not doing work because plan has been deleted"))
 		return nil
 	}
 	if err != nil {
-		glog.Infof(pcb.Message("unable to retrieve object from store: %v"))
+		klog.Infof(pcb.Message("unable to retrieve object from store: %v"))
 		return err
 	}
 
@@ -76,13 +76,13 @@ func (c *controller) reconcileServicePlanKey(key string) error {
 
 func (c *controller) reconcileServicePlan(servicePlan *v1beta1.ServicePlan) error {
 	pcb := pretty.NewContextBuilder(pretty.ServicePlan, servicePlan.Namespace, servicePlan.Name, "")
-	glog.Infof("ServicePlan %q (ExternalName: %q): processing", servicePlan.Name, servicePlan.Spec.ExternalName)
+	klog.Infof("ServicePlan %q (ExternalName: %q): processing", servicePlan.Name, servicePlan.Spec.ExternalName)
 
 	if !servicePlan.Status.RemovedFromBrokerCatalog {
 		return nil
 	}
 
-	glog.Infof(pcb.Message("removed from broker catalog; determining whether there are instances remaining"))
+	klog.Infof(pcb.Message("removed from broker catalog; determining whether there are instances remaining"))
 
 	serviceInstances, err := c.findServiceInstancesOnServicePlan(servicePlan)
 	if err != nil {
@@ -93,7 +93,7 @@ func (c *controller) reconcileServicePlan(servicePlan *v1beta1.ServicePlan) erro
 		return nil
 	}
 
-	glog.Infof(pcb.Message("removed from broker catalog and has zero instances remaining; deleting"))
+	klog.Infof(pcb.Message("removed from broker catalog and has zero instances remaining; deleting"))
 	return c.serviceCatalogClient.ServicePlans(servicePlan.Namespace).Delete(servicePlan.Name, &metav1.DeleteOptions{})
 }
 

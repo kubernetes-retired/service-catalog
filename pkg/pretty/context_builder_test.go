@@ -155,3 +155,27 @@ func TestPrettyContextBuilderContextMessagefAndContext(t *testing.T) {
 		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
 	}
 }
+
+func TestPrettyContextBuilderNamespaceNameAndResourceVersion(t *testing.T) {
+	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
+	e := `ServiceInstance "Namespace/Name" v877`
+	g := pcb.String()
+
+	if g != e {
+		t.Fatalf("Unexpected value of ContextBuilder String; expected %v, got %v", e, g)
+	}
+}
+
+var bResult string
+
+func BenchmarkPCB(b *testing.B) {
+	pcb := NewContextBuilder(ServiceInstance, "Namespace", "Name", "877")
+
+	b.ResetTimer()
+	var s string
+	for i := 0; i <= b.N; i++ {
+		s = pcb.String()
+	}
+
+	bResult = s
+}

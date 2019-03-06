@@ -72,9 +72,9 @@ func TestReconcileServiceBindingWithParametersNamespacedRefs(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -273,9 +273,9 @@ func TestReconcileServiceBindingDeleteNamespacedRefs(t *testing.T) {
 					Generation:        2,
 				},
 				Spec: v1beta1.ServiceBindingSpec{
-					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-					ExternalID:         testServiceBindingGUID,
-					SecretName:         testServiceBindingSecretName,
+					InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:  testServiceBindingGUID,
+					SecretName:  testServiceBindingSecretName,
 				},
 				Status: v1beta1.ServiceBindingStatus{
 					ReconciledGeneration: 1,
@@ -313,9 +313,9 @@ func TestReconcileServiceBindingDeleteNamespacedRefs(t *testing.T) {
 					Generation:        2,
 				},
 				Spec: v1beta1.ServiceBindingSpec{
-					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-					ExternalID:         testServiceBindingGUID,
-					SecretName:         testServiceBindingSecretName,
+					InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:  testServiceBindingGUID,
+					SecretName:  testServiceBindingSecretName,
 				},
 				Status: v1beta1.ServiceBindingStatus{
 					ReconciledGeneration: 1,

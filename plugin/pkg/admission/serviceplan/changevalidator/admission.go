@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apiserver/pkg/admission"
@@ -79,10 +79,10 @@ func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
 	sc, err := d.scLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			glog.V(5).Infof("Could not locate service class %v, can not determine if UpdateablePlan.", instance.Spec.ClusterServiceClassRef.Name)
+			klog.V(5).Infof("Could not locate service class %v, can not determine if UpdateablePlan.", instance.Spec.ClusterServiceClassRef.Name)
 			return nil // should this be `return err`? why would we allow the instance in if we cannot determine it is updatable?
 		}
-		glog.Error(err)
+		klog.Error(err)
 		return admission.NewForbidden(a, err)
 	}
 
@@ -94,7 +94,7 @@ func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
 		lister := d.instanceLister.ServiceInstances(instance.Namespace)
 		origInstance, err := lister.Get(instance.Name)
 		if err != nil {
-			glog.Errorf("Error locating instance %v/%v", instance.Namespace, instance.Name)
+			klog.Errorf("Error locating instance %v/%v", instance.Namespace, instance.Name)
 			return err
 		}
 
@@ -113,9 +113,9 @@ func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
 				oldPlan = origInstance.Spec.ClusterServicePlanName
 				newPlan = instance.Spec.ClusterServicePlanName
 			}
-			glog.V(4).Infof("update Service Instance %v/%v request specified Plan %v while original instance had %v", instance.Namespace, instance.Name, newPlan, oldPlan)
+			klog.V(4).Infof("update Service Instance %v/%v request specified Plan %v while original instance had %v", instance.Namespace, instance.Name, newPlan, oldPlan)
 			msg := fmt.Sprintf("The Service Class %v does not allow plan changes.", sc.Name)
-			glog.Error(msg)
+			klog.Error(msg)
 			return admission.NewForbidden(a, errors.New(msg))
 		}
 	}

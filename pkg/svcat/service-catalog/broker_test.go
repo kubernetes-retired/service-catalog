@@ -441,6 +441,32 @@ var _ = Describe("Broker", func() {
 			Expect(objectFromRequest.Spec.URL).To(Equal(url))
 			Expect(objectFromRequest.Spec.AuthInfo.Bearer.SecretRef.Name).To(Equal(bearerSecret))
 		})
+		It("creates a cluster service broker without auth info", func() {
+			brokerName := "potato_broker"
+			url := "http://potato.com"
+			namespace := "potatonamespace"
+			opts := &RegisterOptions{
+				Namespace: namespace,
+			}
+			scopeOpts := &ScopeOptions{
+				Namespace: namespace,
+				Scope:     ClusterScope,
+			}
+
+			broker, err := sdk.Register(brokerName, url, opts, scopeOpts)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).NotTo(BeNil())
+			Expect(broker.GetName()).To(Equal(brokerName))
+			Expect(broker.GetURL()).To(Equal(url))
+
+			actions := svcCatClient.Actions()
+			Expect(actions[0].Matches("create", "clusterservicebrokers")).To(BeTrue())
+			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ClusterServiceBroker)
+			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(brokerName))
+			Expect(objectFromRequest.Spec.URL).To(Equal(url))
+			Expect(objectFromRequest.Spec.AuthInfo).To(BeNil())
+		})
 		It("Bubbles up cluster service broker errors", func() {
 			errorMessage := "error provisioning broker"
 			brokerName := "potato_broker"

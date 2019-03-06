@@ -18,12 +18,14 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/go-openapi/spec"
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -48,6 +50,10 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
 )
 
+const (
+	inClusterNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+)
+
 // serviceCatalogConfig is a placeholder for configuration
 type serviceCatalogConfig struct {
 	// the shared informers that know how to speak back to this apiserver
@@ -64,7 +70,7 @@ type serviceCatalogConfig struct {
 func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.RecommendedConfig, *serviceCatalogConfig, error) {
 	// check if we are running in standalone mode (for test scenarios)
 	if s.StandaloneMode {
-		glog.Infof("service catalog is in standalone mode")
+		klog.Infof("service catalog is in standalone mode")
 	}
 	// server configuration options
 	if err := s.SecureServingOptions.MaybeDefaultWithSelfSignedCerts(s.GenericServerRunOptions.AdvertiseAddress.String(), nil /*alternateDNS*/, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
@@ -86,12 +92,21 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 		}
 	} else {
 		// always warn when auth is disabled, since this should only be used for testing
-		glog.Warning("Authentication and authorization disabled for testing purposes")
+		klog.Warning("Authentication and authorization disabled for testing purposes")
 		genericConfig.Authentication.Authenticator = &authenticator.AnyUserAuthenticator{}
 		genericConfig.Authorization.Authorizer = authorizerfactory.NewAlwaysAllowAuthorizer()
 	}
 
-	if err := s.AuditOptions.ApplyTo(&genericConfig.Config); err != nil {
+	namespace, err := getInClusterNamespace("service-catalog")
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.AuditOptions.ApplyTo(
+		&genericConfig.Config,
+		genericConfig.ClientConfig,
+		genericConfig.SharedInformerFactory,
+		genericserveroptions.NewProcessInfo("service-catalog-apiserver", namespace),
+		nil); err != nil {
 		return nil, nil, err
 	}
 
@@ -109,7 +124,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 			}
 		}
 	} else {
-		glog.Warning("OpenAPI spec will not be served")
+		klog.Warning("OpenAPI spec will not be served")
 	}
 
 	genericConfig.SwaggerConfig = genericapiserver.DefaultSwaggerConfig()
@@ -124,8 +139,7 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	// FUTURE: use protobuf for communication back to itself?
 	client, err := internalclientset.NewForConfig(genericConfig.LoopbackClientConfig)
 	if err != nil {
-		glog.Errorf("Failed to create clientset for service catalog self-communication: %v", err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create clientset for service catalog self-communication: %v", err)
 	}
 	sharedInformers := informers.NewSharedInformerFactory(client, 10*time.Minute)
 
@@ -136,23 +150,20 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	if !s.StandaloneMode {
 		clusterConfig, err := kube.LoadConfig(s.KubeconfigPath, "")
 		if err != nil {
-			glog.Errorf("Failed to parse kube client config: %v", err)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to parse kube client config: %v", err)
 		}
 		// If clusterConfig is nil, look at the default in-cluster config.
 		if clusterConfig == nil {
 			clusterConfig, err = restclient.InClusterConfig()
 			if err != nil {
-				glog.Errorf("Failed to get kube client config: %v", err)
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("failed to get kube client config: %v", err)
 			}
 		}
 		clusterConfig.GroupVersion = &schema.GroupVersion{}
 
 		kubeClient, err := kubeclientset.NewForConfig(clusterConfig)
 		if err != nil {
-			glog.Errorf("Failed to create clientset interface: %v", err)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to create clientset interface: %v", err)
 		}
 
 		kubeSharedInformers := kubeinformers.NewSharedInformerFactory(kubeClient, 10*time.Minute)
@@ -179,7 +190,7 @@ func buildAdmission(c *genericapiserver.RecommendedConfig, s *ServiceCatalogServ
 	kubeClient kubeclientset.Interface, kubeSharedInformers kubeinformers.SharedInformerFactory) (admission.Interface, error) {
 
 	pluginNames := enabledPluginNames(s.AdmissionOptions)
-	glog.Infof("Admission control plugin names: %v", pluginNames)
+	klog.Infof("Admission control plugin names: %v", pluginNames)
 
 	genericInitializer := initializer.New(kubeClient, kubeSharedInformers, c.Authorization.Authorizer, api.Scheme)
 	scPluginInitializer := scadmission.NewPluginInitializer(client, sharedInformers, kubeClient, kubeSharedInformers)
@@ -229,12 +240,32 @@ func enabledPluginNames(a *genericserveroptions.AdmissionOptions) []string {
 // addPostStartHooks adds the common post start hooks we invoke when using either server storage option.
 func addPostStartHooks(server *genericapiserver.GenericAPIServer, scConfig *serviceCatalogConfig, stopCh <-chan struct{}) {
 	server.AddPostStartHook("start-service-catalog-apiserver-informers", func(context genericapiserver.PostStartHookContext) error {
-		glog.Infof("Starting shared informers")
+		klog.Infof("Starting shared informers")
 		scConfig.sharedInformers.Start(stopCh)
 		if scConfig.kubeSharedInformers != nil {
 			scConfig.kubeSharedInformers.Start(stopCh)
 		}
-		glog.Infof("Started shared informers")
+		klog.Infof("Started shared informers")
 		return nil
 	})
+}
+
+func getInClusterNamespace(defaultNamespace string) (string, error) {
+	// Check whether the namespace file exists.
+	// If not, we are not running in cluster so can't guess the namespace.
+	_, err := os.Stat(inClusterNamespacePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// not running in-cluster, using default namespace
+			return defaultNamespace, nil
+		}
+		return "", fmt.Errorf("error checking namespace file: %v", err)
+	}
+
+	// Load the namespace file and return its content
+	namespace, err := ioutil.ReadFile(inClusterNamespacePath)
+	if err != nil {
+		return "", fmt.Errorf("error reading namespace file: %v", err)
+	}
+	return string(namespace), nil
 }

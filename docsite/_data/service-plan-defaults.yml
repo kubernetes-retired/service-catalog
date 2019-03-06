@@ -6,6 +6,11 @@ toc:
 - title: Enable Service Plan Defaults
   path: "#enable-service-plan-defaults"
 - title: Define Default Provision Parameters
-  path: "#define-default-provision-parameters"
+  landing_page: "#define-default-provision-parameters"
+  section:
+    - title: Create and modify a copy of an existing plan
+      path: "#create-and-modify-a-copy-of-an-existing-plan"
+    - title: Create and modify a copy of an existing class
+      path: "#create-and-modify-a-copy-of-an-existing-class"
 - title: Provision a service instance with default parameters
   path: "#provision-a-service-instance-with-default-parameters"

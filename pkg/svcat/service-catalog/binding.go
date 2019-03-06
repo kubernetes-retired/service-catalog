@@ -61,7 +61,7 @@ func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 
 	var bindings []v1beta1.ServiceBinding
 	for _, binding := range results.Items {
-		if binding.Spec.ServiceInstanceRef.Name == instance.Name {
+		if binding.Spec.InstanceRef.Name == instance.Name {
 			bindings = append(bindings, binding)
 		}
 	}
@@ -86,7 +86,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			ExternalID: externalID,
-			ServiceInstanceRef: v1beta1.LocalObjectReference{
+			InstanceRef: v1beta1.LocalObjectReference{
 				Name: instanceName,
 			},
 			SecretName:     secretName,

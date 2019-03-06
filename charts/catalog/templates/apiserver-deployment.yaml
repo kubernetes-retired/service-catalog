@@ -28,6 +28,10 @@ spec:
 {{ toYaml .Values.apiserver.annotations | indent 8 }}
       {{- end }}
     spec:
+{{- with .Values.securityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+{{- end }}        
       serviceAccountName: "{{ .Values.apiserver.serviceAccount }}"
       containers:
       - name: apiserver
@@ -86,13 +90,13 @@ spec:
         readinessProbe:
           httpGet:
             port: 8443
-            path: /healthz
+            path: /healthz/ready
             scheme: HTTPS
           failureThreshold: 1
           initialDelaySeconds: 10
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 2
+          timeoutSeconds: 5
         livenessProbe:
           httpGet:
             port: 8443
@@ -102,7 +106,7 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 2
+          timeoutSeconds: 5
         {{- end }}
       {{- if and (eq .Values.apiserver.storage.type "etcd") .Values.apiserver.storage.etcd.useEmbedded }}
       - name: etcd

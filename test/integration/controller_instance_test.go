@@ -518,7 +518,7 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 // ServiceInstance.
 func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 	otherPlanName := "otherplanname"
-	otherPlanID := "other-plan-id"
+	otherPlanID := "otherplanid"
 	cases := []struct {
 		name                          string
 		useExternalNames              bool
@@ -928,15 +928,14 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 // with/without retries.
 func TestCreateServiceInstanceWithRetries(t *testing.T) {
 	cases := []struct {
-		name                        string
-		setup                func(ct *controllerTest)
+		name  string
+		setup func(ct *controllerTest)
 	}{
 		{
 			name: "no retry",
 			setup: func(ct *controllerTest) {
 				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-					},
+					Response: &osb.ProvisionResponse{},
 				}
 			},
 		},
@@ -953,8 +952,7 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 							},
 						},
 						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-							},
+							Response: &osb.ProvisionResponse{},
 						},
 					}))
 			},
@@ -972,8 +970,7 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 							},
 						},
 						fakeosb.ProvisionReaction{
-							Response: &osb.ProvisionResponse{
-							},
+							Response: &osb.ProvisionResponse{},
 						},
 					}))
 			},
@@ -984,8 +981,8 @@ func TestCreateServiceInstanceWithRetries(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			ct := &controllerTest{
-				t:      t,
-				broker: getTestBroker(),
+				t:        t,
+				broker:   getTestBroker(),
 				instance: getTestInstance(),
 			}
 			ct.setup = tc.setup
@@ -1060,7 +1057,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 		nonHTTPResponseError error
 		// expected reason used in the instance condition to indiciate that the provision failed
 		provisionErrorReason string
-		// expected reason used in the instance condiiton to indicate that the provision failed terminally
+		// expected reason used in the instance condition to indicate that the provision failed terminally
 		failReason string
 		// true if the failed provision is expected to trigger orphan mitigation
 		triggersOrphanMitigation bool
@@ -1175,9 +1172,8 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToProvision {
 								return &osb.ProvisionResponse{}, nil
-							} else {
-								return nil, reactionError
 							}
+							return nil, reactionError
 						})
 					respondSuccessfullyToDeprovision := false
 					blockDeprovision := true
@@ -1192,11 +1188,10 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 							}
 							if respondSuccessfullyToDeprovision {
 								return &osb.DeprovisionResponse{}, nil
-							} else {
-								return nil, osb.HTTPStatusCodeError{
-									StatusCode:   500,
-									ErrorMessage: strPtr("temporary deprovision error"),
-								}
+							}
+							return nil, osb.HTTPStatusCodeError{
+								StatusCode:   500,
+								ErrorMessage: strPtr("temporary deprovision error"),
 							}
 						})
 				},
@@ -1301,7 +1296,7 @@ func TestCreateServiceInstanceFailsWithNonexistentPlan(t *testing.T) {
 		skipVerifyingInstanceSuccess: true,
 		preCreateInstance: func(ct *controllerTest) {
 			otherPlanName := "otherplanname"
-			otherPlanID := "other-plan-id"
+			otherPlanID := "otherplanid"
 			catalogResponse := ct.osbClient.CatalogReaction.(*fakeosb.CatalogReaction).Response
 			catalogResponse.Services[0].PlanUpdatable = truePtr()
 			catalogResponse.Services[0].Plans = []osb.Plan{
@@ -1728,94 +1723,6 @@ func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 					if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, *tc.verifyCondition); err != nil {
 						t.Fatalf("error waiting for instance condition: %v", err)
 					}
-				}
-			})
-		})
-	}
-}
-
-// TestPollServiceInstanceLastOperationFailure checks that async operation is correctly
-// retried after the initial operation fails
-func TestPollServiceInstanceLastOperationFailure(t *testing.T) {
-	cases := []struct {
-		name                         string
-		setup                        func(t *controllerTest)
-		skipVerifyingInstanceSuccess bool
-		failureCondition             *v1beta1.ServiceInstanceCondition
-		successCondition             *v1beta1.ServiceInstanceCondition
-	}{
-		{
-			name: "async provisioning with last operation response state failed",
-			setup: func(ct *controllerTest) {
-				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-						Async: true,
-					},
-				}
-				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
-					getLastOperationResponseByPollCountStates(2,
-						[]osb.LastOperationState{
-							osb.StateFailed,
-							osb.StateSucceeded,
-						}))
-			},
-			skipVerifyingInstanceSuccess: false,
-			failureCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionFalse,
-				Reason: "ProvisionCallFailed",
-			},
-			successCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionTrue,
-				Reason: "ProvisionedSuccessfully",
-			},
-		},
-		// response errors
-		{
-			name: "async provisioning with last operation response state failed eventually",
-			setup: func(ct *controllerTest) {
-				ct.osbClient.ProvisionReaction = &fakeosb.ProvisionReaction{
-					Response: &osb.ProvisionResponse{
-						Async: true,
-					},
-				}
-				ct.osbClient.PollLastOperationReaction = fakeosb.DynamicPollLastOperationReaction(
-					getLastOperationResponseByPollCountStates(1,
-						[]osb.LastOperationState{
-							osb.StateInProgress,
-							osb.StateFailed,
-							osb.StateInProgress,
-							osb.StateSucceeded,
-						}))
-			},
-			skipVerifyingInstanceSuccess: false,
-			failureCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionFalse,
-				Reason: "ProvisionCallFailed",
-			},
-			successCondition: &v1beta1.ServiceInstanceCondition{
-				Type:   v1beta1.ServiceInstanceConditionReady,
-				Status: v1beta1.ConditionTrue,
-				Reason: "ProvisionedSuccessfully",
-			},
-		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			//t.Parallel()
-			ct := &controllerTest{
-				t:                            t,
-				broker:                       getTestBroker(),
-				instance:                     getTestInstance(),
-				skipVerifyingInstanceSuccess: tc.skipVerifyingInstanceSuccess,
-				setup: tc.setup,
-			}
-			ct.run(func(ct *controllerTest) {
-				if err := util.WaitForInstanceCondition(ct.client, testNamespace, testInstanceName, *tc.successCondition); err != nil {
-					t.Fatalf("error waiting for instance condition: %v", err)
 				}
 			})
 		})

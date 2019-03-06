@@ -87,7 +87,7 @@ func WriteClassDetails(w io.Writer, class servicecatalog.Class) {
 	t.AppendBulk([][]string{
 		{"Scope:", scope},
 		{"Description:", spec.Description},
-		{"UUID:", class.GetName()},
+		{"Kubernetes Name:", class.GetName()},
 		{"Status:", class.GetStatusText()},
 		{"Tags:", strings.Join(spec.Tags, ", ")},
 		{"Broker:", class.GetServiceBrokerName()},
@@ -108,13 +108,13 @@ func WriteClassAndPlanDetails(w io.Writer, classes []servicecatalog.Class, plans
 			if i == 0 {
 				t.Append([]string{
 					class.GetExternalName(),
-					plan.GetName(),
+					plan.GetExternalName(),
 					class.GetSpec().Description,
 				})
 			} else {
 				t.Append([]string{
 					"",
-					plan.GetName(),
+					plan.GetExternalName(),
 					"",
 				})
 			}

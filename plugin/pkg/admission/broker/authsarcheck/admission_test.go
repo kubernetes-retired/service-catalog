@@ -75,8 +75,9 @@ func TestAdmissionBroker(t *testing.T) {
 	// Anonymous struct fields:
 	// name: short description of the testing
 	// broker: a fake broker object
+	// userInfo: info about the user submitting the request
 	// allowed: flag for whether or not the broker should be admitted
-	cases := []struct {
+	clusterCases := []struct {
 		name     string
 		broker   *servicecatalog.ClusterServiceBroker
 		userInfo *user.DefaultInfo
@@ -231,7 +232,7 @@ func TestAdmissionBroker(t *testing.T) {
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := range clusterCases {
 		mockKubeClient := newMockKubeClientForTest(tc.userInfo)
 		handler, kubeInformerFactory, err := newHandlerForTest(mockKubeClient)
 		if err != nil {
@@ -240,6 +241,181 @@ func TestAdmissionBroker(t *testing.T) {
 		kubeInformerFactory.Start(wait.NeverStop)
 
 		err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(tc.broker, nil, servicecatalog.Kind("ClusterServiceBroker").WithVersion("version"), tc.broker.Namespace, tc.broker.Name, servicecatalog.Resource("clusterservicebrokers").WithVersion("version"), "", admission.Create, false, tc.userInfo))
+		if err != nil && tc.allowed || err == nil && !tc.allowed {
+			t.Errorf("Create test '%s' reports: Unexpected error returned from admission handler: %v", tc.name, err)
+		}
+	}
+
+	// Anonymous struct fields:
+	// name: short description of the testing
+	// broker: a fake broker object
+	// userInfo: info about the user submitting the request
+	// allowed: flag for whether or not the broker should be admitted
+	namespacedCases := []struct {
+		name     string
+		broker   *servicecatalog.ServiceBroker
+		userInfo *user.DefaultInfo
+		allowed  bool
+	}{
+		{
+			name: "namespace broker with no auth",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-ns",
+					Name:      "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:catalog",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
+		},
+		{
+			name: "namespace broker with basic auth, user authenticated",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-ns",
+					Name:      "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Basic: &servicecatalog.BasicAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{
+								Name: "test-secret",
+							},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:catalog",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
+		},
+		{
+			name: "namespace broker with bearer token, user authenticated",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-ns",
+					Name:      "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{
+								Name: "test-secret",
+							},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:catalog",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
+		},
+		{
+			name: "namespace broker with bearer token, unauthenticated user",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-ns",
+					Name:      "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{
+								Name: "test-secret",
+							},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:forbidden",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: false,
+		},
+		{
+			name: "namespace broker with empty authInfo",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:forbidden",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
+		},
+		{
+			name: "namespace broker with authInfo, empty strings for Namespace/Name",
+			broker: &servicecatalog.ServiceBroker{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-ns",
+					Name:      "test-broker",
+				},
+				Spec: servicecatalog.ServiceBrokerSpec{
+					AuthInfo: &servicecatalog.ServiceBrokerAuthInfo{
+						Bearer: &servicecatalog.BearerTokenAuthConfig{
+							SecretRef: &servicecatalog.LocalObjectReference{
+								Name: "",
+							},
+						},
+					},
+					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
+						URL:            "http://example.com",
+						RelistBehavior: "Manual",
+					},
+				},
+			},
+			userInfo: &user.DefaultInfo{
+				Name:   "system:serviceaccount:test-ns:catalog",
+				Groups: []string{"system:serviceaccount", "system:serviceaccounts:test-ns"},
+			},
+			allowed: true,
+		},
+	}
+
+	for _, tc := range namespacedCases {
+		mockKubeClient := newMockKubeClientForTest(tc.userInfo)
+		handler, kubeInformerFactory, err := newHandlerForTest(mockKubeClient)
+		if err != nil {
+			t.Errorf("unexpected error initializing handler: %v", err)
+		}
+		kubeInformerFactory.Start(wait.NeverStop)
+
+		err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(tc.broker, nil, servicecatalog.Kind("ServiceBroker").WithVersion("version"), tc.broker.Namespace, tc.broker.Name, servicecatalog.Resource("servicebrokers").WithVersion("version"), "", admission.Create, false, tc.userInfo))
 		if err != nil && tc.allowed || err == nil && !tc.allowed {
 			t.Errorf("Create test '%s' reports: Unexpected error returned from admission handler: %v", tc.name, err)
 		}

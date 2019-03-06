@@ -32,10 +32,10 @@ import (
 	"k8s.io/apiserver/pkg/storage/names"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for bindings
@@ -79,7 +79,7 @@ var (
 func (bindingRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to create")
+		klog.Fatal("received a non-binding object to create")
 	}
 }
 
@@ -94,7 +94,7 @@ func (bindingRESTStrategy) NamespaceScoped() bool {
 func (bindingRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	binding, ok := obj.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to create")
+		klog.Fatal("received a non-binding object to create")
 	}
 
 	if binding.Spec.ExternalID == "" {
@@ -132,11 +132,11 @@ func (bindingRESTStrategy) AllowUnconditionalUpdate() bool {
 func (bindingRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to update to")
+		klog.Fatal("received a non-binding object to update to")
 	}
 	oldServiceBinding, ok := old.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to update from")
+		klog.Fatal("received a non-binding object to update from")
 	}
 	newServiceBinding.Status = oldServiceBinding.Status
 
@@ -163,11 +163,11 @@ func (bindingRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtim
 func (bindingRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to validate to")
+		klog.Fatal("received a non-binding object to validate to")
 	}
 	oldServiceBinding, ok := old.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to validate from")
+		klog.Fatal("received a non-binding object to validate from")
 	}
 
 	return scv.ValidateServiceBindingUpdate(newServiceBinding, oldServiceBinding)
@@ -182,7 +182,7 @@ func (bindingRESTStrategy) CheckGracefulDelete(ctx context.Context, obj runtime.
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		serviceInstanceCredential, ok := obj.(*sc.ServiceBinding)
 		if !ok {
-			glog.Fatal("received a non-ServiceBinding object to delete")
+			klog.Fatal("received a non-ServiceBinding object to delete")
 		}
 		setServiceBindingUserInfo(ctx, serviceInstanceCredential)
 	}
@@ -193,11 +193,11 @@ func (bindingRESTStrategy) CheckGracefulDelete(ctx context.Context, obj runtime.
 func (bindingStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to update to")
+		klog.Fatal("received a non-binding object to update to")
 	}
 	oldServiceBinding, ok := old.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to update from")
+		klog.Fatal("received a non-binding object to update from")
 	}
 	// status changes are not allowed to update spec
 	newServiceBinding.Spec = oldServiceBinding.Spec
@@ -206,11 +206,11 @@ func (bindingStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old 
 func (bindingStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServiceBinding, ok := new.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to validate to")
+		klog.Fatal("received a non-binding object to validate to")
 	}
 	oldServiceBinding, ok := old.(*sc.ServiceBinding)
 	if !ok {
-		glog.Fatal("received a non-binding object to validate from")
+		klog.Fatal("received a non-binding object to validate from")
 	}
 
 	return scv.ValidateServiceBindingStatusUpdate(newServiceBinding, oldServiceBinding)

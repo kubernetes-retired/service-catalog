@@ -20,8 +20,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
@@ -70,7 +70,7 @@ func (f *FakeServiceBrokerServer) Start() string {
 // Stop shuts down the server.
 func (f *FakeServiceBrokerServer) Stop() {
 	f.server.Close()
-	glog.Info("fake broker stopped")
+	klog.Info("fake broker stopped")
 }
 
 // SetResponseStatus sets the default response status of the broker to the
@@ -92,12 +92,12 @@ func (f *FakeServiceBrokerServer) SetLastOperationState(state string) {
 // HANDLERS
 
 func (f *FakeServiceBrokerServer) catalogHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake catalog called")
+	klog.Info("fake catalog called")
 	util.WriteResponse(w, http.StatusOK, &brokerapi.Catalog{})
 }
 
 func (f *FakeServiceBrokerServer) lastOperationHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake lastOperation called")
+	klog.Info("fake lastOperation called")
 	f.Request = r
 	req := &brokerapi.LastOperationRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
@@ -119,7 +119,7 @@ func (f *FakeServiceBrokerServer) lastOperationHandler(w http.ResponseWriter, r 
 }
 
 func (f *FakeServiceBrokerServer) provisionHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake provision called")
+	klog.Info("fake provision called")
 	f.Request = r
 	req := &brokerapi.CreateServiceInstanceRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
@@ -141,7 +141,7 @@ func (f *FakeServiceBrokerServer) provisionHandler(w http.ResponseWriter, r *htt
 }
 
 func (f *FakeServiceBrokerServer) deprovisionHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake deprovision called")
+	klog.Info("fake deprovision called")
 	f.Request = r
 	req := &brokerapi.DeleteServiceInstanceRequest{
 		ServiceID: r.URL.Query().Get("service_id"),
@@ -167,13 +167,13 @@ func (f *FakeServiceBrokerServer) deprovisionHandler(w http.ResponseWriter, r *h
 }
 
 func (f *FakeServiceBrokerServer) updateHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake update called")
+	klog.Info("fake update called")
 	// TODO: Implement
 	util.WriteResponse(w, http.StatusForbidden, nil)
 }
 
 func (f *FakeServiceBrokerServer) bindHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake bind called")
+	klog.Info("fake bind called")
 	f.Request = r
 	req := &brokerapi.BindingRequest{}
 	if err := util.BodyToObject(r, req); err != nil {
@@ -185,7 +185,7 @@ func (f *FakeServiceBrokerServer) bindHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (f *FakeServiceBrokerServer) unbindHandler(w http.ResponseWriter, r *http.Request) {
-	glog.Info("fake unbind called")
+	klog.Info("fake unbind called")
 	f.Request = r
 	util.WriteResponse(w, f.responseStatus, &brokerapi.DeleteServiceInstanceResponse{})
 }

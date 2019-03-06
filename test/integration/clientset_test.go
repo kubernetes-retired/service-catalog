@@ -1647,7 +1647,7 @@ func testBindingClient(client servicecatalogclient.Interface, name string) error
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{
+			InstanceRef: v1beta1.LocalObjectReference{
 				Name: "bar",
 			},
 			Parameters: &runtime.RawExtension{Raw: []byte(bindingParameter)},

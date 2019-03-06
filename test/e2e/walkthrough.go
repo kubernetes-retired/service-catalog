@@ -184,7 +184,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 				Namespace: testnamespace.Name,
 			},
 			Spec: v1beta1.ServiceBindingSpec{
-				ServiceInstanceRef: v1beta1.LocalObjectReference{
+				InstanceRef: v1beta1.LocalObjectReference{
 					Name: instanceName,
 				},
 				SecretName: "my-secret",

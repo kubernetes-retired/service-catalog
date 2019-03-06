@@ -23,15 +23,15 @@ import (
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	"k8s.io/kubectl/pkg/pluginutils"
 
-	_ "github.com/golang/glog" // Initialize glog flags
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
+	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/browsing"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/completion"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/extra"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/instance"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/plugin"
@@ -52,6 +52,7 @@ var (
 )
 
 func main() {
+	klog.InitFlags(nil)
 	// root command context
 	cxt := &command.Context{
 		Viper: viper.New(),
@@ -125,7 +126,7 @@ func buildRootCommand(cxt *command.Context) *cobra.Command {
 	cmd.AddCommand(instance.NewDeprovisionCmd(cxt))
 	cmd.AddCommand(binding.NewBindCmd(cxt))
 	cmd.AddCommand(binding.NewUnbindCmd(cxt))
-	cmd.AddCommand(extra.NewMarketplaceCmd(cxt))
+	cmd.AddCommand(browsing.NewMarketplaceCmd(cxt))
 	cmd.AddCommand(newSyncCmd(cxt))
 	if !plugin.IsPlugin() {
 		cmd.AddCommand(newInstallCmd(cxt))

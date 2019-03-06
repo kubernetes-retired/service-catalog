@@ -33,10 +33,12 @@ var _ authenticator.Request = &AnyUserAuthenticator{}
 // AuthenticateRequest gets the user name from the Basic auth. If there is
 // no basic auth or it is not valid for any reason, then an empty username
 // is used.
-func (a *AnyUserAuthenticator) AuthenticateRequest(req *http.Request) (user.Info, bool, error) {
+func (a *AnyUserAuthenticator) AuthenticateRequest(req *http.Request) (*authenticator.Response, bool, error) {
 	username, _, _ := req.BasicAuth()
 	userInfo := &user.DefaultInfo{
 		Name: username,
 	}
-	return userInfo, true, nil
+	return &authenticator.Response{
+		User: userInfo,
+	}, true, nil
 }

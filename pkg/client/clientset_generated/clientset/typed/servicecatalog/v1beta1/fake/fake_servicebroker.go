@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ func (c *FakeServiceBrokers) DeleteCollection(options *v1.DeleteOptions, listOpt
 // Patch applies the patch and returns the patched serviceBroker.
 func (c *FakeServiceBrokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(servicebrokersResource, c.ns, name, data, subresources...), &v1beta1.ServiceBroker{})
+		Invokes(testing.NewPatchSubresourceAction(servicebrokersResource, c.ns, name, pt, data, subresources...), &v1beta1.ServiceBroker{})
 
 	if obj == nil {
 		return nil, err
