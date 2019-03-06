@@ -179,3 +179,7 @@ asyncBindingOperationsEnabled: false
 namespacedServiceBrokerDisabled: false
 # Whether the ServicePlanDefaults alpha feature should be enabled
 servicePlanDefaultsEnabled: false
+## Security context give the opportunity to run container as nonroot by setting a securityContext 
+## by example :
+## securityContext: { runAsUser: 1001 }
+securityContext: {}
