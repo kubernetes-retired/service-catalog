@@ -176,7 +176,7 @@ var kub = (function () {
         var windowHeight = window.innerHeight;
         var maxHeight = Math.min(footerTop, windowHeight) - docsTocTop;
 
-        docsToc.css({ 'top': docsTocTop + 'px', 'max-height': maxHeight + 'px', 'overflow' : 'scroll' });
+        docsToc.css({ 'top': docsTocTop + 'px', 'max-height': maxHeight + 'px' });
     }
 
     function setHomeHeaderStyles() {
