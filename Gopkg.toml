@@ -740,7 +740,7 @@ required = [
 
 [[override]]
   name = "github.com/stretchr/testify"
-  revision = "c679ae2cc0cb27ec3293fea7e254e47386f05d69"
+  version = "v1.3.0"
 
 [[override]]
   name = "github.com/syndtr/gocapability"
@@ -909,3 +909,4 @@ required = [
 [[override]]
   name = "vbom.ml/util"
   revision = "db5cfe13f5cc80a4990d98e2e1b0707a4d1a5394"
+
