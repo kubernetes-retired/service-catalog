@@ -11,7 +11,7 @@ spec:
   replicas: {{ .Values.controllerManager.replicas }}
   strategy:
     type: {{ .Values.controllerManager.updateStrategy }}
-  minReadySeconds: {{ .Values.apiserver.minReadySeconds }}
+  minReadySeconds: {{ .Values.controllerManager.minReadySeconds }}
   selector:
     matchLabels:
       app: {{ template "fullname" . }}-controller-manager
@@ -61,13 +61,6 @@ spec:
         {{ if .Values.controllerManager.profiling.contentionProfiling -}}
         - "--contention-profiling=true"
         {{- end}}
-        {{- if not .Values.useAggregator }}
-        - --service-catalog-api-server-url
-        - https://{{ template "fullname" . }}-apiserver
-        {{- end }}
-        {{ if and (.Values.controllerManager.apiserverSkipVerify) (not .Values.useAggregator) -}}
-        - "--service-catalog-insecure-skip-verify=true"
-        {{- end }}
         - -v
         - "{{ .Values.controllerManager.verbosity }}"
         - --resync-interval
@@ -102,10 +95,6 @@ spec:
         {{- end }}
         ports:
         - containerPort: 8444
-        volumeMounts:
-        - name: service-catalog-cert
-          mountPath: /var/run/kubernetes-service-catalog
-          readOnly: true
         {{- if .Values.controllerManager.healthcheck.enabled }}
         readinessProbe:
           httpGet:
@@ -132,16 +121,3 @@ spec:
       nodeSelector:
          {{ .Values.controllerManager.nodeSelector }}
       {{ end }}
-      volumes:
-      - name: service-catalog-cert
-        secret:
-          secretName: {{ template "fullname" . }}-apiserver-cert
-          items:
-          - key: tls.crt
-            path: apiserver.crt
-          - key: tls.key
-            path: apiserver.key
-          {{- if .Values.apiserver.tls.requestHeaderCA }}
-          - key: requestheader-ca.crt
-            path: requestheader-ca.crt
-          {{- end }}
