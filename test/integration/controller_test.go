@@ -52,6 +52,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
+	k8sinformers "k8s.io/client-go/informers"
 )
 
 const (
@@ -762,6 +763,9 @@ func newControllerTestTestController(ct *controllerTest) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
+	coreInformerFactory := k8sinformers.NewSharedInformerFactory(fakeKubeClient, time.Minute)
+	coreInformers := coreInformerFactory.Core()
+
 	// WARNING: Should you try to record more events than the buffer size
 	// passed here, the recording function will hang indefinitely.
 	fakeRecorder := record.NewFakeRecorder(50)
@@ -769,6 +773,7 @@ func newControllerTestTestController(ct *controllerTest) (
 	// create a test controller
 	testController, err := controller.NewController(
 		fakeKubeClient,
+		coreInformers.V1().Secrets(),
 		catalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
@@ -809,9 +814,11 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	klog.V(4).Info("Waiting for caches to sync")
 	informerFactory.Start(stopCh)
+	coreInformerFactory.Start(stopCh)
 
 	klog.V(4).Info("Waiting for caches to sync")
 	informerFactory.WaitForCacheSync(stopCh)
+	coreInformerFactory.WaitForCacheSync(stopCh)
 
 	controllerStopped := make(chan struct{})
 
@@ -922,6 +929,9 @@ func newTestController(t *testing.T) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
+	coreInformerFactory := k8sinformers.NewSharedInformerFactory(fakeKubeClient, time.Minute)
+	coreInformers := coreInformerFactory.Core()
+
 	// WARNING: Should you try to record more events than the buffer size
 	// passed here, the recording function will hang indefinitely.
 	fakeRecorder := record.NewFakeRecorder(50)
@@ -929,6 +939,7 @@ func newTestController(t *testing.T) (
 	// create a test controller
 	testController, err := controller.NewController(
 		fakeKubeClient,
+		coreInformers.V1().Secrets(),
 		catalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
@@ -959,6 +970,7 @@ func newTestController(t *testing.T) (
 		controllerStopped <- struct{}{}
 	}()
 	informerFactory.Start(stopCh)
+	coreInformerFactory.Start(stopCh)
 	t.Log("informers start")
 
 	shutdownController := func() {

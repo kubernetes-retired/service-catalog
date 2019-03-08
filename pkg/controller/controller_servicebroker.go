@@ -114,9 +114,9 @@ func (c *controller) reconcileServiceBrokerKey(key string) error {
 	return c.reconcileServiceBroker(broker)
 }
 
-func (c *controller) updateServiceBrokerClient(broker *v1beta1.ServiceBroker) (osb.Client, error) {
+func (c *controller) serviceBrokerClient(broker *v1beta1.ServiceBroker) (osb.Client, error) {
 	pcb := pretty.NewServiceBrokerContextBuilder(broker)
-	authConfig, err := getAuthCredentialsFromServiceBroker(c.kubeClient, broker)
+	authConfig, err := c.getAuthCredentialsFromServiceBroker(broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials: %s", err)
 		klog.Info(pcb.Message(s))
@@ -161,7 +161,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 	if broker.DeletionTimestamp == nil { // Add or update
 		klog.V(4).Info(pcb.Message("Processing adding/update event"))
 
-		brokerClient, err := c.updateServiceBrokerClient(broker)
+		brokerClient, err := c.serviceBrokerClient(broker)
 		if err != nil {
 			return err
 		}

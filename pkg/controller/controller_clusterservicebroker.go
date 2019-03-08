@@ -124,10 +124,10 @@ func (c *controller) reconcileClusterServiceBrokerKey(key string) error {
 	return c.reconcileClusterServiceBroker(broker)
 }
 
-func (c *controller) updateClusterServiceBrokerClient(broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
+func (c *controller) clusterServiceBrokerClient(broker *v1beta1.ClusterServiceBroker) (osb.Client, error) {
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 	klog.V(4).Info(pcb.Message("Updating broker client"))
-	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
+	authConfig, err := c.getAuthCredentialsFromClusterServiceBroker(broker)
 	if err != nil {
 		s := fmt.Sprintf("Error getting broker auth credentials: %s", err)
 		klog.Info(pcb.Message(s))
@@ -169,7 +169,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 	if broker.DeletionTimestamp == nil { // Add or update
 		klog.V(4).Info(pcb.Message("Processing adding/update event"))
 
-		brokerClient, err := c.updateClusterServiceBrokerClient(broker)
+		brokerClient, err := c.clusterServiceBrokerClient(broker)
 		if err != nil {
 			return err
 		}

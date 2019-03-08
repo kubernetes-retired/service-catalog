@@ -45,6 +45,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/informers"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
@@ -2327,11 +2328,15 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(fakeCatalogClient, 0)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
+	k8sInformerFactory := informers.NewSharedInformerFactory(fakeKubeClient, 0)
+	k8sInformers := k8sInformerFactory.Core().V1()
+
 	fakeRecorder := record.NewFakeRecorder(5)
 
 	// create a test controller
 	testController, err := NewController(
 		fakeKubeClient,
+		k8sInformers.Secrets(),
 		fakeCatalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
