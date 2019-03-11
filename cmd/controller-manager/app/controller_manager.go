@@ -59,6 +59,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"k8s.io/client-go/informers"
 	"k8s.io/klog"
 )
 
@@ -362,6 +363,9 @@ func StartControllers(s *options.ControllerManagerServer,
 	}
 	klog.V(5).Infof("Creating shared informers; resync interval: %v", s.ResyncInterval)
 
+	coreInformerFactory := informers.NewSharedInformerFactory(coreClient, s.ResyncInterval)
+	coreInformers := coreInformerFactory.Core()
+
 	// Build the informer factory for service-catalog resources
 	informerFactory := servicecataloginformers.NewSharedInformerFactory(
 		serviceCatalogClientBuilder.ClientOrDie("shared-informers"),
@@ -373,6 +377,7 @@ func StartControllers(s *options.ControllerManagerServer,
 	klog.V(5).Infof("Creating controller; broker relist interval: %v", s.ServiceBrokerRelistInterval)
 	serviceCatalogController, err := controller.NewController(
 		coreClient,
+		coreInformers.V1().Secrets(),
 		serviceCatalogClientBuilder.ClientOrDie(controllerManagerAgentName).ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
@@ -397,9 +402,11 @@ func StartControllers(s *options.ControllerManagerServer,
 
 	klog.V(1).Info("Starting shared informers")
 	informerFactory.Start(stop)
+	coreInformerFactory.Start(stop)
 
 	klog.V(5).Info("Waiting for caches to sync")
 	informerFactory.WaitForCacheSync(stop)
+	coreInformerFactory.WaitForCacheSync(stop)
 
 	klog.V(5).Info("Running controller")
 	go serviceCatalogController.Run(s.ConcurrentSyncs, stop)

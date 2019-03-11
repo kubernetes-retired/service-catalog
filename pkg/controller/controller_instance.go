@@ -968,9 +968,9 @@ func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) erro
 	var brokerClient osb.Client
 	var err error
 	if instance.Spec.ClusterServiceClassSpecified() {
-		_, _, _, brokerClient, err = c.getClusterServiceClassPlanAndClusterServiceBroker(instance)
+		_, _, brokerClient, err = c.getClusterServiceClassAndClusterServiceBroker(instance)
 	} else {
-		_, _, _, brokerClient, err = c.getServiceClassPlanAndServiceBroker(instance)
+		_, _, brokerClient, err = c.getServiceClassAndServiceBroker(instance)
 	}
 	if err != nil {
 		return c.handleServiceInstanceReconciliationError(instance, err)

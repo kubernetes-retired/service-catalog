@@ -854,9 +854,7 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 
 	broker := getTestClusterServiceBrokerWithAuth(authInfo)
 	if secret != nil {
-		addGetSecretReaction(fakeKubeClient, secret)
-	} else {
-		addGetSecretNotFoundReaction(fakeKubeClient)
+		fakeKubeClient.Core().Secrets(secret.Namespace).Create(secret)
 	}
 	testClusterServiceClass := getTestClusterServiceClass()
 	fakeClusterServiceBrokerClient.CatalogReaction = &fakeosb.CatalogReaction{
@@ -894,18 +892,6 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 		assertNumberOfActions(t, actions, 1)
 		updatedClusterServiceBroker := assertUpdateStatus(t, actions[0], broker)
 		assertClusterServiceBrokerReadyFalse(t, updatedClusterServiceBroker)
-	}
-
-	// verify one kube action occurred
-	kubeActions := fakeKubeClient.Actions()
-	assertNumberOfActions(t, kubeActions, 1)
-
-	getAction := kubeActions[0].(clientgotesting.GetAction)
-	if e, a := "get", getAction.GetVerb(); e != a {
-		t.Fatalf("Unexpected verb on action; %s", expectedGot(e, a))
-	}
-	if e, a := "secrets", getAction.GetResource().Resource; e != a {
-		t.Fatalf("Unexpected resource on action; %s", expectedGot(e, a))
 	}
 
 	events := getRecordedEvents(testController)

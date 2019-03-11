@@ -51,6 +51,8 @@ import (
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
 	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	v12 "k8s.io/client-go/informers/core/v1"
+	"k8s.io/client-go/listers/core/v1"
 )
 
 const (
@@ -75,6 +77,7 @@ const (
 // NewController returns a new Open Service Broker catalog controller.
 func NewController(
 	kubeClient kubernetes.Interface,
+	secretInformer v12.SecretInformer,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1beta1Interface,
 	clusterServiceBrokerInformer informers.ClusterServiceBrokerInformer,
 	serviceBrokerInformer informers.ServiceBrokerInformer,
@@ -95,6 +98,7 @@ func NewController(
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
+		secretLister:                secretInformer.Lister(),
 		serviceCatalogClient:        serviceCatalogClient,
 		brokerRelistInterval:        brokerRelistInterval,
 		OSBAPIPreferredVersion:      osbAPIPreferredVersion,
@@ -112,8 +116,9 @@ func NewController(
 		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
 		clusterIDConfigMapName:      clusterIDConfigMapName,
 		clusterIDConfigMapNamespace: clusterIDConfigMapNamespace,
-		brokerClientManager:         NewBrokerClientManager(brokerClientCreateFunc),
+		brokerClientCreateFunc:      brokerClientCreateFunc,
 	}
+	controller.brokerClientManager = NewBrokerClientManager(brokerClientCreateFunc)
 
 	controller.clusterServiceBrokerLister = clusterServiceBrokerInformer.Lister()
 	clusterServiceBrokerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -172,6 +177,7 @@ func NewController(
 	}
 	controller.instanceOperationRetryQueue.instances = make(map[string]backoffEntry)
 	controller.instanceOperationRetryQueue.rateLimiter = workqueue.NewItemExponentialFailureRateLimiter(minBrokerOperationRetryDelay, maxBrokerOperationRetryDelay)
+
 	return controller, nil
 }
 
@@ -196,6 +202,7 @@ type controller struct {
 	bindingLister               listers.ServiceBindingLister
 	clusterServicePlanLister    listers.ClusterServicePlanLister
 	servicePlanLister           listers.ServicePlanLister
+	secretLister                v1.SecretLister
 	brokerRelistInterval        time.Duration
 	OSBAPIPreferredVersion      string
 	recorder                    record.EventRecorder
@@ -228,6 +235,8 @@ type controller struct {
 	instanceOperationRetryQueue instanceOperationBackoff
 	// BrokerClientManager holds all OSB clients for brokers.
 	brokerClientManager *BrokerClientManager
+
+	brokerClientCreateFunc osb.CreateFunc
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -486,18 +495,11 @@ func (c *controller) getClusterServiceClassAndClusterServiceBroker(instance *v1b
 				serviceClass.Spec.ClusterServiceBrokerName,
 			),
 		}
-
 	}
 
-	brokerClient, found := c.brokerClientManager.BrokerClient(NewClusterServiceBrokerKey(serviceClass.Spec.ClusterServiceBrokerName))
-	if !found {
-		return nil, "", nil, &operationError{
-			reason: errorNonexistentClusterServiceBrokerReason,
-			message: fmt.Sprintf(
-				"The instance references a broker %q which has no OSB client created",
-				serviceClass.Spec.ClusterServiceBrokerName,
-			),
-		}
+	brokerClient, err := c.clusterServiceBrokerClient(broker)
+	if err != nil {
+		return nil, "", nil, err
 	}
 
 	return serviceClass, broker.Name, brokerClient, nil
@@ -530,15 +532,9 @@ func (c *controller) getServiceClassAndServiceBroker(instance *v1beta1.ServiceIn
 
 	}
 
-	brokerClient, found := c.brokerClientManager.BrokerClient(NewServiceBrokerKey(instance.Namespace, serviceClass.Spec.ServiceBrokerName))
-	if !found {
-		return nil, "", nil, &operationError{
-			reason: errorNonexistentClusterServiceBrokerReason,
-			message: fmt.Sprintf(
-				"The instance references a broker %q which has no OSB client created",
-				serviceClass.Spec.ServiceBrokerName,
-			),
-		}
+	brokerClient, err := c.serviceBrokerClient(broker)
+	if err != nil {
+		return nil, "", nil, err
 	}
 	return serviceClass, broker.Name, brokerClient, nil
 }
@@ -644,11 +640,9 @@ func (c *controller) getClusterServiceBrokerForServiceBinding(instance *v1beta1.
 }
 
 func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceInstance, binding *v1beta1.ServiceBinding) (osb.Client, error) {
-
 	var brokerClient osb.Client
 
 	if instance.Spec.ClusterServiceClassSpecified() {
-
 		serviceClass, err := c.getClusterServiceClassForServiceBinding(instance, binding)
 		if err != nil {
 			return nil, err
@@ -659,15 +653,11 @@ func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceI
 			return nil, err
 		}
 
-		var found bool
-		brokerClient, found = c.brokerClientManager.BrokerClient(NewClusterServiceBrokerKey(broker.Name))
-
-		if !found {
-			return nil, fmt.Errorf("OSB client not found for the broker %s", broker.Name)
+		brokerClient, err = c.clusterServiceBrokerClient(broker)
+		if err != nil {
+			return nil, err
 		}
-
 	} else if instance.Spec.ServiceClassSpecified() {
-
 		serviceClass, err := c.getServiceClassForServiceBinding(instance, binding)
 		if err != nil {
 			return nil, err
@@ -678,11 +668,9 @@ func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceI
 			return nil, err
 		}
 
-		var found bool
-		brokerClient, found = c.brokerClientManager.BrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name))
-
-		if !found {
-			return nil, fmt.Errorf("OSB client not found for the broker %s", broker.Name)
+		brokerClient, err = c.serviceBrokerClient(broker)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -693,7 +681,7 @@ func (c *controller) getBrokerClientForServiceBinding(instance *v1beta1.ServiceI
 // getAuthCredentialsFromClusterServiceBroker returns the auth credentials, if any, or
 // returns an error. If the AuthInfo field is nil, empty values are
 // returned.
-func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, broker *v1beta1.ClusterServiceBroker) (*osb.AuthConfig, error) {
+func (c *controller) getAuthCredentialsFromClusterServiceBroker(broker *v1beta1.ClusterServiceBroker) (*osb.AuthConfig, error) {
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
@@ -701,7 +689,7 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
 		secretRef := authInfo.Basic.SecretRef
-		secret, err := client.CoreV1().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := c.secretLister.Secrets(secretRef.Namespace).Get(secretRef.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -714,7 +702,7 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 		}, nil
 	} else if authInfo.Bearer != nil {
 		secretRef := authInfo.Bearer.SecretRef
-		secret, err := client.CoreV1().Secrets(secretRef.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := c.secretLister.Secrets(secretRef.Namespace).Get(secretRef.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -731,7 +719,7 @@ func getAuthCredentialsFromClusterServiceBroker(client kubernetes.Interface, bro
 
 // getAuthCredentialsFromServiceBroker returns the auth credentials, if any, or
 // returns an error. If the AuthInfo field is nil, empty values are returned.
-func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1beta1.ServiceBroker) (*osb.AuthConfig, error) {
+func (c *controller) getAuthCredentialsFromServiceBroker(broker *v1beta1.ServiceBroker) (*osb.AuthConfig, error) {
 	if broker.Spec.AuthInfo == nil {
 		return nil, nil
 	}
@@ -739,7 +727,7 @@ func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
 		secretRef := authInfo.Basic.SecretRef
-		secret, err := client.CoreV1().Secrets(broker.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := c.secretLister.Secrets(broker.Namespace).Get(secretRef.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -752,7 +740,7 @@ func getAuthCredentialsFromServiceBroker(client kubernetes.Interface, broker *v1
 		}, nil
 	} else if authInfo.Bearer != nil {
 		secretRef := authInfo.Bearer.SecretRef
-		secret, err := client.CoreV1().Secrets(broker.Namespace).Get(secretRef.Name, metav1.GetOptions{})
+		secret, err := c.secretLister.Secrets(broker.Namespace).Get(secretRef.Name)
 		if err != nil {
 			return nil, err
 		}
