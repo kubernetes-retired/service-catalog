@@ -23,10 +23,9 @@ import (
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	webhookutil "github.com/kubernetes-incubator/service-catalog/pkg/webhook/util"
+	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
 
 	admissionTypes "k8s.io/api/admission/v1beta1"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -34,6 +33,7 @@ import (
 // CreateUpdateHandler handles ServiceBinding
 type CreateUpdateHandler struct {
 	decoder *admission.Decoder
+	UUID    webhookutil.UUIDGenerator
 }
 
 var _ admission.Handler = &CreateUpdateHandler{}
@@ -87,7 +87,7 @@ func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.
 	binding.Finalizers = []string{sc.FinalizerServiceCatalog}
 
 	if binding.Spec.ExternalID == "" {
-		binding.Spec.ExternalID = string(uuid.NewUUID())
+		binding.Spec.ExternalID = string(h.UUID.New())
 	}
 
 	if binding.Spec.SecretName == "" {
