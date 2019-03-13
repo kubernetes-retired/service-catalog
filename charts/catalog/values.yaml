@@ -121,10 +121,10 @@ apiserver:
   resources:
     requests:
       cpu: 100m
-      memory: 20Mi
+      memory: 40Mi
     limits:
       cpu: 100m
-      memory: 30Mi
+      memory: 50Mi
 controllerManager:
   replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
