@@ -6206,6 +6206,6 @@ func assertServiceInstanceOperationInProgressWithParametersIsTheOnlyCatalogClien
 
 func reconcileServiceInstance(t *testing.T, testController *controller, instance *v1beta1.ServiceInstance) error {
 	err := testController.reconcileServiceInstance(instance)
-	getMutationDetector().AddObject(instance)
+	mutationDetector(instance)
 	return err
 }

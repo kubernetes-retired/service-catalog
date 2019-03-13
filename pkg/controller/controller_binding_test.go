@@ -4113,6 +4113,6 @@ func assertActionEquals(t *testing.T, action clientgotesting.Action, expectedVer
 
 func reconcileServiceBinding(t *testing.T, testController *controller, binding *v1beta1.ServiceBinding) error {
 	err := testController.reconcileServiceBinding(binding)
-	getMutationDetector().AddObject(binding)
+	mutationDetector(binding)
 	return err
 }

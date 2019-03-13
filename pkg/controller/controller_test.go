@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"reflect"
 	"runtime/debug"
-	"sync"
 	"testing"
 	"time"
 
@@ -39,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/apiserver/pkg/server"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
@@ -3997,22 +3995,16 @@ func addGetSecretReaction(fakeKubeClient *clientgofake.Clientset, secret *corev1
 	})
 }
 
-var detector cache.CacheMutationDetector
-var locker sync.Mutex
+//mutationDetector mutation detector
+func mutationDetector(obj interface{}) {
 
-func getMutationDetector() cache.CacheMutationDetector {
-	if detector == nil {
-		locker.Lock()
-		defer locker.Unlock()
-		if detector != nil {
-			return detector
-		}
-		detector = cache.NewCacheMutationDetector("controller")
-		ch := server.SetupSignalHandler()
-		go func() {
-			detector.Run(ch)
-		}()
-	}
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+	detector := cache.NewCacheMutationDetector("controller")
+ 
+	go func() {
+		detector.Run(stopCh)
+	}()
 
-	return detector
-}
+	detector.AddObject(obj)
+ }
