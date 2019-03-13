@@ -29,6 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+// MultipleBrokersFoundError is the error returned when we find a clusterservicebroker
+// and a servicebroker with the same name
+const MultipleBrokersFoundError = "More than one broker found"
+
 // Broker provides a unifying layer of cluster and namespace scoped broker resources.
 type Broker interface {
 
@@ -99,8 +103,7 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 	return brokers, nil
 }
 
-// RetrieveBroker gets a broker by its name.
-func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, error) {
+func (sdk *SDK) retrieveBroker(name string) (*v1beta1.ClusterServiceBroker, error) {
 	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(name, v1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get broker '%s'", name)
@@ -109,8 +112,48 @@ func (sdk *SDK) RetrieveBroker(name string) (*v1beta1.ClusterServiceBroker, erro
 	return broker, nil
 }
 
-// RetrieveNamespacedBroker gets a broker by its name & namespace.
-func (sdk *SDK) RetrieveNamespacedBroker(namespace string, name string) (*v1beta1.ServiceBroker, error) {
+// RetrieveBrokerByID gets a broker by its k8s name
+func (sdk *SDK) RetrieveBrokerByID(kubeName string, opts ScopeOptions) (Broker, error) {
+	var csb *v1beta1.ClusterServiceBroker
+	var sb *v1beta1.ServiceBroker
+	var err error
+	if opts.Scope.Matches(ClusterScope) {
+		csb, err = sdk.ServiceCatalog().ClusterServiceBrokers().Get(kubeName, v1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			csb = nil
+		}
+		if err != nil && !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("unable to search clusterservicebrokers by k8s name (%s)", err)
+		}
+	}
+
+	if opts.Scope.Matches(NamespaceScope) {
+		sb, err = sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).Get(kubeName, v1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				sb = nil
+			} else {
+				return nil, fmt.Errorf("unable to search servicebrokers k8s by name (%s)", err)
+			}
+		}
+	}
+
+	switch {
+	case csb != nil && sb != nil:
+		return nil, fmt.Errorf(MultipleBrokersFoundError+" for '%s'", kubeName)
+	case csb == nil && sb == nil:
+		return nil, fmt.Errorf("no matching broker found for k8s name '%s'", kubeName)
+	case csb != nil && sb == nil:
+		return csb, nil
+	case csb == nil && sb != nil:
+		return sb, nil
+	default:
+		return nil, fmt.Errorf("this error shouldn't be happening")
+	}
+}
+
+// retrieveNamespacedBroker gets a broker by its name & namespace.
+func (sdk *SDK) retrieveNamespacedBroker(namespace string, name string) (*v1beta1.ServiceBroker, error) {
 	broker, err := sdk.ServiceCatalog().ServiceBrokers(namespace).Get(name, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get broker '%s' (%s)", name, err)
@@ -222,11 +265,9 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 	var err error
 
 	for j := 0; j < retries && !success; j++ {
-
 		if scopeOpts.Scope.Matches(NamespaceScope) {
-			var broker *v1beta1.ServiceBroker
 			namespace := scopeOpts.Namespace
-			broker, err = sdk.RetrieveNamespacedBroker(namespace, name)
+			broker, err := sdk.retrieveNamespacedBroker(namespace, name)
 			if err == nil {
 				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
@@ -242,7 +283,7 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 
 		if scopeOpts.Scope.Matches(ClusterScope) {
 			var broker *v1beta1.ClusterServiceBroker
-			broker, err = sdk.RetrieveBroker(name)
+			broker, err = sdk.retrieveBroker(name)
 			if err == nil {
 				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
@@ -276,7 +317,7 @@ func (sdk *SDK) WaitForBroker(name string, interval time.Duration, timeout *time
 	}
 	err = wait.PollImmediate(interval, *timeout,
 		func() (bool, error) {
-			broker, err = sdk.RetrieveBroker(name)
+			broker, err = sdk.retrieveBroker(name)
 			if err != nil {
 				if apierrors.IsNotFound(errors.Cause(err)) {
 					err = nil

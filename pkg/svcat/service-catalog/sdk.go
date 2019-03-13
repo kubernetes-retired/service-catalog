@@ -46,7 +46,7 @@ type SvcatClient interface {
 
 	Deregister(string, *ScopeOptions) error
 	RetrieveBrokers(opts ScopeOptions) ([]Broker, error)
-	RetrieveBroker(string) (*apiv1beta1.ClusterServiceBroker, error)
+	RetrieveBrokerByID(string, ScopeOptions) (Broker, error)
 	RetrieveBrokerByClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
 	Register(string, string, *RegisterOptions, *ScopeOptions) (Broker, error)
 	Sync(string, ScopeOptions, int) error

@@ -126,6 +126,9 @@ tree:
     use: binding NAME
   - command: ./svcat describe broker
     example: '  svcat describe broker asb'
+    flags:
+    - desc: 'Limit the command to a particular scope: cluster, namespace or all'
+      name: scope
     name: broker
     shortDesc: Show details of a specific broker
     use: broker NAME
