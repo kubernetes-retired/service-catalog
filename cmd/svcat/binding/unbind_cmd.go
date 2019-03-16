@@ -17,15 +17,20 @@ limitations under the License.
 package binding
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -35,6 +40,8 @@ type unbindCmd struct {
 
 	instanceName string
 	bindingNames []string
+	abandon      bool
+	skipPrompt   bool
 }
 
 // NewUnbindCmd builds a "svcat unbind" command
@@ -49,6 +56,7 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		Example: command.NormalizeExamples(`
   svcat unbind wordpress-mysql-instance
   svcat unbind --name wordpress-mysql-binding
+  svcat unbind --abandon wordpress-mysql-instance
 `),
 		PreRunE: command.PreRunE(unbindCmd),
 		RunE:    command.RunE(unbindCmd),
@@ -60,6 +68,20 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 		[]string{},
 		"The name of the binding to remove",
 	)
+	cmd.Flags().BoolVar(
+		&unbindCmd.abandon,
+		"abandon",
+		false,
+		"Forcefully and immediately delete the resource from Service Catalog ONLY, potentially abandoning any broker resources that you may continue to be charged for.",
+	)
+	cmd.Flags().BoolVarP(
+		&unbindCmd.skipPrompt,
+		"yes",
+		"y",
+		false,
+		`Automatic yes to prompts. Assume "yes" as answer to all prompts and run non-interactively.`,
+	)
+
 	unbindCmd.AddWaitFlags(cmd)
 
 	return cmd
@@ -82,6 +104,35 @@ func (c *unbindCmd) Run() error {
 	var hasErrors bool
 	var bindings []types.NamespacedName
 	var err error
+
+	if c.abandon {
+		fmt.Fprintln(c.Output, "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.")
+		if !c.skipPrompt {
+			fmt.Fprintln(c.Output, "Are you sure? [y|n]: ")
+			s := bufio.NewScanner(os.Stdin)
+			s.Scan()
+
+			err = s.Err()
+			fmt.Fprintln(c.Output, err)
+
+			if strings.ToLower(s.Text()) != "y" {
+				err = fmt.Errorf("aborted abandon operation")
+				return err
+			}
+		}
+
+		if c.instanceName != "" {
+			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: c.instanceName, Namespace: c.Namespace}}
+			_, err = c.App.RemoveBindingFinalizerByInstance(si)
+		} else {
+			retrievedBindings := c.getBindingsToDelete()
+			_, err = c.App.RemoveFinalizerForBindings(retrievedBindings)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
 
 	if c.instanceName != "" {
 		bindings, err = c.App.Unbind(c.Namespace, c.instanceName)

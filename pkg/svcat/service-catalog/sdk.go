@@ -43,6 +43,9 @@ type SvcatClient interface {
 	RetrieveBindingsByInstance(*apiv1beta1.ServiceInstance) ([]apiv1beta1.ServiceBinding, error)
 	Unbind(string, string) ([]types.NamespacedName, error)
 	WaitForBinding(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceBinding, error)
+	RemoveBindingFinalizerByInstance(*apiv1beta1.ServiceInstance) ([]types.NamespacedName, error)
+	RemoveFinalizerForBindings([]types.NamespacedName) ([]types.NamespacedName, error)
+	RemoveFinalizerForBinding(types.NamespacedName) error
 
 	Deregister(string, *ScopeOptions) error
 	RetrieveBrokers(opts ScopeOptions) ([]Broker, error)

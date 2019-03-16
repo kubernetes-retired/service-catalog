@@ -19,20 +19,22 @@ package binding
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
+	svcattest "github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatfake "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	testing2 "k8s.io/client-go/testing"
-
-	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
 )
 
 func TestUnbindCommand(t *testing.T) {
@@ -47,6 +49,9 @@ func TestUnbindCommand(t *testing.T) {
 		wantOutput     string
 		wantError      bool
 		allowDiffOrder bool // whether the order of lines in the output can be different from the one in wantOutput
+		abandon        bool // delete all finalizers from the service instance so that it is deleted immediately
+		userResponse   string
+		skipPrompt     bool
 	}{
 		{
 			name:         "delete binding",
@@ -154,7 +159,66 @@ func TestUnbindCommand(t *testing.T) {
 			wantOutput:   "error:\n  remove binding default/badbinding failed: sabotaged\ncould not remove all bindings",
 			wantError:    true,
 		},
+		{
+			name:         "delete all finalizers with user answering yes to interactive prompt",
+			fakeBindings: []string{"mybinding"},
+			fakeInstance: "myinstance",
+			instanceName: "myinstance",
+			abandon:      true,
+			userResponse: "y",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\ndeleted mybinding",
+		},
+		{
+			name:         "delete all finalizers with user skip prompt flag",
+			fakeBindings: []string{"mybinding"},
+			fakeInstance: "myinstance",
+			instanceName: "myinstance",
+			abandon:      true,
+			skipPrompt:   true,
+			userResponse: "y",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\ndeleted mybinding",
+		},
+		{
+			name:         "delete all finalizers with user answering no to interactive prompt",
+			fakeBindings: []string{"mybinding"},
+			fakeInstance: "myinstance",
+			instanceName: "myinstance",
+			abandon:      true,
+			userResponse: "n",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\naborted abandon operation",
+			wantError:    true,
+		},
+		{
+			name:         "delete all finalizers with user providing random response",
+			fakeBindings: []string{"mybinding"},
+			fakeInstance: "myinstance",
+			instanceName: "myinstance",
+			abandon:      true,
+			userResponse: "foo",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\naborted abandon operation",
+			wantError:    true,
+		},
+		{
+			name:         "delete all finalizers - instance name not provided",
+			fakeBindings: []string{"mybinding"},
+			bindingNames: []string{"mybinding"},
+			fakeInstance: "myinstance", // We want to still create a fake instance, but the instance name won't be provided as a user input arg
+			instanceName: "",
+			abandon:      true,
+			userResponse: "y",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\ndeleted mybinding",
+			wantError:    false,
+		},
 	}
+
+	// Create a file for user stdin input
+	tmpfile, err := ioutil.TempFile("", "user_input")
+	if err != nil {
+		log.Fatal(err)
+	}
+	oldStdin := os.Stdin
+	defer os.Remove(tmpfile.Name())        // clean up
+	defer func() { os.Stdin = oldStdin }() // Restore original Stdin
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -181,7 +245,7 @@ func TestUnbindCommand(t *testing.T) {
 			}
 			svcatClient := svcatfake.NewSimpleClientset(fakes...)
 			output := &bytes.Buffer{}
-			fakeApp, _ := svcat.NewApp(k8sClient, svcatClient, "default")
+			fakeApp, _ := svcat.NewApp(k8sClient, svcatClient, ns)
 			cxt := svcattest.NewContext(output, fakeApp)
 
 			// Sabotage any binding with "bad" in the name
@@ -203,6 +267,19 @@ func TestUnbindCommand(t *testing.T) {
 			cmd.bindingNames = tc.bindingNames
 			cmd.instanceName = tc.instanceName
 			cmd.Wait = tc.wait
+			cmd.abandon = tc.abandon
+			cmd.skipPrompt = tc.skipPrompt
+
+			if tc.userResponse != "" {
+				content := []byte(fmt.Sprintf("%s\n", tc.userResponse))
+				if _, err := tmpfile.Write(content); err != nil {
+					log.Fatal(err)
+				}
+				if _, err := tmpfile.Seek(0, 0); err != nil {
+					log.Fatal(err)
+				}
+				os.Stdin = tmpfile
+			}
 
 			err := cmd.Run()
 
@@ -220,6 +297,9 @@ func TestUnbindCommand(t *testing.T) {
 			if !svcattest.OutputMatches(gotOutput, tc.wantOutput, tc.allowDiffOrder) {
 				t.Errorf("unexpected output \n\nWANT:\n%q\n\nGOT:\n%q\n", tc.wantOutput, gotOutput)
 			}
+
+			os.Truncate("user_input", 0)
+			tmpfile.Seek(0, 0)
 		})
 	}
 }
