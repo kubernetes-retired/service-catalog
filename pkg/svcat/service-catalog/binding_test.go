@@ -312,4 +312,124 @@ var _ = Describe("Binding", func() {
 			Expect(deletedBindings[sb2.Name]).To(Equal(sb2.Namespace))
 		})
 	})
+
+	Describe("RemoveFinalizerForBinding", func() {
+		It("Calls the generated v1beta1 put method with the passed in binding", func() {
+			err := sdk.RemoveFinalizerForBinding(types.NamespacedName{
+				Namespace: sb.Namespace,
+				Name:      sb.Name,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			actions := svcCatClient.Actions()
+			// The first action should be a get call because RemoveFinalizerForBinding calls RetrieveBinding to retrieve the ServiceBinding object
+			Expect(actions[0].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(sb.Name))
+			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(sb.Namespace))
+			Expect(actions[1].Matches("update", "servicebindings")).To(BeTrue())
+			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ServiceBinding).ObjectMeta.Name).To(Equal(sb.ObjectMeta.Name))
+			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ServiceBinding).ObjectMeta.Namespace).To(Equal(sb.ObjectMeta.Namespace))
+		})
+		It("Bubbles up errors", func() {
+			fakeNamespacedName := types.NamespacedName{
+				Namespace: "not_a_real_namespace",
+				Name:      "not_a_real_binding",
+			}
+			err := sdk.RemoveFinalizerForBinding(fakeNamespacedName)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring("not found"))
+			actions := svcCatClient.Actions()
+			// The only expected action is the get call to retrive binding, because if the binding is not found, no delete call will be made
+			Expect(actions[0].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(fakeNamespacedName.Name))
+			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(fakeNamespacedName.Namespace))
+		})
+	})
+
+	Describe("RemoveFinalizerForBindings", func() {
+		It("Calls the generated v1beta1 put method with all bindings", func() {
+			bindings, err := sdk.RemoveFinalizerForBindings([]types.NamespacedName{
+				{Namespace: sb.Namespace, Name: sb.Name},
+				{Namespace: sb2.Namespace, Name: sb2.Name},
+			})
+
+			expectedBindingsToDelete := []types.NamespacedName{
+				{Namespace: sb.Namespace, Name: sb.Name},
+				{Namespace: sb2.Namespace, Name: sb2.Name},
+			}
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bindings).Should(ConsistOf(expectedBindingsToDelete[0], expectedBindingsToDelete[1]))
+			// The first action should be a get call because RemoveFinalizerForBinding calls RetrieveBinding to retrieve the ServiceBinding object
+			Expect(svcCatClient.Actions()[0].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(svcCatClient.Actions()[1].Matches("update", "servicebindings")).To(BeTrue())
+		})
+		It("Bubbles up errors", func() {
+			badClient := &fake.Clientset{}
+			errorMessage := "error updating bindings"
+			badClient.AddReactor("update", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			bindings, err := sdk.RemoveFinalizerForBindings([]types.NamespacedName{
+				{Namespace: sb.Namespace, Name: sb.Name},
+				{Namespace: sb2.Namespace, Name: sb2.Name},
+			})
+
+			Expect(bindings).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring(errorMessage))
+			// The first action should be a get call because RemoveFinalizerForBinding calls RetrieveBinding to retrieve the ServiceBinding object
+			Expect(badClient.Actions()[0].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(badClient.Actions()[1].Matches("update", "servicebindings")).To(BeTrue())
+		})
+	})
+
+	Describe("RemoveBindingFinalizerByInstance", func() {
+		It("Calls the generated v1beta1 List method on the provided instance's namespace, and calls Update method on all bindings of the instance", func() {
+			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "apple_instance", Namespace: sb.Namespace}}
+			sb.Spec.InstanceRef.Name = si.Name
+			svcCatClient = fake.NewSimpleClientset(sb, sb2)
+			sdk = &SDK{
+				ServiceCatalogClient: svcCatClient,
+			}
+
+			bindings, err := sdk.RemoveBindingFinalizerByInstance(si)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(bindings).To(ConsistOf(types.NamespacedName{Namespace: sb.Namespace, Name: sb.Name}))
+			actions := svcCatClient.Actions()
+
+			Expect(actions[0].Matches("list", "servicebindings")).To(BeTrue())
+			Expect(actions[0].(testing.ListActionImpl).Namespace).To(Equal(si.Namespace))
+			Expect(actions[1].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(actions[1].(testing.GetActionImpl).Name).To(Equal(sb.Name))
+			Expect(actions[1].(testing.GetActionImpl).Namespace).To(Equal(sb.Namespace))
+			Expect(actions[2].Matches("update", "servicebindings")).To(BeTrue())
+			Expect(actions[2].(testing.UpdateActionImpl).Object.(*v1beta1.ServiceBinding).ObjectMeta.Name).To(Equal(sb.ObjectMeta.Name))
+			Expect(actions[2].(testing.UpdateActionImpl).Object.(*v1beta1.ServiceBinding).ObjectMeta.Namespace).To(Equal(sb.ObjectMeta.Namespace))
+		})
+
+		It("Bubbles up errors", func() {
+			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: "apple_instance", Namespace: sb.Namespace}}
+			sb.Spec.InstanceRef.Name = si.Name
+			svcCatClient = fake.NewSimpleClientset(sb)
+			errorMessage := "error updating bindings"
+			svcCatClient.PrependReactor("update", "servicebindings", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk = &SDK{
+				ServiceCatalogClient: svcCatClient,
+			}
+
+			bindings, err := sdk.RemoveBindingFinalizerByInstance(si)
+
+			Expect(bindings).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring(errorMessage))
+			Expect(svcCatClient.Actions()[0].Matches("list", "servicebindings")).To(BeTrue())
+			Expect(svcCatClient.Actions()[1].Matches("get", "servicebindings")).To(BeTrue())
+			Expect(svcCatClient.Actions()[2].Matches("update", "servicebindings")).To(BeTrue())
+		})
+	})
 })
