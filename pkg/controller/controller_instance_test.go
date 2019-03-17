@@ -51,6 +51,52 @@ const (
 	lastOperationDescription = "testdescr"
 )
 
+// TestReconcileServiceInstanceNotInitializedStatus tests reconcileInstance to ensure that
+// instance Status will be initialized when it's empty.
+func TestReconcileServiceInstanceNotInitializedStatus(t *testing.T) {
+	_, fakeServiceCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
+
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: "test",
+				ClusterServicePlanExternalName:  "test",
+			},
+			ExternalID: testServiceInstanceGUID,
+		},
+		Status: v1beta1.ServiceInstanceStatus{},
+	}
+
+	expectedStatus := v1beta1.ServiceInstanceStatus{
+		Conditions:        []v1beta1.ServiceInstanceCondition{},
+		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
+	}
+
+	err := reconcileServiceInstance(t, testController, instance)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
+	actions := fakeServiceCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedObjInstance := assertUpdateStatus(t, actions[0], instance)
+	updatedInstance, ok := updatedObjInstance.(*v1beta1.ServiceInstance)
+	if !ok {
+		t.Fatalf("cast error: want: *v1beta1.ServiceInstance, got: %T", updatedObjInstance)
+	}
+	if !reflect.DeepEqual(updatedInstance.Status, expectedStatus) {
+		t.Errorf("unexpected diff: %v", diff.ObjectReflectDiff(updatedInstance.Status, expectedStatus))
+	}
+}
+
 // TestReconcileServiceInstanceNonExistentClusterServiceClass tests that reconcileInstance gets a failure when
 // the specified service class is not found
 func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
@@ -67,6 +113,10 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 				ClusterServicePlanExternalName:  "nothere",
 			},
 			ExternalID: testServiceInstanceGUID,
+		},
+		Status: v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{},
+			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
 
@@ -117,6 +167,10 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 				ClusterServicePlanName:  "nothereplan",
 			},
 			ExternalID: testServiceInstanceGUID,
+		},
+		Status: v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{},
+			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
 
@@ -247,6 +301,10 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 			},
 			ExternalID: testServiceInstanceGUID,
 		},
+		Status: v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{},
+			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
+		},
 	}
 
 	if err := reconcileServiceInstance(t, testController, instance); err == nil {
@@ -308,6 +366,10 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 				Name: testClusterServiceClassGUID,
 			},
 			ExternalID: testServiceInstanceGUID,
+		},
+		Status: v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{},
+			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
 

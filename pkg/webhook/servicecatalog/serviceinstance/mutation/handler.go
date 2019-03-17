@@ -93,12 +93,6 @@ func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		setServiceInstanceUserInfo(req, instance)
 	}
-
-	// TODO: cannot be modified on webhook side, need to moved directly to controller
-	//instance.Status = sc.ServiceInstanceStatus{
-	//	Conditions:        []sc.ServiceInstanceCondition{},
-	//	DeprovisionStatus: sc.ServiceInstanceDeprovisionStatusNotRequired,
-	//}
 }
 
 func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, obj *sc.ServiceInstance) {

@@ -20,21 +20,22 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"reflect"
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/klog"
-
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/jsonpath"
+	"k8s.io/klog"
 )
 
 const (
@@ -176,6 +177,15 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 // service bindings.
 func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewBindingContextBuilder(binding)
+
+	if !c.isServiceBindingStatusInitialized(binding) {
+		klog.V(4).Info(pcb.Message("Initialize Status entry"))
+		if err := c.initializeServiceBindingStatus(binding); err != nil {
+			klog.Errorf(pcb.Messagef("Error initializing status: %v", err))
+			return err
+		}
+		return nil
+	}
 
 	if isServiceBindingFailed(binding) {
 		klog.V(4).Info(pcb.Message("not processing event; status showed that it has failed"))
@@ -761,6 +771,34 @@ func (c *controller) updateServiceBindingCondition(
 		))
 	}
 	return err
+}
+
+func (c *controller) isServiceBindingStatusInitialized(binding *v1beta1.ServiceBinding) bool {
+	emptyStatus := v1beta1.ServiceBindingStatus{}
+	if reflect.DeepEqual(binding.Status, emptyStatus) {
+		return false
+	}
+
+	return true
+}
+
+// initializeServiceBindingStatus initialize the ServiceBindingStatus.
+// In normal scenario it should be done when client is creating the ServiceBinding,
+// but right now we cannot modify the Status (sub-resource) in webhook on CREATE action.
+// As a temporary solution we are doing that in the reconcile function.
+func (c *controller) initializeServiceBindingStatus(binding *v1beta1.ServiceBinding) error {
+	updated := binding.DeepCopy()
+	updated.Status = v1beta1.ServiceBindingStatus{
+		Conditions:   []v1beta1.ServiceBindingCondition{},
+		UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+	}
+
+	_, err := c.serviceCatalogClient.ServiceBindings(updated.Namespace).UpdateStatus(updated)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // recordStartOfServiceBindingOperation updates the binding to indicate

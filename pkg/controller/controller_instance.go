@@ -20,27 +20,27 @@ import (
 	stderrors "errors"
 	"fmt"
 	"net/url"
+	"reflect"
 	"sync"
 	"time"
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
-	"k8s.io/klog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
-	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog"
 )
 
 const (
@@ -503,6 +503,15 @@ func (c *controller) removeInstanceFromRetryMap(instance *v1beta1.ServiceInstanc
 // of new service instances.
 func (c *controller) reconcileServiceInstanceAdd(instance *v1beta1.ServiceInstance) error {
 	pcb := pretty.NewInstanceContextBuilder(instance)
+
+	if !c.isServiceInstanceStatusInitialized(instance) {
+		klog.V(4).Info(pcb.Message("Initialize Status entry"))
+		if err := c.initializeServiceInstanceStatus(instance); err != nil {
+			klog.Errorf(pcb.Messagef("Error initializing status: %v", err))
+			return err
+		}
+		return nil
+	}
 
 	if isServiceInstanceProcessedAlready(instance) {
 		klog.V(4).Info(pcb.Message("Not processing event because status showed there is no work to do"))
@@ -1931,6 +1940,34 @@ func (c *controller) updateServiceInstanceCondition(
 	}
 
 	return updatedInstance, err
+}
+
+func (c *controller) isServiceInstanceStatusInitialized(instance *v1beta1.ServiceInstance) bool {
+	emptyStatus := v1beta1.ServiceInstanceStatus{}
+	if reflect.DeepEqual(instance.Status, emptyStatus) {
+		return false
+	}
+
+	return true
+}
+
+// initializeServiceInstanceStatus initialize the ServiceInstanceStatus.
+// In normal scenario it should be done when client is creating the ServiceInstance,
+// but right now we cannot modify the Status (sub-resource) in webhook on CREATE action.
+// As a temporary solution we are doing that in the reconcile function.
+func (c *controller) initializeServiceInstanceStatus(instance *v1beta1.ServiceInstance) error {
+	updated := instance.DeepCopy()
+	updated.Status = v1beta1.ServiceInstanceStatus{
+		Conditions:        []v1beta1.ServiceInstanceCondition{},
+		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
+	}
+
+	_, err := c.serviceCatalogClient.ServiceInstances(updated.Namespace).UpdateStatus(updated)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // prepareObservedGeneration sets the instance's observed generation

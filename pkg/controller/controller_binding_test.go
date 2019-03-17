@@ -46,6 +46,49 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 )
 
+// TestReconcileServiceBindingNotInitializedStatus tests reconcileBinding to ensure that
+// binding Status will be initialized when it's empty.
+func TestReconcileServiceBindingNotInitializedStatus(t *testing.T) {
+	_, fakeServiceCatalogClient, fakeClusterServiceBrokerClient, testController, _ := newTestController(t, noFakeActions())
+
+	binding := &v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceBindingName,
+			Namespace:  testNamespace,
+			Generation: 1,
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			InstanceRef: v1beta1.LocalObjectReference{Name: "test"},
+		},
+		Status: v1beta1.ServiceBindingStatus{},
+	}
+
+	expectedStatus := v1beta1.ServiceBindingStatus{
+		Conditions:   []v1beta1.ServiceBindingCondition{},
+		UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+	}
+
+	err := reconcileServiceBinding(t, testController, binding)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	brokerActions := fakeClusterServiceBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 0)
+
+	actions := fakeServiceCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 1)
+
+	updatedObjBinding := assertUpdateStatus(t, actions[0], binding)
+	updatedBinding, ok := updatedObjBinding.(*v1beta1.ServiceBinding)
+	if !ok {
+		t.Fatalf("cast error: want: *v1beta1.ServiceBinding, got: %T", updatedObjBinding)
+	}
+	if !reflect.DeepEqual(updatedBinding.Status, expectedStatus) {
+		t.Errorf("unexpected diff: %v", diff.ObjectReflectDiff(updatedBinding.Status, expectedStatus))
+	}
+}
+
 // TestReconcileBindingNonExistingInstance tests reconcileBinding to ensure a
 // binding fails as expected when an instance to bind to doesn't exist.
 func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
