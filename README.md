@@ -26,7 +26,8 @@ Open Service Broker API project's [Getting Started guide](https://github.com/ope
 
 #### Video links
 
-- [Service Catalog Basic Concepts](https://goo.gl/6xINOa)
+- [Service Catalog Intro](https://www.youtube.com/watch?v=bm59dpmMhAk)
+- [Service Catalog Deep-Dive](https://www.youtube.com/watch?v=0zp0y8Mo_BE)
 - [Service Catalog Basic Demo](https://goo.gl/IJ6CV3)
 - [SIG Service Catalog Meeting Playlist](https://goo.gl/ZmLNX9)
 
