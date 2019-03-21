@@ -21,7 +21,6 @@ import (
 	"net/http"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/healthz"
 	genericapiserverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage/etcd3/preflight"
@@ -34,9 +33,8 @@ import (
 // RunServer runs an API server with configuration according to opts
 func RunServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error {
 	if stopCh == nil {
-		/* the caller of RunServer should generate the stop channel
-		if there is a need to stop the API server */
-		stopCh = server.SetupSignalHandler()
+		/* whe RespectsStopCh: true and the stop channel is nil, error returned*/
+		return fmt.Errorf("%v", "the stop channel can not be nil")
 	}
 
 	err := opts.Validate()
