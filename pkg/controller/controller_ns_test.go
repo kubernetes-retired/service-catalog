@@ -106,6 +106,11 @@ func getTestServiceClass() *v1beta1.ServiceClass {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testServiceClassGUID,
 			Namespace: testNamespace,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: testServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        testServiceClassName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   testServiceBrokerName,
+			},
 		},
 		Spec: v1beta1.ServiceClassSpec{
 			ServiceBrokerName:      testServiceBrokerName,
@@ -127,6 +132,12 @@ func getTestServicePlan() *v1beta1.ServicePlan {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testServicePlanGUID,
 			Namespace: testNamespace,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:  testServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        testServicePlanName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   testServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: testServiceClassGUID,
+			},
 		},
 		Spec: v1beta1.ServicePlanSpec{
 			ServiceBrokerName:     testServiceBrokerName,

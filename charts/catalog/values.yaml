@@ -61,7 +61,7 @@ controllerManager:
   # Whether or not the controller supports a --broker-relist-interval flag. If this is
   # set to true, brokerRelistInterval will be used as the value for that flag
   brokerRelistIntervalActivated: true
-   # The maximum amount of time to back-off while polling an OSB API operation; format is a duration (`20m`, `1h`, etc)
+  # The maximum amount of time to back-off while polling an OSB API operation; format is a duration (`20m`, `1h`, etc)
   operationPollingMaximumBackoffDuration: 20m
   # The maximum amount of timeout to any request to the broker; format is a duration (`60s`, `3m`, etc)
   osbApiRequestTimeout: 60s

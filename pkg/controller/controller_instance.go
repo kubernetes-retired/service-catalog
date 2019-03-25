@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -1358,21 +1357,27 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			)
 		}
 	} else {
-		filterField := instance.Spec.GetClusterServiceClassFilterFieldName()
+		filterLabel := instance.Spec.GetClusterServiceClassFilterLabelName()
 		filterValue := instance.Spec.GetSpecifiedClusterServiceClass()
+		klog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterLabel, filterValue))
+		labelSelector := labels.SelectorFromSet(labels.Set{
+			filterLabel: filterValue,
+		}).String()
 
-		klog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterField, filterValue))
 		listOpts := metav1.ListOptions{
-			FieldSelector: fields.OneTermEqualSelector(filterField, filterValue).String(),
+			LabelSelector: labelSelector,
 		}
+
 		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
+		klog.Info(pcb.Messagef("Found %d ClusterServiceClasses", len(serviceClasses.Items)))
+
 		if err == nil && len(serviceClasses.Items) == 1 {
 			sc = &serviceClasses.Items[0]
 			instance.Spec.ClusterServiceClassRef = &v1beta1.ClusterObjectReference{
 				Name: sc.Name,
 			}
 			klog.V(4).Info(pcb.Messagef(
-				"resolved %c to K8S ClusterServiceClass %q",
+				"resolved %c to ClusterServiceClass %q",
 				instance.Spec.PlanReference, sc.Name,
 			))
 		} else {
@@ -1381,6 +1386,11 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 				instance.Spec.PlanReference, len(serviceClasses.Items),
 			)
 		}
+
+		klog.V(4).Info(pcb.Messagef(
+			"resolved %c to ClusterServiceClass %q",
+			instance.Spec.PlanReference, sc.Name,
+		))
 	}
 
 	return sc, nil
@@ -1419,14 +1429,22 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 			)
 		}
 	} else {
-		filterField := instance.Spec.GetServiceClassFilterFieldName()
+		filterLabel := instance.Spec.GetServiceClassFilterLabelName()
 		filterValue := instance.Spec.GetSpecifiedServiceClass()
 
-		klog.V(4).Info(pcb.Messagef("looking up a ServiceClass from %s: %q", filterField, filterValue))
+		klog.V(4).Info(pcb.Messagef("looking up a ServiceClass from %s: %q", filterLabel, filterValue))
+
+		labelSelector := labels.SelectorFromSet(labels.Set{
+			filterLabel: filterValue,
+		}).String()
+
 		listOpts := metav1.ListOptions{
-			FieldSelector: fields.OneTermEqualSelector(filterField, filterValue).String(),
+			LabelSelector: labelSelector,
 		}
+
 		serviceClasses, err := c.serviceCatalogClient.ServiceClasses(instance.Namespace).List(listOpts)
+		klog.Info(pcb.Messagef("Found %d ServiceClasses", len(serviceClasses.Items)))
+
 		if err == nil && len(serviceClasses.Items) == 1 {
 			sc = &serviceClasses.Items[0]
 			instance.Spec.ServiceClassRef = &v1beta1.LocalObjectReference{
@@ -1476,14 +1494,18 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 			)
 		}
 	} else {
-		fieldSet := fields.Set{
-			instance.Spec.GetClusterServicePlanFilterFieldName(): instance.Spec.GetSpecifiedClusterServicePlan(),
-			"spec.clusterServiceClassRef.name":                   instance.Spec.ClusterServiceClassRef.Name,
-			"spec.clusterServiceBrokerName":                      brokerName,
+		labelSelector := labels.SelectorFromSet(labels.Set{
+			instance.Spec.GetClusterServicePlanFilterLabelName():                   instance.Spec.GetSpecifiedClusterServicePlan(),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: instance.Spec.ClusterServiceClassRef.Name,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   brokerName,
+		}).String()
+
+		listOpts := metav1.ListOptions{
+			LabelSelector: labelSelector,
 		}
-		fieldSelector := fields.SelectorFromSet(fieldSet).String()
-		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
 		servicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
+		klog.Info(pcb.Messagef("Found %d ClusterServicePlans", len(servicePlans.Items)))
+
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]
 			instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
@@ -1532,14 +1554,18 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 			)
 		}
 	} else {
-		fieldSet := fields.Set{
-			instance.Spec.GetServicePlanFilterFieldName(): instance.Spec.GetSpecifiedServicePlan(),
-			"spec.serviceClassRef.name":                   instance.Spec.ServiceClassRef.Name,
-			"spec.serviceBrokerName":                      brokerName,
+		labelSelector := labels.SelectorFromSet(labels.Set{
+			instance.Spec.GetServicePlanFilterLabelName():                   instance.Spec.GetSpecifiedServicePlan(),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: instance.Spec.ServiceClassRef.Name,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   brokerName,
+		}).String()
+
+		listOpts := metav1.ListOptions{
+			LabelSelector: labelSelector,
 		}
-		fieldSelector := fields.SelectorFromSet(fieldSet).String()
-		listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
 		servicePlans, err := c.serviceCatalogClient.ServicePlans(instance.Namespace).List(listOpts)
+		klog.Info(pcb.Messagef("Found %d ServicePlans", len(servicePlans.Items)))
+
 		if err == nil && len(servicePlans.Items) == 1 {
 			sp := &servicePlans.Items[0]
 			instance.Spec.ServicePlanRef = &v1beta1.LocalObjectReference{
@@ -1554,6 +1580,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 				instance.Spec.PlanReference, instance.Spec.ServiceClassRef.Name, instance.Spec.PlanReference, len(servicePlans.Items),
 			)
 		}
+
 	}
 
 	return nil

@@ -33,6 +33,7 @@ import (
 	core "k8s.io/client-go/testing"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scadmission "github.com/kubernetes-sigs/service-catalog/pkg/apiserver/admission"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset/fake"
@@ -147,6 +148,10 @@ func newClusterServiceClass(id string, name string) *servicecatalog.ClusterServi
 	sc := &servicecatalog.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: id,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalID:   id,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: name,
+			},
 		},
 		Spec: servicecatalog.ClusterServiceClassSpec{
 			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
@@ -163,6 +168,10 @@ func newServiceClass(id string, name string) *servicecatalog.ServiceClass {
 	sc := &servicecatalog.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: id,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalID:   id,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: name,
+			},
 		},
 		Spec: servicecatalog.ServiceClassSpec{
 			CommonServiceClassSpec: servicecatalog.CommonServiceClassSpec{
@@ -175,10 +184,16 @@ func newServiceClass(id string, name string) *servicecatalog.ServiceClass {
 }
 
 // newClusterServicePlans returns new serviceplans.
-func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecatalog.ClusterServicePlan {
-	classname := "test-serviceclass"
+func newClusterServicePlans(classname string, count uint, useDifferentClasses bool) []*servicecatalog.ClusterServicePlan {
 	sp1 := &servicecatalog.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: "bar-id"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "bar-id",
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalID:                 "12345",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "bar",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: classname,
+			},
+		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
 				ExternalName: "bar",
@@ -193,7 +208,14 @@ func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecata
 		classname = "different-serviceclass"
 	}
 	sp2 := &servicecatalog.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: "baz-id"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "baz-id",
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalID:                 "23456",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "baz",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: classname,
+			},
+		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
 				ExternalName: "baz",
@@ -218,10 +240,16 @@ func newClusterServicePlans(count uint, useDifferentClasses bool) []*servicecata
 }
 
 // newServicePlans returns new serviceplans.
-func newServicePlans(count uint, useDifferentClasses bool) []*servicecatalog.ServicePlan {
-	classname := "test-serviceclass"
+func newServicePlans(classname string, count uint, useDifferentClasses bool) []*servicecatalog.ServicePlan {
 	sp1 := &servicecatalog.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: "bar-id"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "bar-id",
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalID:          "12345",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        "bar",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: classname,
+			},
+		},
 		Spec: servicecatalog.ServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
 				ExternalName: "bar",
@@ -236,7 +264,14 @@ func newServicePlans(count uint, useDifferentClasses bool) []*servicecatalog.Ser
 		classname = "different-serviceclass"
 	}
 	sp2 := &servicecatalog.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: "baz-id"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "baz-id",
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalID:          "23456",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        "bar",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: classname,
+			},
+		},
 		Spec: servicecatalog.ServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
 				ExternalName: "baz",
@@ -309,9 +344,9 @@ func TestWithPlanWorks(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var fakeClient *fake.Clientset
 			if tc.namespaced {
-				fakeClient = newFakeServiceCatalogClientForNamespacedTest(nil, newServicePlans(1, false), "" /* do not use get */)
+				fakeClient = newFakeServiceCatalogClientForNamespacedTest(nil, newServicePlans("", 1, false), "" /* do not use get */)
 			} else {
-				fakeClient = newFakeServiceCatalogClientForTest(nil, newClusterServicePlans(1, false), "" /* do not use get */)
+				fakeClient = newFakeServiceCatalogClientForTest(nil, newClusterServicePlans("", 1, false), "" /* do not use get */)
 			}
 			handler, informerFactory, err := newHandlerForTest(fakeClient)
 			if err != nil {
@@ -353,9 +388,9 @@ func TestWithNoPlanFailsWithNoClass(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var fakeClient *fake.Clientset
 			if tc.namespaced {
-				fakeClient = newFakeServiceCatalogClientForNamespacedTest(nil, newServicePlans(1, false), "" /* do not use get */)
+				fakeClient = newFakeServiceCatalogClientForNamespacedTest(nil, newServicePlans("", 1, false), "" /* do not use get */)
 			} else {
-				fakeClient = newFakeServiceCatalogClientForTest(nil, newClusterServicePlans(1, false), "" /* do not use get */)
+				fakeClient = newFakeServiceCatalogClientForTest(nil, newClusterServicePlans("", 1, false), "" /* do not use get */)
 			}
 			handler, informerFactory, err := newHandlerForTest(fakeClient)
 			if err != nil {
@@ -388,16 +423,16 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 			servicecatalog.PlanReference{ClusterServiceClassExternalName: "foo"},
 			servicecatalog.PlanReference{ClusterServiceClassExternalName: "foo", ClusterServicePlanExternalName: "bar"}, false},
 		{"cluster external id",
-			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo"},
-			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo", ClusterServicePlanExternalID: "12345"}, false},
+			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo-id"},
+			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo-id", ClusterServicePlanExternalID: "12345"}, false},
 		{"cluster k8s", servicecatalog.PlanReference{ClusterServiceClassName: "foo-id"},
 			servicecatalog.PlanReference{ClusterServiceClassName: "foo-id", ClusterServicePlanName: "bar-id"}, false},
 		{"ns external name",
 			servicecatalog.PlanReference{ServiceClassExternalName: "foo"},
 			servicecatalog.PlanReference{ServiceClassExternalName: "foo", ServicePlanExternalName: "bar"}, true},
 		{"ns external id",
-			servicecatalog.PlanReference{ServiceClassExternalID: "foo"},
-			servicecatalog.PlanReference{ServiceClassExternalID: "foo", ServicePlanExternalID: "12345"}, true},
+			servicecatalog.PlanReference{ServiceClassExternalID: "foo-id"},
+			servicecatalog.PlanReference{ServiceClassExternalID: "foo-id", ServicePlanExternalID: "12345"}, true},
 		{"ns k8s", servicecatalog.PlanReference{ServiceClassName: "foo-id"},
 			servicecatalog.PlanReference{ServiceClassName: "foo-id", ServicePlanName: "bar-id"}, true},
 	}
@@ -407,12 +442,12 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 			var fakeClient *fake.Clientset
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
-				sps := newServicePlans(1, false)
+				sps := newServicePlans("foo-id", 1, false)
 				klog.V(4).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, "" /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
-				csps := newClusterServicePlans(1, false)
+				csps := newClusterServicePlans("foo-id", 1, false)
 				klog.V(4).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, "" /* do not use get */)
 			}
@@ -449,10 +484,10 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 		namespaced    bool
 	}{
 		{"cluster external name", servicecatalog.PlanReference{ClusterServiceClassExternalName: "foo"}, false},
-		{"cluster external id", servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo"}, false},
+		{"cluster external id", servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo-id"}, false},
 		{"cluster k8s", servicecatalog.PlanReference{ClusterServiceClassName: "foo-id"}, false},
 		{"ns external name", servicecatalog.PlanReference{ServiceClassExternalName: "foo"}, true},
-		{"ns external id", servicecatalog.PlanReference{ServiceClassExternalID: "foo"}, true},
+		{"ns external id", servicecatalog.PlanReference{ServiceClassExternalID: "foo-id"}, true},
 		{"ns k8s", servicecatalog.PlanReference{ServiceClassName: "foo-id"}, true},
 	}
 
@@ -461,12 +496,12 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 			var fakeClient *fake.Clientset
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
-				sps := newServicePlans(2, false)
+				sps := newServicePlans("foo-id", 2, false)
 				klog.V(4).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, "" /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
-				csps := newClusterServicePlans(2, false)
+				csps := newClusterServicePlans("foo-id", 2, false)
 				klog.V(4).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, "" /* do not use get */)
 			}
@@ -503,16 +538,16 @@ func TestWithNoPlanSucceedsWithMultiplePlansFromDifferentClasses(t *testing.T) {
 			servicecatalog.PlanReference{ClusterServiceClassExternalName: "foo"},
 			servicecatalog.PlanReference{ClusterServiceClassExternalName: "foo", ClusterServicePlanExternalName: "bar"}, false},
 		{"cluster external id",
-			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo"},
-			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo", ClusterServicePlanExternalID: "12345"}, false},
+			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo-id"},
+			servicecatalog.PlanReference{ClusterServiceClassExternalID: "foo-id", ClusterServicePlanExternalID: "12345"}, false},
 		{"cluster k8s", servicecatalog.PlanReference{ClusterServiceClassName: "foo-id"},
 			servicecatalog.PlanReference{ClusterServiceClassName: "foo-id", ClusterServicePlanName: "bar-id"}, false},
 		{"ns external name",
 			servicecatalog.PlanReference{ServiceClassExternalName: "foo"},
 			servicecatalog.PlanReference{ServiceClassExternalName: "foo", ServicePlanExternalName: "bar"}, true},
 		{"ns external id",
-			servicecatalog.PlanReference{ServiceClassExternalID: "foo"},
-			servicecatalog.PlanReference{ServiceClassExternalID: "foo", ServicePlanExternalID: "12345"}, true},
+			servicecatalog.PlanReference{ServiceClassExternalID: "foo-id"},
+			servicecatalog.PlanReference{ServiceClassExternalID: "foo-id", ServicePlanExternalID: "12345"}, true},
 		{"ns k8s", servicecatalog.PlanReference{ServiceClassName: "foo-id"},
 			servicecatalog.PlanReference{ServiceClassName: "foo-id", ServicePlanName: "bar-id"}, true},
 	}
@@ -520,16 +555,16 @@ func TestWithNoPlanSucceedsWithMultiplePlansFromDifferentClasses(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			var fakeClient *fake.Clientset
-			classFilter := "test-serviceclass"
+			classFilter := "foo-id"
 
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
-				sps := newServicePlans(2, true)
+				sps := newServicePlans("foo-id", 2, true)
 				klog.V(4).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, classFilter /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
-				csps := newClusterServicePlans(2, true)
+				csps := newClusterServicePlans("foo-id", 2, true)
 				klog.V(4).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, classFilter /* do not use get */)
 			}

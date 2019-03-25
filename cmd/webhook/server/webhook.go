@@ -22,9 +22,14 @@ import (
 
 	scTypes "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	csbmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterservicebroker/mutation"
+	cscmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterserviceclass/mutation"
+	cspmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterserviceplan/mutation"
+
 	sbmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebinding/mutation"
 	brmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebroker/mutation"
+	scmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceclass/mutation"
 	simutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/mutation"
+	spmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceplan/mutation"
 
 	"github.com/pkg/errors"
 	"k8s.io/apiserver/pkg/server/healthz"
@@ -59,15 +64,20 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 
 	// setup webhook server
 	webhookSvr := &webhook.Server{
-		Port:    int32(opts.SecureServingOptions.BindPort),
+		Port:    opts.SecureServingOptions.BindPort,
 		CertDir: opts.SecureServingOptions.ServerCert.CertDirectory,
 	}
 
 	webhooks := map[string]admission.Handler{
 		"/mutating-clusterservicebrokers": &csbmutation.CreateUpdateHandler{},
-		"/mutating-servicebindings":       &sbmutation.CreateUpdateHandler{},
-		"/mutating-servicebrokers":        &brmutation.CreateUpdateHandler{},
-		"/mutating-serviceinstances":      &simutation.CreateUpdateHandler{},
+		"/mutating-clusterserviceclasses": &cscmutation.CreateUpdateHandler{},
+		"/mutating-clusterserviceplans":   &cspmutation.CreateUpdateHandler{},
+
+		"/mutating-servicebindings":  &sbmutation.CreateUpdateHandler{},
+		"/mutating-servicebrokers":   &brmutation.CreateUpdateHandler{},
+		"/mutating-serviceclasses":   &scmutation.CreateUpdateHandler{},
+		"/mutating-serviceinstances": &simutation.CreateUpdateHandler{},
+		"/mutating-serviceplans":     &spmutation.CreateUpdateHandler{},
 	}
 
 	for path, handler := range webhooks {

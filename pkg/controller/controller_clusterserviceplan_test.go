@@ -59,8 +59,10 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			shouldError: false,
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
-					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServicePlanRef.name", "cspguid"),
+					Labels: labels.SelectorFromSet(labels.Set{
+						v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: "cspguid",
+					}),
+					Fields: fields.Everything(),
 				}
 
 				assertNumberOfActions(t, actions, 1)
@@ -74,8 +76,10 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			shouldError: false,
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
-					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServicePlanRef.name", "cspguid"),
+					Labels: labels.SelectorFromSet(labels.Set{
+						v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: "cspguid",
+					}),
+					Fields: fields.Everything(),
 				}
 
 				assertNumberOfActions(t, actions, 2)
@@ -96,8 +100,10 @@ func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {
 			errText: strPtr("oops"),
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
-					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServicePlanRef.name", "cspguid"),
+					Labels: labels.SelectorFromSet(labels.Set{
+						v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: "cspguid",
+					}),
+					Fields: fields.Everything(),
 				}
 
 				assertNumberOfActions(t, actions, 2)

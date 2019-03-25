@@ -115,7 +115,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 			ExternalID: testServiceInstanceGUID,
 		},
 		Status: v1beta1.ServiceInstanceStatus{
-			Conditions: []v1beta1.ServiceInstanceCondition{},
+			Conditions:        []v1beta1.ServiceInstanceCondition{},
 			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
@@ -131,8 +131,10 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -169,7 +171,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClassWithK8SName(t *te
 			ExternalID: testServiceInstanceGUID,
 		},
 		Status: v1beta1.ServiceInstanceStatus{
-			Conditions: []v1beta1.ServiceInstanceCondition{},
+			Conditions:        []v1beta1.ServiceInstanceCondition{},
 			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
@@ -302,7 +304,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 			ExternalID: testServiceInstanceGUID,
 		},
 		Status: v1beta1.ServiceInstanceStatus{
-			Conditions: []v1beta1.ServiceInstanceCondition{},
+			Conditions:        []v1beta1.ServiceInstanceCondition{},
 			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
@@ -321,8 +323,12 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=nothere,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "nothere",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -368,7 +374,7 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlanK8SName(t *testing
 			ExternalID: testServiceInstanceGUID,
 		},
 		Status: v1beta1.ServiceInstanceStatus{
-			Conditions: []v1beta1.ServiceInstanceCondition{},
+			Conditions:        []v1beta1.ServiceInstanceCondition{},
 			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}
@@ -800,14 +806,20 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	assertNumberOfActions(t, actions, 3)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -1004,8 +1016,12 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	assertNumberOfActions(t, actions, 2)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -4616,8 +4632,10 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
@@ -4905,14 +4923,20 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 3)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -5408,14 +5432,20 @@ func TestResolveReferencesWorks(t *testing.T) {
 	assertNumberOfActions(t, actions, 3)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ClusterServiceClassExternalName),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-clusterserviceplan,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
@@ -5453,7 +5483,14 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	newPlanName := "new-plan-name"
 
 	sp := &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: newPlanID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: newPlanID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               newPlanName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+			},
+		},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 				ExternalID:   newPlanID,
@@ -5487,8 +5524,12 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=new-plan-name,spec.clusterServiceBrokerName=test-clusterservicebroker,spec.clusterServiceClassRef.name=cscguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "new-plan-name",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 

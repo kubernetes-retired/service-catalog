@@ -556,7 +556,34 @@ func getTestBearerAuthSecret() *corev1.Secret {
 func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 	broker := getTestClusterServiceBroker()
 	class := &v1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testClusterServiceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testClusterServiceClassGUID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testClusterServiceClassName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+			},
+		},
+		Spec: v1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				Description:  "a test service",
+				ExternalName: testClusterServiceClassName,
+				ExternalID:   testClusterServiceClassGUID,
+				Bindable:     true,
+			},
+		},
+	}
+	markAsServiceCatalogManagedResource(class, broker)
+	return class
+}
+
+func getTestClusterServiceClassWithoutLabels() *v1beta1.ClusterServiceClass {
+	broker := getTestClusterServiceBroker()
+	class := &v1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testClusterServiceClassGUID,
+		},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
@@ -574,7 +601,14 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 	broker := getTestClusterServiceBroker()
 	class := &v1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testRemovedClusterServiceClassGUID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testClusterServiceClassName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+			},
+		},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
@@ -597,7 +631,12 @@ func getTestMarkedAsRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 	broker := getTestClusterServiceBroker()
 	class := &v1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServiceClassGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testRemovedClusterServiceClassGUID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: testClusterServiceBrokerName,
+			},
+		},
 		Spec: v1beta1.ClusterServiceClassSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
@@ -650,7 +689,15 @@ func getTestBindingRetrievableServiceClass() *v1beta1.ServiceClass {
 func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 	broker := getTestClusterServiceBroker()
 	plan := &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: testClusterServicePlanGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testClusterServicePlanGUID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName:  testClusterServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testClusterServicePlanName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+			},
+		},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
@@ -696,7 +743,14 @@ func getTestMarkedAsRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 	broker := getTestClusterServiceBroker()
 	plan := &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: testRemovedClusterServicePlanGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testRemovedClusterServicePlanGUID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testRemovedClusterServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+			},
+		},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: testClusterServiceBrokerName,
 			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
@@ -716,7 +770,14 @@ func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 	broker := getTestClusterServiceBroker()
 	plan := &v1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{Name: testNonbindableClusterServicePlanGUID},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNonbindableClusterServicePlanGUID,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: testNonbindableClusterServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:              testClusterServicePlanName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:  testClusterServiceBrokerName,
+			},
+		},
 		Spec: v1beta1.ClusterServicePlanSpec{
 			CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 				ExternalName: testNonbindableClusterServicePlanName,
@@ -819,6 +880,12 @@ func getTestServiceInstance() *v1beta1.ServiceInstance {
 			Name:       testServiceInstanceName,
 			Namespace:  testNamespace,
 			Generation: 1,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName:        testServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:         testServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName:  testClusterServicePlanGUID,
+			},
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
@@ -878,7 +945,7 @@ func getTestServiceInstanceK8SNames() *v1beta1.ServiceInstance {
 			ExternalID: testServiceInstanceGUID,
 		},
 		Status: v1beta1.ServiceInstanceStatus{
-			Conditions: []v1beta1.ServiceInstanceCondition{},
+			Conditions:        []v1beta1.ServiceInstanceCondition{},
 			DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 		},
 	}

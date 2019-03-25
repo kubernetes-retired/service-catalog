@@ -17,13 +17,13 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/klog"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 // Cluster service plan handlers and control-loop
@@ -82,6 +82,7 @@ func (c *controller) reconcileClusterServicePlan(clusterServicePlan *v1beta1.Clu
 	if err != nil {
 		return err
 	}
+	klog.Infof("Found %d ServiceInstances", len(serviceInstances.Items))
 
 	if len(serviceInstances.Items) != 0 {
 		return nil
@@ -92,11 +93,13 @@ func (c *controller) reconcileClusterServicePlan(clusterServicePlan *v1beta1.Clu
 }
 
 func (c *controller) findServiceInstancesOnClusterServicePlan(clusterServicePlan *v1beta1.ClusterServicePlan) (*v1beta1.ServiceInstanceList, error) {
-	fieldSet := fields.Set{
-		"spec.clusterServicePlanRef.name": clusterServicePlan.Name,
+	labelSelector := labels.SelectorFromSet(labels.Set{
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: clusterServicePlan.Name,
+	}).String()
+
+	listOpts := metav1.ListOptions{
+		LabelSelector: labelSelector,
 	}
-	fieldSelector := fields.SelectorFromSet(fieldSet).String()
-	listOpts := metav1.ListOptions{FieldSelector: fieldSelector}
 
 	return c.serviceCatalogClient.ServiceInstances(metav1.NamespaceAll).List(listOpts)
 }

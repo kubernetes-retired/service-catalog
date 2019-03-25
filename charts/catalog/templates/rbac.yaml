@@ -38,9 +38,9 @@ items:
     verbs:     ["get","list","watch"]
   - apiGroups: ["servicecatalog.k8s.io"]
     resources: ["serviceinstances","servicebindings"]
-    verbs:     ["get","list","watch", "update"]
+    verbs:     ["get","list","watch", "update", "patch"]
   - apiGroups: ["servicecatalog.k8s.io"]
-    resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","serviceinstances/reference","servicebindings/status"]
+    resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","servicebindings/status"]
     verbs:     ["update"]
   {{- if not .Values.namespacedServiceBrokerDisabled }}
   - apiGroups: ["servicecatalog.k8s.io"]

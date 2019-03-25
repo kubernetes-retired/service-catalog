@@ -1,0 +1,7 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceBroker
+metadata:
+  name: helm-broker
+spec:
+  relistRequests: 1
+  url: http://localhost:8081/

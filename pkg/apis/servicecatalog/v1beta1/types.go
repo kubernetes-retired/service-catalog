@@ -1385,11 +1385,25 @@ const (
 	// SpecExternalID is the external id of the object.
 	FilterSpecExternalID = "spec.externalID"
 	// SpecServiceBrokerName is used for ServiceClasses, the parent service broker name.
+
 	FilterSpecServiceBrokerName = "spec.serviceBrokerName"
-	// SpecClusterServiceClassName is only used for plans, the parent service class name.
-	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	// SpecClusterServiceBrokerName is used for ClusterServiceClasses, the parent service broker name.
+	FilterSpecClusterServiceBrokerName = "spec.clusterServiceBrokerName"
+
 	// SpecServiceClassName is only used for plans, the parent service class name.
 	FilterSpecServiceClassName = "spec.serviceClass.name"
+	// SpecClusterServiceClassName is only used for plans, the parent service class name.
+	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	// SpecClusterServiceClassRefName is only used for plans, the parent service class name.
+	FilterSpecServiceClassRefName = "spec.serviceClassRef.name"
+	// SpecClusterServiceClassRefName is only used for plans, the parent service class name.
+	FilterSpecClusterServiceClassRefName = "spec.clusterServiceClassRef.name"
+
+	// SpecServicePlanRefName is only used for instances.
+	FilterSpecServicePlanRefName = "spec.servicePlanRef.name"
+	// SpecClusterServiceClassRefName is only used for instances.
+	FilterSpecClusterServicePlanRefName = "spec.clusterServicePlanRef.name"
+
 	// FilterSpecFree is only used for plans, determines if the plan is free.
 	FilterSpecFree = "spec.free"
 )

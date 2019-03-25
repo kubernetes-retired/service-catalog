@@ -28,6 +28,7 @@ spec:
 {{ toYaml .Values.webhook.annotations | indent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: "{{ .Values.webhook.serviceAccount }}"
       containers:
       - name: svr
         image: {{ .Values.image }}

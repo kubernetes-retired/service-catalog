@@ -22,6 +22,58 @@ webhooks:
     apiGroups: ["servicecatalog.k8s.io"]
     apiVersions: ["v1beta1"]
     resources: ["clusterservicebrokers"]
+- name: mutating.clusterserviceclasses.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/mutating-clusterserviceclasses"
+  failurePolicy: Fail
+  rules:
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: ["servicecatalog.k8s.io"]
+    apiVersions: ["v1beta1"]
+    resources: ["clusterserviceclasses"]
+- name: mutating.serviceclasses.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/mutating-serviceclasses"
+  failurePolicy: Fail
+  rules:
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: ["servicecatalog.k8s.io"]
+    apiVersions: ["v1beta1"]
+    resources: ["serviceclasses"]
+- name: mutating.clusterserviceplans.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/mutating-clusterserviceplans"
+  failurePolicy: Fail
+  rules:
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: ["servicecatalog.k8s.io"]
+    apiVersions: ["v1beta1"]
+    resources: ["clusterserviceplans"]
+- name: mutating.serviceplans.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/mutating-serviceplans"
+  failurePolicy: Fail
+  rules:
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: ["servicecatalog.k8s.io"]
+    apiVersions: ["v1beta1"]
+    resources: ["serviceplans"]
 - name: mutating.servicebindings.servicecatalog.k8s.io
   clientConfig:
     caBundle: {{ b64enc $ca.Cert }}

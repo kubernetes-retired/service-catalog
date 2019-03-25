@@ -168,8 +168,10 @@ func TestReconcileServiceBrokerDelete(t *testing.T) {
 			assertNumberOfActions(t, catalogActions, 7)
 
 			listRestrictions := clientgotesting.ListRestrictions{
-				Labels: labels.Everything(),
-				Fields: fields.OneTermEqualSelector("spec.serviceBrokerName", broker.Name),
+				Labels: labels.SelectorFromSet(labels.Set{
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: broker.Name,
+				}),
+				Fields: fields.Everything(),
 			}
 			assertList(t, catalogActions[0], &v1beta1.ServiceClass{}, listRestrictions)
 			assertList(t, catalogActions[1], &v1beta1.ServicePlan{}, listRestrictions)
