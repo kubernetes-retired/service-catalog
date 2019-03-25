@@ -182,7 +182,7 @@ func TestReconcileServiceBrokerDelete(t *testing.T) {
 
 			assertGet(t, catalogActions[5], broker)
 
-			updatedServiceBroker = assertUpdateStatus(t, catalogActions[6], broker)
+			updatedServiceBroker = assertUpdate(t, catalogActions[6], broker)
 			assertEmptyFinalizers(t, updatedServiceBroker)
 
 			events := getRecordedEvents(testController)

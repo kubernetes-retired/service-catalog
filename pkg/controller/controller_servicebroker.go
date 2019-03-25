@@ -690,7 +690,7 @@ func (c *controller) updateServiceBrokerFinalizers(
 	logContext := fmt.Sprint(pcb.Messagef("Updating finalizers to %v", finalizers))
 
 	klog.V(4).Info(pcb.Messagef("Updating %v", logContext))
-	_, err = c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate)
+	_, err = c.serviceCatalogClient.ServiceBrokers(broker.Namespace).Update(toUpdate)
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %v: %v", logContext, err))
 	}

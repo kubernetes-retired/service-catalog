@@ -1517,15 +1517,23 @@ func (c *controller) handleServiceBindingReconciliationError(binding *v1beta1.Se
 // updating of a ServiceBinding that has successfully finished graceful
 // deletion.
 func (c *controller) processServiceBindingGracefulDeletionSuccess(binding *v1beta1.ServiceBinding) error {
-	finalizers := sets.NewString(binding.Finalizers...)
-	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
-	binding.Finalizers = finalizers.List()
-
-	if _, err := c.updateServiceBindingStatus(binding); err != nil {
-		return err
-	}
-
 	pcb := pretty.NewBindingContextBuilder(binding)
+
+	updatedBinding, err := c.updateServiceBindingStatus(binding)
+	if err != nil {
+		return fmt.Errorf("while updating status: %v", err)
+	}
+	klog.Info(pcb.Message("Status updated"))
+
+	toUpdate := updatedBinding.DeepCopy()
+	finalizers := sets.NewString(toUpdate.Finalizers...)
+	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	toUpdate.Finalizers = finalizers.List()
+
+	_, err = c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(toUpdate)
+	if err != nil {
+		return fmt.Errorf("while removing finalizer entry: %v", err)
+	}
 	klog.Info(pcb.Message("Cleared finalizer"))
 
 	return nil

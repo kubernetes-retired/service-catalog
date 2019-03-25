@@ -1795,6 +1795,10 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1821,9 +1825,10 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -1869,6 +1874,10 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	fakeCatalogClient.AddReactor("get", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, instance, nil
 	})
+
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
 
 	if err := reconcileServiceInstance(t, testController, instance); err == nil {
 		t.Fatalf("expected reconcileServiceInstance to return an error, but there was none")
@@ -1934,9 +1943,10 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	// The actions should be:
 	// 0. Updating the current operation
 	// 1. Updating the ready condition
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updateObject = assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updateObject = assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updateObject, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events = getRecordedEvents(testController)
@@ -2083,6 +2093,10 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 				return true, instance, nil
 			})
 
+			// simulate real update and return updated object,
+			// without that fake client will return empty ServiceInstances struct
+			fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 			if err := reconcileServiceInstance(t, testController, instance); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -2109,9 +2123,10 @@ func TestReconcileServiceInstanceDeleteFailedProvisionWithRequest(t *testing.T) 
 			assertNumberOfActions(t, kubeActions, 0)
 
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 1)
+			assertNumberOfActions(t, actions, 2)
 
-			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+			assertUpdateStatus(t, actions[0], instance)
+			updatedServiceInstance := assertUpdate(t, actions[1], instance)
 			assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 			events := getRecordedEvents(testController)
@@ -2195,6 +2210,10 @@ func TestReconsileServiceInstanceDeleteWithParameters(t *testing.T) {
 				return true, instance, nil
 			})
 
+			// simulate real update and return updated object,
+			// without that fake client will return empty ServiceInstances struct
+			fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 			err := reconcileServiceInstance(t, testController, instance)
 			if err != nil {
 				t.Fatalf("Unexpected error from reconcileServiceInstance: %v", err)
@@ -2208,9 +2227,10 @@ func TestReconsileServiceInstanceDeleteWithParameters(t *testing.T) {
 			assertNumberOfActions(t, kubeActions, 0)
 
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 1)
+			assertNumberOfActions(t, actions, 2)
 
-			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+			assertUpdateStatus(t, actions[0], instance)
+			updatedServiceInstance := assertUpdate(t, actions[1], instance)
 			assertEmptyFinalizers(t, updatedServiceInstance)
 
 			events := getRecordedEvents(testController)
@@ -2296,6 +2316,10 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -2322,9 +2346,10 @@ func TestReconcileServiceInstanceDeleteFailedUpdate(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -2361,6 +2386,10 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("This should not fail : %v", err)
 	}
@@ -2373,11 +2402,13 @@ func TestReconcileServiceInstanceDeleteDoesNotInvokeClusterServiceBroker(t *test
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	// The one actions should be:
-	// 0. Removing the finalizer
-	assertNumberOfActions(t, actions, 1)
+	// The actions should be:
+	// 1. Updating status
+	// 2. Removing the finalizer
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertEmptyFinalizers(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
@@ -2418,7 +2449,7 @@ func TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate(t *testing.T) 
 		if instance.ResourceVersion == "1" {
 			return true, nil, apierrors.NewConflict(action.GetResource().GroupResource(), instance.Name, errors.New("object has changed"))
 		}
-		return false, nil, nil
+		return true, object, nil
 	})
 
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
@@ -2434,14 +2465,16 @@ func TestFinalizerClearedWhen409ConflictEncounteredOnStatusUpdate(t *testing.T) 
 
 	actions := fakeCatalogClient.Actions()
 	// The actions should be:
-	// 0. Update the instance status (with finalizer removed); the server responds with 409 Conflict
+	// 0. Update the instance status; the server responds with 409 Conflict
 	// 1. Fetch the fresh instance
-	// 2. Update the fresh instance. Finalizer should be removed again.
-	assertNumberOfActions(t, actions, 3)
+	// 2. Update instance status with the fresh instance.
+	// 3. Remove the finalizer on the fresh instance.
+	assertNumberOfActions(t, actions, 4)
 
 	assertUpdateStatus(t, actions[0], instance)
 	assertGet(t, actions[1], instance)
-	updatedServiceInstance := assertUpdateStatus(t, actions[2], instance)
+	assertUpdateStatus(t, actions[2], instance)
+	updatedServiceInstance := assertUpdate(t, actions[3], instance)
 	assertEmptyFinalizers(t, updatedServiceInstance)
 
 	events := getRecordedEvents(testController)
@@ -2791,6 +2824,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
@@ -2820,9 +2857,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizer(t *tes
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -2995,6 +3033,10 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	instance := getTestServiceInstanceAsyncDeprovisioning(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
@@ -3024,9 +3066,10 @@ func TestPollServiceInstanceStatusGoneDeprovisioningWithOperationNoFinalizer(t *
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -3186,6 +3229,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if testController.instancePollingQueue.NumRequeues(instanceKey) != 0 {
 		t.Fatalf("Expected polling queue to not have any record of test instance")
 	}
@@ -3215,9 +3262,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationWithFinalizer(t *t
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -5960,6 +6008,10 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	timeOfReconciliation := metav1.Now()
 
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
@@ -5999,9 +6051,10 @@ func TestReconcileServiceInstanceDeleteDuringOngoingOperation(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -6044,6 +6097,10 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	timeOfReconciliation := metav1.Now()
 
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
@@ -6083,9 +6140,10 @@ func TestReconcileServiceInstanceDeleteWithOngoingOperation(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance).(*v1beta1.ServiceInstance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -6129,6 +6187,10 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -6156,9 +6218,10 @@ func TestReconcileServiceInstanceDeleteWithNonExistentPlan(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, "old-plan-name", "old-plan-id", instance)
 
 	events := getRecordedEvents(testController)

@@ -426,6 +426,10 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -452,9 +456,10 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -665,6 +670,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	instance := getTestServiceInstanceAsyncDeprovisioningWithNamespacedRefs(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -697,9 +706,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testServicePlanName, testServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)

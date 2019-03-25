@@ -1903,8 +1903,7 @@ func (c *controller) updateServiceInstanceStatus(instance *v1beta1.ServiceInstan
 // version's status with the status on the ServiceInstance passed
 // to it; it also runs the provided postConflictUpdateFunc,
 // allowing the caller to make additional changes to the
-// new version of the instance - to other parts of the object
-// (e.g. finalizers).
+// new version of the instance - to other parts of the object.
 func (c *controller) updateServiceInstanceStatusWithRetries(
 	instance *v1beta1.ServiceInstance,
 	postConflictUpdateFunc func(*v1beta1.ServiceInstance)) (*v1beta1.ServiceInstance, error) {
@@ -2571,9 +2570,19 @@ func (c *controller) prepareServiceInstanceLastOperationRequest(instance *v1beta
 // updating of a ServiceInstance that has successfully finished graceful
 // deletion.
 func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1beta1.ServiceInstance) error {
-	c.removeFinalizer(instance)
-	if _, err := c.updateServiceInstanceStatusWithRetries(instance, c.removeFinalizer); err != nil {
+	updatedInstance, err := c.updateServiceInstanceStatusWithRetries(instance, nil)
+	if err != nil {
 		return err
+	}
+
+	toUpdate := updatedInstance.DeepCopy()
+	finalizers := sets.NewString(toUpdate.Finalizers...)
+	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	toUpdate.Finalizers = finalizers.List()
+
+	_, err = c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).Update(toUpdate)
+	if err != nil {
+		return fmt.Errorf("while removing finalizer entry: %v", err)
 	}
 
 	pcb := pretty.NewInstanceContextBuilder(instance)
@@ -2581,12 +2590,6 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 
 	c.removeInstanceFromRetryMap(instance)
 	return nil
-}
-
-func (c *controller) removeFinalizer(instance *v1beta1.ServiceInstance) {
-	finalizers := sets.NewString(instance.Finalizers...)
-	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
-	instance.Finalizers = finalizers.List()
 }
 
 // handleServiceInstanceReconciliationError is a helper function that handles

@@ -1166,6 +1166,7 @@ func getTestServiceBinding() *v1beta1.ServiceBinding {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
+			SecretName:  testServiceBindingSecretName,
 			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
 			ExternalID:  testServiceBindingGUID,
 		},
@@ -4070,4 +4071,15 @@ func addGetSecretReaction(fakeKubeClient *clientgofake.Clientset, secret *corev1
 	fakeKubeClient.AddReactor("get", "secrets", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, secret, nil
 	})
+}
+
+// updateObjectReactor is used to simulate real update and return updated object,
+// without that fake client will return empty struct
+// TODO: in future we should consider refactor of newTestController method to use servicecatalogclientset.NewSimpleClientset() instead of &servicecatalogclientset.Clientset{}
+// thanks to that such methods will not be required because we will have that behaviour out-of-the-box - also other reactor like "get" etc. could be removed.
+func updateObjectReactor(resource string) (string, string, clientgotesting.ReactionFunc) {
+	return "update", resource, func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		e := action.(clientgotesting.UpdateAction)
+		return true, e.GetObject(), nil
+	}
 }
