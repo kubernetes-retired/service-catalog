@@ -18,7 +18,6 @@ package mutation_test
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/appscode/jsonpatch"
@@ -137,73 +136,14 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 	}
 }
 
-func TestCreateUpdateHandlerHandleReturnErrorIfGVKMismatch(t *testing.T) {
-	// given
-	sc.AddToScheme(scheme.Scheme)
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
+func TestCreateUpdateHandlerHandleDecoderErrors(t *testing.T) {
+	tester.DiscardLoggedMsg()
 
-	fixReq := admission.Request{
-		AdmissionRequest: admissionv1beta1.AdmissionRequest{
-			Operation: admissionv1beta1.Create,
-			Name:      "test-broker",
-			Namespace: "system",
-			Kind: metav1.GroupVersionKind{
-				Kind:    "ClusterServiceClass",
-				Version: "v1beta1",
-				Group:   "servicecatalog.k8s.io",
-			},
-		},
+	for _, fn := range []func(t *testing.T, handler tester.TestDecoderHandler, kind string){
+		tester.AssertHandlerReturnErrorIfReqObjIsMalformed,
+		tester.AssertHandlerReturnErrorIfGVKMismatch,
+	} {
+		handler := mutation.CreateUpdateHandler{}
+		fn(t, &handler, "ClusterServiceBroker")
 	}
-
-	expReqResult := &metav1.Status{
-		Code:    http.StatusBadRequest,
-		Message: "type mismatch: want: servicecatalog.k8s.io/v1beta1, Kind=ClusterServiceBroker got: servicecatalog.k8s.io/v1beta1, Kind=ClusterServiceClass",
-	}
-
-	handler := mutation.CreateUpdateHandler{}
-	handler.InjectDecoder(decoder)
-
-	// when
-	resp := handler.Handle(context.Background(), fixReq)
-
-	// then
-	assert.False(t, resp.Allowed)
-	assert.Equal(t, expReqResult, resp.Result)
-}
-
-func TestCreateUpdateHandlerHandleReturnErrorIfReqObjIsMalformed(t *testing.T) {
-	// given
-	sc.AddToScheme(scheme.Scheme)
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
-
-	fixReq := admission.Request{
-		AdmissionRequest: admissionv1beta1.AdmissionRequest{
-			Operation: admissionv1beta1.Create,
-			Name:      "test-broker",
-			Namespace: "system",
-			Kind: metav1.GroupVersionKind{
-				Kind:    "ClusterServiceBroker",
-				Version: "v1beta1",
-				Group:   "servicecatalog.k8s.io",
-			},
-			Object: runtime.RawExtension{Raw: []byte("{malformed: JSON,,")},
-		},
-	}
-
-	expReqResult := &metav1.Status{
-		Code:    http.StatusBadRequest,
-		Message: "couldn't get version/kind; json parse error: invalid character 'm' looking for beginning of object key string",
-	}
-
-	handler := mutation.CreateUpdateHandler{}
-	handler.InjectDecoder(decoder)
-
-	// when
-	resp := handler.Handle(context.Background(), fixReq)
-
-	// then
-	assert.False(t, resp.Allowed)
-	assert.Equal(t, expReqResult, resp.Result)
 }
