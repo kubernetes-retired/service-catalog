@@ -416,7 +416,12 @@ tree:
   example: |2-
       svcat unbind wordpress-mysql-instance
       svcat unbind --name wordpress-mysql-binding
+      svcat unbind --abandon wordpress-mysql-instance
   flags:
+  - desc: Forcefully and immediately delete the resource from Service Catalog ONLY,
+      potentially abandoning any broker resources that you may continue to be charged
+      for.
+    name: abandon
   - desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
       1h'
     name: interval
@@ -427,6 +432,10 @@ tree:
     name: timeout
   - desc: Wait until the operation completes.
     name: wait
+  - desc: Automatic yes to prompts. Assume "yes" as answer to all prompts and run
+      non-interactively.
+    name: "yes"
+    shorthand: "y"
   name: unbind
   shortDesc: Unbinds an instance. When an instance name is specified, all of its bindings
     are removed, otherwise use --name to remove a specific binding

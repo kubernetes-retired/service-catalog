@@ -26,8 +26,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -263,4 +264,70 @@ func (sdk *SDK) bindingHasStatus(binding *v1beta1.ServiceBinding, status v1beta1
 	}
 
 	return false
+}
+
+// RemoveFinalizerForBinding removes the finalizer for a single binding
+func (sdk *SDK) RemoveFinalizerForBinding(namespacedName types.NamespacedName) error {
+	// Get binding object from namespacedName
+	binding, err := sdk.RetrieveBinding(namespacedName.Namespace, namespacedName.Name)
+	if err != nil {
+		return err
+	}
+	finalizers := sets.NewString(binding.Finalizers...)
+	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	binding.Finalizers = finalizers.List()
+	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).UpdateStatus(binding)
+	return err
+}
+
+// RemoveFinalizerForBindings removes the finalizer for the provided list of bindings
+func (sdk *SDK) RemoveFinalizerForBindings(bindings []types.NamespacedName) ([]types.NamespacedName, error) {
+	var g sync.WaitGroup
+	deletedBindings := make(chan types.NamespacedName, len(bindings))
+	errs := make(chan error, len(bindings))
+	for _, binding := range bindings {
+		g.Add(1)
+		go func(binding types.NamespacedName) {
+			defer g.Done()
+			err := sdk.RemoveFinalizerForBinding(binding)
+			if err == nil {
+				deletedBindings <- binding
+			}
+			errs <- err
+		}(binding)
+	}
+
+	g.Wait()
+	close(errs)
+	close(deletedBindings)
+
+	// Collect any errors that occurred into a single formatted error
+	bindErr := &multierror.Error{
+		ErrorFormat: func(errors []error) string {
+			return joinErrors("error:", errors, "\n  ")
+		},
+	}
+	for err := range errs {
+		bindErr = multierror.Append(bindErr, err)
+	}
+
+	//Range over the deleted bindings to build a slice to return
+	deleted := []types.NamespacedName(nil)
+	for b := range deletedBindings {
+		deleted = append(deleted, b)
+	}
+	return deleted, bindErr.ErrorOrNil()
+}
+
+// RemoveBindingFinalizerByInstance removes v1beta1.FinalizerServiceCatalog from all bindings for the specified instance.
+func (sdk *SDK) RemoveBindingFinalizerByInstance(instance *v1beta1.ServiceInstance) ([]types.NamespacedName, error) {
+	instanceBindings, err := sdk.RetrieveBindingsByInstance(instance)
+	if err != nil {
+		return nil, err
+	}
+	namespacedNames := []types.NamespacedName{}
+	for _, b := range instanceBindings {
+		namespacedNames = append(namespacedNames, types.NamespacedName{Namespace: b.Namespace, Name: b.Name})
+	}
+	return sdk.RemoveFinalizerForBindings(namespacedNames)
 }
