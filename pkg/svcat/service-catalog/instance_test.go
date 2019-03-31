@@ -743,4 +743,37 @@ var _ = Describe("Instances", func() {
 			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(si.Namespace))
 		})
 	})
+
+	Describe("RemoveFinalizerForInstance", func() {
+		It("Calls the generated v1beta1 put method with the passed in instance", func() {
+			err := sdk.RemoveFinalizerForInstance(si.Namespace, si.Name)
+			Expect(err).NotTo(HaveOccurred())
+
+			actions := svcCatClient.Actions()
+			Expect(len(actions)).To(Equal(2))
+			Expect(actions[0].Matches("get", "serviceinstances")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(si.Name))
+			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(si.Namespace))
+			Expect(actions[1].Matches("update", "serviceinstances")).To(BeTrue())
+			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ServiceInstance).ObjectMeta.Name).To(Equal(si.Name))
+			Expect(actions[1].(testing.UpdateActionImpl).Object.(*v1beta1.ServiceInstance).ObjectMeta.Namespace).To(Equal(si.Namespace))
+		})
+		It("Bubbles up errors", func() {
+			errorMessage := "instance not found"
+			badClient := &fake.Clientset{}
+			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, fmt.Errorf(errorMessage)
+			})
+			sdk.ServiceCatalogClient = badClient
+
+			err := sdk.RemoveFinalizerForInstance("foo", "bar")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(errorMessage))
+			actions := badClient.Actions()
+			Expect(len(actions)).To(Equal(1))
+			Expect(actions[0].Matches("get", "serviceinstances")).To(BeTrue())
+			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal("bar"))
+			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal("foo"))
+		})
+	})
 })

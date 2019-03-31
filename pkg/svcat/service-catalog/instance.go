@@ -26,6 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -290,4 +291,21 @@ func (sdk *SDK) InstanceHasStatus(instance *v1beta1.ServiceInstance, status v1be
 	}
 
 	return false
+}
+
+// RemoveFinalizerForInstance removes v1beta1.FinalizerServiceCatalog from the specified instance.
+func (sdk *SDK) RemoveFinalizerForInstance(ns, name string) error {
+	instance, err := sdk.RetrieveInstance(ns, name)
+    if err != nil {
+		return err
+	}
+
+	finalizers := sets.NewString(instance.Finalizers...)
+	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	instance.Finalizers = finalizers.List()
+	_, err = sdk.ServiceCatalog().ServiceInstances(instance.Namespace).UpdateStatus(instance)
+	if err != nil {
+		return err
+	}
+	return nil
 }

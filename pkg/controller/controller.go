@@ -714,7 +714,7 @@ func (c *controller) getAuthCredentialsFromClusterServiceBroker(broker *v1beta1.
 			BearerConfig: bearerConfig,
 		}, nil
 	}
-	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
+	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %v", authInfo)
 }
 
 // getAuthCredentialsFromServiceBroker returns the auth credentials, if any, or
@@ -752,7 +752,7 @@ func (c *controller) getAuthCredentialsFromServiceBroker(broker *v1beta1.Service
 			BearerConfig: bearerConfig,
 		}, nil
 	}
-	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %s", authInfo)
+	return nil, fmt.Errorf("empty auth info or unsupported auth mode: %v", authInfo)
 }
 
 func getBasicAuthConfig(secret *corev1.Secret) (*osb.BasicAuthConfig, error) {

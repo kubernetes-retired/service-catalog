@@ -46,6 +46,7 @@ type SvcatClient interface {
 	RemoveBindingFinalizerByInstance(*apiv1beta1.ServiceInstance) ([]types.NamespacedName, error)
 	RemoveFinalizerForBindings([]types.NamespacedName) ([]types.NamespacedName, error)
 	RemoveFinalizerForBinding(types.NamespacedName) error
+	RemoveFinalizerForInstance(string, string) error
 
 	Deregister(string, *ScopeOptions) error
 	RetrieveBrokers(opts ScopeOptions) ([]Broker, error)
