@@ -19,14 +19,6 @@
   revision = "3b1ae45394a234c385be014e9a488f2bb6eef821"
 
 [[projects]]
-  digest = "1:4a0faa3985fa22fd6f28b93def5a3cad6f155fce6b93ec09c6d8c897f579f90f"
-  name = "code.cloudfoundry.org/lager"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "b152b7147a2a0154109a5194fcc7f4a933283abb"
-  version = "v2.0.0"
-
-[[projects]]
   digest = "1:81f8c061c3d18ed1710957910542bc17d2b789c6cd19e0f654c30b35fd255ca5"
   name = "github.com/Azure/go-ansiterm"
   packages = [
@@ -664,25 +656,6 @@
   revision = "e21c03b7a721e413718d2703181ead350d3c9d6f"
 
 [[projects]]
-  branch = "arbitrary_params"
-  digest = "1:4678e7a0dac39c32c7701f264c5a2a3b6b34bc055eb6351686cd3312b487cf08"
-  name = "github.com/pivotal-cf/brokerapi"
-  packages = [
-    ".",
-    "auth",
-  ]
-  pruneopts = "NUT"
-  revision = "3c6889259b98dc489f552cd5a0ebeec117620219"
-
-[[projects]]
-  branch = "fix-large-token"
-  digest = "1:823c9c68379773c78d94c45a0ad8ffd16abc7d398af6f3d322f546a0307a94ba"
-  name = "github.com/pivotal-golang/lager"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ce912f1f6e007e955045546229ae42ba5ac66fa7"
-
-[[projects]]
   digest = "1:5cf3f025cbee5951a4ee961de067c8a89fc95a5adabead774f82822efabab121"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -695,6 +668,13 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "4d0e916071f68db74f8a73926335f809396d6b42"
+
+[[projects]]
+  digest = "1:08413c4235cad94a96c39e1e2f697789733c4a87d1fdf06b412d2cf2ba49826a"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  pruneopts = "NUT"
+  revision = "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
 
 [[projects]]
   branch = "master"
@@ -805,6 +785,17 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "7fb2782df3d83e0036cc89f461ed0422628776f4"
+
+[[projects]]
+  digest = "1:85adecf1dbfae5769cc62a8bcea6498f8e9f0e2452e4e6686eb36fa4428a5a6e"
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "require",
+  ]
+  pruneopts = "NUT"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:28aee88434fcefe93f513c55f793bc36362b88c0ae40e63033899fb78ddfd402"
@@ -1542,7 +1533,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "code.cloudfoundry.org/lager",
     "github.com/Azure/go-autorest/autorest",
     "github.com/coreos/etcd/embed",
     "github.com/coreos/pkg/capnslog",
@@ -1560,7 +1550,6 @@
     "github.com/onsi/ginkgo/config",
     "github.com/onsi/gomega",
     "github.com/peterbourgon/mergemap",
-    "github.com/pivotal-cf/brokerapi",
     "github.com/pkg/errors",
     "github.com/pmorie/go-open-service-broker-client/v2",
     "github.com/pmorie/go-open-service-broker-client/v2/fake",
@@ -1570,8 +1559,9 @@
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",
+    "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/require",
     "golang.org/x/lint/golint",
-    "gopkg.in/yaml.v2",
     "k8s.io/api/authorization/v1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/apitesting/fuzzer",
@@ -1598,6 +1588,7 @@
     "k8s.io/apimachinery/pkg/util/errors",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/json",
+    "k8s.io/apimachinery/pkg/util/rand",
     "k8s.io/apimachinery/pkg/util/runtime",
     "k8s.io/apimachinery/pkg/util/sets",
     "k8s.io/apimachinery/pkg/util/uuid",
@@ -1633,9 +1624,11 @@
     "k8s.io/client-go/discovery",
     "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/informers",
+    "k8s.io/client-go/informers/core/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/typed/core/v1",
+    "k8s.io/client-go/listers/core/v1",
     "k8s.io/client-go/pkg/version",
     "k8s.io/client-go/plugin/pkg/client/auth",
     "k8s.io/client-go/rest",
