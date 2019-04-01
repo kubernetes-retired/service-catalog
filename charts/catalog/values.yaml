@@ -31,6 +31,7 @@ webhook:
       securePort: 30443
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
+  serviceAccount: service-catalog-webhook
   # Webhook resource requests and limits
   # Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   resources:

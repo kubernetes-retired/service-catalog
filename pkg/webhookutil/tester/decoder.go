@@ -114,10 +114,19 @@ func AssertHandlerReturnErrorIfGVKMismatch(t *testing.T, handler TestDecoderHand
 
 // DiscardLoggedMsg turns off log messages
 func DiscardLoggedMsg() {
-	klog.InitFlags(nil)
-	flag.Set("logtostderr", "false")
-	flag.Set("alsologtostderr", "false")
-	flag.Set("stderrthreshold", "999")
-	flag.Parse()
-	klog.SetOutput(ioutil.Discard)
+	isAlreadySet := false
+	flag.Visit(func(i *flag.Flag) {
+		if i.Name == "stderrthreshold" {
+			isAlreadySet = true
+		}
+	})
+
+	if !isAlreadySet {
+		klog.InitFlags(nil)
+		flag.Set("logtostderr", "false")
+		flag.Set("alsologtostderr", "false")
+		flag.Set("stderrthreshold", "999")
+		flag.Parse()
+		klog.SetOutput(ioutil.Discard)
+	}
 }

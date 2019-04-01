@@ -1594,7 +1594,7 @@
   revision = "21c4ce38f2a793ec01e925ddc31216500183b773"
 
 [[projects]]
-  digest = "1:e562f88eb9b9e8684984e27c9b825b923289551f335b8d1549023ffe42d9eb25"
+  digest = "1:0cad3618c2ff4795468b4b0c94a3f8a96dd06cd2a17c4ef3bd128b9675e66e3e"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -1602,6 +1602,7 @@
     "pkg/client",
     "pkg/client/apiutil",
     "pkg/client/config",
+    "pkg/client/fake",
     "pkg/internal/log",
     "pkg/internal/objectutil",
     "pkg/internal/recorder",
@@ -1611,6 +1612,7 @@
     "pkg/metrics",
     "pkg/recorder",
     "pkg/runtime/inject",
+    "pkg/scheme",
     "pkg/webhook",
     "pkg/webhook/admission",
     "pkg/webhook/internal/metrics",
@@ -1757,9 +1759,13 @@
     "k8s.io/kube-openapi/cmd/openapi-gen",
     "k8s.io/kube-openapi/pkg/common",
     "k8s.io/kubectl/pkg/pluginutils",
+    "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
+    "sigs.k8s.io/controller-runtime/pkg/client/fake",
     "sigs.k8s.io/controller-runtime/pkg/manager",
+    "sigs.k8s.io/controller-runtime/pkg/runtime/inject",
+    "sigs.k8s.io/controller-runtime/pkg/scheme",
     "sigs.k8s.io/controller-runtime/pkg/webhook",
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission",
     "sigs.k8s.io/yaml",

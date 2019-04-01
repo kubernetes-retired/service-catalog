@@ -31,6 +31,8 @@ import (
 	simutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/mutation"
 	spmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceplan/mutation"
 
+	sivalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/validation"
+
 	"github.com/pkg/errors"
 	"k8s.io/apiserver/pkg/server/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -78,6 +80,8 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		"/mutating-serviceclasses":   &scmutation.CreateUpdateHandler{},
 		"/mutating-serviceinstances": &simutation.CreateUpdateHandler{},
 		"/mutating-serviceplans":     &spmutation.CreateUpdateHandler{},
+
+		"/validating-serviceinstances": sivalidation.NewAdmissionHandler(),
 	}
 
 	for path, handler := range webhooks {

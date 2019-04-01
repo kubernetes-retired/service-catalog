@@ -1492,3 +1492,9 @@ type RemoveKeyTransform struct {
 	// The key to remove from the Secret
 	Key string `json:"key"`
 }
+
+func init() {
+	// SchemaBuilder is used to map go structs to GroupVersionKinds.
+	// Solution suggested by the Kubebuilder book: https://book.kubebuilder.io/basics/simple_resource.html - "Scaffolded Boilerplate" section
+	SchemeBuilderRuntime.Register(&ServiceBinding{}, &ServiceInstance{}, &ClusterServiceClass{})
+}

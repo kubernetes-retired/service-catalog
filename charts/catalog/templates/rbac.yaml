@@ -152,3 +152,48 @@ items:
     kind: Group
     name: system:authenticated
 {{end}}
+
+### Webhook ###
+- apiVersion: {{template "rbacApiVersion" . }}
+  kind: ClusterRole
+  metadata:
+    name: "servicecatalog.k8s.io:webhook"
+  rules:
+    # access to our service-catalog types
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["clusterserviceclasses"]
+      verbs:     ["get","list","watch"]
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["clusterserviceplans"]
+      verbs:     ["get","list","watch"]
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["clusterservicebrokers"]
+      verbs:     ["get","list","watch"]
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["serviceinstances","servicebindings"]
+      verbs:     ["get","list","watch"]
+    {{- if not .Values.namespacedServiceBrokerDisabled }}
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["serviceclasses"]
+      verbs:     ["get","list","watch"]
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["serviceplans"]
+      verbs:     ["get","list","watch"]
+    - apiGroups: ["servicecatalog.k8s.io"]
+      resources: ["servicebrokers"]
+      verbs:     ["get","list","watch"]
+    {{- end }}
+  # give the webhook service account access to whats defined in its role.
+- apiVersion: {{template "rbacApiVersion" . }}
+  kind: ClusterRoleBinding
+  metadata:
+    name: "servicecatalog.k8s.io:webhook"
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: "servicecatalog.k8s.io:webhook"
+  subjects:
+    - apiGroup: ""
+      kind: ServiceAccount
+      name: "{{ .Values.webhook.serviceAccount }}"
+      namespace: "{{ .Release.Namespace }}"
