@@ -112,10 +112,6 @@ func (c *getCmd) Validate(args []string) error {
 }
 
 func (c *getCmd) Run() error {
-	fmt.Println("KUBENAME: ", c.kubeName)
-	fmt.Println("EXTERNAL NAME: ", c.name)
-	fmt.Println("CLASS EXTERNAL NAME: ", c.className)
-	fmt.Println("CLASS NAME: ", c.classKubeName)
 	if c.kubeName == "" && c.name == "" {
 		return c.getAll()
 	}
