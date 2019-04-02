@@ -35,7 +35,7 @@ func RunServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) error 
 	if stopCh == nil {
 		/* the caller of RunServer should generate the stop channel
 		if there is a need to stop the API server */
-		stopCh = make(chan struct{})
+		panic("stop channel was not set when starting the api server")
 	}
 
 	err := opts.Validate()
