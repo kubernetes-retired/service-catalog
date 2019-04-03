@@ -27,13 +27,13 @@ import (
 // Is workaround cause in klog we do not have options to create a logger with Field
 // which will be added for each logged entry like we can do in logrus or zap.
 type TracedLogger struct {
-	header string
+	headerPrinter
 }
 
 // NewTracedLogger returns new instance of the TracedLogger
 func NewTracedLogger(uid types.UID) *TracedLogger {
 	return &TracedLogger{
-		header: fmt.Sprintf("[ReqUID: %s ]", uid),
+		headerPrinter: headerPrinter{header: fmt.Sprintf("[ReqUID: %s ]", uid)},
 	}
 }
 
@@ -65,4 +65,44 @@ func (l *TracedLogger) tracedMsgf(format string, args ...interface{}) string {
 func (l *TracedLogger) tracedMsg(args ...interface{}) string {
 	msg := fmt.Sprint(args...)
 	return fmt.Sprintf("%s: %s", l.header, msg)
+}
+
+// V returns TracedLogger with a given log level
+func (l *TracedLogger) V(v klog.Level) TracedVLogger {
+	return TracedVLogger{headerPrinter: l.headerPrinter, v: v}
+}
+
+// TracedVLogger contains logger with a log level
+type TracedVLogger struct {
+	headerPrinter
+	v klog.Level
+}
+
+// Info logs to the INFO log.
+func (v TracedVLogger) Info(args ...interface{}) {
+	klog.V(v.v).Info(v.tracedMsg(args...))
+}
+
+// Infoln logs to the INFO log.
+func (v TracedVLogger) Infoln(args ...interface{}) {
+	klog.V(v.v).Infoln(v.tracedMsg(args...))
+}
+
+// Infof logs to the INFO log with format.
+func (v TracedVLogger) Infof(format string, args ...interface{}) {
+	klog.V(v.v).Info(v.tracedMsgf(format, args...))
+}
+
+type headerPrinter struct {
+	header string
+}
+
+func (v *headerPrinter) tracedMsgf(format string, args ...interface{}) string {
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Sprintf("%s: %s", v.header, msg)
+}
+
+func (v *headerPrinter) tracedMsg(args ...interface{}) string {
+	msg := fmt.Sprint(args...)
+	return fmt.Sprintf("%s: %s", v.header, msg)
 }

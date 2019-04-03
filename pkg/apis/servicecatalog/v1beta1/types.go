@@ -1496,5 +1496,5 @@ type RemoveKeyTransform struct {
 func init() {
 	// SchemaBuilder is used to map go structs to GroupVersionKinds.
 	// Solution suggested by the Kubebuilder book: https://book.kubebuilder.io/basics/simple_resource.html - "Scaffolded Boilerplate" section
-	SchemeBuilderRuntime.Register(&ServiceBinding{}, &ServiceInstance{}, &ClusterServiceClass{})
+	SchemeBuilderRuntime.Register(&ServiceBinding{}, &ServiceInstance{}, &ClusterServiceClassList{}, &ServiceClassList{}, &ServiceClass{}, &ClusterServiceClass{}, &ClusterServicePlanList{}, &ServicePlanList{}, &ServicePlan{}, &ClusterServicePlan{})
 }
