@@ -31,6 +31,9 @@ import (
 	simutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/mutation"
 	spmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceplan/mutation"
 
+	csbrvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterservicebroker/validation"
+	sbvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebinding/validation"
+	sbrvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebroker/validation"
 	sivalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/validation"
 
 	"github.com/pkg/errors"
@@ -81,7 +84,10 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		"/mutating-serviceplans":     &spmutation.CreateUpdateHandler{},
 		"/mutating-serviceinstances": simutation.New(),
 
-		"/validating-serviceinstances": sivalidation.NewAdmissionHandler(),
+		"/validating-clusterservicebrokers": csbrvalidation.NewAdmissionHandler(),
+		"/validating-servicebindings":       sbvalidation.NewAdmissionHandler(),
+		"/validating-servicebrokers":        sbrvalidation.NewAdmissionHandler(),
+		"/validating-serviceinstances":      sivalidation.NewAdmissionHandler(),
 	}
 
 	for path, handler := range webhooks {

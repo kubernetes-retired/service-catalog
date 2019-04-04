@@ -18,12 +18,10 @@ package validation
 
 import (
 	"context"
-	"net/http"
-
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
-
 	admissionTypes "k8s.io/api/admission/v1beta1"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -31,10 +29,10 @@ import (
 
 // Validator is used to implement new validation logic
 type Validator interface {
-	Validate(context.Context, admission.Request, *sc.ServiceInstance, *webhookutil.TracedLogger) *webhookutil.WebhookError
+	Validate(context.Context, admission.Request, *sc.ClusterServiceBroker, *webhookutil.TracedLogger) *webhookutil.WebhookError
 }
 
-// AdmissionHandler handles ServiceInstance validation
+// AdmissionHandler handles ClusterServiceBroker validation
 type AdmissionHandler struct {
 	decoder *admission.Decoder
 
@@ -49,7 +47,8 @@ var _ inject.Client = &AdmissionHandler{}
 // NewAdmissionHandler creates new AdmissionHandler and initializes validators list
 func NewAdmissionHandler() *AdmissionHandler {
 	return &AdmissionHandler{
-		UpdateValidators: []Validator{&DenyPlanChangeIfNotUpdatable{}},
+		CreateValidators: []Validator{&AccessToBroker{}},
+		UpdateValidators: []Validator{&AccessToBroker{}},
 	}
 }
 
@@ -58,38 +57,38 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req admission.Request) ad
 	traced := webhookutil.NewTracedLogger(req.UID)
 	traced.Infof("Start handling validation operation: %s for %s", req.Operation, req.Kind.Kind)
 
-	si := &sc.ServiceInstance{}
-	if err := webhookutil.MatchKinds(si, req.Kind); err != nil {
+	csb := &sc.ClusterServiceBroker{}
+	if err := webhookutil.MatchKinds(csb, req.Kind); err != nil {
 		traced.Errorf("Error matching kinds: %v", err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if err := h.decoder.Decode(req, si); err != nil {
+	if err := h.decoder.Decode(req, csb); err != nil {
 		traced.Errorf("Could not decode request object: %v", err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	traced.Infof("start validation process for %s: %s/%s", si.Kind, si.Namespace, si.Name)
+	traced.Infof("start validation process for %s: %s/%s", csb.Kind, csb.Namespace, csb.Name)
 
 	var err *webhookutil.WebhookError
 
 	switch req.Operation {
 	case admissionTypes.Create:
 		for _, v := range h.CreateValidators {
-			err = v.Validate(ctx, req, si, traced)
+			err = v.Validate(ctx, req, csb, traced)
 			if err != nil {
 				break
 			}
 		}
 	case admissionTypes.Update:
 		for _, v := range h.UpdateValidators {
-			err = v.Validate(ctx, req, si, traced)
+			err = v.Validate(ctx, req, csb, traced)
 			if err != nil {
 				break
 			}
 		}
 	default:
-		traced.Infof("ServiceInstance validation wehbook does not support action %q", req.Operation)
+		traced.Infof("ClusterServiceBroker validation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
 	}
 
@@ -103,7 +102,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req admission.Request) ad
 	}
 
 	traced.Infof("Completed successfully validation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
-	return admission.Allowed("ServiceInstance AdmissionHandler successful")
+	return admission.Allowed("ClusterServiceBroker AdmissionHandler successful")
 }
 
 // InjectDecoder injects the decoder into the handlers

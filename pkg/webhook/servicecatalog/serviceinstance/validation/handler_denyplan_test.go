@@ -122,7 +122,7 @@ func TestAdmissionHandlerDenyPlanChangeIfNotUpdatableSimpleScenarios(t *testing.
 			request.AdmissionRequest.Operation = test.operation
 
 			// when
-			response := handler.Handle(context.TODO(), request)
+			response := handler.Handle(context.Background(), request)
 
 			// then
 			assert.Equal(t, response.AdmissionResponse.Allowed, test.responseAllowed)
@@ -217,7 +217,7 @@ func TestAdmissionHandlerDenyPlanChangeIfNotUpdatablePlanNameChanged(t *testing.
 			request.AdmissionRequest.Operation = admissionv1beta1.Update
 
 			// when
-			response := handler.Handle(context.TODO(), request)
+			response := handler.Handle(context.Background(), request)
 
 			// then
 			assert.Equal(t, response.AdmissionResponse.Allowed, test.responseAllowed)

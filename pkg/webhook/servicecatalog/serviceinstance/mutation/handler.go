@@ -27,7 +27,6 @@ import (
 	admissionTypes "k8s.io/api/admission/v1beta1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -82,7 +81,7 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 		case http.StatusForbidden:
 			return admission.Denied(err.Error())
 		default:
-			return admission.Errored(err.Code(), errors.New(err.Error()))
+			return admission.Errored(err.Code(), err)
 		}
 	}
 

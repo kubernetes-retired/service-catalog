@@ -55,14 +55,14 @@ spec:
                   - "secretRef"
                   properties:
                     secretRef:
-                      type: string
+                      type: object
                 bearer:
                   type: object
                   required:
                   - "secretRef"
                   properties:
                     secretRef:
-                      type: string
+                      type: object
 
 ---
 
@@ -123,14 +123,14 @@ spec:
                   - "secretRef"
                   properties:
                     secretRef:
-                      type: string
+                      type: object
                 bearer:
                   type: object
                   required:
                   - "secretRef"
                   properties:
                     secretRef:
-                      type: string
+                      type: object
 
 ---
 

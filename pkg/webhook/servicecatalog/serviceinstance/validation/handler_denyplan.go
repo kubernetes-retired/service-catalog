@@ -18,13 +18,14 @@ package validation
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"net/http"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -33,6 +34,9 @@ type DenyPlanChangeIfNotUpdatable struct {
 	decoder *admission.Decoder
 	client  client.Client
 }
+
+var _ admission.DecoderInjector = &DenyPlanChangeIfNotUpdatable{}
+var _ inject.Client = &DenyPlanChangeIfNotUpdatable{}
 
 // InjectDecoder injects the decoder
 func (h *DenyPlanChangeIfNotUpdatable) InjectDecoder(d *admission.Decoder) error {
@@ -47,7 +51,7 @@ func (h *DenyPlanChangeIfNotUpdatable) InjectClient(c client.Client) error {
 }
 
 // Validate checks if Plan can be changed
-func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admission.Request, si *sc.ServiceInstance, traced *webhookutil.TracedLogger) error {
+func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admission.Request, si *sc.ServiceInstance, traced *webhookutil.TracedLogger) *webhookutil.WebhookError {
 	traced.Info("Starting validation - DenyPlanChangeIfNotUpdatable")
 
 	if si.Spec.ClusterServiceClassRef == nil {
@@ -63,7 +67,7 @@ func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admissi
 
 	if err := h.client.Get(ctx, key, csc); err != nil {
 		traced.Infof("Could not locate service class '%v', can not determine if UpdateablePlan.", si.Spec.ClusterServiceClassRef.Name)
-		return err
+		return webhookutil.NewWebhookError(err.Error(), http.StatusForbidden)
 	}
 
 	if csc.Spec.PlanUpdatable {
@@ -75,7 +79,7 @@ func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admissi
 		origInstance := &sc.ServiceInstance{}
 		if err := h.decoder.DecodeRaw(req.OldObject, origInstance); err != nil {
 			traced.Errorf("Could not decode oldObject: %v", err)
-			return err
+			return webhookutil.NewWebhookError(err.Error(), http.StatusBadRequest)
 		}
 
 		externalPlanNameUpdated := si.Spec.ClusterServicePlanExternalName != origInstance.Spec.ClusterServicePlanExternalName
@@ -96,7 +100,7 @@ func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admissi
 			traced.Infof("update Service Instance %v/%v request specified Plan %v while original instance had %v", si.Namespace, si.Name, newPlan, oldPlan)
 			msg := fmt.Sprintf("The Service Class %v does not allow plan changes.", csc.Name)
 			traced.Error(msg)
-			return errors.New(msg)
+			return webhookutil.NewWebhookError(msg, http.StatusForbidden)
 		}
 	}
 

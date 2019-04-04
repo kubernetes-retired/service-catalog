@@ -133,6 +133,45 @@ webhooks:
     apiGroups: ["servicecatalog.k8s.io"]
     apiVersions: ["v1beta1"]
     resources: ["serviceinstances"]
+- name: validating.clusterservicebrokers.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/validating-clusterservicebrokers"
+  failurePolicy: Fail
+  rules:
+    - operations: [ "CREATE", "UPDATE" ]
+      apiGroups: ["servicecatalog.k8s.io"]
+      apiVersions: ["v1beta1"]
+      resources: ["clusterservicebrokers"]
+- name: validating.servicebindings.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/validating-servicebindings"
+  failurePolicy: Fail
+  rules:
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: ["servicecatalog.k8s.io"]
+    apiVersions: ["v1beta1"]
+    resources: ["servicebindings"]
+- name: validating.servicebrokers.servicecatalog.k8s.io
+  clientConfig:
+    caBundle: {{ b64enc $ca.Cert }}
+    service:
+      name: {{ template "fullname" . }}-webhook
+      namespace: "{{ .Release.Namespace }}"
+      path: "/validating-servicebrokers"
+  failurePolicy: Fail
+  rules:
+    - operations: [ "CREATE", "UPDATE" ]
+      apiGroups: ["servicecatalog.k8s.io"]
+      apiVersions: ["v1beta1"]
+      resources: ["servicebrokers"]
 ---
 apiVersion: v1
 kind: Secret
