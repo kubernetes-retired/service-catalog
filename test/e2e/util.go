@@ -17,6 +17,7 @@ limitations under the License.
 package e2e
 
 import (
+	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -34,7 +35,7 @@ func NewUPSBrokerPod(name string) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  name,
-					Image: brokerImageFlag,
+					Image: framework.TestContext.BrokerImage,
 					Args: []string{
 						"--port",
 						"8080",

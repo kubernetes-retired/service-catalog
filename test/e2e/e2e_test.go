@@ -17,20 +17,15 @@ limitations under the License.
 package e2e
 
 import (
-	"flag"
 	"testing"
 
 	"k8s.io/client-go/tools/clientcmd"
 
-	"k8s.io/klog"
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
+	"k8s.io/klog"
 )
 
-var brokerImageFlag string
-
 func init() {
-	flag.StringVar(&brokerImageFlag, "broker-image", "quay.io/kubernetes-service-catalog/user-broker:latest",
-		"The container image for the broker to test against")
 	framework.RegisterParseFlags()
 
 	if "" == framework.TestContext.KubeConfig {

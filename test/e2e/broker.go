@@ -39,7 +39,21 @@ func newTestBroker(name, url string) *v1beta1.ClusterServiceBroker {
 	}
 }
 
-var _ = framework.ServiceCatalogDescribe("ClusterServiceBroker", func() {
+func newNamespacedTestBroker(name, namespace, url string) *v1beta1.ServiceBroker {
+	return &v1beta1.ServiceBroker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: v1beta1.ServiceBrokerSpec{
+			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
+				URL: url,
+			},
+		},
+	}
+}
+
+var _ = framework.ServiceCatalogDescribe("Brokers", func() {
 	f := framework.NewDefaultFramework("create-service-broker")
 
 	brokerName := "test-broker"
@@ -67,39 +81,77 @@ var _ = framework.ServiceCatalogDescribe("ClusterServiceBroker", func() {
 		err = f.KubeClientSet.CoreV1().Services(f.Namespace.Name).Delete(brokerName, nil)
 		Expect(err).NotTo(HaveOccurred())
 	})
+	Describe("ClusterServiceBroker", func() {
+		It("should become ready", func() {
+			By("Making sure the ClusterServiceBroker does not exist before creating it")
+			if _, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Get(brokerName, metav1.GetOptions{}); err == nil {
+				By("deleting the ClusterServiceBroker if it does exist")
+				err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(brokerName, nil)
+				Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
 
-	It("should become ready", func() {
-		By("Making sure the ServiceBroker does not exist before creating it")
-		if _, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Get(brokerName, metav1.GetOptions{}); err == nil {
-			By("deleting the ServiceBroker if it does exist")
+				By("Waiting for the ClusterServiceBroker to not exist after deleting it")
+				err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), brokerName)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			By("Creating a ClusterBroker")
+			url := "http://" + brokerName + "." + f.Namespace.Name + ".svc.cluster.local"
+
+			broker, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Create(newTestBroker(brokerName, url))
+			Expect(err).NotTo(HaveOccurred())
+			By("Waiting for ClusterServiceBroker to be ready")
+			err = util.WaitForBrokerCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
+				broker.Name,
+				v1beta1.ServiceBrokerCondition{
+					Type:   v1beta1.ServiceBrokerConditionReady,
+					Status: v1beta1.ConditionTrue,
+				})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Deleting the ClusterServiceBroker")
 			err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(brokerName, nil)
-			Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
+			Expect(err).NotTo(HaveOccurred())
 
-			By("Waiting for the ServiceBroker to not exist after deleting it")
+			By("Waiting for ClusterServiceBroker to not exist")
 			err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), brokerName)
 			Expect(err).NotTo(HaveOccurred())
-		}
+		})
+	})
+	Describe("Namespaced ServiceBroker", func() {
+		It("should become ready", func() {
+			By("Making sure the ServiceBroker does not exist before creating it")
+			if _, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceBrokers(f.Namespace.Name).Get(brokerName, metav1.GetOptions{}); err == nil {
+				By("deleting the ServiceBroker if it does exist")
+				err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceBrokers(f.Namespace.Name).Delete(brokerName, nil)
+				Expect(err).NotTo(HaveOccurred(), "failed to delete the broker")
 
-		By("Creating a Broker")
-		url := "http://" + brokerName + "." + f.Namespace.Name + ".svc.cluster.local"
+				By("Waiting for the ServiceBroker to not exist after deleting it")
+				err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), brokerName)
+				Expect(err).NotTo(HaveOccurred())
+			}
 
-		broker, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Create(newTestBroker(brokerName, url))
-		Expect(err).NotTo(HaveOccurred())
-		By("Waiting for Broker to be ready")
-		err = util.WaitForBrokerCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
-			broker.Name,
-			v1beta1.ServiceBrokerCondition{
-				Type:   v1beta1.ServiceBrokerConditionReady,
-				Status: v1beta1.ConditionTrue,
-			})
-		Expect(err).NotTo(HaveOccurred())
+			By("Creating a ServiceBroker")
+			url := "http://" + brokerName + "." + f.Namespace.Name + ".svc.cluster.local"
+			broker, err := f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceBrokers(f.Namespace.Name).Create(newNamespacedTestBroker(brokerName, f.Namespace.Name, url))
+			Expect(err).NotTo(HaveOccurred())
+			By("Waiting for Broker to be ready")
+			err = util.WaitForBrokerCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
+				broker.Name,
+				v1beta1.ServiceBrokerCondition{
+					Type:   v1beta1.ServiceBrokerConditionReady,
+					Status: v1beta1.ConditionTrue,
+				},
+				broker.Namespace,
+			)
+			Expect(err).NotTo(HaveOccurred())
 
-		By("Deleting the Broker")
-		err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(brokerName, nil)
-		Expect(err).NotTo(HaveOccurred())
+			By("Deleting the ServiceBroker")
+			err = f.ServiceCatalogClientSet.ServicecatalogV1beta1().ServiceBrokers(broker.Namespace).Delete(brokerName, nil)
+			Expect(err).NotTo(HaveOccurred())
 
-		By("Waiting for Broker to not exist")
-		err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), brokerName)
-		Expect(err).NotTo(HaveOccurred())
+			By("Waiting for ServiceBroker to not exist")
+			err = util.WaitForBrokerToNotExist(f.ServiceCatalogClientSet.ServicecatalogV1beta1(), brokerName, broker.Namespace)
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 })

@@ -175,7 +175,7 @@ $(BINDIR)/%-gen: $$(shell find vendor/k8s.io/code-generator/cmd/$$*-gen vendor/k
 
 .PHONY: $(BINDIR)/e2e.test
 $(BINDIR)/e2e.test: .init
-	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
+	$(DOCKER_CMD) env GOOS=$(CLIENT_PLATFORM) GOARCH=$(ARCH) go test -c -o $@ $(SC_PKG)/test/e2e
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init generators $(TYPES_FILES)
