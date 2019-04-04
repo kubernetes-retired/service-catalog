@@ -175,7 +175,6 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		}
 
 		// get the broker's catalog
-		now := metav1.Now()
 		brokerCatalog, err := brokerClient.GetCatalog()
 		if err != nil {
 			s := fmt.Sprintf("Error getting broker catalog: %s", err)
@@ -185,10 +184,8 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 				return err
 			}
 			if broker.Status.OperationStartTime == nil {
-				toUpdate := broker.DeepCopy()
-				toUpdate.Status.OperationStartTime = &now
-				if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
-					klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
+				now := metav1.Now()
+				if err := c.setOperateStartTime(broker, &now); err != nil {
 					return err
 				}
 			} else if !time.Now().Before(broker.Status.OperationStartTime.Time.Add(c.reconciliationRetryDuration)) {
@@ -211,10 +208,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		// set the operation start time if not already set
 		if broker.Status.OperationStartTime != nil {
-			toUpdate := broker.DeepCopy()
-			toUpdate.Status.OperationStartTime = nil
-			if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
-				klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
+			if err := c.setOperateStartTime(broker, nil); err != nil {
 				return err
 			}
 		}
@@ -447,6 +441,21 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		metrics.BrokerServiceClassCount.DeleteLabelValues(broker.Name)
 		metrics.BrokerServicePlanCount.DeleteLabelValues(broker.Name)
 		return nil
+	}
+
+	return nil
+}
+
+//setOperateStartTime set broker operate start time.
+func (c *controller) setOperateStartTime(broker *v1beta1.ClusterServiceBroker, time *metav1.Time) error {
+	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
+	if broker.Status.OperationStartTime != nil {
+		toUpdate := broker.DeepCopy()
+		toUpdate.Status.OperationStartTime = time
+		if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
+			klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
+			return err
+		}
 	}
 
 	return nil
