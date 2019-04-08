@@ -359,9 +359,18 @@ var _ = Describe("Binding", func() {
 			}
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bindings).Should(ConsistOf(expectedBindingsToDelete[0], expectedBindingsToDelete[1]))
-			// The first action should be a get call because RemoveFinalizerForBinding calls RetrieveBinding to retrieve the ServiceBinding object
-			Expect(svcCatClient.Actions()[0].Matches("get", "servicebindings")).To(BeTrue())
-			Expect(svcCatClient.Actions()[1].Matches("update", "servicebindings")).To(BeTrue())
+			// Two of the actions should be get calls and the other two should be update calls
+			numGetCalls := 0
+			numUpdateCalls := 0
+			for _, action := range svcCatClient.Actions() {
+				if action.Matches("get", "servicebindings") {
+					numGetCalls++
+				} else if action.Matches("update", "servicebindings") {
+					numUpdateCalls++
+				}
+			}
+			Expect(numGetCalls).To(Equal(2))
+			Expect(numUpdateCalls).To(Equal(2))
 		})
 		It("Bubbles up errors", func() {
 			badClient := &fake.Clientset{}
@@ -379,9 +388,6 @@ var _ = Describe("Binding", func() {
 			Expect(bindings).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))
-			// The first action should be a get call because RemoveFinalizerForBinding calls RetrieveBinding to retrieve the ServiceBinding object
-			Expect(badClient.Actions()[0].Matches("get", "servicebindings")).To(BeTrue())
-			Expect(badClient.Actions()[1].Matches("update", "servicebindings")).To(BeTrue())
 		})
 	})
 
