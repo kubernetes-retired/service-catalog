@@ -85,7 +85,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 		return err
 	}
 
-	// // Set the finalized generic and storage configs
+	// Set the finalized generic and storage configs
 	config := apiserver.NewEtcdConfig(genericConfig, 0 /* deleteCollectionWorkers */, storageFactory)
 
 	// Fill in defaults not already set in the config
@@ -126,10 +126,12 @@ type checkEtcdConnectable struct {
 	ServerList []string
 }
 
+// Name is the name of a checkEtcdConnectable.
 func (c checkEtcdConnectable) Name() string {
 	return "etcd"
 }
 
+// Check used to check if the etcd server is reachable
 func (c checkEtcdConnectable) Check(_ *http.Request) error {
 	klog.Info("etcd checker called")
 	serverReachable, err := preflight.EtcdConnection{ServerList: c.ServerList}.CheckEtcdServers()
@@ -139,7 +141,7 @@ func (c checkEtcdConnectable) Check(_ *http.Request) error {
 		return err
 	}
 	if !serverReachable {
-		msg := "etcd failed to reach any server"
+		msg := "etcd checker failed to reach any etcd server"
 		klog.Error(msg)
 		return fmt.Errorf(msg)
 	}
