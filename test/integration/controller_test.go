@@ -115,8 +115,8 @@ func TestBasicFlows(t *testing.T) {
 			//t.Parallel()
 			if tc.asyncForBindings {
 				// Enable the AsyncBindingOperations feature
-				utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+				utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+				defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 			}
 
 			ct := &controllerTest{
@@ -232,7 +232,7 @@ func verifyUsernameInLastBrokerAction(t *testing.T, osbClient *fakeosb.FakeClien
 func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	// Enable the OriginatingIdentity feature
 	prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, true)
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 	createChangeUsernameFunc := func(username string) func(*controllerTest) {
 		return func(ct *controllerTest) {
@@ -555,8 +555,8 @@ func TestServiceBindingDeleteWithAsyncBindInProgress(t *testing.T) {
 			//t.Parallel()
 
 			// Enable the AsyncBindingOperations feature
-			utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+			utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 			var done int32 = 0
 			ct := controllerTest{

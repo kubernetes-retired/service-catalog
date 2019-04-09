@@ -127,7 +127,6 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 		klog.Warning("OpenAPI spec will not be served")
 	}
 
-	genericConfig.SwaggerConfig = genericapiserver.DefaultSwaggerConfig()
 	// TODO: investigate if we need metrics unique to service catalog, but take defaults for now
 	// see https://github.com/kubernetes-incubator/service-catalog/issues/677
 	genericConfig.EnableMetrics = true
@@ -192,7 +191,7 @@ func buildAdmission(c *genericapiserver.RecommendedConfig, s *ServiceCatalogServ
 	pluginNames := enabledPluginNames(s.AdmissionOptions)
 	klog.Infof("Admission control plugin names: %v", pluginNames)
 
-	genericInitializer := initializer.New(kubeClient, kubeSharedInformers, c.Authorization.Authorizer, api.Scheme)
+	genericInitializer := initializer.New(kubeClient, kubeSharedInformers, c.Authorization.Authorizer)
 	scPluginInitializer := scadmission.NewPluginInitializer(client, sharedInformers, kubeClient, kubeSharedInformers)
 	initializersChain := admission.PluginInitializers{
 		scPluginInitializer,

@@ -467,7 +467,7 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 		{
 			name: "alpha features enabled",
 			setup: func(ct *controllerTest) {
-				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL)); err != nil {
+				if err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL)); err != nil {
 					t.Fatalf("Failed to enable updatable dashboard url feature: %v", err)
 				}
 			},
@@ -478,7 +478,7 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 		{
 			name: "alpha feature disabled",
 			setup: func(ct *controllerTest) {
-				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL)); err != nil {
+				if err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL)); err != nil {
 					t.Fatalf("Failed to enable updatable dashboard url feature: %v", err)
 				}
 			},
@@ -1669,7 +1669,7 @@ func TestPollServiceInstanceLastOperationSuccess(t *testing.T) {
 		{
 			name: "async last operation response successful with originating identity",
 			setup: func(ct *controllerTest) {
-				if err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity)); err != nil {
+				if err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity)); err != nil {
 					t.Fatalf("Failed to enable originating identity feature: %v", err)
 				}
 

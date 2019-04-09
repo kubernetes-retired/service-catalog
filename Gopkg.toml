@@ -284,7 +284,7 @@ required = [
 
 [[override]]
   name = "github.com/evanphx/json-patch"
-  revision = "36442dbdb585210f8d5a1b45e67aa323c197d5c4"
+  revision = "5858425f75500d40c52783dce87d085a483ce135"
 
 [[override]]
   name = "github.com/exponent-io/jsonpath"
@@ -859,48 +859,48 @@ required = [
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
 
 [[override]]
-  branch = "release-1.13"
+  branch = "release-1.14"
   name = "k8s.io/api"
 
 [[override]]
-  branch = "release-1.13"
+  branch = "release-1.14"
   name = "k8s.io/apiextensions-apiserver"
 
 [[override]]
-  branch = "release-1.13"
+  branch = "release-1.14"
   name = "k8s.io/apimachinery"
 
 [[override]]
-  branch = "release-1.13"
+  branch = "release-1.14"
   name = "k8s.io/apiserver"
 
 [[override]]
-  branch = "release-10.0"
+  branch = "release-11.0"
   name = "k8s.io/client-go"
 
 [[override]]
-  branch = "release-1.13"
+  branch = "release-1.14"
   name = "k8s.io/code-generator"
 
 [[override]]
   name = "k8s.io/gengo"
-  revision = "51747d6e00da1fc578d5a333a93bb2abcbce7a95"
+  revision = "e17681d19d3ac4837a019ece36c2a0ec31ffe985"
 
 [[override]]
   name = "k8s.io/heapster"
-  revision = "c2ac40f1adf8c42a79badddb2a2acd673cae3bcb"
+  revision = "e1e83412787b60d8a70088f09a2cb12339b305c3"
 
 [[override]]
   name = "k8s.io/klog"
-  revision = "8139d8cb77af419532b33dfa7dd09fbc5f1d344f"
+  revision = "aaeac2fedbead93263ae78b80849cac7ff5a5fbb"
 
 [[override]]
   name = "k8s.io/kube-openapi"
-  revision = "c59034cc13d587f5ef4e85ca0ade0c1866ae8e1d"
+  revision = "94e1e7b7574c44c4c0f2007de6fe617e259191f3"
 
 [[override]]
   name = "k8s.io/utils"
-  revision = "66066c83e385e385ccc3c964b44fd7dcd413d0ed"
+  revision = "21c4ce38f2a793ec01e925ddc31216500183b773"
 
 [[override]]
   name = "sigs.k8s.io/yaml"
@@ -910,3 +910,6 @@ required = [
   name = "vbom.ml/util"
   revision = "db5cfe13f5cc80a4990d98e2e1b0707a4d1a5394"
 
+[[override]]
+  name = "sigs.k8s.io/structured-merge-diff"
+  revision = "e85c7b244fd2cc57bb829d73a061f93a441e63ce"

@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	utiltemplate "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/template"
-	"k8s.io/apiserver/pkg/util/flag"
+	"k8s.io/component-base/cli/flag"
 
 	"github.com/spf13/pflag"
 )

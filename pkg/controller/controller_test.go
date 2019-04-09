@@ -1358,8 +1358,8 @@ func TestCatalogConversionWithPreexistingClassesAndPlans(t *testing.T) {
 }
 
 func TestCatalogConversionWithParameterSchemas(t *testing.T) {
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.ResponseSchema))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.ResponseSchema))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.ResponseSchema))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.ResponseSchema))
 
 	catalog := &osb.CatalogResponse{}
 	err := json.Unmarshal([]byte(alphaParameterSchemaCatalogBytes), &catalog)

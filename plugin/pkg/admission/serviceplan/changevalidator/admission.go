@@ -57,7 +57,7 @@ type denyPlanChangeIfNotUpdatable struct {
 
 var _ = scadmission.WantsInternalServiceCatalogInformerFactory(&denyPlanChangeIfNotUpdatable{})
 
-func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes) error {
+func (d *denyPlanChangeIfNotUpdatable) Admit(a admission.Attributes, o admission.ObjectInterfaces) error {
 	// we need to wait for our caches to warm
 	if !d.WaitForReady() {
 		return admission.NewForbidden(a, fmt.Errorf("not yet ready to handle request"))

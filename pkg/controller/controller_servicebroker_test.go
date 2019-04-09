@@ -264,11 +264,11 @@ func TestReconcileServiceClassFromServiceBrokerCatalog(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+			err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 			if err != nil {
 				t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
 			}
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
 			if tc.catalogClientPrepFunc != nil {
@@ -369,11 +369,11 @@ func TestReconcileServicePlanFromServiceBrokerCatalog(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+			err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 			if err != nil {
 				t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
 			}
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
 			if tc.catalogClientPrepFunc != nil {

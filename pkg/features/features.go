@@ -80,7 +80,7 @@ const (
 )
 
 func init() {
-	utilfeature.DefaultFeatureGate.Add(defaultServiceCatalogFeatureGates)
+	utilfeature.DefaultMutableFeatureGate.Add(defaultServiceCatalogFeatureGates)
 }
 
 // defaultServiceCatalogFeatureGates consists of all known service catalog specific feature keys.

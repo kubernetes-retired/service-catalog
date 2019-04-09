@@ -105,6 +105,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/api/core/v1.AzureFileVolumeSource":                       schema_k8sio_api_core_v1_AzureFileVolumeSource(ref),
 		"k8s.io/api/core/v1.Binding":                                     schema_k8sio_api_core_v1_Binding(ref),
 		"k8s.io/api/core/v1.CSIPersistentVolumeSource":                   schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.CSIVolumeSource":                             schema_k8sio_api_core_v1_CSIVolumeSource(ref),
 		"k8s.io/api/core/v1.Capabilities":                                schema_k8sio_api_core_v1_Capabilities(ref),
 		"k8s.io/api/core/v1.CephFSPersistentVolumeSource":                schema_k8sio_api_core_v1_CephFSPersistentVolumeSource(ref),
 		"k8s.io/api/core/v1.CephFSVolumeSource":                          schema_k8sio_api_core_v1_CephFSVolumeSource(ref),
@@ -302,6 +303,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.DeleteOptions":             schema_pkg_apis_meta_v1_DeleteOptions(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Duration":                  schema_pkg_apis_meta_v1_Duration(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ExportOptions":             schema_pkg_apis_meta_v1_ExportOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Fields":                    schema_pkg_apis_meta_v1_Fields(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.GetOptions":                schema_pkg_apis_meta_v1_GetOptions(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupKind":                 schema_pkg_apis_meta_v1_GroupKind(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupResource":             schema_pkg_apis_meta_v1_GroupResource(ref),
@@ -317,10 +319,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.List":                      schema_pkg_apis_meta_v1_List(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta":                  schema_pkg_apis_meta_v1_ListMeta(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ListOptions":               schema_pkg_apis_meta_v1_ListOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ManagedFieldsEntry":        schema_pkg_apis_meta_v1_ManagedFieldsEntry(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.MicroTime":                 schema_pkg_apis_meta_v1_MicroTime(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta":                schema_pkg_apis_meta_v1_ObjectMeta(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference":            schema_pkg_apis_meta_v1_OwnerReference(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Patch":                     schema_pkg_apis_meta_v1_Patch(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.PatchOptions":              schema_pkg_apis_meta_v1_PatchOptions(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Preconditions":             schema_pkg_apis_meta_v1_Preconditions(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.RootPaths":                 schema_pkg_apis_meta_v1_RootPaths(ref),
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ServerAddressByClientCIDR": schema_pkg_apis_meta_v1_ServerAddressByClientCIDR(ref),
@@ -344,6 +348,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_AddKeyTransform(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AddKeyTransform specifies that Service Catalog should add an additional entry to the Secret associated with the ServiceBinding. For example, given the following AddKeyTransform:\n    {\"key\": \"CONNECTION_POOL_SIZE\", \"stringValue\": \"10\"}\nthe following entry will appear in the Secret:\n    \"CONNECTION_POOL_SIZE\": \"10\"\nNote that this transform should only be used to add non-sensitive (non-secret) values. To add sensitive information, the AddKeysFromTransform should be used instead.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -377,7 +382,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_AddKeyTransform(ref common.Reference
 				Required: []string{"key", "value", "stringValue", "jsonPathExpression"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -386,6 +390,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_AddKeysFromTransform(ref common.Refe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AddKeysFromTransform specifies that Service Catalog should merge an existing secret into the Secret associated with the ServiceBinding. For example, given the following AddKeysFromTransform:\n    {\"secretRef\": {\"namespace\": \"foo\", \"name\": \"bar\"}}\nthe entries of the Secret \"bar\" from Namespace \"foo\" will be merged into the credentials Secret.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
@@ -406,6 +411,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_BasicAuthConfig(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BasicAuthConfig provides config for the basic authentication of cluster scoped brokers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
@@ -426,6 +432,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_BearerTokenAuthConfig(ref common.Ref
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BearerTokenAuthConfig provides config for the bearer token authentication of cluster scoped brokers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
@@ -446,6 +453,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CatalogRestrictions(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.\n\nSome examples of this object are as follows:\n\nThis is an example of a whitelist on service externalName. Goal: Only list Services with the externalName of FooService and BarService, Solution: restrictions := ServiceCatalogRestrictions{\n\t\tServiceClass: [\"spec.externalName in (FooService, BarService)\"]\n}\n\nThis is an example of a blacklist on service externalName. Goal: Allow all services except the ones with the externalName of FooService and BarService, Solution: restrictions := ServiceCatalogRestrictions{\n\t\tServiceClass: [\"spec.externalName notin (FooService, BarService)\"]\n}\n\nThis whitelists plans called \"Demo\", and blacklists (but only a single element in the list) a service and a plan. Goal: Allow all plans with the externalName demo, but not AABBCC, and not a specific service by name, Solution: restrictions := ServiceCatalogRestrictions{\n\t\tServiceClass: [\"name!=AABBB-CCDD-EEGG-HIJK\"]\n\t\tServicePlan: [\"spec.externalName in (Demo)\", \"name!=AABBCC\"]\n}\n\nCatalogRestrictions strings have a special format similar to Label Selectors, except the catalog supports only a very specific property set.\n\nThe predicate format is expected to be `<property><conditional><requirement>` Check the *Requirements type definition for which <property> strings will be allowed. <conditional> is allowed to be one of the following: ==, !=, in, notin <requirement> will be a string value if `==` or `!=` are used. <requirement> will be a set of string values if `in` or `notin` are used. Multiple predicates are allowed to be chained with a comma (,)\n\nServiceClass allowed property names:\n  name - the value set to [Cluster]ServiceClass.Name\n  spec.externalName - the value set to [Cluster]ServiceClass.Spec.ExternalName\n  spec.externalID - the value set to [Cluster]ServiceClass.Spec.ExternalID\nServicePlan allowed property names:\n  name - the value set to [Cluster]ServicePlan.Name\n  spec.externalName - the value set to [Cluster]ServicePlan.Spec.ExternalName\n  spec.externalID - the value set to [Cluster]ServicePlan.Spec.ExternalID\n  spec.free - the value set to [Cluster]ServicePlan.Spec.Free\n  spec.serviceClass.name - the value set to ServicePlan.Spec.ServiceClassRef.Name\n  spec.clusterServiceClass.name - the value set to ClusterServicePlan.Spec.ClusterServiceClassRef.Name",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"serviceClass": {
 						SchemaProps: spec.SchemaProps{
@@ -478,7 +486,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_CatalogRestrictions(ref common.Refer
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -487,6 +494,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterBasicAuthConfig(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterBasicAuthConfig provides config for the basic authentication of cluster scoped brokers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
@@ -507,6 +515,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterBearerTokenAuthConfig(ref com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterBearerTokenAuthConfig provides config for the bearer token authentication of cluster scoped brokers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
@@ -527,6 +536,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterObjectReference(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterObjectReference contains enough information to let you locate the cluster-scoped referenced object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -538,7 +548,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterObjectReference(ref common.Re
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -547,6 +556,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBroker(ref common.Refe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceBroker represents an entity that provides ClusterServiceClasses for use in the service catalog.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -598,6 +608,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerAuthInfo(ref com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"basic": {
 						SchemaProps: spec.SchemaProps{
@@ -624,6 +635,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerList(ref common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceBrokerList is a list of Brokers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -670,6 +682,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerSpec(ref common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceBrokerSpec represents a description of a Broker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"url": {
 						SchemaProps: spec.SchemaProps{
@@ -738,6 +751,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerStatus(ref commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceBrokerStatus represents the current status of a ClusterServiceBroker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
@@ -784,6 +798,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClass(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceClass represents an offering in the service catalog.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -835,6 +850,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassList(ref common.R
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceClassList is a list of ClusterServiceClasses.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -881,6 +897,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassSpec(ref common.R
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceClassSpec represents the details about a ClusterServiceClass",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"externalName": {
 						SchemaProps: spec.SchemaProps{
@@ -985,6 +1002,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassStatus(ref common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServiceClassStatus represents status information about a ClusterServiceClass.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"removedFromBrokerCatalog": {
 						SchemaProps: spec.SchemaProps{
@@ -997,7 +1015,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassStatus(ref common
 				Required: []string{"removedFromBrokerCatalog"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1006,6 +1023,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlan(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServicePlan represents a tier of a ServiceClass.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1057,6 +1075,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanList(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServicePlanList is a list of ClusterServicePlans.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1103,6 +1122,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServicePlanSpec represents details about a ClusterServicePlan.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"externalName": {
 						SchemaProps: spec.SchemaProps{
@@ -1202,6 +1222,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanStatus(ref common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClusterServicePlanStatus represents status information about a ClusterServicePlan.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"removedFromBrokerCatalog": {
 						SchemaProps: spec.SchemaProps{
@@ -1214,7 +1235,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanStatus(ref common.
 				Required: []string{"removedFromBrokerCatalog"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1223,6 +1243,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerSpec(ref common.R
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommonServiceBrokerSpec represents a description of a Broker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"url": {
 						SchemaProps: spec.SchemaProps{
@@ -1285,6 +1306,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerStatus(ref common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommonServiceBrokerStatus represents the current status of a Broker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
@@ -1331,6 +1353,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassSpec(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommonServiceClassSpec represents details about a ServiceClass",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"externalName": {
 						SchemaProps: spec.SchemaProps{
@@ -1428,6 +1451,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassStatus(ref common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommonServiceClassStatus represents common status information between cluster scoped and namespace scoped ServiceClasses.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"removedFromBrokerCatalog": {
 						SchemaProps: spec.SchemaProps{
@@ -1440,7 +1464,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassStatus(ref common.
 				Required: []string{"removedFromBrokerCatalog"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1449,6 +1472,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanSpec(ref common.Ref
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommonServicePlanSpec represents details that are shared by both a ClusterServicePlan and a namespaced ServicePlan",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"externalName": {
 						SchemaProps: spec.SchemaProps{
@@ -1535,6 +1559,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanStatus(ref common.R
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommonServicePlanStatus represents status information about a ClusterServicePlan or a ServicePlan.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"removedFromBrokerCatalog": {
 						SchemaProps: spec.SchemaProps{
@@ -1547,7 +1572,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanStatus(ref common.R
 				Required: []string{"removedFromBrokerCatalog"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1556,6 +1580,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_LocalObjectReference(ref common.Refe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1567,7 +1592,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_LocalObjectReference(ref common.Refe
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1576,6 +1600,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ObjectReference(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ObjectReference contains enough information to let you locate the referenced object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"namespace": {
 						SchemaProps: spec.SchemaProps{
@@ -1594,7 +1619,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ObjectReference(ref common.Reference
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1603,6 +1627,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ParametersFromSource(ref common.Refe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ParametersFromSource represents the source of a set of Parameters",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretKeyRef": {
 						SchemaProps: spec.SchemaProps{
@@ -1623,6 +1648,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_PlanReference(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PlanReference defines the user specification for the desired (Cluster)ServicePlan and (Cluster)ServiceClass. Because there are multiple ways to specify the desired Class/Plan, this structure specifies the allowed ways to specify the intent. Note: a user may specify either cluster scoped OR namespace scoped identifiers, but NOT both, as they are mutually exclusive.\n\nCurrently supported ways:\n - ClusterServiceClassExternalName and ClusterServicePlanExternalName\n - ClusterServiceClassExternalID and ClusterServicePlanExternalID\n - ClusterServiceClassName and ClusterServicePlanName\n - ServiceClassExternalName and ServicePlanExternalName\n - ServiceClassExternalID and ServicePlanExternalID\n - ServiceClassName and ServicePlanName\n\nFor any of these ways, if a ClusterServiceClass only has one plan then the corresponding service plan field is optional.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"clusterServiceClassExternalName": {
 						SchemaProps: spec.SchemaProps{
@@ -1711,7 +1737,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_PlanReference(ref common.ReferenceCa
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1720,6 +1745,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_RemoveKeyTransform(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RemoveKeyTransform specifies that one of the credentials keys returned from the broker should not be included in the credentials Secret.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -1732,7 +1758,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_RemoveKeyTransform(ref common.Refere
 				Required: []string{"key"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1741,6 +1766,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_RenameKeyTransform(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RenameKeyTransform specifies that one of the credentials keys returned from the broker should be renamed and stored under a different key in the Secret. For example, given the following credentials entry:\n    \"USERNAME\": \"johndoe\"\nand the following RenameKeyTransform:\n    {\"from\": \"USERNAME\", \"to\": \"DB_USER\"}\nthe following entry will appear in the Secret:\n    \"DB_USER\": \"johndoe\"",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"from": {
 						SchemaProps: spec.SchemaProps{
@@ -1760,7 +1786,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_RenameKeyTransform(ref common.Refere
 				Required: []string{"from", "to"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1769,6 +1794,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_SecretKeyReference(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecretKeyReference references a key of a Secret.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1788,7 +1814,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_SecretKeyReference(ref common.Refere
 				Required: []string{"name", "key"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1797,6 +1822,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_SecretTransform(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecretTransform is a single transformation that is applied to the credentials returned from the broker before they are inserted into the Secret associated with the ServiceBinding. Because different brokers providing the same type of service may each return a different credentials structure, users can specify the transformations that should be applied to the Secret to adapt its entries to whatever the service consumer expects. For example, the credentials returned by the broker may include the key \"USERNAME\", but the consumer requires the username to be exposed under the key \"DB_USER\" instead. To have the Service Catalog transform the Secret, the following SecretTransform must be specified in ServiceBinding.spec.secretTransform: - {\"renameKey\": {\"from\": \"USERNAME\", \"to\": \"DB_USER\"}} Only one of the SecretTransform's members may be specified.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"renameKey": {
 						SchemaProps: spec.SchemaProps{
@@ -1835,6 +1861,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBinding(ref common.ReferenceC
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBinding represents a \"used by\" relationship between an application and an ServiceInstance.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1886,6 +1913,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingCondition(ref common.R
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingCondition condition information for a ServiceBinding.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -1935,6 +1963,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingList(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingList is a list of ServiceBindings.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1981,6 +2010,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingPropertiesState(ref co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingPropertiesState is the state of a ServiceBinding that the ClusterServiceBroker knows about.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"parameters": {
 						SchemaProps: spec.SchemaProps{
@@ -2014,6 +2044,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingSpec represents the desired state of a ServiceBinding.\n\nThe spec field cannot be changed after a ServiceBinding is created.  Changes submitted to the spec field will be ignored.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"instanceRef": {
 						SchemaProps: spec.SchemaProps{
@@ -2087,6 +2118,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref common.Refe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingStatus represents the current status of a ServiceBinding.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
@@ -2174,6 +2206,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBroker(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBroker represents an entity that provides ServiceClasses for use in the service catalog.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2225,6 +2258,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerAuthInfo(ref common.Ref
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBrokerAuthInfo is a union type that contains information on one of the authentication methods the service catalog and brokers may support, according to the OpenServiceBroker API specification (https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md).",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"basic": {
 						SchemaProps: spec.SchemaProps{
@@ -2251,6 +2285,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerCondition(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBrokerCondition contains condition information for a Broker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -2300,6 +2335,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerList(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBrokerList is a list of Brokers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2346,6 +2382,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerSpec(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBrokerSpec represents a description of a Broker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"url": {
 						SchemaProps: spec.SchemaProps{
@@ -2414,6 +2451,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerStatus(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBrokerStatus the current status of a ServiceBroker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
@@ -2460,6 +2498,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClass(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceClass represents a namespaced offering in the service catalog.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2506,6 +2545,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassList(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceClassList is a list of ServiceClasses.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2552,6 +2592,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassSpec(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceClassSpec represents the details about a ServiceClass",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"externalName": {
 						SchemaProps: spec.SchemaProps{
@@ -2656,6 +2697,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassStatus(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceClassStatus represents status information about a ServiceClass.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"removedFromBrokerCatalog": {
 						SchemaProps: spec.SchemaProps{
@@ -2668,7 +2710,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassStatus(ref common.Refere
 				Required: []string{"removedFromBrokerCatalog"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2677,6 +2718,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstance(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceInstance represents a provisioned instance of a ServiceClass. Currently, the spec field cannot be changed once a ServiceInstance is created.  Spec changes submitted by users will be ignored.\n\nIn the future, this will be allowed and will represent the intention that the ServiceInstance should have the plan and/or parameters updated at the ClusterServiceBroker.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2728,6 +2770,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceCondition(ref common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceInstanceCondition contains condition information about an Instance.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -2777,6 +2820,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceList(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceInstanceList is a list of instances.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2823,6 +2867,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstancePropertiesState(ref c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceInstancePropertiesState is the state of a ServiceInstance that the ClusterServiceBroker knows about.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"clusterServicePlanExternalName": {
 						SchemaProps: spec.SchemaProps{
@@ -2885,6 +2930,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceInstanceSpec represents the desired state of an Instance.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"clusterServiceClassExternalName": {
 						SchemaProps: spec.SchemaProps{
@@ -3046,6 +3092,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceInstanceStatus represents the current status of an Instance.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
@@ -3161,6 +3208,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlan(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServicePlan represents a tier of a ServiceClass.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3212,6 +3260,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanList(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServicePlanList is a list of rServicePlans.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3258,6 +3307,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServicePlanSpec represents details about a ServicePlan.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"externalName": {
 						SchemaProps: spec.SchemaProps{
@@ -3357,6 +3407,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanStatus(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServicePlanStatus represents status information about a ServicePlan.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"removedFromBrokerCatalog": {
 						SchemaProps: spec.SchemaProps{
@@ -3369,7 +3420,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanStatus(ref common.Referen
 				Required: []string{"removedFromBrokerCatalog"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3378,6 +3428,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_UserInfo(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UserInfo holds information about the user that last changed a resource's spec.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"username": {
 						SchemaProps: spec.SchemaProps{
@@ -3408,6 +3459,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_UserInfo(ref common.ReferenceCallbac
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type: []string{"array"},
@@ -3428,7 +3480,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_UserInfo(ref common.ReferenceCallbac
 				Required: []string{"username", "uid"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3437,6 +3488,7 @@ func schema_pkg_apis_settings_v1alpha1_PodPreset(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodPreset is a policy resource that defines additional runtime requirements for a Pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3475,6 +3527,7 @@ func schema_pkg_apis_settings_v1alpha1_PodPresetList(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodPresetList is a list of PodPreset objects.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3521,6 +3574,7 @@ func schema_pkg_apis_settings_v1alpha1_PodPresetSpec(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodPresetSpec is a description of a pod preset.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"selector": {
 						SchemaProps: spec.SchemaProps{
@@ -3594,6 +3648,7 @@ func schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Persistent Disk resource in AWS.\n\nAn AWS EBS disk must exist before mounting to a container. The disk must also be in the same AWS zone as the kubelet. An AWS EBS disk can only be mounted as read/write once. AWS EBS volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumeID": {
 						SchemaProps: spec.SchemaProps{
@@ -3627,7 +3682,6 @@ func schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref common.Refere
 				Required: []string{"volumeID"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3636,6 +3690,7 @@ func schema_k8sio_api_core_v1_Affinity(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Affinity is a group of affinity scheduling rules.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"nodeAffinity": {
 						SchemaProps: spec.SchemaProps{
@@ -3668,6 +3723,7 @@ func schema_k8sio_api_core_v1_AttachedVolume(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AttachedVolume describes a volume attached to a node",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3687,7 +3743,6 @@ func schema_k8sio_api_core_v1_AttachedVolume(ref common.ReferenceCallback) commo
 				Required: []string{"name", "devicePath"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3696,6 +3751,7 @@ func schema_k8sio_api_core_v1_AvoidPods(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AvoidPods describes pods that should avoid this node. This is the value for a Node annotation with key scheduler.alpha.kubernetes.io/preferAvoidPods and will eventually become a field of NodeStatus.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"preferAvoidPods": {
 						SchemaProps: spec.SchemaProps{
@@ -3723,6 +3779,7 @@ func schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"diskName": {
 						SchemaProps: spec.SchemaProps{
@@ -3770,7 +3827,6 @@ func schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref common.ReferenceCallback
 				Required: []string{"diskName", "diskURI"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3779,6 +3835,7 @@ func schema_k8sio_api_core_v1_AzureFilePersistentVolumeSource(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretName": {
 						SchemaProps: spec.SchemaProps{
@@ -3812,7 +3869,6 @@ func schema_k8sio_api_core_v1_AzureFilePersistentVolumeSource(ref common.Referen
 				Required: []string{"secretName", "shareName"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3821,6 +3877,7 @@ func schema_k8sio_api_core_v1_AzureFileVolumeSource(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretName": {
 						SchemaProps: spec.SchemaProps{
@@ -3847,7 +3904,6 @@ func schema_k8sio_api_core_v1_AzureFileVolumeSource(ref common.ReferenceCallback
 				Required: []string{"secretName", "shareName"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3856,6 +3912,7 @@ func schema_k8sio_api_core_v1_Binding(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Binding ties one object to another; for example, a pod is bound to a node by a scheduler. Deprecated in 1.7, please use the bindings subresource of pods instead.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3897,6 +3954,7 @@ func schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents storage that is managed by an external CSI volume driver (Beta feature)",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"driver": {
 						SchemaProps: spec.SchemaProps{
@@ -3931,6 +3989,7 @@ func schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref common.ReferenceCall
 							Description: "Attributes of the volume to publish.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -3967,11 +4026,70 @@ func schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref common.ReferenceCall
 	}
 }
 
+func schema_k8sio_api_core_v1_CSIVolumeSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Represents a source location of a volume to mount, managed by an external CSI driver",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"driver": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Driver is the name of the CSI driver that handles this volume. Consult with your admin for the correct name as registered in the cluster.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"readOnly": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specifies a read-only configuration for the volume. Defaults to false (read/write).",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"fsType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Filesystem type to mount. Ex. \"ext4\", \"xfs\", \"ntfs\". If not provided, the empty value is passed to the associated CSI driver which will determine the default filesystem to apply.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"volumeAttributes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeAttributes stores driver-specific properties that are passed to the CSI driver. Consult your driver's documentation for supported values.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"nodePublishSecretRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NodePublishSecretRef is a reference to the secret object containing sensitive information to pass to the CSI driver to complete the CSI NodePublishVolume and NodeUnpublishVolume calls. This field is optional, and  may be empty if no secret is required. If the secret object contains more than one secret, all secret references are passed.",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+				},
+				Required: []string{"driver"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.LocalObjectReference"},
+	}
+}
+
 func schema_k8sio_api_core_v1_Capabilities(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Adds and removes POSIX capabilities from running containers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"add": {
 						SchemaProps: spec.SchemaProps{
@@ -4004,7 +4122,6 @@ func schema_k8sio_api_core_v1_Capabilities(ref common.ReferenceCallback) common.
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4013,6 +4130,7 @@ func schema_k8sio_api_core_v1_CephFSPersistentVolumeSource(ref common.ReferenceC
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Ceph Filesystem mount that lasts the lifetime of a pod Cephfs volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"monitors": {
 						SchemaProps: spec.SchemaProps{
@@ -4076,6 +4194,7 @@ func schema_k8sio_api_core_v1_CephFSVolumeSource(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Ceph Filesystem mount that lasts the lifetime of a pod Cephfs volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"monitors": {
 						SchemaProps: spec.SchemaProps{
@@ -4139,6 +4258,7 @@ func schema_k8sio_api_core_v1_CinderPersistentVolumeSource(ref common.ReferenceC
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a cinder volume resource in Openstack. A Cinder volume must exist before mounting to a container. The volume must also be in the same region as the kubelet. Cinder volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumeID": {
 						SchemaProps: spec.SchemaProps{
@@ -4181,6 +4301,7 @@ func schema_k8sio_api_core_v1_CinderVolumeSource(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a cinder volume resource in Openstack. A Cinder volume must exist before mounting to a container. The volume must also be in the same region as the kubelet. Cinder volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumeID": {
 						SchemaProps: spec.SchemaProps{
@@ -4223,6 +4344,7 @@ func schema_k8sio_api_core_v1_ClientIPConfig(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ClientIPConfig represents the configurations of Client IP based session affinity.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"timeoutSeconds": {
 						SchemaProps: spec.SchemaProps{
@@ -4234,7 +4356,6 @@ func schema_k8sio_api_core_v1_ClientIPConfig(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4243,6 +4364,7 @@ func schema_k8sio_api_core_v1_ComponentCondition(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Information about the condition of a component.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -4276,7 +4398,6 @@ func schema_k8sio_api_core_v1_ComponentCondition(ref common.ReferenceCallback) c
 				Required: []string{"type", "status"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4285,6 +4406,7 @@ func schema_k8sio_api_core_v1_ComponentStatus(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ComponentStatus (and ComponentStatusList) holds the cluster validation info.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4338,6 +4460,7 @@ func schema_k8sio_api_core_v1_ComponentStatusList(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Status of all the conditions for the component as a list of ComponentStatus objects.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4386,6 +4509,7 @@ func schema_k8sio_api_core_v1_ConfigMap(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ConfigMap holds configuration data for pods to consume.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4412,6 +4536,7 @@ func schema_k8sio_api_core_v1_ConfigMap(ref common.ReferenceCallback) common.Ope
 							Description: "Data contains the configuration data. Each key must consist of alphanumeric characters, '-', '_' or '.'. Values with non-UTF-8 byte sequences must use the BinaryData field. The keys stored in Data must not overlap with the keys in the BinaryData field, this is enforced during validation process.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -4426,6 +4551,7 @@ func schema_k8sio_api_core_v1_ConfigMap(ref common.ReferenceCallback) common.Ope
 							Description: "BinaryData contains the binary data. Each key must consist of alphanumeric characters, '-', '_' or '.'. BinaryData can contain byte sequences that are not in the UTF-8 range. The keys stored in BinaryData must not overlap with the ones in the Data field, this is enforced during validation process. Using this field will require 1.10+ apiserver and kubelet.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -4448,6 +4574,7 @@ func schema_k8sio_api_core_v1_ConfigMapEnvSource(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ConfigMapEnvSource selects a ConfigMap to populate the environment variables with.\n\nThe contents of the target ConfigMap's Data field will represent the key-value pairs as environment variables.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -4466,7 +4593,6 @@ func schema_k8sio_api_core_v1_ConfigMapEnvSource(ref common.ReferenceCallback) c
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4475,6 +4601,7 @@ func schema_k8sio_api_core_v1_ConfigMapKeySelector(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Selects a key from a ConfigMap.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -4501,7 +4628,6 @@ func schema_k8sio_api_core_v1_ConfigMapKeySelector(ref common.ReferenceCallback)
 				Required: []string{"key"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4510,6 +4636,7 @@ func schema_k8sio_api_core_v1_ConfigMapList(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ConfigMapList is a resource containing a list of ConfigMap objects.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4558,6 +4685,7 @@ func schema_k8sio_api_core_v1_ConfigMapNodeConfigSource(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ConfigMapNodeConfigSource contains the information to reference a ConfigMap as a config source for the Node.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"namespace": {
 						SchemaProps: spec.SchemaProps{
@@ -4598,7 +4726,6 @@ func schema_k8sio_api_core_v1_ConfigMapNodeConfigSource(ref common.ReferenceCall
 				Required: []string{"namespace", "name", "kubeletConfigKey"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4607,6 +4734,7 @@ func schema_k8sio_api_core_v1_ConfigMapProjection(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Adapts a ConfigMap into a projected volume.\n\nThe contents of the target ConfigMap's Data field will be presented in a projected volume as files using the keys in the Data field as the file names, unless the items element is populated with specific mappings of keys to paths. Note that this is identical to a configmap volume source without the default mode.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -4648,6 +4776,7 @@ func schema_k8sio_api_core_v1_ConfigMapVolumeSource(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Adapts a ConfigMap into a volume.\n\nThe contents of the target ConfigMap's Data field will be presented in a volume as files using the keys in the Data field as the file names, unless the items element is populated with specific mappings of keys to paths. ConfigMap volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -4696,6 +4825,7 @@ func schema_k8sio_api_core_v1_Container(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A single application container that you want to run within a pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -4749,7 +4879,7 @@ func schema_k8sio_api_core_v1_Container(ref common.ReferenceCallback) common.Ope
 					"ports": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
-								"x-kubernetes-list-map-keys": []string{
+								"x-kubernetes-list-map-keys": []interface{}{
 									"containerPort",
 									"protocol",
 								},
@@ -4926,6 +5056,7 @@ func schema_k8sio_api_core_v1_ContainerImage(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Describe a container image",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"names": {
 						SchemaProps: spec.SchemaProps{
@@ -4952,7 +5083,6 @@ func schema_k8sio_api_core_v1_ContainerImage(ref common.ReferenceCallback) commo
 				Required: []string{"names"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4961,6 +5091,7 @@ func schema_k8sio_api_core_v1_ContainerPort(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ContainerPort represents a network port in a single container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -5001,7 +5132,6 @@ func schema_k8sio_api_core_v1_ContainerPort(ref common.ReferenceCallback) common
 				Required: []string{"containerPort"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -5010,6 +5140,7 @@ func schema_k8sio_api_core_v1_ContainerState(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ContainerState holds a possible state of container. Only one of its members may be specified. If none of them is specified, the default one is ContainerStateWaiting.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"waiting": {
 						SchemaProps: spec.SchemaProps{
@@ -5042,6 +5173,7 @@ func schema_k8sio_api_core_v1_ContainerStateRunning(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ContainerStateRunning is a running state of a container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"startedAt": {
 						SchemaProps: spec.SchemaProps{
@@ -5062,6 +5194,7 @@ func schema_k8sio_api_core_v1_ContainerStateTerminated(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ContainerStateTerminated is a terminated state of a container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"exitCode": {
 						SchemaProps: spec.SchemaProps{
@@ -5124,6 +5257,7 @@ func schema_k8sio_api_core_v1_ContainerStateWaiting(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ContainerStateWaiting is a waiting state of a container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"reason": {
 						SchemaProps: spec.SchemaProps{
@@ -5142,7 +5276,6 @@ func schema_k8sio_api_core_v1_ContainerStateWaiting(ref common.ReferenceCallback
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -5151,6 +5284,7 @@ func schema_k8sio_api_core_v1_ContainerStatus(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ContainerStatus contains details for the current status of this container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -5220,6 +5354,7 @@ func schema_k8sio_api_core_v1_DaemonEndpoint(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "DaemonEndpoint contains information about a single Daemon endpoint.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"Port": {
 						SchemaProps: spec.SchemaProps{
@@ -5232,7 +5367,6 @@ func schema_k8sio_api_core_v1_DaemonEndpoint(ref common.ReferenceCallback) commo
 				Required: []string{"Port"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -5241,6 +5375,7 @@ func schema_k8sio_api_core_v1_DownwardAPIProjection(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents downward API info for projecting into a projected volume. Note that this is identical to a downwardAPI volume source without the default mode.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"items": {
 						SchemaProps: spec.SchemaProps{
@@ -5268,6 +5403,7 @@ func schema_k8sio_api_core_v1_DownwardAPIVolumeFile(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "DownwardAPIVolumeFile represents information to create the file containing the pod field",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -5309,6 +5445,7 @@ func schema_k8sio_api_core_v1_DownwardAPIVolumeSource(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "DownwardAPIVolumeSource represents a volume containing downward API info. Downward API volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"items": {
 						SchemaProps: spec.SchemaProps{
@@ -5343,6 +5480,7 @@ func schema_k8sio_api_core_v1_EmptyDirVolumeSource(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents an empty directory for a pod. Empty directory volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"medium": {
 						SchemaProps: spec.SchemaProps{
@@ -5370,6 +5508,7 @@ func schema_k8sio_api_core_v1_EndpointAddress(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EndpointAddress is a tuple that describes single IP address.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ip": {
 						SchemaProps: spec.SchemaProps{
@@ -5412,6 +5551,7 @@ func schema_k8sio_api_core_v1_EndpointPort(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EndpointPort is a tuple that describes a single port.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -5438,7 +5578,6 @@ func schema_k8sio_api_core_v1_EndpointPort(ref common.ReferenceCallback) common.
 				Required: []string{"port"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -5447,6 +5586,7 @@ func schema_k8sio_api_core_v1_EndpointSubset(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EndpointSubset is a group of addresses with a common set of ports. The expanded set of endpoints is the Cartesian product of Addresses x Ports. For example, given:\n  {\n    Addresses: [{\"ip\": \"10.10.1.1\"}, {\"ip\": \"10.10.2.2\"}],\n    Ports:     [{\"name\": \"a\", \"port\": 8675}, {\"name\": \"b\", \"port\": 309}]\n  }\nThe resulting set of endpoints can be viewed as:\n    a: [ 10.10.1.1:8675, 10.10.2.2:8675 ],\n    b: [ 10.10.1.1:309, 10.10.2.2:309 ]",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"addresses": {
 						SchemaProps: spec.SchemaProps{
@@ -5500,6 +5640,7 @@ func schema_k8sio_api_core_v1_Endpoints(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Endpoints is a collection of endpoints that implement the actual service. Example:\n  Name: \"mysvc\",\n  Subsets: [\n    {\n      Addresses: [{\"ip\": \"10.10.1.1\"}, {\"ip\": \"10.10.2.2\"}],\n      Ports: [{\"name\": \"a\", \"port\": 8675}, {\"name\": \"b\", \"port\": 309}]\n    },\n    {\n      Addresses: [{\"ip\": \"10.10.3.3\"}],\n      Ports: [{\"name\": \"a\", \"port\": 93}, {\"name\": \"b\", \"port\": 76}]\n    },\n ]",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -5547,6 +5688,7 @@ func schema_k8sio_api_core_v1_EndpointsList(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EndpointsList is a list of endpoints.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -5595,6 +5737,7 @@ func schema_k8sio_api_core_v1_EnvFromSource(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvFromSource represents the source of a set of ConfigMaps",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"prefix": {
 						SchemaProps: spec.SchemaProps{
@@ -5628,6 +5771,7 @@ func schema_k8sio_api_core_v1_EnvVar(ref common.ReferenceCallback) common.OpenAP
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvVar represents an environment variable present in a Container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -5663,6 +5807,7 @@ func schema_k8sio_api_core_v1_EnvVarSource(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvVarSource represents a source for the value of an EnvVar.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"fieldRef": {
 						SchemaProps: spec.SchemaProps{
@@ -5701,6 +5846,7 @@ func schema_k8sio_api_core_v1_Event(ref common.ReferenceCallback) common.OpenAPI
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Event is a report of an event somewhere in the cluster.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -5827,6 +5973,7 @@ func schema_k8sio_api_core_v1_EventList(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EventList is a list of events.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -5875,6 +6022,7 @@ func schema_k8sio_api_core_v1_EventSeries(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EventSeries contain information on series of events, i.e. thing that was/is happening continuously for some time.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"count": {
 						SchemaProps: spec.SchemaProps{
@@ -5909,6 +6057,7 @@ func schema_k8sio_api_core_v1_EventSource(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EventSource contains information for an event.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"component": {
 						SchemaProps: spec.SchemaProps{
@@ -5927,7 +6076,6 @@ func schema_k8sio_api_core_v1_EventSource(ref common.ReferenceCallback) common.O
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -5936,6 +6084,7 @@ func schema_k8sio_api_core_v1_ExecAction(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExecAction describes a \"run in container\" action.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"command": {
 						SchemaProps: spec.SchemaProps{
@@ -5954,7 +6103,6 @@ func schema_k8sio_api_core_v1_ExecAction(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -5963,6 +6111,7 @@ func schema_k8sio_api_core_v1_FCVolumeSource(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Fibre Channel volume. Fibre Channel volumes can only be mounted as read/write once. Fibre Channel volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"targetWWNs": {
 						SchemaProps: spec.SchemaProps{
@@ -6016,7 +6165,6 @@ func schema_k8sio_api_core_v1_FCVolumeSource(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6025,6 +6173,7 @@ func schema_k8sio_api_core_v1_FlexPersistentVolumeSource(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "FlexPersistentVolumeSource represents a generic persistent volume resource that is provisioned/attached using an exec based plugin.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"driver": {
 						SchemaProps: spec.SchemaProps{
@@ -6058,6 +6207,7 @@ func schema_k8sio_api_core_v1_FlexPersistentVolumeSource(ref common.ReferenceCal
 							Description: "Optional: Extra command options if any.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -6081,6 +6231,7 @@ func schema_k8sio_api_core_v1_FlexVolumeSource(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"driver": {
 						SchemaProps: spec.SchemaProps{
@@ -6114,6 +6265,7 @@ func schema_k8sio_api_core_v1_FlexVolumeSource(ref common.ReferenceCallback) com
 							Description: "Optional: Extra command options if any.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -6137,6 +6289,7 @@ func schema_k8sio_api_core_v1_FlockerVolumeSource(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Flocker volume mounted by the Flocker agent. One and only one of datasetName and datasetUUID should be set. Flocker volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"datasetName": {
 						SchemaProps: spec.SchemaProps{
@@ -6155,7 +6308,6 @@ func schema_k8sio_api_core_v1_FlockerVolumeSource(ref common.ReferenceCallback) 
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6164,6 +6316,7 @@ func schema_k8sio_api_core_v1_GCEPersistentDiskVolumeSource(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Persistent Disk resource in Google Compute Engine.\n\nA GCE PD must exist before mounting to a container. The disk must also be in the same GCE project and zone as the kubelet. A GCE PD can only be mounted as read/write once or read-only many times. GCE PDs support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pdName": {
 						SchemaProps: spec.SchemaProps{
@@ -6197,7 +6350,6 @@ func schema_k8sio_api_core_v1_GCEPersistentDiskVolumeSource(ref common.Reference
 				Required: []string{"pdName"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6206,6 +6358,7 @@ func schema_k8sio_api_core_v1_GitRepoVolumeSource(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.\n\nDEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"repository": {
 						SchemaProps: spec.SchemaProps{
@@ -6232,7 +6385,6 @@ func schema_k8sio_api_core_v1_GitRepoVolumeSource(ref common.ReferenceCallback) 
 				Required: []string{"repository"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6241,6 +6393,7 @@ func schema_k8sio_api_core_v1_GlusterfsPersistentVolumeSource(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Glusterfs mount that lasts the lifetime of a pod. Glusterfs volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"endpoints": {
 						SchemaProps: spec.SchemaProps{
@@ -6274,7 +6427,6 @@ func schema_k8sio_api_core_v1_GlusterfsPersistentVolumeSource(ref common.Referen
 				Required: []string{"endpoints", "path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6283,6 +6435,7 @@ func schema_k8sio_api_core_v1_GlusterfsVolumeSource(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Glusterfs mount that lasts the lifetime of a pod. Glusterfs volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"endpoints": {
 						SchemaProps: spec.SchemaProps{
@@ -6309,7 +6462,6 @@ func schema_k8sio_api_core_v1_GlusterfsVolumeSource(ref common.ReferenceCallback
 				Required: []string{"endpoints", "path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6318,6 +6470,7 @@ func schema_k8sio_api_core_v1_HTTPGetAction(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "HTTPGetAction describes an action based on HTTP Get requests.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -6373,6 +6526,7 @@ func schema_k8sio_api_core_v1_HTTPHeader(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "HTTPHeader describes a custom header to be used in HTTP probes",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -6392,7 +6546,6 @@ func schema_k8sio_api_core_v1_HTTPHeader(ref common.ReferenceCallback) common.Op
 				Required: []string{"name", "value"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6401,6 +6554,7 @@ func schema_k8sio_api_core_v1_Handler(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Handler defines a specific action that should be taken",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"exec": {
 						SchemaProps: spec.SchemaProps{
@@ -6433,6 +6587,7 @@ func schema_k8sio_api_core_v1_HostAlias(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the pod's hosts file.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ip": {
 						SchemaProps: spec.SchemaProps{
@@ -6458,7 +6613,6 @@ func schema_k8sio_api_core_v1_HostAlias(ref common.ReferenceCallback) common.Ope
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6467,6 +6621,7 @@ func schema_k8sio_api_core_v1_HostPathVolumeSource(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -6486,7 +6641,6 @@ func schema_k8sio_api_core_v1_HostPathVolumeSource(ref common.ReferenceCallback)
 				Required: []string{"path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6495,6 +6649,7 @@ func schema_k8sio_api_core_v1_ISCSIPersistentVolumeSource(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ISCSIPersistentVolumeSource represents an ISCSI disk. ISCSI volumes can only be mounted as read/write once. ISCSI volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"targetPortal": {
 						SchemaProps: spec.SchemaProps{
@@ -6593,6 +6748,7 @@ func schema_k8sio_api_core_v1_ISCSIVolumeSource(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents an ISCSI disk. ISCSI volumes can only be mounted as read/write once. ISCSI volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"targetPortal": {
 						SchemaProps: spec.SchemaProps{
@@ -6691,6 +6847,7 @@ func schema_k8sio_api_core_v1_KeyToPath(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Maps a string key to a path within a volume.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -6717,7 +6874,6 @@ func schema_k8sio_api_core_v1_KeyToPath(ref common.ReferenceCallback) common.Ope
 				Required: []string{"key", "path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -6726,6 +6882,7 @@ func schema_k8sio_api_core_v1_Lifecycle(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Lifecycle describes actions that the management system should take in response to container lifecycle events. For the PostStart and PreStop lifecycle handlers, management of the container blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"postStart": {
 						SchemaProps: spec.SchemaProps{
@@ -6735,7 +6892,7 @@ func schema_k8sio_api_core_v1_Lifecycle(ref common.ReferenceCallback) common.Ope
 					},
 					"preStop": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PreStop is called immediately before a container is terminated. The container is terminated after the handler completes. The reason for termination is passed to the handler. Regardless of the outcome of the handler, the container is eventually terminated. Other management of the container blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks",
+							Description: "PreStop is called immediately before a container is terminated due to an API request or management event such as liveness probe failure, preemption, resource contention, etc. The handler is not called if the container crashes or exits. The reason for termination is passed to the handler. The Pod's termination grace period countdown begins before the PreStop hooked is executed. Regardless of the outcome of the handler, the container will eventually terminate within the Pod's termination grace period. Other management of the container blocks until the hook completes or until the termination grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks",
 							Ref:         ref("k8s.io/api/core/v1.Handler"),
 						},
 					},
@@ -6752,6 +6909,7 @@ func schema_k8sio_api_core_v1_LimitRange(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LimitRange sets resource usage limits for each kind of resource in a Namespace.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -6792,6 +6950,7 @@ func schema_k8sio_api_core_v1_LimitRangeItem(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LimitRangeItem defines a min/max usage limit for any resource that matches on kind.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -6805,6 +6964,7 @@ func schema_k8sio_api_core_v1_LimitRangeItem(ref common.ReferenceCallback) commo
 							Description: "Max usage constraints on this kind by resource name.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -6818,6 +6978,7 @@ func schema_k8sio_api_core_v1_LimitRangeItem(ref common.ReferenceCallback) commo
 							Description: "Min usage constraints on this kind by resource name.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -6831,6 +6992,7 @@ func schema_k8sio_api_core_v1_LimitRangeItem(ref common.ReferenceCallback) commo
 							Description: "Default resource requirement limit value by resource name if resource limit is omitted.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -6844,6 +7006,7 @@ func schema_k8sio_api_core_v1_LimitRangeItem(ref common.ReferenceCallback) commo
 							Description: "DefaultRequest is the default resource requirement request value by resource name if resource request is omitted.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -6857,6 +7020,7 @@ func schema_k8sio_api_core_v1_LimitRangeItem(ref common.ReferenceCallback) commo
 							Description: "MaxLimitRequestRatio if specified, the named resource must have a request and limit that are both non-zero where limit divided by request is less than or equal to the enumerated value; this represents the max burst for the named resource.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -6878,6 +7042,7 @@ func schema_k8sio_api_core_v1_LimitRangeList(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LimitRangeList is a list of LimitRange items.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -6926,6 +7091,7 @@ func schema_k8sio_api_core_v1_LimitRangeSpec(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LimitRangeSpec defines a min/max usage limit for resources that match on kind.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"limits": {
 						SchemaProps: spec.SchemaProps{
@@ -6954,6 +7120,7 @@ func schema_k8sio_api_core_v1_List(ref common.ReferenceCallback) common.OpenAPID
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "List holds a list of objects, which may not be known by the server.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -7002,6 +7169,7 @@ func schema_k8sio_api_core_v1_LoadBalancerIngress(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ip": {
 						SchemaProps: spec.SchemaProps{
@@ -7020,7 +7188,6 @@ func schema_k8sio_api_core_v1_LoadBalancerIngress(ref common.ReferenceCallback) 
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7029,6 +7196,7 @@ func schema_k8sio_api_core_v1_LoadBalancerStatus(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LoadBalancerStatus represents the status of a load-balancer.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ingress": {
 						SchemaProps: spec.SchemaProps{
@@ -7056,6 +7224,7 @@ func schema_k8sio_api_core_v1_LocalObjectReference(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -7067,7 +7236,6 @@ func schema_k8sio_api_core_v1_LocalObjectReference(ref common.ReferenceCallback)
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7076,6 +7244,7 @@ func schema_k8sio_api_core_v1_LocalVolumeSource(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Local represents directly-attached storage with node affinity (Beta feature)",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -7095,7 +7264,6 @@ func schema_k8sio_api_core_v1_LocalVolumeSource(ref common.ReferenceCallback) co
 				Required: []string{"path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7104,6 +7272,7 @@ func schema_k8sio_api_core_v1_NFSVolumeSource(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"server": {
 						SchemaProps: spec.SchemaProps{
@@ -7130,7 +7299,6 @@ func schema_k8sio_api_core_v1_NFSVolumeSource(ref common.ReferenceCallback) comm
 				Required: []string{"server", "path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7139,6 +7307,7 @@ func schema_k8sio_api_core_v1_Namespace(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Namespace provides a scope for Names. Use of multiple namespaces is optional.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -7185,6 +7354,7 @@ func schema_k8sio_api_core_v1_NamespaceList(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NamespaceList is a list of Namespaces.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -7233,6 +7403,7 @@ func schema_k8sio_api_core_v1_NamespaceSpec(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NamespaceSpec describes the attributes on a Namespace.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"finalizers": {
 						SchemaProps: spec.SchemaProps{
@@ -7251,7 +7422,6 @@ func schema_k8sio_api_core_v1_NamespaceSpec(ref common.ReferenceCallback) common
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7260,6 +7430,7 @@ func schema_k8sio_api_core_v1_NamespaceStatus(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NamespaceStatus is information about the current status of a Namespace.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
@@ -7271,7 +7442,6 @@ func schema_k8sio_api_core_v1_NamespaceStatus(ref common.ReferenceCallback) comm
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7280,6 +7450,7 @@ func schema_k8sio_api_core_v1_Node(ref common.ReferenceCallback) common.OpenAPID
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Node is a worker node in Kubernetes. Each node will have a unique identifier in the cache (i.e. in etcd).",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -7326,6 +7497,7 @@ func schema_k8sio_api_core_v1_NodeAddress(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeAddress contains information for the node's address.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -7345,7 +7517,6 @@ func schema_k8sio_api_core_v1_NodeAddress(ref common.ReferenceCallback) common.O
 				Required: []string{"type", "address"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7354,6 +7525,7 @@ func schema_k8sio_api_core_v1_NodeAffinity(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Node affinity is a group of node affinity scheduling rules.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"requiredDuringSchedulingIgnoredDuringExecution": {
 						SchemaProps: spec.SchemaProps{
@@ -7387,6 +7559,7 @@ func schema_k8sio_api_core_v1_NodeCondition(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeCondition contains condition information for a node.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -7442,6 +7615,7 @@ func schema_k8sio_api_core_v1_NodeConfigSource(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeConfigSource specifies a source of node configuration. Exactly one subfield (excluding metadata) must be non-nil.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"configMap": {
 						SchemaProps: spec.SchemaProps{
@@ -7462,6 +7636,7 @@ func schema_k8sio_api_core_v1_NodeConfigStatus(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeConfigStatus describes the status of the config assigned by Node.Spec.ConfigSource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"assigned": {
 						SchemaProps: spec.SchemaProps{
@@ -7501,6 +7676,7 @@ func schema_k8sio_api_core_v1_NodeDaemonEndpoints(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeDaemonEndpoints lists ports opened by daemons running on the Node.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kubeletEndpoint": {
 						SchemaProps: spec.SchemaProps{
@@ -7521,6 +7697,7 @@ func schema_k8sio_api_core_v1_NodeList(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeList is the whole list of all Nodes which have been registered with master.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -7569,6 +7746,7 @@ func schema_k8sio_api_core_v1_NodeProxyOptions(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeProxyOptions is the query options to a Node's proxy call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -7594,7 +7772,6 @@ func schema_k8sio_api_core_v1_NodeProxyOptions(ref common.ReferenceCallback) com
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7603,12 +7780,14 @@ func schema_k8sio_api_core_v1_NodeResources(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeResources is an object for conveying resource information about a node. see http://releases.k8s.io/HEAD/docs/design/resources.md for more details.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"Capacity": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Capacity represents the available resources of a node",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -7631,6 +7810,7 @@ func schema_k8sio_api_core_v1_NodeSelector(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A node selector represents the union of the results of one or more label queries over a set of nodes; that is, it represents the OR of the selectors represented by the node selector terms.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"nodeSelectorTerms": {
 						SchemaProps: spec.SchemaProps{
@@ -7659,6 +7839,7 @@ func schema_k8sio_api_core_v1_NodeSelectorRequirement(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -7692,7 +7873,6 @@ func schema_k8sio_api_core_v1_NodeSelectorRequirement(ref common.ReferenceCallba
 				Required: []string{"key", "operator"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -7701,6 +7881,7 @@ func schema_k8sio_api_core_v1_NodeSelectorTerm(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A null or empty node selector term matches no objects. The requirements of them are ANDed. The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"matchExpressions": {
 						SchemaProps: spec.SchemaProps{
@@ -7741,6 +7922,7 @@ func schema_k8sio_api_core_v1_NodeSpec(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeSpec describes the attributes that a node is created with.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"podCIDR": {
 						SchemaProps: spec.SchemaProps{
@@ -7802,12 +7984,14 @@ func schema_k8sio_api_core_v1_NodeStatus(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeStatus is information about the current status of a node.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"capacity": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Capacity represents the total resources of a node. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -7821,6 +8005,7 @@ func schema_k8sio_api_core_v1_NodeStatus(ref common.ReferenceCallback) common.Op
 							Description: "Allocatable represents the resources of a node that are available for scheduling. Defaults to Capacity.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -7945,6 +8130,7 @@ func schema_k8sio_api_core_v1_NodeSystemInfo(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NodeSystemInfo is a set of ids/uuids to uniquely identify the node.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"machineID": {
 						SchemaProps: spec.SchemaProps{
@@ -8020,7 +8206,6 @@ func schema_k8sio_api_core_v1_NodeSystemInfo(ref common.ReferenceCallback) commo
 				Required: []string{"machineID", "systemUUID", "bootID", "kernelVersion", "osImage", "containerRuntimeVersion", "kubeletVersion", "kubeProxyVersion", "operatingSystem", "architecture"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -8029,6 +8214,7 @@ func schema_k8sio_api_core_v1_ObjectFieldSelector(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ObjectFieldSelector selects an APIVersioned field of an object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -8048,7 +8234,6 @@ func schema_k8sio_api_core_v1_ObjectFieldSelector(ref common.ReferenceCallback) 
 				Required: []string{"fieldPath"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -8057,6 +8242,7 @@ func schema_k8sio_api_core_v1_ObjectReference(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ObjectReference contains enough information to let you inspect or modify the referred object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -8110,7 +8296,6 @@ func schema_k8sio_api_core_v1_ObjectReference(ref common.ReferenceCallback) comm
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -8119,6 +8304,7 @@ func schema_k8sio_api_core_v1_PersistentVolume(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolume (PV) is a storage resource provisioned by an administrator. It is analogous to a node. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -8165,6 +8351,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaim(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeClaim is a user's request for and claim to a persistent volume",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -8211,6 +8398,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimCondition(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeClaimCondition contails details about state of pvc",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -8264,6 +8452,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimList(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeClaimList is a list of PersistentVolumeClaim items.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -8312,6 +8501,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimSpec(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeClaimSpec describes the common attributes of storage devices and allows a Source for provider-specific attributes",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"accessModes": {
 						SchemaProps: spec.SchemaProps{
@@ -8379,6 +8569,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimStatus(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeClaimStatus is the current status of a persistent volume claim.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
@@ -8406,6 +8597,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimStatus(ref common.ReferenceCa
 							Description: "Represents the actual resources of the underlying volume.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -8446,6 +8638,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimVolumeSource(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeClaimVolumeSource references the user's PVC in the same namespace. This volume finds the bound PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource is, essentially, a wrapper around another type of volume that is owned by someone else (the system).",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"claimName": {
 						SchemaProps: spec.SchemaProps{
@@ -8465,7 +8658,6 @@ func schema_k8sio_api_core_v1_PersistentVolumeClaimVolumeSource(ref common.Refer
 				Required: []string{"claimName"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -8474,6 +8666,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeList(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeList is a list of PersistentVolume items.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -8522,6 +8715,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeSource(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeSource is similar to VolumeSource but meant for the administrator who creates PVs. Exactly one of its members must be set.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gcePersistentDisk": {
 						SchemaProps: spec.SchemaProps{
@@ -8651,7 +8845,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeSource(ref common.ReferenceCallbac
 					},
 					"csi": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CSI represents storage that handled by an external CSI driver (Beta feature).",
+							Description: "CSI represents storage that is handled by an external CSI driver (Beta feature).",
 							Ref:         ref("k8s.io/api/core/v1.CSIPersistentVolumeSource"),
 						},
 					},
@@ -8668,12 +8862,14 @@ func schema_k8sio_api_core_v1_PersistentVolumeSpec(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeSpec is the specification of a persistent volume.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"capacity": {
 						SchemaProps: spec.SchemaProps{
 							Description: "A description of the persistent volume's resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -8810,7 +9006,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeSpec(ref common.ReferenceCallback)
 					},
 					"csi": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CSI represents storage that handled by an external CSI driver (Beta feature).",
+							Description: "CSI represents storage that is handled by an external CSI driver (Beta feature).",
 							Ref:         ref("k8s.io/api/core/v1.CSIPersistentVolumeSource"),
 						},
 					},
@@ -8888,6 +9084,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeStatus(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PersistentVolumeStatus is the current status of a persistent volume.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
@@ -8913,7 +9110,6 @@ func schema_k8sio_api_core_v1_PersistentVolumeStatus(ref common.ReferenceCallbac
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -8922,6 +9118,7 @@ func schema_k8sio_api_core_v1_PhotonPersistentDiskVolumeSource(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Photon Controller persistent disk resource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pdID": {
 						SchemaProps: spec.SchemaProps{
@@ -8941,7 +9138,6 @@ func schema_k8sio_api_core_v1_PhotonPersistentDiskVolumeSource(ref common.Refere
 				Required: []string{"pdID"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -8950,6 +9146,7 @@ func schema_k8sio_api_core_v1_Pod(ref common.ReferenceCallback) common.OpenAPIDe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Pod is a collection of containers that can run on a host. This resource is created by clients and scheduled onto hosts.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -8996,6 +9193,7 @@ func schema_k8sio_api_core_v1_PodAffinity(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Pod affinity is a group of inter pod affinity scheduling rules.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"requiredDuringSchedulingIgnoredDuringExecution": {
 						SchemaProps: spec.SchemaProps{
@@ -9036,6 +9234,7 @@ func schema_k8sio_api_core_v1_PodAffinityTerm(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"labelSelector": {
 						SchemaProps: spec.SchemaProps{
@@ -9078,6 +9277,7 @@ func schema_k8sio_api_core_v1_PodAntiAffinity(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Pod anti affinity is a group of inter pod anti affinity scheduling rules.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"requiredDuringSchedulingIgnoredDuringExecution": {
 						SchemaProps: spec.SchemaProps{
@@ -9118,6 +9318,7 @@ func schema_k8sio_api_core_v1_PodAttachOptions(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodAttachOptions is the query options to a Pod's remote attach call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -9171,7 +9372,6 @@ func schema_k8sio_api_core_v1_PodAttachOptions(ref common.ReferenceCallback) com
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -9180,6 +9380,7 @@ func schema_k8sio_api_core_v1_PodCondition(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodCondition contains details for the current condition of this pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -9235,6 +9436,7 @@ func schema_k8sio_api_core_v1_PodDNSConfig(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"nameservers": {
 						SchemaProps: spec.SchemaProps{
@@ -9290,6 +9492,7 @@ func schema_k8sio_api_core_v1_PodDNSConfigOption(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodDNSConfigOption defines DNS resolver options of a pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -9307,7 +9510,6 @@ func schema_k8sio_api_core_v1_PodDNSConfigOption(ref common.ReferenceCallback) c
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -9316,6 +9518,7 @@ func schema_k8sio_api_core_v1_PodExecOptions(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodExecOptions is the query options to a Pod's remote exec call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -9384,7 +9587,6 @@ func schema_k8sio_api_core_v1_PodExecOptions(ref common.ReferenceCallback) commo
 				Required: []string{"command"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -9393,6 +9595,7 @@ func schema_k8sio_api_core_v1_PodList(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodList is a list of Pods.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -9441,6 +9644,7 @@ func schema_k8sio_api_core_v1_PodLogOptions(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodLogOptions is the query options for a Pod's logs REST call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -9524,6 +9728,7 @@ func schema_k8sio_api_core_v1_PodPortForwardOptions(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodPortForwardOptions is the query options to a Pod's port forward call when using WebSockets. The `port` query parameter must specify the port or ports (comma separated) to forward over. Port forwarding over SPDY does not use these options. It requires the port to be passed in the `port` header as part of request.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -9556,7 +9761,6 @@ func schema_k8sio_api_core_v1_PodPortForwardOptions(ref common.ReferenceCallback
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -9565,6 +9769,7 @@ func schema_k8sio_api_core_v1_PodProxyOptions(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodProxyOptions is the query options to a Pod's proxy call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -9590,7 +9795,6 @@ func schema_k8sio_api_core_v1_PodProxyOptions(ref common.ReferenceCallback) comm
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -9599,6 +9803,7 @@ func schema_k8sio_api_core_v1_PodReadinessGate(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodReadinessGate contains the reference to a pod condition",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditionType": {
 						SchemaProps: spec.SchemaProps{
@@ -9611,7 +9816,6 @@ func schema_k8sio_api_core_v1_PodReadinessGate(ref common.ReferenceCallback) com
 				Required: []string{"conditionType"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -9620,6 +9824,7 @@ func schema_k8sio_api_core_v1_PodSecurityContext(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodSecurityContext holds pod-level security attributes and common container settings. Some fields are also present in container.securityContext.  Field values of container.securityContext take precedence over field values of PodSecurityContext.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"seLinuxOptions": {
 						SchemaProps: spec.SchemaProps{
@@ -9695,6 +9900,7 @@ func schema_k8sio_api_core_v1_PodSignature(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Describes the class of pods that should avoid this node. Exactly one field should be set.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"podController": {
 						SchemaProps: spec.SchemaProps{
@@ -9715,6 +9921,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodSpec is a description of a pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumes": {
 						VendorExtensible: spec.VendorExtensible{
@@ -9806,6 +10013,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -9977,7 +10185,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"readinessGates": {
 						SchemaProps: spec.SchemaProps{
-							Description: "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md",
+							Description: "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More info: https://git.k8s.io/enhancements/keps/sig-network/0007-pod-ready%2B%2B.md",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -9990,14 +10198,14 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"runtimeClassName": {
 						SchemaProps: spec.SchemaProps{
-							Description: "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future.",
+							Description: "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/runtime-class.md This is an alpha feature and may change in the future.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"enableServiceLinks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links.",
+							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links. Optional: Defaults to true.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -10016,6 +10224,7 @@ func schema_k8sio_api_core_v1_PodStatus(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodStatus represents information about the status of a pod. Status may trail the actual state of a system, especially if the node that hosts the pod cannot contact the control plane.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
@@ -10130,6 +10339,7 @@ func schema_k8sio_api_core_v1_PodStatusResult(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodStatusResult is a wrapper for PodStatus returned by kubelet that can be encode/decoded",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -10170,6 +10380,7 @@ func schema_k8sio_api_core_v1_PodTemplate(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodTemplate describes a template for creating copies of a predefined pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -10210,6 +10421,7 @@ func schema_k8sio_api_core_v1_PodTemplateList(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodTemplateList is a list of PodTemplates.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -10258,6 +10470,7 @@ func schema_k8sio_api_core_v1_PodTemplateSpec(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodTemplateSpec describes the data a pod should have when created from a template",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
@@ -10284,6 +10497,7 @@ func schema_k8sio_api_core_v1_PortworxVolumeSource(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PortworxVolumeSource represents a Portworx volume resource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumeID": {
 						SchemaProps: spec.SchemaProps{
@@ -10310,7 +10524,6 @@ func schema_k8sio_api_core_v1_PortworxVolumeSource(ref common.ReferenceCallback)
 				Required: []string{"volumeID"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -10319,6 +10532,7 @@ func schema_k8sio_api_core_v1_PreferAvoidPodsEntry(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Describes a class of pods that should avoid this node.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"podSignature": {
 						SchemaProps: spec.SchemaProps{
@@ -10360,6 +10574,7 @@ func schema_k8sio_api_core_v1_PreferredSchedulingTerm(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "An empty preferred scheduling term matches all objects with implicit weight 0 (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"weight": {
 						SchemaProps: spec.SchemaProps{
@@ -10388,6 +10603,7 @@ func schema_k8sio_api_core_v1_Probe(ref common.ReferenceCallback) common.OpenAPI
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Probe describes a health check to be performed against a container to determine whether it is alive or ready to receive traffic.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"exec": {
 						SchemaProps: spec.SchemaProps{
@@ -10455,6 +10671,7 @@ func schema_k8sio_api_core_v1_ProjectedVolumeSource(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a projected volume source",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"sources": {
 						SchemaProps: spec.SchemaProps{
@@ -10490,6 +10707,7 @@ func schema_k8sio_api_core_v1_QuobyteVolumeSource(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Quobyte mount that lasts the lifetime of a pod. Quobyte volumes do not support ownership management or SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"registry": {
 						SchemaProps: spec.SchemaProps{
@@ -10526,11 +10744,17 @@ func schema_k8sio_api_core_v1_QuobyteVolumeSource(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"tenant": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tenant owning the given Quobyte volume in the Backend Used with dynamically provisioned Quobyte volumes, value is set by the plugin",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"registry", "volume"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -10539,6 +10763,7 @@ func schema_k8sio_api_core_v1_RBDPersistentVolumeSource(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Rados Block Device mount that lasts the lifetime of a pod. RBD volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"monitors": {
 						SchemaProps: spec.SchemaProps{
@@ -10616,6 +10841,7 @@ func schema_k8sio_api_core_v1_RBDVolumeSource(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a Rados Block Device mount that lasts the lifetime of a pod. RBD volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"monitors": {
 						SchemaProps: spec.SchemaProps{
@@ -10693,6 +10919,7 @@ func schema_k8sio_api_core_v1_RangeAllocation(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RangeAllocation is not a public type.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -10742,6 +10969,7 @@ func schema_k8sio_api_core_v1_ReplicationController(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReplicationController represents the configuration of a replication controller.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -10788,6 +11016,7 @@ func schema_k8sio_api_core_v1_ReplicationControllerCondition(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReplicationControllerCondition describes the state of a replication controller at a certain point.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -10837,6 +11066,7 @@ func schema_k8sio_api_core_v1_ReplicationControllerList(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReplicationControllerList is a collection of replication controllers.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -10885,6 +11115,7 @@ func schema_k8sio_api_core_v1_ReplicationControllerSpec(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReplicationControllerSpec is the specification of a replication controller.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
@@ -10905,6 +11136,7 @@ func schema_k8sio_api_core_v1_ReplicationControllerSpec(ref common.ReferenceCall
 							Description: "Selector is a label query over pods that should match the Replicas count. If Selector is empty, it is defaulted to the labels present on the Pod template. Label keys and values that must match in order to be controlled by this replication controller, if empty defaulted to labels on Pod template. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -10933,6 +11165,7 @@ func schema_k8sio_api_core_v1_ReplicationControllerStatus(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReplicationControllerStatus represents the current status of a replication controller.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
@@ -11002,6 +11235,7 @@ func schema_k8sio_api_core_v1_ResourceFieldSelector(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ResourceFieldSelector represents container resources (cpu, memory) and their output format",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"containerName": {
 						SchemaProps: spec.SchemaProps{
@@ -11037,6 +11271,7 @@ func schema_k8sio_api_core_v1_ResourceQuota(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ResourceQuota sets aggregate quota restrictions enforced per namespace",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -11083,6 +11318,7 @@ func schema_k8sio_api_core_v1_ResourceQuotaList(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ResourceQuotaList is a list of ResourceQuota items.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -11131,12 +11367,14 @@ func schema_k8sio_api_core_v1_ResourceQuotaSpec(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ResourceQuotaSpec defines the desired hard limits to enforce for Quota.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"hard": {
 						SchemaProps: spec.SchemaProps{
 							Description: "hard is the set of desired hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -11178,12 +11416,14 @@ func schema_k8sio_api_core_v1_ResourceQuotaStatus(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ResourceQuotaStatus defines the enforced hard limits and observed use.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"hard": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -11197,6 +11437,7 @@ func schema_k8sio_api_core_v1_ResourceQuotaStatus(ref common.ReferenceCallback) 
 							Description: "Used is the current observed total usage of the resource in the namespace.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -11218,12 +11459,14 @@ func schema_k8sio_api_core_v1_ResourceRequirements(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ResourceRequirements describes the compute resource requirements.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"limits": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -11237,6 +11480,7 @@ func schema_k8sio_api_core_v1_ResourceRequirements(ref common.ReferenceCallback)
 							Description: "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
@@ -11258,6 +11502,7 @@ func schema_k8sio_api_core_v1_SELinuxOptions(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SELinuxOptions are the labels to be applied to the container",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"user": {
 						SchemaProps: spec.SchemaProps{
@@ -11290,7 +11535,6 @@ func schema_k8sio_api_core_v1_SELinuxOptions(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -11299,6 +11543,7 @@ func schema_k8sio_api_core_v1_ScaleIOPersistentVolumeSource(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ScaleIOPersistentVolumeSource represents a persistent ScaleIO volume",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gateway": {
 						SchemaProps: spec.SchemaProps{
@@ -11383,6 +11628,7 @@ func schema_k8sio_api_core_v1_ScaleIOVolumeSource(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ScaleIOVolumeSource represents a persistent ScaleIO volume",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gateway": {
 						SchemaProps: spec.SchemaProps{
@@ -11467,6 +11713,7 @@ func schema_k8sio_api_core_v1_ScopeSelector(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A scope selector represents the AND of the selectors represented by the scoped-resource selector requirements.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"matchExpressions": {
 						SchemaProps: spec.SchemaProps{
@@ -11494,6 +11741,7 @@ func schema_k8sio_api_core_v1_ScopedResourceSelectorRequirement(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A scoped-resource selector requirement is a selector that contains values, a scope name, and an operator that relates the scope name and values.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"scopeName": {
 						SchemaProps: spec.SchemaProps{
@@ -11527,7 +11775,6 @@ func schema_k8sio_api_core_v1_ScopedResourceSelectorRequirement(ref common.Refer
 				Required: []string{"scopeName", "operator"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -11536,6 +11783,7 @@ func schema_k8sio_api_core_v1_Secret(ref common.ReferenceCallback) common.OpenAP
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Secret holds secret data of a certain type. The total bytes of the values in the Data field must be less than MaxSecretSize bytes.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -11562,6 +11810,7 @@ func schema_k8sio_api_core_v1_Secret(ref common.ReferenceCallback) common.OpenAP
 							Description: "Data contains the secret data. Each key must consist of alphanumeric characters, '-', '_' or '.'. The serialized form of the secret data is a base64 encoded string, representing the arbitrary (possibly non-string) data value here. Described in https://tools.ietf.org/html/rfc4648#section-4",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -11576,6 +11825,7 @@ func schema_k8sio_api_core_v1_Secret(ref common.ReferenceCallback) common.OpenAP
 							Description: "stringData allows specifying non-binary secret data in string form. It is provided as a write-only convenience method. All keys and values are merged into the data field on write, overwriting any existing values. It is never output when reading from the API.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -11605,6 +11855,7 @@ func schema_k8sio_api_core_v1_SecretEnvSource(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecretEnvSource selects a Secret to populate the environment variables with.\n\nThe contents of the target Secret's Data field will represent the key-value pairs as environment variables.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -11623,7 +11874,6 @@ func schema_k8sio_api_core_v1_SecretEnvSource(ref common.ReferenceCallback) comm
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -11632,6 +11882,7 @@ func schema_k8sio_api_core_v1_SecretKeySelector(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecretKeySelector selects a key of a Secret.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -11658,7 +11909,6 @@ func schema_k8sio_api_core_v1_SecretKeySelector(ref common.ReferenceCallback) co
 				Required: []string{"key"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -11667,6 +11917,7 @@ func schema_k8sio_api_core_v1_SecretList(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecretList is a list of Secret.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -11715,6 +11966,7 @@ func schema_k8sio_api_core_v1_SecretProjection(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Adapts a secret into a projected volume.\n\nThe contents of the target Secret's Data field will be presented in a projected volume as files using the keys in the Data field as the file names. Note that this is identical to a secret volume source without the default mode.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -11756,6 +12008,7 @@ func schema_k8sio_api_core_v1_SecretReference(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecretReference represents a Secret Reference. It has enough information to retrieve secret in any namespace",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -11774,7 +12027,6 @@ func schema_k8sio_api_core_v1_SecretReference(ref common.ReferenceCallback) comm
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -11783,6 +12035,7 @@ func schema_k8sio_api_core_v1_SecretVolumeSource(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Adapts a Secret into a volume.\n\nThe contents of the target Secret's Data field will be presented in a volume as files using the keys in the Data field as the file names. Secret volumes support ownership management and SELinux relabeling.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secretName": {
 						SchemaProps: spec.SchemaProps{
@@ -11831,6 +12084,7 @@ func schema_k8sio_api_core_v1_SecurityContext(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecurityContext holds security configuration that will be applied to a container. Some fields are present in both SecurityContext and PodSecurityContext.  When both are set, the values in SecurityContext take precedence.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"capabilities": {
 						SchemaProps: spec.SchemaProps{
@@ -11906,6 +12160,7 @@ func schema_k8sio_api_core_v1_SerializedReference(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SerializedReference is a reference to serialized object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -11940,6 +12195,7 @@ func schema_k8sio_api_core_v1_Service(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Service is a named abstraction of software service (for example, mysql) consisting of local port (for example 3306) that the proxy listens on, and the selector that determines which pods will answer requests sent through the proxy.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -11986,6 +12242,7 @@ func schema_k8sio_api_core_v1_ServiceAccount(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceAccount binds together: * a name, understood by users, and perhaps by peripheral systems, for an identity * a principal that can be authenticated and authorized * a set of secrets",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -12059,6 +12316,7 @@ func schema_k8sio_api_core_v1_ServiceAccountList(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceAccountList is a list of ServiceAccount objects",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -12107,6 +12365,7 @@ func schema_k8sio_api_core_v1_ServiceAccountTokenProjection(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceAccountTokenProjection represents a projected service account token volume. This projection can be used to insert a service account token into the pods runtime filesystem for use against APIs (Kubernetes API Server or otherwise).",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"audience": {
 						SchemaProps: spec.SchemaProps{
@@ -12133,7 +12392,6 @@ func schema_k8sio_api_core_v1_ServiceAccountTokenProjection(ref common.Reference
 				Required: []string{"path"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -12142,6 +12400,7 @@ func schema_k8sio_api_core_v1_ServiceList(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceList holds a list of services.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -12190,6 +12449,7 @@ func schema_k8sio_api_core_v1_ServicePort(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServicePort contains information on service's port.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -12239,6 +12499,7 @@ func schema_k8sio_api_core_v1_ServiceProxyOptions(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceProxyOptions is the query options to a Service's proxy call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -12264,7 +12525,6 @@ func schema_k8sio_api_core_v1_ServiceProxyOptions(ref common.ReferenceCallback) 
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -12273,10 +12533,16 @@ func schema_k8sio_api_core_v1_ServiceSpec(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceSpec describes the attributes that a user creates on a service.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ports": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"port",
+									"protocol",
+								},
+								"x-kubernetes-list-type":       "map",
 								"x-kubernetes-patch-merge-key": "port",
 								"x-kubernetes-patch-strategy":  "merge",
 							},
@@ -12298,6 +12564,7 @@ func schema_k8sio_api_core_v1_ServiceSpec(ref common.ReferenceCallback) common.O
 							Description: "Route service traffic to pods with label keys and values matching this selector. If empty or not present, the service is assumed to have an external process managing its endpoints, which Kubernetes will not modify. Only applies to types ClusterIP, NodePort, and LoadBalancer. Ignored if type is ExternalName. More info: https://kubernetes.io/docs/concepts/services-networking/service/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -12316,7 +12583,7 @@ func schema_k8sio_api_core_v1_ServiceSpec(ref common.ReferenceCallback) common.O
 					},
 					"type": {
 						SchemaProps: spec.SchemaProps{
-							Description: "type determines how the Service is exposed. Defaults to ClusterIP. Valid options are ExternalName, ClusterIP, NodePort, and LoadBalancer. \"ExternalName\" maps to the specified externalName. \"ClusterIP\" allocates a cluster-internal IP address for load-balancing to endpoints. Endpoints are determined by the selector or if that is not specified, by manual construction of an Endpoints object. If clusterIP is \"None\", no virtual IP is allocated and the endpoints are published as a set of endpoints rather than a stable IP. \"NodePort\" builds on ClusterIP and allocates a port on every node which routes to the clusterIP. \"LoadBalancer\" builds on NodePort and creates an external load-balancer (if supported in the current cloud) which routes to the clusterIP. More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types",
+							Description: "type determines how the Service is exposed. Defaults to ClusterIP. Valid options are ExternalName, ClusterIP, NodePort, and LoadBalancer. \"ExternalName\" maps to the specified externalName. \"ClusterIP\" allocates a cluster-internal IP address for load-balancing to endpoints. Endpoints are determined by the selector or if that is not specified, by manual construction of an Endpoints object. If clusterIP is \"None\", no virtual IP is allocated and the endpoints are published as a set of endpoints rather than a stable IP. \"NodePort\" builds on ClusterIP and allocates a port on every node which routes to the clusterIP. \"LoadBalancer\" builds on NodePort and creates an external load-balancer (if supported in the current cloud) which routes to the clusterIP. More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -12410,6 +12677,7 @@ func schema_k8sio_api_core_v1_ServiceStatus(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceStatus represents the current status of a service.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"loadBalancer": {
 						SchemaProps: spec.SchemaProps{
@@ -12430,6 +12698,7 @@ func schema_k8sio_api_core_v1_SessionAffinityConfig(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SessionAffinityConfig represents the configurations of session affinity.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"clientIP": {
 						SchemaProps: spec.SchemaProps{
@@ -12450,6 +12719,7 @@ func schema_k8sio_api_core_v1_StorageOSPersistentVolumeSource(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a StorageOS persistent volume resource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumeName": {
 						SchemaProps: spec.SchemaProps{
@@ -12498,6 +12768,7 @@ func schema_k8sio_api_core_v1_StorageOSVolumeSource(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a StorageOS persistent volume resource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumeName": {
 						SchemaProps: spec.SchemaProps{
@@ -12546,6 +12817,7 @@ func schema_k8sio_api_core_v1_Sysctl(ref common.ReferenceCallback) common.OpenAP
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Sysctl defines a kernel parameter to be set",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -12565,7 +12837,6 @@ func schema_k8sio_api_core_v1_Sysctl(ref common.ReferenceCallback) common.OpenAP
 				Required: []string{"name", "value"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -12574,6 +12845,7 @@ func schema_k8sio_api_core_v1_TCPSocketAction(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TCPSocketAction describes an action based on opening a socket",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"port": {
 						SchemaProps: spec.SchemaProps{
@@ -12602,6 +12874,7 @@ func schema_k8sio_api_core_v1_Taint(ref common.ReferenceCallback) common.OpenAPI
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "The node this Taint is attached to has the \"effect\" on any pod that does not tolerate the Taint.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -12644,6 +12917,7 @@ func schema_k8sio_api_core_v1_Toleration(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "The pod this Toleration is attached to tolerates any taint that matches the triple <key,value,effect> using the matching operator <operator>.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -12683,7 +12957,6 @@ func schema_k8sio_api_core_v1_Toleration(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -12692,6 +12965,7 @@ func schema_k8sio_api_core_v1_TopologySelectorLabelRequirement(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A topology selector requirement is a selector that matches given label. This is an alpha feature and may change in the future.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -12718,7 +12992,6 @@ func schema_k8sio_api_core_v1_TopologySelectorLabelRequirement(ref common.Refere
 				Required: []string{"key", "values"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -12727,6 +13000,7 @@ func schema_k8sio_api_core_v1_TopologySelectorTerm(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A topology selector term represents the result of label queries. A null or empty topology selector term matches no objects. The requirements of them are ANDed. It provides a subset of functionality as NodeSelectorTerm. This is an alpha feature and may change in the future.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"matchLabelExpressions": {
 						SchemaProps: spec.SchemaProps{
@@ -12754,6 +13028,7 @@ func schema_k8sio_api_core_v1_TypedLocalObjectReference(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TypedLocalObjectReference contains enough information to let you locate the typed referenced object inside the same namespace.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiGroup": {
 						SchemaProps: spec.SchemaProps{
@@ -12780,7 +13055,6 @@ func schema_k8sio_api_core_v1_TypedLocalObjectReference(ref common.ReferenceCall
 				Required: []string{"kind", "name"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -12789,6 +13063,7 @@ func schema_k8sio_api_core_v1_Volume(ref common.ReferenceCallback) common.OpenAP
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Volume represents a named volume in a pod that may be accessed by any container in the pod.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -12959,12 +13234,18 @@ func schema_k8sio_api_core_v1_Volume(ref common.ReferenceCallback) common.OpenAP
 							Ref:         ref("k8s.io/api/core/v1.StorageOSVolumeSource"),
 						},
 					},
+					"csi": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CSI (Container Storage Interface) represents storage that is handled by an external CSI driver (Alpha feature).",
+							Ref:         ref("k8s.io/api/core/v1.CSIVolumeSource"),
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
+			"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CSIVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
 	}
 }
 
@@ -12973,6 +13254,7 @@ func schema_k8sio_api_core_v1_VolumeDevice(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "volumeDevice describes a mapping of a raw block device within a container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -12992,7 +13274,6 @@ func schema_k8sio_api_core_v1_VolumeDevice(ref common.ReferenceCallback) common.
 				Required: []string{"name", "devicePath"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13001,6 +13282,7 @@ func schema_k8sio_api_core_v1_VolumeMount(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "VolumeMount describes a mounting of a Volume within a container.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -13037,11 +13319,17 @@ func schema_k8sio_api_core_v1_VolumeMount(ref common.ReferenceCallback) common.O
 							Format:      "",
 						},
 					},
+					"subPathExpr": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Expanded path within the volume from which the container's volume should be mounted. Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment. Defaults to \"\" (volume's root). SubPathExpr and SubPath are mutually exclusive. This field is alpha in 1.14.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"name", "mountPath"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13050,6 +13338,7 @@ func schema_k8sio_api_core_v1_VolumeNodeAffinity(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "VolumeNodeAffinity defines constraints that limit what nodes this volume can be accessed from.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"required": {
 						SchemaProps: spec.SchemaProps{
@@ -13070,6 +13359,7 @@ func schema_k8sio_api_core_v1_VolumeProjection(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Projection that may be projected along with other supported volume types",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"secret": {
 						SchemaProps: spec.SchemaProps{
@@ -13108,6 +13398,7 @@ func schema_k8sio_api_core_v1_VolumeSource(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents the source of a volume to mount. Only one of its members may be specified.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"hostPath": {
 						SchemaProps: spec.SchemaProps{
@@ -13271,11 +13562,17 @@ func schema_k8sio_api_core_v1_VolumeSource(ref common.ReferenceCallback) common.
 							Ref:         ref("k8s.io/api/core/v1.StorageOSVolumeSource"),
 						},
 					},
+					"csi": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CSI (Container Storage Interface) represents storage that is handled by an external CSI driver (Alpha feature).",
+							Ref:         ref("k8s.io/api/core/v1.CSIVolumeSource"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
+			"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CSIVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
 	}
 }
 
@@ -13284,6 +13581,7 @@ func schema_k8sio_api_core_v1_VsphereVirtualDiskVolumeSource(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Represents a vSphere volume resource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"volumePath": {
 						SchemaProps: spec.SchemaProps{
@@ -13317,7 +13615,6 @@ func schema_k8sio_api_core_v1_VsphereVirtualDiskVolumeSource(ref common.Referenc
 				Required: []string{"volumePath"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13326,6 +13623,7 @@ func schema_k8sio_api_core_v1_WeightedPodAffinityTerm(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "The weights of all of the matched WeightedPodAffinityTerm fields are added per-node to find the most preferred node(s)",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"weight": {
 						SchemaProps: spec.SchemaProps{
@@ -13366,6 +13664,7 @@ func schema_apimachinery_pkg_api_resource_int64Amount(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "int64Amount represents a fixed precision numerator and arbitrary scale exponent. It is faster than operations on inf.Dec for values that can be represented as int64.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"value": {
 						SchemaProps: spec.SchemaProps{
@@ -13383,7 +13682,6 @@ func schema_apimachinery_pkg_api_resource_int64Amount(ref common.ReferenceCallba
 				Required: []string{"value", "scale"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13392,6 +13690,7 @@ func schema_pkg_apis_meta_v1_APIGroup(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APIGroup contains the name, the supported versions, and the preferred version of a group.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13460,6 +13759,7 @@ func schema_pkg_apis_meta_v1_APIGroupList(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APIGroupList is a list of APIGroup, to allow clients to discover the API at /apis.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13502,6 +13802,7 @@ func schema_pkg_apis_meta_v1_APIResource(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APIResource specifies the name of a resource and whether it is namespaced.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -13587,11 +13888,17 @@ func schema_pkg_apis_meta_v1_APIResource(ref common.ReferenceCallback) common.Op
 							},
 						},
 					},
+					"storageVersionHash": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The hash value of the storage version, the version this resource is converted to when written to the data store. Value must be treated as opaque by clients. Only equality comparison on the value is valid. This is an alpha feature and may change or be removed in the future. The field is populated by the apiserver only if the StorageVersionHash feature gate is enabled. This field will remain optional even if it graduates.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"name", "singularName", "namespaced", "kind", "verbs"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13600,6 +13907,7 @@ func schema_pkg_apis_meta_v1_APIResourceList(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APIResourceList is a list of APIResource, it is used to expose the name of the resources supported in a specific group and version, and if the resource is namespaced.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13649,6 +13957,7 @@ func schema_pkg_apis_meta_v1_APIVersions(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APIVersions lists the versions that are available, to allow clients to discover the API at /api, which is the root path of the legacy v1 API.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13705,6 +14014,7 @@ func schema_pkg_apis_meta_v1_CreateOptions(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CreateOptions may be provided when creating an API object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13734,17 +14044,16 @@ func schema_pkg_apis_meta_v1_CreateOptions(ref common.ReferenceCallback) common.
 							},
 						},
 					},
-					"includeUninitialized": {
+					"fieldManager": {
 						SchemaProps: spec.SchemaProps{
-							Description: "If IncludeUninitialized is specified, the object may be returned without completing initialization.",
-							Type:        []string{"boolean"},
+							Description: "fieldManager is a name associated with the actor or entity that is making these changes. The value must be less than or 128 characters long, and only contain printable characters, as defined by https://golang.org/pkg/unicode/#IsPrint.",
+							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13753,6 +14062,7 @@ func schema_pkg_apis_meta_v1_DeleteOptions(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "DeleteOptions may be provided when deleting an API object.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13822,18 +14132,10 @@ func schema_pkg_apis_meta_v1_Duration(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Duration is a wrapper around time.Duration which supports correct marshaling to YAML and JSON. In particular, it marshals into strings, which can be used as map keys in json.",
-				Properties: map[string]spec.Schema{
-					"Duration": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
-						},
-					},
-				},
-				Required: []string{"Duration"},
+				Type:        v1.Duration{}.OpenAPISchemaType(),
+				Format:      v1.Duration{}.OpenAPISchemaFormat(),
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13841,7 +14143,8 @@ func schema_pkg_apis_meta_v1_ExportOptions(ref common.ReferenceCallback) common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ExportOptions is the query options to the standard REST get call.",
+				Description: "ExportOptions is the query options to the standard REST get call. Deprecated. Planned for removal in 1.18.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13859,14 +14162,14 @@ func schema_pkg_apis_meta_v1_ExportOptions(ref common.ReferenceCallback) common.
 					},
 					"export": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Should this value be exported.  Export strips fields that a user can not specify.",
+							Description: "Should this value be exported.  Export strips fields that a user can not specify. Deprecated. Planned for removal in 1.18.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
 					"exact": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Should the export be exact.  Exact export maintains cluster-specific fields like 'Namespace'.",
+							Description: "Should the export be exact.  Exact export maintains cluster-specific fields like 'Namespace'. Deprecated. Planned for removal in 1.18.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -13875,7 +14178,17 @@ func schema_pkg_apis_meta_v1_ExportOptions(ref common.ReferenceCallback) common.
 				Required: []string{"export", "exact"},
 			},
 		},
-		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_meta_v1_Fields(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Fields stores a set of fields in a data structure like a Trie. To understand how this is used, see: https://github.com/kubernetes-sigs/structured-merge-diff",
+				Type:        []string{"object"},
+			},
+		},
 	}
 }
 
@@ -13884,6 +14197,7 @@ func schema_pkg_apis_meta_v1_GetOptions(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GetOptions is the standard query options to the standard REST get call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -13906,17 +14220,9 @@ func schema_pkg_apis_meta_v1_GetOptions(ref common.ReferenceCallback) common.Ope
 							Format:      "",
 						},
 					},
-					"includeUninitialized": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If true, partially initialized resources are included in the response.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13925,6 +14231,7 @@ func schema_pkg_apis_meta_v1_GroupKind(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying concepts during lookup stages without having partially valid types",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"group": {
 						SchemaProps: spec.SchemaProps{
@@ -13942,7 +14249,6 @@ func schema_pkg_apis_meta_v1_GroupKind(ref common.ReferenceCallback) common.Open
 				Required: []string{"group", "kind"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13951,6 +14257,7 @@ func schema_pkg_apis_meta_v1_GroupResource(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GroupResource specifies a Group and a Resource, but does not force a version.  This is useful for identifying concepts during lookup stages without having partially valid types",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"group": {
 						SchemaProps: spec.SchemaProps{
@@ -13968,7 +14275,6 @@ func schema_pkg_apis_meta_v1_GroupResource(ref common.ReferenceCallback) common.
 				Required: []string{"group", "resource"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -13977,6 +14283,7 @@ func schema_pkg_apis_meta_v1_GroupVersion(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GroupVersion contains the \"group\" and the \"version\", which uniquely identifies the API.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"group": {
 						SchemaProps: spec.SchemaProps{
@@ -13994,7 +14301,6 @@ func schema_pkg_apis_meta_v1_GroupVersion(ref common.ReferenceCallback) common.O
 				Required: []string{"group", "version"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14003,6 +14309,7 @@ func schema_pkg_apis_meta_v1_GroupVersionForDiscovery(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GroupVersion contains the \"group/version\" and \"version\" string of a version. It is made a struct to keep extensibility.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"groupVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -14022,7 +14329,6 @@ func schema_pkg_apis_meta_v1_GroupVersionForDiscovery(ref common.ReferenceCallba
 				Required: []string{"groupVersion", "version"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14031,6 +14337,7 @@ func schema_pkg_apis_meta_v1_GroupVersionKind(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GroupVersionKind unambiguously identifies a kind.  It doesn't anonymously include GroupVersion to avoid automatic coersion.  It doesn't use a GroupVersion to avoid custom marshalling",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"group": {
 						SchemaProps: spec.SchemaProps{
@@ -14054,7 +14361,6 @@ func schema_pkg_apis_meta_v1_GroupVersionKind(ref common.ReferenceCallback) comm
 				Required: []string{"group", "version", "kind"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14063,6 +14369,7 @@ func schema_pkg_apis_meta_v1_GroupVersionResource(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GroupVersionResource unambiguously identifies a resource.  It doesn't anonymously include GroupVersion to avoid automatic coersion.  It doesn't use a GroupVersion to avoid custom marshalling",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"group": {
 						SchemaProps: spec.SchemaProps{
@@ -14086,7 +14393,6 @@ func schema_pkg_apis_meta_v1_GroupVersionResource(ref common.ReferenceCallback) 
 				Required: []string{"group", "version", "resource"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14095,6 +14401,7 @@ func schema_pkg_apis_meta_v1_Initializer(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Initializer is information about an initializer that has not yet completed.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -14107,7 +14414,6 @@ func schema_pkg_apis_meta_v1_Initializer(ref common.ReferenceCallback) common.Op
 				Required: []string{"name"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14116,6 +14422,7 @@ func schema_pkg_apis_meta_v1_Initializers(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Initializers tracks the progress of initialization.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pending": {
 						VendorExtensible: spec.VendorExtensible{
@@ -14156,6 +14463,7 @@ func schema_pkg_apis_meta_v1_InternalEvent(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "InternalEvent makes watch.Event versioned",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"Type": {
 						SchemaProps: spec.SchemaProps{
@@ -14183,12 +14491,14 @@ func schema_pkg_apis_meta_v1_LabelSelector(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"matchLabels": {
 						SchemaProps: spec.SchemaProps{
 							Description: "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -14224,6 +14534,7 @@ func schema_pkg_apis_meta_v1_LabelSelectorRequirement(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						VendorExtensible: spec.VendorExtensible{
@@ -14263,7 +14574,6 @@ func schema_pkg_apis_meta_v1_LabelSelectorRequirement(ref common.ReferenceCallba
 				Required: []string{"key", "operator"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14272,6 +14582,7 @@ func schema_pkg_apis_meta_v1_List(ref common.ReferenceCallback) common.OpenAPIDe
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "List holds a list of objects, which may not be known by the server.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -14320,6 +14631,7 @@ func schema_pkg_apis_meta_v1_ListMeta(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ListMeta describes metadata that synthetic resources must have, including lists and various status objects. A resource may have only one of {ObjectMeta, ListMeta}.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"selfLink": {
 						SchemaProps: spec.SchemaProps{
@@ -14345,7 +14657,6 @@ func schema_pkg_apis_meta_v1_ListMeta(ref common.ReferenceCallback) common.OpenA
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14354,6 +14665,7 @@ func schema_pkg_apis_meta_v1_ListOptions(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ListOptions is the query options to a standard REST list call.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -14380,13 +14692,6 @@ func schema_pkg_apis_meta_v1_ListOptions(ref common.ReferenceCallback) common.Op
 						SchemaProps: spec.SchemaProps{
 							Description: "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
 							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"includeUninitialized": {
-						SchemaProps: spec.SchemaProps{
-							Description: "If true, partially initialized resources are included in the response.",
-							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
@@ -14428,7 +14733,54 @@ func schema_pkg_apis_meta_v1_ListOptions(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
-		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_meta_v1_ManagedFieldsEntry(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ManagedFieldsEntry is a workflow-id, a FieldSet and the group version of the resource that the fieldset applies to.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"manager": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Manager is an identifier of the workflow managing these fields.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"operation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Operation is the type of operation which lead to this ManagedFieldsEntry being created. The only valid values for this field are 'Apply' and 'Update'.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the version of this resource that this field set applies to. The format is \"group/version\" just like the top-level APIVersion field. It is necessary to track the version of a field set because it cannot be automatically converted.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"time": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Time is timestamp of when these fields were set. It should always be empty if Operation is 'Apply'",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"fields": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Fields identifies a set of fields.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Fields"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Fields", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -14449,6 +14801,7 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -14523,6 +14876,7 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 							Description: "Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -14537,6 +14891,7 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 							Description: "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -14567,7 +14922,7 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 					},
 					"initializers": {
 						SchemaProps: spec.SchemaProps{
-							Description: "An initializer is a controller which enforces some system invariant at object creation time. This field is a list of initializers that have not yet acted on this object. If nil or empty, this object has been completely initialized. Otherwise, the object is considered uninitialized and is hidden (in list/watch and get calls) from clients that haven't explicitly asked to observe uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers. Only privileged users may set or modify this list. Once it is empty, it may not be modified further by any user.",
+							Description: "An initializer is a controller which enforces some system invariant at object creation time. This field is a list of initializers that have not yet acted on this object. If nil or empty, this object has been completely initialized. Otherwise, the object is considered uninitialized and is hidden (in list/watch and get calls) from clients that haven't explicitly asked to observe uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers. Only privileged users may set or modify this list. Once it is empty, it may not be modified further by any user.\n\nDEPRECATED - initializers are an alpha field and will be removed in v1.15.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Initializers"),
 						},
 					},
@@ -14597,11 +14952,24 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 							Format:      "",
 						},
 					},
+					"managedFields": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like \"ci-cd\". The set of fields is always in the version that the workflow used when modifying the object.\n\nThis field is alpha and can be changed or removed without notice.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ManagedFieldsEntry"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.Initializers", "k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Initializers", "k8s.io/apimachinery/pkg/apis/meta/v1.ManagedFieldsEntry", "k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -14610,6 +14978,7 @@ func schema_pkg_apis_meta_v1_OwnerReference(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "OwnerReference contains enough information to let you identify an owning object. An owning object must be in the same namespace as the dependent, or be cluster-scoped, so there is no namespace field.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -14657,7 +15026,6 @@ func schema_pkg_apis_meta_v1_OwnerReference(ref common.ReferenceCallback) common
 				Required: []string{"apiVersion", "kind", "name", "uid"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14666,10 +15034,64 @@ func schema_pkg_apis_meta_v1_Patch(ref common.ReferenceCallback) common.OpenAPID
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Patch is provided to give a concrete name and type to the Kubernetes PATCH request body.",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_meta_v1_PatchOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PatchOptions may be provided when patching an API object. PatchOptions is meant to be a superset of UpdateOptions.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"dryRun": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"force": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Force is going to \"force\" Apply requests. It means user will re-acquire conflicting fields owned by other people. Force flag must be unset for non-apply patch requests.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"fieldManager": {
+						SchemaProps: spec.SchemaProps{
+							Description: "fieldManager is a name associated with the actor or entity that is making these changes. The value must be less than or 128 characters long, and only contain printable characters, as defined by https://golang.org/pkg/unicode/#IsPrint. This field is required for apply requests (application/apply-patch) but optional for non-apply patch types (JsonPatch, MergePatch, StrategicMergePatch).",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -14678,6 +15100,7 @@ func schema_pkg_apis_meta_v1_Preconditions(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Preconditions must be fulfilled before an operation (update, delete, etc.) is carried out.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"uid": {
 						SchemaProps: spec.SchemaProps{
@@ -14686,10 +15109,16 @@ func schema_pkg_apis_meta_v1_Preconditions(ref common.ReferenceCallback) common.
 							Format:      "",
 						},
 					},
+					"resourceVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specifies the target ResourceVersion",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14698,6 +15127,7 @@ func schema_pkg_apis_meta_v1_RootPaths(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RootPaths lists the paths available at root. For example: \"/healthz\", \"/apis\".",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"paths": {
 						SchemaProps: spec.SchemaProps{
@@ -14717,7 +15147,6 @@ func schema_pkg_apis_meta_v1_RootPaths(ref common.ReferenceCallback) common.Open
 				Required: []string{"paths"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14726,6 +15155,7 @@ func schema_pkg_apis_meta_v1_ServerAddressByClientCIDR(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServerAddressByClientCIDR helps the client to determine the server address that they should use, depending on the clientCIDR that they match.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"clientCIDR": {
 						SchemaProps: spec.SchemaProps{
@@ -14745,7 +15175,6 @@ func schema_pkg_apis_meta_v1_ServerAddressByClientCIDR(ref common.ReferenceCallb
 				Required: []string{"clientCIDR", "serverAddress"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14754,6 +15183,7 @@ func schema_pkg_apis_meta_v1_Status(ref common.ReferenceCallback) common.OpenAPI
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Status is a return value for calls that don't return other objects.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -14822,6 +15252,7 @@ func schema_pkg_apis_meta_v1_StatusCause(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StatusCause provides more information about an api.Status failure, including cases when multiple errors are encountered.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"reason": {
 						SchemaProps: spec.SchemaProps{
@@ -14847,7 +15278,6 @@ func schema_pkg_apis_meta_v1_StatusCause(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14856,6 +15286,7 @@ func schema_pkg_apis_meta_v1_StatusDetails(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StatusDetails is a set of additional properties that MAY be set by the server to provide additional information about a response. The Reason field of a Status object defines what attributes will be set. Clients must ignore fields that do not match the defined type of each attribute, and should assume that any attribute may be empty, invalid, or under defined.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -14930,6 +15361,7 @@ func schema_pkg_apis_meta_v1_Timestamp(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Timestamp is a struct that is equivalent to Time, but intended for protobuf marshalling/unmarshalling. It is generated into a serialization that matches Time. Do not use in Go structs.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"seconds": {
 						SchemaProps: spec.SchemaProps{
@@ -14949,7 +15381,6 @@ func schema_pkg_apis_meta_v1_Timestamp(ref common.ReferenceCallback) common.Open
 				Required: []string{"seconds", "nanos"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14958,6 +15389,7 @@ func schema_pkg_apis_meta_v1_TypeMeta(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TypeMeta describes an individual object in an API response or request with strings representing the type of the object and its API schema version. Structures that are versioned or persisted should inline TypeMeta.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -14976,7 +15408,6 @@ func schema_pkg_apis_meta_v1_TypeMeta(ref common.ReferenceCallback) common.OpenA
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -14984,7 +15415,8 @@ func schema_pkg_apis_meta_v1_UpdateOptions(ref common.ReferenceCallback) common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "UpdateOptions may be provided when updating an API object.",
+				Description: "UpdateOptions may be provided when updating an API object. All fields in UpdateOptions should also be present in PatchOptions.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -15014,10 +15446,16 @@ func schema_pkg_apis_meta_v1_UpdateOptions(ref common.ReferenceCallback) common.
 							},
 						},
 					},
+					"fieldManager": {
+						SchemaProps: spec.SchemaProps{
+							Description: "fieldManager is a name associated with the actor or entity that is making these changes. The value must be less than or 128 characters long, and only contain printable characters, as defined by https://golang.org/pkg/unicode/#IsPrint.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -15026,6 +15464,7 @@ func schema_pkg_apis_meta_v1_WatchEvent(ref common.ReferenceCallback) common.Ope
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Event represents a single event to a watched resource.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -15053,6 +15492,7 @@ func schema_k8sio_apimachinery_pkg_runtime_RawExtension(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.Object `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// External package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// On the wire, the JSON will look something like this: {\n\t\"kind\":\"MyAPIObject\",\n\t\"apiVersion\":\"v1\",\n\t\"myPlugin\": {\n\t\t\"kind\":\"PluginA\",\n\t\t\"aOption\":\"foo\",\n\t},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"Raw": {
 						SchemaProps: spec.SchemaProps{
@@ -15065,7 +15505,6 @@ func schema_k8sio_apimachinery_pkg_runtime_RawExtension(ref common.ReferenceCall
 				Required: []string{"Raw"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -15074,6 +15513,7 @@ func schema_k8sio_apimachinery_pkg_runtime_TypeMeta(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TypeMeta is shared by all top level objects. The proper way to use it is to inline it in your type, like this: type MyAwesomeAPIObject struct {\n     runtime.TypeMeta    `json:\",inline\"`\n     ... // other fields\n} func (obj *MyAwesomeAPIObject) SetGroupVersionKind(gvk *metav1.GroupVersionKind) { metav1.UpdateTypeMeta(obj,gvk) }; GroupVersionKind() *GroupVersionKind\n\nTypeMeta is provided here for convenience. You may use it directly from this package or define your own with the same fields.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -15090,7 +15530,6 @@ func schema_k8sio_apimachinery_pkg_runtime_TypeMeta(ref common.ReferenceCallback
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -15099,6 +15538,7 @@ func schema_k8sio_apimachinery_pkg_runtime_Unknown(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Unknown allows api objects with unknown types to be passed-through. This can be used to deal with the API objects from a plug-in. Unknown objects still have functioning TypeMeta features-- kind, version, etc. metadata and field mutatation.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -15137,7 +15577,6 @@ func schema_k8sio_apimachinery_pkg_runtime_Unknown(ref common.ReferenceCallback)
 				Required: []string{"Raw", "ContentEncoding", "ContentType"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -15146,6 +15585,7 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Info contains versioning information. how we'll want to distribute that information.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"major": {
 						SchemaProps: spec.SchemaProps{
@@ -15205,6 +15645,5 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 				Required: []string{"major", "minor", "gitVersion", "gitCommit", "gitTreeState", "buildDate", "goVersion", "compiler", "platform"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }

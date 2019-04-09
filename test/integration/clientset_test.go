@@ -110,7 +110,7 @@ func TestEtcdHealthCheckerSuccess(t *testing.T) {
 }
 
 func testGroupVersion(client servicecatalogclient.Interface) error {
-	gv := client.Servicecatalog().RESTClient().APIVersion()
+	gv := client.ServicecatalogV1beta1().RESTClient().APIVersion()
 	if gv.Group != servicecatalog.GroupName {
 		return fmt.Errorf("we should be testing the servicecatalog group, not %s", gv.Group)
 	}
@@ -130,7 +130,7 @@ func TestNoName(t *testing.T) {
 }
 
 func testNoName(client servicecatalogclient.Interface) error {
-	scClient := client.Servicecatalog()
+	scClient := client.ServicecatalogV1beta1()
 
 	ns := "namespace"
 
@@ -174,7 +174,7 @@ func TestClusterServiceBrokerClient(t *testing.T) {
 }
 
 func testClusterServiceBrokerClient(client servicecatalogclient.Interface, name string) error {
-	brokerClient := client.Servicecatalog().ClusterServiceBrokers()
+	brokerClient := client.ServicecatalogV1beta1().ClusterServiceBrokers()
 	broker := &v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ClusterServiceBrokerSpec{
@@ -347,7 +347,7 @@ func TestNamespacedServiceBrokerClient(t *testing.T) {
 }
 
 func testNamespacedServiceBrokerClient(client servicecatalogclient.Interface, namespace, name string) error {
-	brokerClient := client.Servicecatalog().ServiceBrokers(namespace)
+	brokerClient := client.ServicecatalogV1beta1().ServiceBrokers(namespace)
 	broker := &v1beta1.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 		Spec: v1beta1.ServiceBrokerSpec{
@@ -520,7 +520,7 @@ func TestClusterServiceClassClient(t *testing.T) {
 }
 
 func testClusterServiceClassClient(client servicecatalogclient.Interface, name string) error {
-	serviceClassClient := client.Servicecatalog().ClusterServiceClasses()
+	serviceClassClient := client.ServicecatalogV1beta1().ClusterServiceClasses()
 
 	serviceClass := &v1beta1.ClusterServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -729,7 +729,7 @@ func TestNamespacedServiceClassClient(t *testing.T) {
 }
 
 func testNamespacedServiceClassClient(client servicecatalogclient.Interface, namespace, name string) error {
-	serviceClassClient := client.Servicecatalog().ServiceClasses(namespace)
+	serviceClassClient := client.ServicecatalogV1beta1().ServiceClasses(namespace)
 
 	serviceClass := &v1beta1.ServiceClass{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -941,7 +941,7 @@ func TestClusterServicePlanClient(t *testing.T) {
 }
 
 func testClusterServicePlanClient(client servicecatalogclient.Interface, name string) error {
-	servicePlanClient := client.Servicecatalog().ClusterServicePlans()
+	servicePlanClient := client.ServicecatalogV1beta1().ClusterServicePlans()
 
 	bindable := true
 	servicePlan := &v1beta1.ClusterServicePlan{
@@ -1159,7 +1159,7 @@ func TestNamespacedServicePlanClient(t *testing.T) {
 }
 
 func testNamespacedServicePlanClient(client servicecatalogclient.Interface, namespace, name string) error {
-	servicePlanClient := client.Servicecatalog().ServicePlans(namespace)
+	servicePlanClient := client.ServicecatalogV1beta1().ServicePlans(namespace)
 
 	bindable := true
 	servicePlan := &v1beta1.ServicePlan{
@@ -1383,7 +1383,7 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 		osbGUID      = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 		dashboardURL = "http://test-dashboard.example.com"
 	)
-	instanceClient := client.Servicecatalog().ServiceInstances("test-namespace")
+	instanceClient := client.ServicecatalogV1beta1().ServiceInstances("test-namespace")
 
 	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
@@ -1642,7 +1642,7 @@ func TestBindingClient(t *testing.T) {
 }
 
 func testBindingClient(client servicecatalogclient.Interface, name string) error {
-	bindingClient := client.Servicecatalog().ServiceBindings("test-namespace")
+	bindingClient := client.ServicecatalogV1beta1().ServiceBindings("test-namespace")
 
 	binding := &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-binding"},

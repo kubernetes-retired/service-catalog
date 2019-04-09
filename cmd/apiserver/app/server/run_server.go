@@ -101,7 +101,7 @@ func runEtcdServer(opts *ServiceCatalogServerOptions, stopCh <-chan struct{}) er
 
 	// Install healthz checks before calling PrepareRun.
 	etcdChecker := checkEtcdConnectable{
-		ServerList: etcdOpts.StorageConfig.ServerList,
+		ServerList: etcdOpts.StorageConfig.Transport.ServerList,
 	}
 
 	// The liveness probe is registered at /healthz for us by the k8s genericapiserver and indicates

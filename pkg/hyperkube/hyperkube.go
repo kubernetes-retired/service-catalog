@@ -33,8 +33,8 @@ import (
 	utiltemplate "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/template"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server"
-	utilflag "k8s.io/apiserver/pkg/util/flag"
-	"k8s.io/apiserver/pkg/util/logs"
+	utilflag "k8s.io/component-base/cli/flag"
+	"k8s.io/component-base/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )

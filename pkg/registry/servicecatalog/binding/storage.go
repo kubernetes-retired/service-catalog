@@ -98,12 +98,12 @@ func toSelectableFields(binding *servicecatalog.ServiceBinding) fields.Set {
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
-func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
+func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	binding, ok := obj.(*servicecatalog.ServiceBinding)
 	if !ok {
-		return nil, nil, false, fmt.Errorf("given object is not a ServiceBinding")
+		return nil, nil, fmt.Errorf("given object is not a ServiceBinding")
 	}
-	return labels.Set(binding.ObjectMeta.Labels), toSelectableFields(binding), binding.Initializers != nil, nil
+	return labels.Set(binding.ObjectMeta.Labels), toSelectableFields(binding), nil
 }
 
 // NewStorage creates a new rest.Storage responsible for accessing ServiceBinding

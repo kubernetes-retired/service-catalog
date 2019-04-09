@@ -38,11 +38,11 @@ import (
 // TestReconcileBindingWithParametersNamespacedRefs tests reconcileBinding to ensure a
 // binding with parameters will be passed to the broker properly.
 func TestReconcileServiceBindingWithParametersNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		BindReaction: &fakeosb.BindReaction{
@@ -193,14 +193,14 @@ func TestReconcileServiceBindingWithParametersNamespacedRefs(t *testing.T) {
 // controller receives an asynchronous bind response back from the broker when
 // doing a bind call.
 func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	key := osb.OperationKey(testOperation)
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
@@ -250,11 +250,11 @@ func TestReconcileServiceBindingAsynchronousBindNamespacedRefs(t *testing.T) {
 // TestReconcileBindingDeleteNamespacedRefs tests reconcileBinding to ensure a
 // binding deletion works as expected.
 func TestReconcileServiceBindingDeleteNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	cases := []struct {
 		name     string
@@ -398,10 +398,10 @@ func TestReconcileServiceBindingDeleteNamespacedRefs(t *testing.T) {
 }
 
 func TestPollServiceBindingNamespacedRefs(t *testing.T) {
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	goneError := osb.HTTPStatusCodeError{
 		StatusCode: http.StatusGone,
@@ -1075,14 +1075,14 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 // controller receives an asynchronous bind response back from the broker when
 // doing an unbind call.
 func TestReconcileServiceBindingAsynchronousUnbindNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	key := osb.OperationKey(testOperation)
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{

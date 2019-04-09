@@ -555,10 +555,10 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 				},
 			},
 			expectedSecretData: map[string][]byte{
-				"addedStringValue":      []byte("stringValue"),
-				"addedByteArray":        []byte("byteArray"),
-				"valueFromJSONPath":     []byte("bar"),
-				"bar":                   []byte("bar"),
+				"addedStringValue":  []byte("stringValue"),
+				"addedByteArray":    []byte("byteArray"),
+				"valueFromJSONPath": []byte("bar"),
+				"bar":               []byte("bar"),
 				"key-from-other-secret": []byte("qux"),
 			},
 		},
@@ -640,8 +640,8 @@ func TestDeleteServiceBindingFailureRetry(t *testing.T) {
 // retries after failing an asynchronous unbind.
 func TestDeleteServiceBindingFailureRetryAsync(t *testing.T) {
 	// Enable the AsyncBindingOperations feature
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	hasPollFailed := false
 	ct := &controllerTest{

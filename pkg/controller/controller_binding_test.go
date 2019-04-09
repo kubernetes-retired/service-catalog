@@ -2025,7 +2025,7 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 	for _, tc := range originatingIdentityTestCases {
 		func() {
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				BindReaction: &fakeosb.BindReaction{
@@ -2082,7 +2082,7 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 	for _, tc := range originatingIdentityTestCases {
 		func() {
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				UnbindReaction: &fakeosb.UnbindReaction{
@@ -3047,8 +3047,8 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 		},
 	})
 
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
@@ -3140,8 +3140,8 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 		},
 	})
 
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
@@ -3210,8 +3210,8 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 }
 
 func TestPollServiceBinding(t *testing.T) {
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	goneError := osb.HTTPStatusCodeError{
 		StatusCode: http.StatusGone,

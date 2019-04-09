@@ -82,8 +82,8 @@ func TestBasicFlow(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			t.Parallel()
 			// GIVEN
-			utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+			utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 			ct := newControllerTest(t)
 			defer ct.TearDown()
 			setupFunc(ct)

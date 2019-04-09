@@ -63,7 +63,7 @@ type defaultServicePlan struct {
 
 var _ = scadmission.WantsInternalServiceCatalogClientSet(&defaultServicePlan{})
 
-func (d *defaultServicePlan) Admit(a admission.Attributes) error {
+func (d *defaultServicePlan) Admit(a admission.Attributes, o admission.ObjectInterfaces) error {
 	// We only care about service Instances
 	if a.GetResource().Group != servicecatalog.GroupName || a.GetResource().GroupResource() != servicecatalog.Resource("serviceinstances") {
 		return nil

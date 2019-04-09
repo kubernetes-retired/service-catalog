@@ -120,7 +120,7 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.DurationVar(&s.ReconciliationRetryDuration, "reconciliation-retry-duration", s.ReconciliationRetryDuration, "The maximum amount of time to retry reconciliations on a resource before failing")
 	fs.DurationVar(&s.OperationPollingMaximumBackoffDuration, "operation-polling-maximum-backoff-duration", s.OperationPollingMaximumBackoffDuration, "The maximum amount of time to back-off while polling an OSB API operation")
 	s.SecureServingOptions.AddFlags(fs)
-	utilfeature.DefaultFeatureGate.AddFlag(fs)
+	utilfeature.DefaultMutableFeatureGate.AddFlag(fs)
 	fs.StringVar(&s.ClusterIDConfigMapName, "cluster-id-configmap-name", controller.DefaultClusterIDConfigMapName, "k8s name for clusterid configmap")
 	fs.StringVar(&s.ClusterIDConfigMapNamespace, "cluster-id-configmap-namespace", controller.DefaultClusterIDConfigMapNamespace, "k8s namespace for clusterid configmap")
 }
