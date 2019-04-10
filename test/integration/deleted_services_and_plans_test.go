@@ -41,7 +41,7 @@ func TestClusterServicePlanRemovedFromCatalogWithoutInstances(t *testing.T) {
 			t.Fatalf("error creating ClusterServicePlan: %v", err)
 		}
 
-		err = util.WaitForClusterServicePlanToExist(ct.client, testRemovedClusterServicePlanGUID)
+		err = util.WaitForServicePlanToExist(ct.client, testRemovedClusterServicePlanGUID)
 		if err != nil {
 			t.Fatalf("error waiting for ClusterServicePlan to exist: %v", err)
 		}
@@ -53,7 +53,7 @@ func TestClusterServicePlanRemovedFromCatalogWithoutInstances(t *testing.T) {
 			t.Fatalf("error marking ClusterServicePlan as removed from catalog: %v", err)
 		}
 
-		err = util.WaitForClusterServicePlanToNotExist(ct.client, testRemovedClusterServicePlanGUID)
+		err = util.WaitForServicePlanToNotExist(ct.client, testRemovedClusterServicePlanGUID)
 		if err != nil {
 			t.Fatalf("error waiting for remove ClusterServicePlan to not exist: %v", err)
 		}
@@ -99,7 +99,7 @@ func TestClusterServiceClassRemovedFromCatalogWithoutInstances(t *testing.T) {
 			t.Fatalf("error creating ClusterServiceClass: %v", err)
 		}
 
-		err = util.WaitForClusterServiceClassToExist(ct.client, testRemovedClusterServiceClassGUID)
+		err = util.WaitForServiceClassToExist(ct.client, testRemovedClusterServiceClassGUID)
 		if err != nil {
 			t.Fatalf("error waiting for ClusterServiceClass to exist: %v", err)
 		}
@@ -111,7 +111,7 @@ func TestClusterServiceClassRemovedFromCatalogWithoutInstances(t *testing.T) {
 			t.Fatalf("error marking ClusterServiceClass as removed from catalog: %v", err)
 		}
 
-		err = util.WaitForClusterServiceClassToNotExist(ct.client, testRemovedClusterServiceClassGUID)
+		err = util.WaitForServiceClassToNotExist(ct.client, testRemovedClusterServiceClassGUID)
 		if err != nil {
 			t.Fatalf("error waiting for remove ClusterServiceClass to not exist: %v", err)
 		}

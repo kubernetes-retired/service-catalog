@@ -24,13 +24,13 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 
-	"k8s.io/klog"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/gomega"
+	"k8s.io/klog"
 )
 
-// TestE2E checks configuration parameters (specified through flags) and then runs
+// RunE2ETests checks configuration parameters (specified through flags) and then runs
 // E2E tests using the Ginkgo runner.
 func RunE2ETests(t *testing.T) {
 	logs.InitLogs()

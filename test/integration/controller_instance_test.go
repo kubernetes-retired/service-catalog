@@ -185,7 +185,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 				t.Fatalf("error creating ClusterServiceClass: %v", err)
 			}
 
-			if err := util.WaitForClusterServiceClassToExist(ct.client, testClusterServiceClassGUID); err != nil {
+			if err := util.WaitForServiceClassToExist(ct.client, testClusterServiceClassGUID); err != nil {
 				t.Fatalf("error waiting for ClusterServiceClass to exist: %v", err)
 			}
 
@@ -206,7 +206,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 			if _, err := ct.client.ClusterServicePlans().Create(servicePlan); err != nil {
 				t.Fatalf("error creating ClusterServicePlan: %v", err)
 			}
-			if err := util.WaitForClusterServicePlanToExist(ct.client, testPlanExternalID); err != nil {
+			if err := util.WaitForServicePlanToExist(ct.client, testPlanExternalID); err != nil {
 				t.Fatalf("error waiting for ClusterServicePlan to exist: %v", err)
 			}
 		},
@@ -1312,10 +1312,10 @@ func TestCreateServiceInstanceFailsWithNonexistentPlan(t *testing.T) {
 			if _, err := ct.client.ClusterServiceBrokers().Update(ct.broker); err != nil {
 				t.Fatalf("error updating Broker: %v", err)
 			}
-			if err := util.WaitForClusterServicePlanToExist(ct.client, otherPlanID); err != nil {
+			if err := util.WaitForServicePlanToExist(ct.client, otherPlanID); err != nil {
 				t.Fatalf("error waiting for ClusterServiceClass to exist: %v", err)
 			}
-			if err := util.WaitForClusterServicePlanToNotExist(ct.client, testPlanExternalID); err != nil {
+			if err := util.WaitForServicePlanToNotExist(ct.client, testPlanExternalID); err != nil {
 				t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 			}
 

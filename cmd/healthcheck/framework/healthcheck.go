@@ -197,7 +197,7 @@ func (h *HealthCheck) verifyBrokerIsReady() error {
 		return h.setError("broker not ready: %v", err.Error())
 	}
 
-	err = util.WaitForClusterServiceClassToExist(h.serviceCatalogClientSet.ServicecatalogV1beta1(), h.serviceclassID)
+	err = util.WaitForServiceClassToExist(h.serviceCatalogClientSet.ServicecatalogV1beta1(), h.serviceclassID)
 	if err != nil {
 		return h.setError("service class not found: %v", err.Error())
 	}
