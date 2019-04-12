@@ -9,6 +9,7 @@ useAggregator: true
 ## If true, create & use RBAC resources
 ##
 rbacEnable: true
+rbacApiVersion: rbac.authorization.k8s.io/v1
 apiserver:
   replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
