@@ -51,6 +51,7 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
+// Validate checks that the required arguments have been provided
 func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("a binding name is required")
@@ -60,6 +61,7 @@ func (c *describeCmd) Validate(args []string) error {
 	return nil
 }
 
+// Run print the secret of a binding which retrieved by name and namespace.
 func (c *describeCmd) Run() error {
 	return c.describe()
 }
