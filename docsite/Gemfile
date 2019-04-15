@@ -2,7 +2,7 @@ source "https://rubygems.org"
 
 # gem "github-pages", group: :jekyll_plugins
 
-gem "jekyll", "3.6.0"
+gem "jekyll", "3.6.3"
 
 group :github_pages_compatible do
     gem "json", "~> 1.7", ">= 1.7.7"
