@@ -150,6 +150,106 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 	}
 }
 
+func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
+	const fixUUID = "mocked-uuid-123-abc"
+	tests := map[string]struct {
+		givenOldRawObj []byte
+		givenNewRawObj []byte
+		expPatches     []jsonpatch.Operation
+	}{
+		"Should clear out the ClusterServicePlanRef": {
+			givenOldRawObj: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ServiceInstance",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-instance",
+                  "generation": 1
+  				},
+  				"spec": {
+				  "updateRequests": 1,
+				  "clusterServiceClassExternalName": "some-class",
+				  "clusterServicePlanExternalName": "some-plan",
+                  "clusterServicePlanRef": {"name": "plan-01"},
+                  "externalID": "external-id-001"
+  				}
+			}`),
+			givenNewRawObj: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ServiceInstance",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-instance",
+				  "generation": 1
+  				},
+  				"spec": {
+				  "updateRequests": 1,
+				  "clusterServiceClassExternalName": "some-class",
+				  "clusterServicePlanExternalName": "some-plan-changed",
+				  "clusterServicePlanRef": {"name": "plan-01"},
+				  "externalID": "external-id-001"
+  				}
+			}`),
+			expPatches: []jsonpatch.Operation{
+				{
+					Operation: "remove",
+					Path:      "/spec/clusterServicePlanRef",
+				},
+			},
+		},
+	}
+
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			// given
+			sc.AddToScheme(scheme.Scheme)
+			decoder, err := admission.NewDecoder(scheme.Scheme)
+			require.NoError(t, err)
+
+			err = utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+			require.NoError(t, err, "cannot disable OriginatingIdentity feature")
+			// restore default state
+			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+
+			fixReq := admission.Request{
+				AdmissionRequest: admissionv1beta1.AdmissionRequest{
+					Operation: admissionv1beta1.Update,
+					Name:      "test-instance",
+					Namespace: "system",
+					Kind: metav1.GroupVersionKind{
+						Kind:    "ServiceInstance",
+						Version: "v1beta1",
+						Group:   "servicecatalog.k8s.io",
+					},
+					OldObject: runtime.RawExtension{Raw: tc.givenOldRawObj},
+					Object:    runtime.RawExtension{Raw: tc.givenNewRawObj},
+				},
+			}
+
+			handler := mutation.CreateUpdateHandler{
+				UUID: func() types.UID { return fixUUID },
+			}
+			handler.InjectDecoder(decoder)
+
+			// when
+			resp := handler.Handle(context.Background(), fixReq)
+
+			// then
+			assert.True(t, resp.Allowed)
+			require.NotNil(t, resp.PatchType)
+			assert.Equal(t, admissionv1beta1.PatchTypeJSONPatch, *resp.PatchType)
+
+			// filtering out status cause k8s api-server will discard this too
+			patches := tester.FilterOutStatusPatch(resp.Patches)
+
+			require.Len(t, patches, len(tc.expPatches))
+			for _, expPatch := range tc.expPatches {
+				assert.Contains(t, patches, expPatch)
+			}
+		})
+	}
+}
+
 func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *testing.T) {
 	// given
 	sc.AddToScheme(scheme.Scheme)

@@ -103,6 +103,112 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 	}
 }
 
+func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
+	tests := map[string]struct {
+		oldRawObject []byte
+		newRawObj    []byte
+
+		expPatches []jsonpatch.Operation
+	}{
+		"Should reset broker name to old one and allow to change other fields": {
+			oldRawObject: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ClusterServiceClass",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-class",
+                  "labels": {
+                    "servicecatalog.k8s.io/spec.externalName":"external-name",
+					"servicecatalog.k8s.io/spec.clusterServiceBrokerName":"test-broker",
+                    "servicecatalog.k8s.io/spec.externalID": "external-id"
+                  }
+  				},
+  				"spec": {
+                  "clusterServiceBrokerName": "test-broker",
+                  "externalName": "external-name",
+                  "externalID": "external-id",
+				  "description":"a description",
+				  "bindable": false,
+                  "bindingRetrievable": false,
+                  "planUpdatable": false
+  				}
+			}`),
+			newRawObj: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ClusterServiceClass",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-class",
+				  "labels": {
+                    "servicecatalog.k8s.io/spec.externalName":"external-name",
+					"servicecatalog.k8s.io/spec.clusterServiceBrokerName":"test-broker",
+                    "servicecatalog.k8s.io/spec.externalID": "external-id"
+                  }
+  				},
+  				"spec": {
+                  "clusterServiceBrokerName": "test-broker-new",
+                  "externalName": "external-name",
+                  "externalID": "external-id",
+				  "description":"a description",
+                  "bindable": true,
+				  "bindingRetrievable": true,
+                  "planUpdatable": false
+  				}
+			}`),
+			expPatches: []jsonpatch.Operation{
+				{
+					Operation: "replace",
+					Path:      "/spec/clusterServiceBrokerName",
+					Value:     "test-broker",
+				},
+			},
+		},
+	}
+
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			// given
+			sc.AddToScheme(scheme.Scheme)
+			decoder, err := admission.NewDecoder(scheme.Scheme)
+			require.NoError(t, err)
+
+			fixReq := admission.Request{
+				AdmissionRequest: admissionv1beta1.AdmissionRequest{
+					Operation: admissionv1beta1.Update,
+					Name:      "test-class",
+					Namespace: "system",
+					Kind: metav1.GroupVersionKind{
+						Kind:    "ClusterServiceClass",
+						Version: "v1beta1",
+						Group:   "servicecatalog.k8s.io",
+					},
+					OldObject: runtime.RawExtension{Raw: tc.oldRawObject},
+					Object:    runtime.RawExtension{Raw: tc.newRawObj},
+				},
+			}
+
+			handler := mutation.CreateUpdateHandler{}
+			handler.InjectDecoder(decoder)
+
+			// when
+			resp := handler.Handle(context.Background(), fixReq)
+
+			// then
+			assert.True(t, resp.Allowed)
+			require.NotNil(t, resp.PatchType)
+			assert.Equal(t, admissionv1beta1.PatchTypeJSONPatch, *resp.PatchType)
+
+			// filtering out status cause k8s api-server will discard this too
+			patches := tester.FilterOutStatusPatch(resp.Patches)
+
+			require.Len(t, patches, len(tc.expPatches))
+			for _, expPatch := range tc.expPatches {
+				assert.Contains(t, patches, expPatch)
+			}
+		})
+	}
+}
+
 func TestCreateUpdateHandlerHandleDecoderErrors(t *testing.T) {
 	tester.DiscardLoggedMsg()
 

@@ -136,6 +136,96 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 	}
 }
 
+func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
+	tests := map[string]struct {
+		oldRawObject []byte
+		newRawObj    []byte
+
+		expPatches []jsonpatch.Operation
+	}{
+		"Should restore previous relist request, when not provided (set to 0)": {
+			oldRawObject: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ClusterServiceBroker",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-broker",
+                  "generation": 1
+  				},
+  				"spec": {
+				  "relistRequests": 1,
+				  "relistBehavior": "Duration",	
+  				  "url": "http://localhost:8081/"
+  				}
+			}`),
+			newRawObj: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ClusterServiceBroker",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-broker",
+                  "generation": 1
+  				},
+  				"spec": {
+				  "relistRequests": 0,
+				  "relistBehavior": "Duration",
+  				  "url": "http://localhost:8081/"
+  				}
+			}`),
+			expPatches: []jsonpatch.Operation{
+				{
+					Operation: "replace",
+					Path:      "/spec/relistRequests",
+					Value:     float64(1),
+				},
+			},
+		},
+	}
+
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			// given
+			sc.AddToScheme(scheme.Scheme)
+			decoder, err := admission.NewDecoder(scheme.Scheme)
+			require.NoError(t, err)
+
+			fixReq := admission.Request{
+				AdmissionRequest: admissionv1beta1.AdmissionRequest{
+					Operation: admissionv1beta1.Update,
+					Name:      "test-broker",
+					Namespace: "system",
+					Kind: metav1.GroupVersionKind{
+						Kind:    "ClusterServiceBroker",
+						Version: "v1beta1",
+						Group:   "servicecatalog.k8s.io",
+					},
+					OldObject: runtime.RawExtension{Raw: tc.oldRawObject},
+					Object:    runtime.RawExtension{Raw: tc.newRawObj},
+				},
+			}
+
+			handler := mutation.CreateUpdateHandler{}
+			handler.InjectDecoder(decoder)
+
+			// when
+			resp := handler.Handle(context.Background(), fixReq)
+
+			// then
+			assert.True(t, resp.Allowed)
+			require.NotNil(t, resp.PatchType)
+			assert.Equal(t, admissionv1beta1.PatchTypeJSONPatch, *resp.PatchType)
+
+			// filtering out status cause k8s api-server will discard this too
+			patches := tester.FilterOutStatusPatch(resp.Patches)
+
+			require.Len(t, patches, len(tc.expPatches))
+			for _, expPatch := range tc.expPatches {
+				assert.Contains(t, patches, expPatch)
+			}
+		})
+	}
+}
+
 func TestCreateUpdateHandlerHandleDecoderErrors(t *testing.T) {
 	tester.DiscardLoggedMsg()
 

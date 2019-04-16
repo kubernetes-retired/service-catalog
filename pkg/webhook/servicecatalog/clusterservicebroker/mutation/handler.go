@@ -46,7 +46,7 @@ var _ admission.Handler = &CreateUpdateHandler{}
 // Handle handles admission requests.
 func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
-	traced.Infof("Start handling operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
+	traced.Infof("Start handling mutation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 
 	cb := &sc.ClusterServiceBroker{}
 	if err := webhookutil.MatchKinds(cb, req.Kind); err != nil {
@@ -64,7 +64,12 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 	case admissionTypes.Create:
 		h.mutateOnCreate(ctx, mutated)
 	case admissionTypes.Update:
-		h.mutateOnUpdate(ctx, mutated)
+		oldObj := &sc.ClusterServiceBroker{}
+		if err := h.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
+			traced.Errorf("Could not decode request old object: %v", err)
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		h.mutateOnUpdate(ctx, oldObj, mutated)
 	default:
 		traced.Infof("ClusterServiceBroker mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
@@ -79,14 +84,6 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 	traced.Infof("Completed successfully operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 	return admission.PatchResponseFromRaw(req.Object.Raw, rawMutated)
 }
-
-//var _ inject.Client = &CreateUpdateHandler{}
-//
-//// InjectClient injects the client into the CreateUpdateHandler
-//func (h *CreateUpdateHandler) InjectClient(c client.Client) error {
-//	h.client = c
-//	return nil
-//}
 
 var _ admission.DecoderInjector = &CreateUpdateHandler{}
 
@@ -106,6 +103,9 @@ func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, sb *sc.Cluster
 	}
 }
 
-func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, obj *sc.ClusterServiceBroker) {
-	// TODO: implement logic from pkg/registry/servicecatalog/clusterservicebroker/strategy.go
+func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, oldClusterServiceBroker, newClusterServiceBroker *sc.ClusterServiceBroker) {
+	// Ignore the RelistRequests field when it is the default value
+	if newClusterServiceBroker.Spec.RelistRequests == 0 {
+		newClusterServiceBroker.Spec.RelistRequests = oldClusterServiceBroker.Spec.RelistRequests
+	}
 }

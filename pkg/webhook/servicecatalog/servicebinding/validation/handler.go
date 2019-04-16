@@ -47,7 +47,8 @@ var _ inject.Client = &AdmissionHandler{}
 // NewAdmissionHandler creates new AdmissionHandler and initializes validators list
 func NewAdmissionHandler() *AdmissionHandler {
 	return &AdmissionHandler{
-		CreateValidators: []Validator{&ReferenceDeletion{}},
+		CreateValidators: []Validator{&ReferenceDeletion{}, &StaticCreate{}},
+		UpdateValidators: []Validator{&StaticUpdate{}},
 	}
 }
 

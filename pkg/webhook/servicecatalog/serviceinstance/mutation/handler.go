@@ -27,6 +27,7 @@ import (
 	admissionTypes "k8s.io/api/admission/v1beta1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -51,7 +52,7 @@ var _ admission.Handler = &CreateUpdateHandler{}
 // Handle handles admission requests.
 func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
-	traced.Infof("Start handling operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
+	traced.Infof("Start handling mutation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 
 	si := &sc.ServiceInstance{}
 	if err := webhookutil.MatchKinds(si, req.Kind); err != nil {
@@ -69,7 +70,12 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 	case admissionTypes.Create:
 		h.mutateOnCreate(ctx, req, mutated)
 	case admissionTypes.Update:
-		h.mutateOnUpdate(ctx, mutated)
+		oldObj := &sc.ServiceInstance{}
+		if err := h.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
+			traced.Errorf("Could not decode request old object: %v", err)
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		h.mutateOnUpdate(ctx, req, oldObj, mutated)
 	default:
 		traced.Infof("ServiceInstance mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
@@ -104,7 +110,8 @@ func (h *CreateUpdateHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.Request, instance *sc.ServiceInstance) {
-	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
+	// This feature was copied from Service Catalog registry: https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/registry/servicecatalog/instance/strategy.go
+	// If you want to track previous changes please check there.
 
 	if instance.Spec.ExternalID == "" {
 		instance.Spec.ExternalID = string(h.UUID.New())
@@ -113,10 +120,32 @@ func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.
 	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 		setServiceInstanceUserInfo(req, instance)
 	}
+
+	instance.Spec.ClusterServiceClassRef = nil
+	instance.Spec.ClusterServicePlanRef = nil
+	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
 
-func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, obj *sc.ServiceInstance) {
-	// TODO: implement logic from pkg/registry/servicecatalog/instance/strategy.go
+func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, req admission.Request, oldServiceInstance, newServiceInstance *sc.ServiceInstance) {
+
+	// Clear out the ClusterServicePlanRef so that it is resolved during reconciliation
+	planUpdated := newServiceInstance.Spec.ClusterServicePlanExternalName != oldServiceInstance.Spec.ClusterServicePlanExternalName ||
+		newServiceInstance.Spec.ClusterServicePlanExternalID != oldServiceInstance.Spec.ClusterServicePlanExternalID ||
+		newServiceInstance.Spec.ClusterServicePlanName != oldServiceInstance.Spec.ClusterServicePlanName
+	if planUpdated {
+		newServiceInstance.Spec.ClusterServicePlanRef = nil
+	}
+
+	// Ignore the UpdateRequests field when it is the default value
+	if newServiceInstance.Spec.UpdateRequests == 0 {
+		newServiceInstance.Spec.UpdateRequests = oldServiceInstance.Spec.UpdateRequests
+	}
+
+	if !apiequality.Semantic.DeepEqual(oldServiceInstance.Spec, newServiceInstance.Spec) {
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+			setServiceInstanceUserInfo(req, newServiceInstance)
+		}
+	}
 }
 
 // setServiceInstanceUserInfo injects user.Info from the request context

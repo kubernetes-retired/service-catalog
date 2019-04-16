@@ -23,7 +23,7 @@ import (
 	sctestutil "github.com/kubernetes-sigs/service-catalog/test/util"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

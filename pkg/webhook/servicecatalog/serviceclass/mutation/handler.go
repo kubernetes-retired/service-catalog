@@ -38,7 +38,7 @@ var _ admission.Handler = &CreateUpdateHandler{}
 // Handle handles admission requests.
 func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
-	traced.Infof("Start handling operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
+	traced.Infof("Start handling mutation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 
 	cb := &sc.ServiceClass{}
 	if err := webhookutil.MatchKinds(cb, req.Kind); err != nil {
@@ -56,7 +56,12 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 	case admissionTypes.Create:
 		h.mutateOnCreate(ctx, mutated)
 	case admissionTypes.Update:
-		h.mutateOnUpdate(ctx, mutated)
+		oldObj := &sc.ServiceClass{}
+		if err := h.decoder.DecodeRaw(req.OldObject, oldObj); err != nil {
+			traced.Errorf("Could not decode request old object: %v", err)
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		h.mutateOnUpdate(ctx, oldObj, mutated)
 	default:
 		traced.Infof("ServiceClass mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
@@ -80,12 +85,12 @@ func (h *CreateUpdateHandler) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, binding *sc.ServiceClass) {
-
+func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, serviceClass *sc.ServiceClass) {
+	serviceClass.Status = sc.ServiceClassStatus{}
 }
 
-func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, obj *sc.ServiceClass) {
-	// TODO: implement logic from pkg/registry/servicecatalog/binding/strategy.go
+func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, oldServiceClass, newServiceClass *sc.ServiceClass) {
+	newServiceClass.Spec.ServiceBrokerName = oldServiceClass.Spec.ServiceBrokerName
 }
 
 func (h *CreateUpdateHandler) syncLabels(obj *sc.ServiceClass) {

@@ -32,9 +32,13 @@ import (
 	spmutation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceplan/mutation"
 
 	csbrvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterservicebroker/validation"
+	cscvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterserviceclass/validation"
+	cspvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/clusterserviceplan/validation"
 	sbvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebinding/validation"
 	sbrvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebroker/validation"
+	scvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceclass/validation"
 	sivalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/validation"
+	spvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceplan/validation"
 
 	"github.com/pkg/errors"
 	"k8s.io/apiserver/pkg/server/healthz"
@@ -84,10 +88,18 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		"/mutating-serviceplans":     &spmutation.CreateUpdateHandler{},
 		"/mutating-serviceinstances": simutation.New(),
 
-		"/validating-clusterservicebrokers": csbrvalidation.NewAdmissionHandler(),
-		"/validating-servicebindings":       sbvalidation.NewAdmissionHandler(),
-		"/validating-servicebrokers":        sbrvalidation.NewAdmissionHandler(),
-		"/validating-serviceinstances":      sivalidation.NewAdmissionHandler(),
+		"/validating-clusterservicebrokers":        csbrvalidation.NewAdmissionHandler(),
+		"/validating-clusterservicebrokers/status": &csbrvalidation.StatusUpdateHandler{},
+		"/validating-clusterserviceclasses":        cscvalidation.NewAdmissionHandler(),
+		"/validating-clusterserviceplans":          cspvalidation.NewAdmissionHandler(),
+
+		"/validating-servicebindings":        sbvalidation.NewAdmissionHandler(),
+		"/validating-servicebindings/status": &sbvalidation.StatusUpdateValidationHandler{},
+		"/validating-servicebrokers":         sbrvalidation.NewAdmissionHandler(),
+		"/validating-servicebrokers/status":  &sbrvalidation.StatusUpdateHandler{},
+		"/validating-serviceclasses":         scvalidation.NewAdmissionHandler(),
+		"/validating-serviceplans":           spvalidation.NewAdmissionHandler(),
+		"/validating-serviceinstances":       sivalidation.NewAdmissionHandler(),
 	}
 
 	for path, handler := range webhooks {

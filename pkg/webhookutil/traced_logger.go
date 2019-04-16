@@ -39,22 +39,22 @@ func NewTracedLogger(uid types.UID) *TracedLogger {
 
 // Infof logs to the INFO log.
 func (l *TracedLogger) Infof(format string, args ...interface{}) {
-	klog.Infof(l.tracedMsgf(format, args...))
+	klog.InfoDepth(1, l.tracedMsgf(format, args...))
 }
 
 // Errorf logs to the ERROR, WARNING, and INFO logs.
 func (l *TracedLogger) Errorf(format string, args ...interface{}) {
-	klog.Errorf(l.tracedMsgf(format, args...))
+	klog.ErrorDepth(1, l.tracedMsgf(format, args...))
 }
 
 // Info logs to the INFO log.
 func (l *TracedLogger) Info(args ...interface{}) {
-	klog.Info(l.tracedMsg(args...))
+	klog.InfoDepth(1, l.tracedMsg(args...))
 }
 
 // Error logs to the ERROR, WARNING, and INFO logs.
 func (l *TracedLogger) Error(args ...interface{}) {
-	klog.Error(l.tracedMsg(args...))
+	klog.ErrorDepth(1, l.tracedMsg(args...))
 }
 
 func (l *TracedLogger) tracedMsgf(format string, args ...interface{}) string {

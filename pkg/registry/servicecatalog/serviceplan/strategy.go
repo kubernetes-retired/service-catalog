@@ -27,7 +27,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
 	"k8s.io/klog"
 )

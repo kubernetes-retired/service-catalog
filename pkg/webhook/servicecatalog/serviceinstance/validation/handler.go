@@ -49,7 +49,8 @@ var _ inject.Client = &AdmissionHandler{}
 // NewAdmissionHandler creates new AdmissionHandler and initializes validators list
 func NewAdmissionHandler() *AdmissionHandler {
 	return &AdmissionHandler{
-		UpdateValidators: []Validator{&DenyPlanChangeIfNotUpdatable{}},
+		UpdateValidators: []Validator{&StaticUpdate{}, &DenyPlanChangeIfNotUpdatable{}},
+		CreateValidators: []Validator{&StaticCreate{}},
 	}
 }
 

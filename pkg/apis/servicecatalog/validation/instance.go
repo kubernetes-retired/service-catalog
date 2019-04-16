@@ -19,7 +19,7 @@ package validation
 import (
 	"fmt"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -78,7 +78,6 @@ func internalValidateServiceInstance(instance *sc.ServiceInstance, create bool) 
 		validateServiceInstanceName,
 		field.NewPath("metadata"))...)
 	allErrs = append(allErrs, validateServiceInstanceSpec(&instance.Spec, field.NewPath("spec"), create)...)
-	allErrs = append(allErrs, validateServiceInstanceStatus(&instance.Status, field.NewPath("status"), create)...)
 	if create {
 		allErrs = append(allErrs, validateServiceInstanceCreate(instance)...)
 	} else {
@@ -405,6 +404,7 @@ func internalValidateServiceInstanceReferencesUpdateAllowed(new *sc.ServiceInsta
 func ValidateServiceInstanceStatusUpdate(new *sc.ServiceInstance, old *sc.ServiceInstance) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, internalValidateServiceInstanceStatusUpdateAllowed(new, old)...)
+	allErrs = append(allErrs, validateServiceInstanceStatus(&new.Status, field.NewPath("status"), false)...)
 	allErrs = append(allErrs, internalValidateServiceInstance(new, false)...)
 	return allErrs
 }

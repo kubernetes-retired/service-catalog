@@ -19,7 +19,7 @@ package servicebroker
 import (
 	"testing"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	sctestutil "github.com/kubernetes-sigs/service-catalog/test/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
