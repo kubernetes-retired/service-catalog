@@ -435,9 +435,9 @@ func AssertServiceInstanceConditionFalseOrAbsent(t *testing.T, instance *v1beta1
 // EnableOriginatingIdentity enables the OriginatingIdentity feature gate.  Returns
 // the prior state of the gate.
 func EnableOriginatingIdentity(t *testing.T, enabled bool) (previousState bool) {
-	prevOrigIdentEnablement := utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity)
+	prevOrigIdentEnablement := utilfeature.DefaultMutableFeatureGate.Enabled(scfeatures.OriginatingIdentity)
 	if prevOrigIdentEnablement != enabled {
-		err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, enabled))
+		err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, enabled))
 		if err != nil {
 			t.Fatalf("Failed to enable originating identity feature: %v", err)
 		}

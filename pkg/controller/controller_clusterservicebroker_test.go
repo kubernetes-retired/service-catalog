@@ -854,7 +854,7 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 
 	broker := getTestClusterServiceBrokerWithAuth(authInfo)
 	if secret != nil {
-		fakeKubeClient.Core().Secrets(secret.Namespace).Create(secret)
+		fakeKubeClient.CoreV1().Secrets(secret.Namespace).Create(secret)
 	}
 	testClusterServiceClass := getTestClusterServiceClass()
 	fakeClusterServiceBrokerClient.CatalogReaction = &fakeosb.CatalogReaction{

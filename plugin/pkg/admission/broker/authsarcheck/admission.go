@@ -66,7 +66,7 @@ func convertToSARExtra(extra map[string][]string) map[string]authorizationapi.Ex
 	return ret
 }
 
-func (s *sarcheck) Admit(a admission.Attributes) error {
+func (s *sarcheck) Admit(a admission.Attributes, o admission.ObjectInterfaces) error {
 	// need to wait for our caches to warm
 	if !s.WaitForReady() {
 		return admission.NewForbidden(a, fmt.Errorf("not yet ready to handle request"))

@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"k8s.io/client-go/kubernetes"
+	v1coordination "k8s.io/client-go/kubernetes/typed/coordination/v1"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"k8s.io/api/core/v1"
@@ -247,14 +248,20 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		return err
 	}
 
-	klog.V(5).Infof("Using namespace %v for leader election lock", controllerManagerOptions.LeaderElectionNamespace)
+	// create config for interacting with coordination.k8s.io group
+	coordinationClient, err := v1coordination.NewForConfig(k8sKubeconfig)
+	if err != nil {
+		return err
+	}
 
+	klog.V(5).Infof("Using namespace %v for leader election lock", controllerManagerOptions.LeaderElectionNamespace)
 	// Lock required for leader election
 	rl, err := resourcelock.New(
 		controllerManagerOptions.LeaderElection.ResourceLock,
 		controllerManagerOptions.LeaderElectionNamespace,
 		"service-catalog-controller-manager",
 		leaderElectionClient.CoreV1(),
+		coordinationClient,
 		resourcelock.ResourceLockConfig{
 			Identity:      id + "-external-service-catalog-controller",
 			EventRecorder: recorder,

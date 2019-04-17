@@ -78,17 +78,7 @@ func (c *Clientset) ServicecatalogV1beta1() servicecatalogv1beta1.Servicecatalog
 	return &fakeservicecatalogv1beta1.FakeServicecatalogV1beta1{Fake: &c.Fake}
 }
 
-// Servicecatalog retrieves the ServicecatalogV1beta1Client
-func (c *Clientset) Servicecatalog() servicecatalogv1beta1.ServicecatalogV1beta1Interface {
-	return &fakeservicecatalogv1beta1.FakeServicecatalogV1beta1{Fake: &c.Fake}
-}
-
 // SettingsV1alpha1 retrieves the SettingsV1alpha1Client
 func (c *Clientset) SettingsV1alpha1() settingsv1alpha1.SettingsV1alpha1Interface {
-	return &fakesettingsv1alpha1.FakeSettingsV1alpha1{Fake: &c.Fake}
-}
-
-// Settings retrieves the SettingsV1alpha1Client
-func (c *Clientset) Settings() settingsv1alpha1.SettingsV1alpha1Interface {
 	return &fakesettingsv1alpha1.FakeSettingsV1alpha1{Fake: &c.Fake}
 }

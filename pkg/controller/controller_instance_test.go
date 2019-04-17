@@ -767,7 +767,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 }
 
 func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.ServicePlanDefaults))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.ServicePlanDefaults))
 	if err != nil {
 		t.Fatalf("Could not enable ServicePlanDefaults feature flag.")
 	}
@@ -839,8 +839,8 @@ func TestReconcileServiceInstanceAppliesDefaultProvisioningParams(t *testing.T) 
 	}
 }
 
-func TestReconcileServiceInstanceRespectsServicePlanDefaultsFeatureGate(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.ServicePlanDefaults))
+func TestReconcileServiceInstanceRespectsServicePlanDefaultsMutableFeatureGate(t *testing.T) {
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.ServicePlanDefaults))
 	if err != nil {
 		t.Fatalf("Could not disable ServicePlanDefaults feature flag.")
 	}
@@ -3826,7 +3826,7 @@ func TestReconcileInstanceUsingOriginatingIdentity(t *testing.T) {
 	for _, tc := range originatingIdentityTestCases {
 		func() {
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -3882,7 +3882,7 @@ func TestReconcileInstanceDeleteUsingOriginatingIdentity(t *testing.T) {
 		func() {
 
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			_, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -3948,7 +3948,7 @@ func TestPollInstanceUsingOriginatingIdentity(t *testing.T) {
 	for _, tc := range originatingIdentityTestCases {
 		func() {
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			_, _, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -4915,17 +4915,17 @@ func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
 			},
 		})
 		if tc.enableUpdateDashboardURL {
-			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL))
+			err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.UpdateDashboardURL))
 			if err != nil {
 				t.Fatalf("Failed to enable updatable dashboard URL feature: %v", err)
 			}
 		} else {
-			err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
+			err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
 			if err != nil {
 				t.Fatalf("Failed to enable updatable dashboard URL feature: %v", err)
 			}
 		}
-		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
+		defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.UpdateDashboardURL))
 
 		sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 		sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestClusterServiceClass())

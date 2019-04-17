@@ -29,11 +29,7 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	ServicecatalogV1beta1() servicecatalogv1beta1.ServicecatalogV1beta1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Servicecatalog() servicecatalogv1beta1.ServicecatalogV1beta1Interface
 	SettingsV1alpha1() settingsv1alpha1.SettingsV1alpha1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Settings() settingsv1alpha1.SettingsV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -49,20 +45,8 @@ func (c *Clientset) ServicecatalogV1beta1() servicecatalogv1beta1.Servicecatalog
 	return c.servicecatalogV1beta1
 }
 
-// Deprecated: Servicecatalog retrieves the default version of ServicecatalogClient.
-// Please explicitly pick a version.
-func (c *Clientset) Servicecatalog() servicecatalogv1beta1.ServicecatalogV1beta1Interface {
-	return c.servicecatalogV1beta1
-}
-
 // SettingsV1alpha1 retrieves the SettingsV1alpha1Client
 func (c *Clientset) SettingsV1alpha1() settingsv1alpha1.SettingsV1alpha1Interface {
-	return c.settingsV1alpha1
-}
-
-// Deprecated: Settings retrieves the default version of SettingsClient.
-// Please explicitly pick a version.
-func (c *Clientset) Settings() settingsv1alpha1.SettingsV1alpha1Interface {
 	return c.settingsV1alpha1
 }
 

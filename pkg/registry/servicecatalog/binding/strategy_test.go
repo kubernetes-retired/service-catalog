@@ -99,7 +99,7 @@ func TestInstanceCredentialUpdate(t *testing.T) {
 func TestInstanceCredentialUserInfo(t *testing.T) {
 	// Enable the OriginatingIdentity feature
 	prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, true)
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 	creatorUserName := "creator"
 	createdInstanceCredential := getTestInstanceCredential()
