@@ -112,10 +112,6 @@ func (c *getCmd) Validate(args []string) error {
 }
 
 func (c *getCmd) Run() error {
-	fmt.Println("KUBENAME: ", c.kubeName)
-	fmt.Println("EXTERNAL NAME: ", c.name)
-	fmt.Println("CLASS EXTERNAL NAME: ", c.className)
-	fmt.Println("CLASS NAME: ", c.classKubeName)
 	if c.kubeName == "" && c.name == "" {
 		return c.getAll()
 	}
@@ -154,7 +150,6 @@ func (c *getCmd) getAll() error {
 	}
 
 	plans, err := c.App.RetrievePlans(classID, opts)
-	fmt.Println("PLANS: ", plans)
 	if err != nil {
 		return fmt.Errorf("unable to list plans (%s)", err)
 	}
@@ -187,12 +182,12 @@ func (c *getCmd) get() error {
 		return err
 	}
 	// Retrieve the class as well because plans don't have the external class name
-	class, err := c.App.RetrieveClassByID(plan.GetClassID())
+	class, err := c.App.RetrieveClassByID(plan.GetClassID(), opts)
 	if err != nil {
 		return err
 	}
 
-	output.WritePlan(c.Output, c.OutputFormat, plan, *class)
+	output.WritePlan(c.Output, c.OutputFormat, plan, class)
 
 	return nil
 }

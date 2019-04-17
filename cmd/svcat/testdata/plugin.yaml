@@ -137,10 +137,15 @@ tree:
         svcat describe class mysqldb
         svcat describe class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5
     flags:
-    - desc: Whether or not to get the class by its Kubernetes Name (the default is
+    - desc: If present, list the requested object(s) across all namespaces. Namespace
+        in current context is ignored even if specified with --namespace
+      name: all-namespaces
+    - desc: Whether or not to get the class by its Kubernetes name (the default is
         by external name)
       name: kube-name
       shorthand: k
+    - desc: 'Limit the command to a particular scope: cluster, namespace or all'
+      name: scope
     name: class
     shortDesc: Show details of a specific class
     use: class NAME

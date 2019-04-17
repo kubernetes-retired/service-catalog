@@ -29,6 +29,9 @@ import (
 const (
 	// FieldExternalClassName is the jsonpath to a class's external name.
 	FieldExternalClassName = "spec.externalName"
+	// MultipleClassesFoundError is the error returned when we find a clusterserviceclass
+	// and a serviceclass with the same name
+	MultipleClassesFoundError = "More than one class found"
 )
 
 // CreateClassFromOptions allows to specify how a new class will be created
@@ -154,12 +157,41 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 }
 
 // RetrieveClassByID gets a class by its Kubernetes name.
-func (sdk *SDK) RetrieveClassByID(kubeName string) (*v1beta1.ClusterServiceClass, error) {
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(kubeName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to get class (%s)", err)
+func (sdk *SDK) RetrieveClassByID(kubeName string, opts ScopeOptions) (Class, error) {
+	var csc *v1beta1.ClusterServiceClass
+	var sc *v1beta1.ServiceClass
+	var err error
+	if opts.Scope.Matches(ClusterScope) {
+		csc, err = sdk.ServiceCatalog().ClusterServiceClasses().Get(kubeName, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			csc = nil
+		}
+		if err != nil && !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("unable to get class (%s)", err)
+		}
 	}
-	return class, nil
+	if opts.Scope.Matches(NamespaceScope) {
+		sc, err = sdk.ServiceCatalog().ServiceClasses(opts.Namespace).Get(kubeName, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			sc = nil
+		}
+		if err != nil && !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("unable to get class (%s)", err)
+		}
+	}
+
+	switch {
+	case csc != nil && sc != nil:
+		return nil, fmt.Errorf(MultipleClassesFoundError+" for '%s'", kubeName)
+	case csc == nil && sc == nil:
+		return nil, fmt.Errorf("no matching class found for k8s name '%s'", kubeName)
+	case csc != nil && sc == nil:
+		return csc, nil
+	case csc == nil && sc != nil:
+		return sc, nil
+	default:
+		return nil, fmt.Errorf("this error shouldn't be happening")
+	}
 }
 
 // RetrieveClassByPlan gets the class associated to a plan.
