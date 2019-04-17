@@ -54,7 +54,7 @@ Service Broker
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | Image to use | `quay.io/kubernetes-service-catalog/test-broker:v0.1.42` |
+| `image` | Image to use | `quay.io/kubernetes-service-catalog/test-broker:v0.1.43` |
 | `imagePullPolicy` | `imagePullPolicy` for the test-broker | `Always` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
