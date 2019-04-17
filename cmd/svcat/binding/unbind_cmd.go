@@ -87,6 +87,7 @@ func NewUnbindCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
+// Validate checks that the required arguments have been provided
 func (c *unbindCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		if len(c.bindingNames) == 0 {
@@ -99,6 +100,7 @@ func (c *unbindCmd) Validate(args []string) error {
 	return nil
 }
 
+// Run delete bindings by the name of the instance.
 func (c *unbindCmd) Run() error {
 	// Indicates an error occurred and that a non-zero exit code should be used
 	var hasErrors bool
