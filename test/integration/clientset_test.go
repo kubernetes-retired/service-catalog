@@ -1513,7 +1513,7 @@ func testInstanceClient(client servicecatalogclient.Interface, name string) erro
 	instanceServer.Spec.ClusterServiceClassRef = classRef
 	planRef := &v1beta1.ClusterObjectReference{Name: "service-plan-ref"}
 	instanceServer.Spec.ClusterServicePlanRef = planRef
-	returnedInstance, err := instanceClient.UpdateReferences(instanceServer)
+	returnedInstance, err := instanceClient.Update(instanceServer)
 	if err != nil {
 		return fmt.Errorf("Error updating instance references: %v", err)
 	}

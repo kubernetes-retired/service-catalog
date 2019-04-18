@@ -1832,14 +1832,10 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	pcb := pretty.NewInstanceContextBuilder(toUpdate)
 	klog.V(4).Info(pcb.Message("Updating references"))
-	status := toUpdate.Status
-	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).UpdateReferences(toUpdate)
+	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).Update(toUpdate)
 	if err != nil {
 		klog.Errorf(pcb.Messagef("Failed to update references: %v", err))
 	}
-	// The UpdateReferences method ignores status changes.
-	// Restore status that might have changed locally to be able to update it later.
-	updatedInstance.Status = status
 	return updatedInstance, err
 }
 

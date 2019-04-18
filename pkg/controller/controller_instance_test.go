@@ -823,7 +823,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
+	updatedServiceInstance := assertUpdate(t, actions[2], instance)
 
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
@@ -1025,7 +1025,7 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[1], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
@@ -1502,7 +1502,7 @@ func TestReconcileServiceInstanceSuccessWithK8SNames(t *testing.T) {
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
-	updatedServiceInstance := assertUpdateReference(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[0], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
@@ -5497,7 +5497,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 	}
 	assertList(t, actions[1], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
+	updatedServiceInstance := assertUpdate(t, actions[2], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
@@ -5581,7 +5581,7 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 	}
 	assertList(t, actions[0], &v1beta1.ClusterServicePlan{}, listRestrictions)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[1], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
@@ -5627,7 +5627,7 @@ func TestResolveReferencesWorksK8SNames(t *testing.T) {
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[0], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")

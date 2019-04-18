@@ -849,7 +849,7 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 	}
 	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
+	updatedServiceInstance := assertUpdate(t, actions[2], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")
