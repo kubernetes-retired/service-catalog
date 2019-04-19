@@ -58,7 +58,7 @@ type SvcatClient interface {
 	RetrieveClasses(ScopeOptions) ([]Class, error)
 	RetrieveClassByName(string, ScopeOptions) (Class, error)
 	RetrieveClassByID(string, ScopeOptions) (Class, error)
-	RetrieveClassByPlan(Plan) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByPlan(Plan) (Class, error)
 	CreateClassFrom(CreateClassFromOptions) (Class, error)
 
 	Deprovision(string, string) error

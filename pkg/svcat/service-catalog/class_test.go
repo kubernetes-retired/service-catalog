@@ -321,7 +321,7 @@ var _ = Describe("Class", func() {
 		})
 	})
 	Describe("RetrieveClassByPlan", func() {
-		It("Calls the generated v1beta1 get method with the plan's parent service class's name", func() {
+		It("Calls the generated v1beta1 get method for ClusterServiceClasses with the plan's parent service class's name if the plan is a ClusterServicePlan", func() {
 			classPlan := &v1beta1.ClusterServicePlan{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "foobar_plan",
@@ -343,10 +343,11 @@ var _ = Describe("Class", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(class).To(Equal(csc))
 			actions := realClient.Actions()
+			Expect(len(actions)).To(Equal(1))
 			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(csc.Name))
 		})
-		It("Bubbles up errors", func() {
+		It("Bubbles up errors from the v1beta1 ClusterServiceClass method", func() {
 			fakeClassName := "not_real"
 			errorMessage := "not found"
 
@@ -372,8 +373,64 @@ var _ = Describe("Class", func() {
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
 			Expect(class).To(BeNil())
 			actions := badClient.Actions()
+			Expect(len(actions)).To(Equal(1))
 			Expect(actions[0].Matches("get", "clusterserviceclasses")).To(BeTrue())
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(fakeClassName))
+		})
+		Context("ServiceClass", func() {
+			var (
+				classPlan *v1beta1.ServicePlan
+			)
+			BeforeEach(func() {
+				classPlan = &v1beta1.ServicePlan{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foobar_plan",
+						Namespace: sc.Namespace,
+					},
+					Spec: v1beta1.ServicePlanSpec{
+						ServiceClassRef: v1beta1.LocalObjectReference{
+							Name: sc.Name,
+						},
+					},
+				}
+			})
+			It("Calls the generated v1beta1 get method for ServiceClasses with the plan's parent service class's name if the plan is a ServicePlan", func() {
+				realClient := &fake.Clientset{}
+				realClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+					return true, sc, nil
+				})
+				sdk = &SDK{
+					ServiceCatalogClient: realClient,
+				}
+				class, err := sdk.RetrieveClassByPlan(classPlan)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(class).To(Equal(sc))
+				actions := realClient.Actions()
+				Expect(len(actions)).To(Equal(1))
+				Expect(actions[0].Matches("get", "serviceclasses")).To(BeTrue())
+				Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classPlan.Spec.ServiceClassRef.Name))
+				Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(classPlan.Namespace))
+			})
+			It("Bubbles up errors from the v1beta1 ServiceClass method", func() {
+				errorMessage := "not found"
+
+				badClient := &fake.Clientset{}
+				badClient.AddReactor("get", "serviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+					return true, nil, errors.New(errorMessage)
+				})
+				sdk = &SDK{
+					ServiceCatalogClient: badClient,
+				}
+				class, err := sdk.RetrieveClassByPlan(classPlan)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(errorMessage))
+				Expect(class).To(BeNil())
+				actions := badClient.Actions()
+				Expect(len(actions)).To(Equal(1))
+				Expect(actions[0].Matches("get", "serviceclasses")).To(BeTrue())
+				Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(classPlan.Spec.ServiceClassRef.Name))
+				Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(classPlan.Namespace))
+			})
 		})
 	})
 	Describe("CreateClassFrom", func() {

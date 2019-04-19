@@ -137,7 +137,7 @@ func WriteParentPlan(w io.Writer, plan *v1beta1.ClusterServicePlan) {
 }
 
 // WritePlanDetails prints details for a single plan.
-func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.ClusterServiceClass) {
+func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class servicecatalog.Class) {
 	t := NewDetailsTable(w)
 
 	t.AppendBulk([][]string{
@@ -146,7 +146,7 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 		{"Kubernetes Name:", string(plan.GetName())},
 		{"Status:", plan.GetShortStatus()},
 		{"Free:", strconv.FormatBool(plan.GetFree())},
-		{"Class:", class.Spec.ExternalName},
+		{"Class:", class.GetExternalName()},
 	})
 
 	t.Render()
