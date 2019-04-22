@@ -163,6 +163,17 @@ controllerManager:
   apiserverSkipVerify: true
   # Whether the controller will expose metrics on /metrics
   enablePrometheusScrape: false
+  # Attributes of the controller's service resource
+  service:
+    # Type of service; valid values are "LoadBalancer", "NodePort" and "ClusterIP"
+    # NodePort is useful if deploying on bare metal or hacking locally on
+    # minikube
+    type: ClusterIP
+    # Further configuration for services of type NodePort
+    nodePort:
+      # Available port in allowable range (e.g. 30000 - 32767 on minikube)
+      # The TLS-enabled endpoint will be exposed here
+      securePort: 30444
   # Controller Manager resource requests and limits
   # Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   resources:
