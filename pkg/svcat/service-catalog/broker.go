@@ -310,14 +310,14 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 }
 
 // WaitForBroker waits for the specified broker to be Ready or Failed
-func (sdk *SDK) WaitForBroker(name string, interval time.Duration, timeout *time.Duration) (broker Broker, err error) {
+func (sdk *SDK) WaitForBroker(name string, opts *ScopeOptions, interval time.Duration, timeout *time.Duration) (broker Broker, err error) {
 	if timeout == nil {
 		notimeout := time.Duration(math.MaxInt64)
 		timeout = &notimeout
 	}
 	err = wait.PollImmediate(interval, *timeout,
 		func() (bool, error) {
-			broker, err = sdk.retrieveBroker(name)
+			broker, err = sdk.RetrieveBrokerByID(name, *opts)
 			if err != nil {
 				if apierrors.IsNotFound(errors.Cause(err)) {
 					err = nil

@@ -59,7 +59,17 @@ var _ = Describe("Broker", func() {
 				Status: v1beta1.ConditionTrue,
 			})
 		sb = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar", Namespace: "default"}}
+		sb.Status.Conditions = append(sb.Status.Conditions,
+			v1beta1.ServiceBrokerCondition{
+				Type:   v1beta1.ServiceBrokerConditionReady,
+				Status: v1beta1.ConditionTrue,
+			})
 		sb2 = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "barbaz", Namespace: "ns2"}}
+		sb2.Status.Conditions = append(sb2.Status.Conditions,
+			v1beta1.ServiceBrokerCondition{
+				Type:   v1beta1.ServiceBrokerConditionReady,
+				Status: v1beta1.ConditionTrue,
+			})
 		svcCatClient = fake.NewSimpleClientset(csb, csb2, sb, sb2)
 		sdk = &SDK{
 			ServiceCatalogClient: svcCatClient,
@@ -651,12 +661,13 @@ var _ = Describe("Broker", func() {
 	})
 	Describe("WaitForBroker", func() {
 		var (
-			counter        int
-			interval       time.Duration
-			notReady       v1beta1.ServiceBrokerCondition
-			notReadyBroker *v1beta1.ClusterServiceBroker
-			timeout        time.Duration
-			waitClient     *fake.Clientset
+			counter                  int
+			interval                 time.Duration
+			notReady                 v1beta1.ServiceBrokerCondition
+			notReadyBroker           *v1beta1.ClusterServiceBroker
+			notReadyNamespacedBroker *v1beta1.ServiceBroker
+			timeout                  time.Duration
+			waitClient               *fake.Clientset
 		)
 		BeforeEach(func() {
 			counter = 0
@@ -664,9 +675,14 @@ var _ = Describe("Broker", func() {
 			notReady = v1beta1.ServiceBrokerCondition{Type: v1beta1.ServiceBrokerConditionReady, Status: v1beta1.ConditionFalse}
 			notReadyBroker = &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: csb.Name}}
 			notReadyBroker.Status.Conditions = []v1beta1.ServiceBrokerCondition{notReady}
+			notReadyNamespacedBroker = &v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: sb.Name, Namespace: sb.Namespace}}
+			notReadyNamespacedBroker.Status.Conditions = []v1beta1.ServiceBrokerCondition{notReady}
 			timeout = 1 * time.Second
 			waitClient = &fake.Clientset{}
 
+			waitClient.AddReactor("get", "servicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, nil
+			})
 			waitClient.AddReactor("get", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
 				counter++
 				return true, notReadyBroker, nil
@@ -681,14 +697,45 @@ var _ = Describe("Broker", func() {
 				}
 				return false, nil, nil
 			})
-
-			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+			opts := &ScopeOptions{
+				Namespace: "default",
+				Scope:     AllScope,
+			}
+			broker, err := sdk.WaitForBroker(csb.Name, opts, interval, &timeout)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(broker).To(Equal(csb))
 			actions := waitClient.Actions()
 			Expect(len(actions)).Should(BeNumerically(">", 1))
 			for _, v := range actions {
-				Expect(v.Matches("get", "clusterservicebrokers")).To(BeTrue())
+				Expect(v.Matches("get", "clusterservicebrokers") || v.Matches("get", "servicebrokers")).To(BeTrue())
+				Expect(v.(testing.GetActionImpl).Name).To(Equal(csb.Name))
+			}
+		})
+		It("waits until a namespaced broker is ready to return", func() {
+			waitClient.PrependReactor("get", "clusterservicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				return true, nil, nil
+			})
+			waitClient.PrependReactor("get", "servicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				counter++
+				return true, notReadyNamespacedBroker, nil
+			})
+			waitClient.PrependReactor("get", "servicebrokers", func(action testing.Action) (bool, runtime.Object, error) {
+				if counter > 5 {
+					return true, sb, nil
+				}
+				return false, nil, nil
+			})
+			opts := &ScopeOptions{
+				Namespace: "default",
+				Scope:     AllScope,
+			}
+			broker, err := sdk.WaitForBroker(sb.Name, opts, interval, &timeout)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(broker).To(Equal(sb))
+			actions := waitClient.Actions()
+			Expect(len(actions)).Should(BeNumerically(">", 1))
+			for _, v := range actions {
+				Expect(v.Matches("get", "clusterservicebrokers") || v.Matches("get", "servicebrokers")).To(BeTrue())
 				Expect(v.(testing.GetActionImpl).Name).To(Equal(csb.Name))
 			}
 		})
@@ -703,7 +750,11 @@ var _ = Describe("Broker", func() {
 				return false, nil, nil
 			})
 
-			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+			opts := &ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
+			broker, err := sdk.WaitForBroker(csb.Name, opts, interval, &timeout)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(broker).To(Equal(failedBroker))
@@ -715,7 +766,11 @@ var _ = Describe("Broker", func() {
 			}
 		})
 		It("times out if the broker never becomes ready or failed", func() {
-			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+			opts := &ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
+			broker, err := sdk.WaitForBroker(csb.Name, opts, interval, &timeout)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("timed out"))
@@ -736,7 +791,11 @@ var _ = Describe("Broker", func() {
 				return false, nil, nil
 			})
 
-			broker, err := sdk.WaitForBroker(csb.Name, interval, &timeout)
+			opts := &ScopeOptions{
+				Namespace: "",
+				Scope:     ClusterScope,
+			}
+			broker, err := sdk.WaitForBroker(csb.Name, opts, interval, &timeout)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
