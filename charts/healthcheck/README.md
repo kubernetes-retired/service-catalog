@@ -42,6 +42,7 @@ Flag | Description
 --log_backtrace_at traceLocation | when logging hits line file:N, emit a stack trace (default :0)
 --log_dir string | If non-empty, write log files in this directory
 --logtostderr | log to standard error instead of files
+--namespaced-broker | whether to use a namespaced service broker (default false)
 --secure-port int | The port on which to serve HTTPS with authentication and authorization. If 0, don't serve HTTPS at all. (default 443)
 --stderrthreshold severity | logs at or above this threshold go to stderr (default 2)
 --tls-cert-file string | File containing the default x509 Certificate for HTTPS. (CA cert, if any, concatenated after server cert). If HTTPS serving is enabled, and --tls-cert-file and --tls-private-key-file are not provided, a self-signed certificate and key are generated for the public address and saved to the directory specified by --cert-dir.

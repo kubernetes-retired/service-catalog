@@ -97,6 +97,7 @@ type HealthCheck struct {
 	bindingName             string
 	brokerendpointName      string
 	namespace               *corev1.Namespace // ns where we create instance and binding
+	usenamespacedbroker     bool
 	frameworkError          error
 }
 
@@ -173,26 +174,25 @@ func (h *HealthCheck) verifyBrokerIsReady() error {
 		return h.setError("endpoint not found: %v", err.Error())
 	}
 
-	url := "http://" + h.brokername + "." + h.brokernamespace + ".svc.cluster.local"
-	broker := &v1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: h.brokername,
-		},
-		Spec: v1beta1.ClusterServiceBrokerSpec{
-			CommonServiceBrokerSpec: v1beta1.CommonServiceBrokerSpec{
-				URL: url,
+	klog.V(4).Infof("checking for Broker %v to be ready", h.brokername)
+	if h.usenamespacedbroker {
+		err = util.WaitForBrokerCondition(h.serviceCatalogClientSet.ServicecatalogV1beta1(),
+			h.brokername,
+			v1beta1.ServiceBrokerCondition{
+				Type:   v1beta1.ServiceBrokerConditionReady,
+				Status: v1beta1.ConditionTrue,
 			},
-		},
+			h.brokernamespace,
+		)
+	} else {
+		err = util.WaitForBrokerCondition(h.serviceCatalogClientSet.ServicecatalogV1beta1(),
+			h.brokername,
+			v1beta1.ServiceBrokerCondition{
+				Type:   v1beta1.ServiceBrokerConditionReady,
+				Status: v1beta1.ConditionTrue,
+			},
+		)
 	}
-
-	klog.V(4).Infof("checking for Broker %v to be ready", broker.Name)
-	err = util.WaitForBrokerCondition(h.serviceCatalogClientSet.ServicecatalogV1beta1(),
-		broker.Name,
-		v1beta1.ServiceBrokerCondition{
-			Type:   v1beta1.ServiceBrokerConditionReady,
-			Status: v1beta1.ConditionTrue,
-		},
-	)
 	if err != nil {
 		return h.setError("broker not ready: %v", err.Error())
 	}
@@ -211,20 +211,30 @@ func (h *HealthCheck) createInstance() error {
 		return h.frameworkError
 	}
 	klog.V(4).Info("Creating a ServiceInstance")
+	var err error
+	var planReference v1beta1.PlanReference
+
+	if h.usenamespacedbroker {
+		planReference = v1beta1.PlanReference{
+			ServiceClassExternalName: h.serviceclassName,
+			ServicePlanExternalName:  "default",
+		}
+	} else {
+		planReference = v1beta1.PlanReference{
+			ClusterServiceClassExternalName: h.serviceclassName,
+			ClusterServicePlanExternalName:  "default",
+		}
+	}
 	instance := &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      h.instanceName,
 			Namespace: h.namespace.Name,
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
-			PlanReference: v1beta1.PlanReference{
-				ClusterServiceClassExternalName: h.serviceclassName,
-				ClusterServicePlanExternalName:  "default",
-			},
+			PlanReference: planReference,
 		},
 	}
 	operationStartTime := time.Now()
-	var err error
 	instance, err = h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Create(instance)
 	if err != nil {
 		return h.setError("error creating instance: %v", err.Error())
@@ -400,6 +410,7 @@ func (h *HealthCheck) deleteNamespace() error {
 }
 
 func (h *HealthCheck) initBrokerAttributes(s *HealthCheckServer) error {
+	h.usenamespacedbroker = s.UseNamespacedBroker
 	switch s.TestBrokerName {
 	case "ups-broker":
 		h.brokername = "ups-broker"

@@ -36,6 +36,7 @@ type HealthCheckServer struct {
 	HealthCheckInterval  time.Duration
 	SecureServingOptions *genericoptions.SecureServingOptions
 	TestBrokerName       string
+	UseNamespacedBroker  bool
 }
 
 const (
@@ -62,5 +63,6 @@ func (s *HealthCheckServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.KubeContext, "kubernetes-context", "", "config context to use for kubernetes. If unset, will use value from 'current-context'")
 	fs.DurationVar(&s.HealthCheckInterval, "healthcheck-interval", s.HealthCheckInterval, "How frequently the end to end health check should be performed")
 	fs.StringVar(&s.TestBrokerName, "broker-name", "ups-broker", "Broker Name to test against - can only be ups-broker or osb-stub.  You must ensure the specified broker is deployed.")
+	fs.BoolVar(&s.UseNamespacedBroker, "namespaced-broker", false, "Whether to use a namespaced service broker")
 	s.SecureServingOptions.AddFlags(fs)
 }
