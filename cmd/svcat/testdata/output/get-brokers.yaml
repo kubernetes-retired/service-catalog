@@ -20,6 +20,7 @@
       status: "True"
       type: Ready
     lastCatalogRetrievalTime: "2018-01-12T02:10:27Z"
+    lastConditionState: Ready
     reconciledGeneration: 2
 - metadata:
     creationTimestamp: "2018-01-11T20:53:30Z"
@@ -43,4 +44,5 @@
       status: "True"
       type: Ready
     lastCatalogRetrievalTime: "2018-01-12T02:10:27Z"
+    lastConditionState: Ready
     reconciledGeneration: 2

@@ -1204,6 +1204,7 @@ func autoConvert_v1beta1_CommonServiceBrokerStatus_To_servicecatalog_CommonServi
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.LastCatalogRetrievalTime = (*v1.Time)(unsafe.Pointer(in.LastCatalogRetrievalTime))
+	out.LastConditionState = in.LastConditionState
 	return nil
 }
 
@@ -1217,6 +1218,7 @@ func autoConvert_servicecatalog_CommonServiceBrokerStatus_To_v1beta1_CommonServi
 	out.ReconciledGeneration = in.ReconciledGeneration
 	out.OperationStartTime = (*v1.Time)(unsafe.Pointer(in.OperationStartTime))
 	out.LastCatalogRetrievalTime = (*v1.Time)(unsafe.Pointer(in.LastCatalogRetrievalTime))
+	out.LastConditionState = in.LastConditionState
 	return nil
 }
 
@@ -1690,6 +1692,7 @@ func autoConvert_v1beta1_ServiceBindingStatus_To_servicecatalog_ServiceBindingSt
 	out.ExternalProperties = (*servicecatalog.ServiceBindingPropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.UnbindStatus = servicecatalog.ServiceBindingUnbindStatus(in.UnbindStatus)
+	out.LastConditionState = in.LastConditionState
 	return nil
 }
 
@@ -1709,6 +1712,7 @@ func autoConvert_servicecatalog_ServiceBindingStatus_To_v1beta1_ServiceBindingSt
 	out.ExternalProperties = (*ServiceBindingPropertiesState)(unsafe.Pointer(in.ExternalProperties))
 	out.OrphanMitigationInProgress = in.OrphanMitigationInProgress
 	out.UnbindStatus = ServiceBindingUnbindStatus(in.UnbindStatus)
+	out.LastConditionState = in.LastConditionState
 	return nil
 }
 
@@ -2146,6 +2150,9 @@ func autoConvert_v1beta1_ServiceInstanceStatus_To_servicecatalog_ServiceInstance
 	out.ProvisionStatus = servicecatalog.ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = servicecatalog.ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.LastConditionState = in.LastConditionState
+	out.UserSpecifiedPlanName = in.UserSpecifiedPlanName
+	out.UserSpecifiedClassName = in.UserSpecifiedClassName
 	return nil
 }
 
@@ -2169,6 +2176,9 @@ func autoConvert_servicecatalog_ServiceInstanceStatus_To_v1beta1_ServiceInstance
 	out.ProvisionStatus = ServiceInstanceProvisionStatus(in.ProvisionStatus)
 	out.DeprovisionStatus = ServiceInstanceDeprovisionStatus(in.DeprovisionStatus)
 	out.DefaultProvisionParameters = (*runtime.RawExtension)(unsafe.Pointer(in.DefaultProvisionParameters))
+	out.LastConditionState = in.LastConditionState
+	out.UserSpecifiedPlanName = in.UserSpecifiedPlanName
+	out.UserSpecifiedClassName = in.UserSpecifiedClassName
 	return nil
 }
 

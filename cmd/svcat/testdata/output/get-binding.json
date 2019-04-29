@@ -58,6 +58,7 @@
          "parameterChecksum": "23ca85e0f9fc05340ea0a13ef945602cd5cdc3f52d763e750cb0ab0cb172a94f"
       },
       "orphanMitigationInProgress": false,
-      "unbindStatus": "Required"
+      "unbindStatus": "Required",
+      "lastConditionState": "Ready"
    }
 }

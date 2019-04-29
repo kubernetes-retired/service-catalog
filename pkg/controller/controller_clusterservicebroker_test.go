@@ -301,6 +301,15 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 	// verify no kube resources created
 	kubeActions := fakeKubeClient.Actions()
 	assertNumberOfActions(t, kubeActions, 0)
+
+	updateObject, ok := updatedClusterServiceBroker.(*v1beta1.ClusterServiceBroker)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ClusterServiceBroker")
+	}
+
+	if updateObject.Status.LastConditionState != "Ready" {
+		t.Fatalf("LastConditionState has unexpected value. Expected: %v, got: %v", "Ready", updateObject.Status.LastConditionState)
+	}
 }
 
 func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {

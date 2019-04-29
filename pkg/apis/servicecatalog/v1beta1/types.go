@@ -309,6 +309,10 @@ type CommonServiceBrokerStatus struct {
 	// LastCatalogRetrievalTime is the time the Catalog was last fetched from
 	// the Service Broker
 	LastCatalogRetrievalTime *metav1.Time `json:"lastCatalogRetrievalTime,omitempty"`
+
+	// LastConditionState aggregates state from the Conditions array
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	LastConditionState string `json:"lastConditionState"`
 }
 
 // ClusterServiceBrokerStatus represents the current status of a
@@ -987,6 +991,18 @@ type ServiceInstanceStatus struct {
 	// DefaultProvisionParameters are the default parameters applied to this
 	// instance.
 	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
+
+	// LastConditionState aggregates state from the Conditions array
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	LastConditionState string `json:"lastConditionState"`
+
+	// UserSpecifiedPlanName aggregates cluster or namespace PlanName
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	UserSpecifiedPlanName string `json:"userSpecifiedPlanName"`
+
+	// UserSpecifiedClassName aggregates cluster or namespace ClassName
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	UserSpecifiedClassName string `json:"userSpecifiedClassName"`
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -1248,6 +1264,10 @@ type ServiceBindingStatus struct {
 
 	// UnbindStatus describes what has been done to unbind the ServiceBinding.
 	UnbindStatus ServiceBindingUnbindStatus `json:"unbindStatus"`
+
+	// LastConditionState aggregates state from the Conditions array
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	LastConditionState string `json:"lastConditionState"`
 }
 
 // ServiceBindingCondition condition information for a ServiceBinding.

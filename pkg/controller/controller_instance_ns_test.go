@@ -63,7 +63,7 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	instance = assertServiceInstanceProvisionInProgressAndUserSpecifiedFieldsClientActions(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 
 	assertNumberOfBrokerActions(t, fakeBrokerClient.Actions(), 0)
@@ -150,7 +150,7 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	instance = assertServiceInstanceProvisionInProgressAndUserSpecifiedFieldsClientActions(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 

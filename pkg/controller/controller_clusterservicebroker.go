@@ -678,6 +678,7 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1beta1.Cluster
 		now := metav1.NewTime(t)
 		toUpdate.Status.LastCatalogRetrievalTime = &now
 	}
+	toUpdate.Status.LastConditionState = getServiceBrokerLastConditionState(toUpdate.Status.CommonServiceBrokerStatus)
 
 	klog.V(4).Info(pcb.Messagef("Updating ready condition to %v", status))
 	_, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate)

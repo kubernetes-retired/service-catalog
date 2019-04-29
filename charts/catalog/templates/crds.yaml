@@ -12,6 +12,16 @@ spec:
     plural: clusterservicebrokers
     singular: clusterservicebroker
     kind: ClusterServiceBroker
+  additionalPrinterColumns:
+    - name: URL
+      type: string
+      JSONPath: .spec.url
+    - name: Status
+      type: string
+      JSONPath: .status.lastConditionState
+    - name: Age
+      type: date
+      JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -31,6 +41,16 @@ spec:
     plural: servicebrokers
     singular: servicebroker
     kind: ServiceBroker
+  additionalPrinterColumns:
+  - name: URL
+    type: string
+    JSONPath: .spec.url
+  - name: Status
+    type: string
+    JSONPath: .status.lastConditionState
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -50,6 +70,16 @@ spec:
     plural: serviceclasses
     singular: serviceclass
     kind: ServiceClass
+  additionalPrinterColumns:
+  - name: External-Name
+    type: string
+    JSONPath: .spec.externalName
+  - name: Broker
+    type: string
+    JSONPath: .spec.clusterServiceBrokerName
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -69,6 +99,16 @@ spec:
     plural: clusterserviceclasses
     singular: clusterserviceclass
     kind: ClusterServiceClass
+  additionalPrinterColumns:
+  - name: External-Name
+    type: string
+    JSONPath: .spec.externalName
+  - name: Broker
+    type: string
+    JSONPath: .spec.clusterServiceBrokerName
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -88,6 +128,19 @@ spec:
     plural: serviceplans
     singular: serviceplan
     kind: ServicePlan
+  additionalPrinterColumns:
+  - name: External-Name
+    type: string
+    JSONPath: .spec.externalName
+  - name: Broker
+    type: string
+    JSONPath: .spec.serviceBrokerName
+  - name: Class
+    type: string
+    JSONPath: .spec.serviceClassRef.Name
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -107,6 +160,19 @@ spec:
     plural: clusterserviceplans
     singular: clusterserviceplan
     kind: ClusterServicePlan
+  additionalPrinterColumns:
+  - name: External-Name
+    type: string
+    JSONPath: .spec.externalName
+  - name: Broker
+    type: string
+    JSONPath: .spec.clusterServiceBrokerName
+  - name: Class
+    type: string
+    JSONPath: .spec.clusterServiceClassRef.name
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -126,6 +192,19 @@ spec:
     plural: serviceinstances
     singular: serviceinstance
     kind: ServiceInstance
+  additionalPrinterColumns:
+  - name: Class
+    type: string
+    JSONPath: .status.userSpecifiedClassName
+  - name: Plan
+    type: string
+    JSONPath: .status.userSpecifiedPlanName
+  - name: Status
+    type: string
+    JSONPath: .status.lastConditionState
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 
@@ -145,6 +224,19 @@ spec:
     plural: servicebindings
     singular: servicebinding
     kind: ServiceBinding
+  additionalPrinterColumns:
+  - name: Service-Instance
+    type: string
+    JSONPath: .spec.instanceRef.name
+  - name: Secret-Name
+    type: string
+    JSONPath: .spec.secretName
+  - name: Status
+    type: string
+    JSONPath: .status.lastConditionState
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   subresources:
     status: {}
 

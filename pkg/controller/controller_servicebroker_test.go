@@ -57,6 +57,7 @@ func TestReconcileServiceBrokerUpdatesBrokerClient(t *testing.T) {
 	if !found {
 		t.Error("expected predefined OSB client")
 	}
+
 }
 
 func getServiceBrokerReactor(broker *v1beta1.ServiceBroker) (string, string, clientgotesting.ReactionFunc) {
@@ -400,5 +401,65 @@ func TestReconcileServicePlanFromServiceBrokerCatalog(t *testing.T) {
 				tc.catalogActionsCheckFunc(t, actions)
 			}
 		})
+	}
+}
+
+func TestReconcileServiceBrokerExistingServiceClassAndServicePlan(t *testing.T) {
+	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	if err != nil {
+		t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
+	}
+	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+
+	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestNamespacedCatalogConfig())
+
+	testServiceClass := getTestServiceClass()
+	testServicePlan := getTestServicePlan()
+	sharedInformers.ServiceClasses().Informer().GetStore().Add(testServiceClass)
+
+	fakeCatalogClient.AddReactor("list", "serviceclasses", func(action clientgotesting.Action) (bool, runtime.Object, error) {
+		return true, &v1beta1.ServiceClassList{
+			Items: []v1beta1.ServiceClass{
+				*testServiceClass,
+			},
+		}, nil
+	})
+
+	if err := reconcileServiceBroker(t, testController, getTestServiceBroker()); err != nil {
+		t.Fatalf("This should not fail: %v", err)
+	}
+
+	brokerActions := fakeServiceBrokerClient.Actions()
+	assertNumberOfBrokerActions(t, brokerActions, 1)
+	assertGetCatalog(t, brokerActions[0])
+
+	listRestrictions := clientgotesting.ListRestrictions{
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: testServiceBrokerName,
+		}),
+		Fields: fields.Everything(),
+	}
+
+	actions := fakeCatalogClient.Actions()
+	assertNumberOfActions(t, actions, 6)
+	assertList(t, actions[0], &v1beta1.ServiceClass{}, listRestrictions)
+	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
+	assertUpdate(t, actions[2], testServiceClass)
+	assertCreate(t, actions[3], testServicePlan)
+
+	updatedServiceBroker := assertUpdateStatus(t, actions[5], getTestServiceBroker())
+	assertServiceBrokerReadyTrue(t, updatedServiceBroker)
+
+	// verify no kube resources created
+	kubeActions := fakeKubeClient.Actions()
+	assertNumberOfActions(t, kubeActions, 0)
+
+	updateObject, ok := updatedServiceBroker.(*v1beta1.ServiceBroker)
+	if !ok {
+		t.Fatalf("couldn't convert to *v1beta1.ServiceBroker")
+	}
+
+	if updateObject.Status.LastConditionState != "Ready" {
+		t.Fatalf("LastConditionState has unexpected value. Expected: %v, got: %v", "Ready", updateObject.Status.LastConditionState)
 	}
 }

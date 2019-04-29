@@ -39,6 +39,7 @@ status:
         ps2: two
       secretparam1: <redacted>
       secretparam2: <redacted>
+  lastConditionState: Ready
   orphanMitigationInProgress: false
   reconciledGeneration: 1
   unbindStatus: Required

@@ -46,7 +46,10 @@ status:
         ps2: two
       secretparam1: <redacted>
       secretparam2: <redacted>
+  lastConditionState: Ready
   observedGeneration: 0
   orphanMitigationInProgress: false
   provisionStatus: ""
   reconciledGeneration: 1
+  userSpecifiedClassName: ""
+  userSpecifiedPlanName: ""

@@ -838,6 +838,36 @@ func getTestCatalog() *osb.CatalogResponse {
 	}
 }
 
+// broker catalog that provides the service class named in of
+// getTestNamespacedServiceClass()
+func getTestNamespacedCatalog() *osb.CatalogResponse {
+	return &osb.CatalogResponse{
+		Services: []osb.Service{
+			{
+				Name:        testServiceClassName,
+				ID:          testServiceClassGUID,
+				Description: "a test service",
+				Bindable:    true,
+				Plans: []osb.Plan{
+					{
+						Name:        testServicePlanName,
+						Free:        truePtr(),
+						ID:          testServicePlanGUID,
+						Description: "a test plan",
+					},
+					{
+						Name:        testNonbindableServicePlanName,
+						Free:        truePtr(),
+						ID:          testNonbindableServicePlanGUID,
+						Description: "a test plan",
+						Bindable:    falsePtr(),
+					},
+				},
+			},
+		},
+	}
+}
+
 // instance referencing the result of getTestClusterServiceClass()
 // and getTestClusterServicePlan()
 // This version sets:
@@ -4043,6 +4073,14 @@ func getTestCatalogConfig() fakeosb.FakeClientConfiguration {
 	return fakeosb.FakeClientConfiguration{
 		CatalogReaction: &fakeosb.CatalogReaction{
 			Response: getTestCatalog(),
+		},
+	}
+}
+
+func getTestNamespacedCatalogConfig() fakeosb.FakeClientConfiguration {
+	return fakeosb.FakeClientConfiguration{
+		CatalogReaction: &fakeosb.CatalogReaction{
+			Response: getTestNamespacedCatalog(),
 		},
 	}
 }

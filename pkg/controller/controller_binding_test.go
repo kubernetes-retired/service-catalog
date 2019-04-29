@@ -1853,6 +1853,7 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 		reason                string
 		message               string
 		transitionTimeChanged bool
+		expectedLastCondition string
 	}{
 
 		{
@@ -1860,12 +1861,14 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 			input:                 getTestServiceBinding(),
 			status:                v1beta1.ConditionFalse,
 			transitionTimeChanged: true,
+			expectedLastCondition: "",
 		},
 		{
 			name:                  "not ready -> not ready",
 			input:                 getTestServiceBindingWithStatus(v1beta1.ConditionFalse),
 			status:                v1beta1.ConditionFalse,
 			transitionTimeChanged: false,
+			expectedLastCondition: "",
 		},
 		{
 			name:                  "not ready -> not ready, message and reason change",
@@ -1874,24 +1877,29 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 			reason:                "foo",
 			message:               "bar",
 			transitionTimeChanged: false,
+			expectedLastCondition: "foo",
 		},
 		{
 			name:                  "not ready -> ready",
 			input:                 getTestServiceBindingWithStatus(v1beta1.ConditionFalse),
 			status:                v1beta1.ConditionTrue,
 			transitionTimeChanged: true,
+			expectedLastCondition: "Ready",
 		},
 		{
 			name:                  "ready -> ready",
 			input:                 getTestServiceBindingWithStatus(v1beta1.ConditionTrue),
 			status:                v1beta1.ConditionTrue,
 			transitionTimeChanged: false,
+			expectedLastCondition: "Ready",
 		},
 		{
 			name:                  "ready -> not ready",
 			input:                 getTestServiceBindingWithStatus(v1beta1.ConditionTrue),
 			status:                v1beta1.ConditionFalse,
+			reason:                "foo",
 			transitionTimeChanged: true,
+			expectedLastCondition: "foo",
 		},
 	}
 
@@ -1918,6 +1926,10 @@ func TestUpdateServiceBindingCondition(t *testing.T) {
 			updateActionObject, ok := updatedServiceBinding.(*v1beta1.ServiceBinding)
 			if !ok {
 				t.Fatalf("%v: couldn't convert to binding", tc.name)
+			}
+
+			if updateActionObject.Status.LastConditionState != tc.expectedLastCondition {
+				t.Fatalf("LastConditionState has unexpected value. Expected: %v, got: %v", tc.expectedLastCondition, updateActionObject.Status.LastConditionState)
 			}
 
 			var initialTs metav1.Time

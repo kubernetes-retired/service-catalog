@@ -42,6 +42,9 @@
             "message": "The instance was provisioned successfully"
           }
         ],
+        "lastConditionState": "Ready",
+        "userSpecifiedPlanName": "",
+        "userSpecifiedClassName": "",
         "asyncOpInProgress": false,
         "orphanMitigationInProgress": false,
         "reconciledGeneration": 1,
@@ -90,6 +93,9 @@
             "message": "The instance was provisioned successfully"
           }
         ],
+        "lastConditionState": "Ready",
+        "userSpecifiedPlanName": "",
+        "userSpecifiedClassName": "",
         "asyncOpInProgress": false,
         "orphanMitigationInProgress": false,
         "reconciledGeneration": 1,

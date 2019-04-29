@@ -649,6 +649,8 @@ func updateCommonStatusCondition(pcb *pretty.ContextBuilder, meta metav1.ObjectM
 		now := metav1.NewTime(t)
 		commonStatus.LastCatalogRetrievalTime = &now
 	}
+
+	commonStatus.LastConditionState = getServiceBrokerLastConditionState(*commonStatus)
 }
 
 // updateServiceBrokerCondition updates the ready condition for the given ServiceBroker
@@ -761,4 +763,15 @@ func convertServicePlanListToMap(list []v1beta1.ServicePlan) map[string]*v1beta1
 	}
 
 	return ret
+}
+
+func getServiceBrokerLastConditionState(status v1beta1.CommonServiceBrokerStatus) string {
+	if len(status.Conditions) > 0 {
+		condition := status.Conditions[len(status.Conditions)-1]
+		if condition.Status == v1beta1.ConditionTrue {
+			return string(condition.Type)
+		}
+		return condition.Reason
+	}
+	return ""
 }
