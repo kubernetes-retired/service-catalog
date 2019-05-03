@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,22 +26,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type getCmd struct {
+// GetCmd contains the information needed to get a specific plan or all plans
+type GetCmd struct {
 	*command.Namespaced
 	*command.Scoped
 	*command.Formatted
-	lookupByKubeName bool
-	kubeName         string
-	name             string
+	LookupByKubeName bool
+	KubeName         string
+	Name             string
 
-	classFilter   string
-	classKubeName string
-	className     string
+	ClassFilter   string
+	ClassKubeName string
+	ClassName     string
 }
 
 // NewGetCmd builds a "svcat get plans" command
 func NewGetCmd(ctx *command.Context) *cobra.Command {
-	getCmd := &getCmd{
+	getCmd := &GetCmd{
 		Namespaced: command.NewNamespaced(ctx),
 		Scoped:     command.NewScoped(),
 		Formatted:  command.NewFormatted(),
@@ -66,14 +67,14 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&getCmd.lookupByKubeName,
+		&getCmd.LookupByKubeName,
 		"kube-name",
 		"k",
 		false,
 		"Whether or not to get the plan by its Kubernetes name (the default is by external name)",
 	)
 	cmd.Flags().StringVarP(
-		&getCmd.classFilter,
+		&getCmd.ClassFilter,
 		"class",
 		"c",
 		"",
@@ -85,42 +86,53 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *getCmd) Validate(args []string) error {
+// Validate parses the provided arugments and errors if they are formatted incorrectly
+func (c *GetCmd) Validate(args []string) error {
 	if len(args) > 0 {
-		if c.lookupByKubeName {
-			c.kubeName = args[0]
+		if c.LookupByKubeName {
+			if strings.Contains(args[0], "/") {
+				names := strings.Split(args[0], "/")
+				if len(names) != 2 {
+					return fmt.Errorf("failed to parse class/plan k8s name combination '%s'", args[0])
+				}
+				c.ClassKubeName = names[0]
+				c.KubeName = names[1]
+			} else {
+				c.KubeName = args[0]
+			}
 		} else if strings.Contains(args[0], "/") {
 			names := strings.Split(args[0], "/")
 			if len(names) != 2 {
-				return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
+				return fmt.Errorf("failed to parse class/plan name combination '%s'", args[0])
 			}
-			c.className = names[0]
-			c.name = names[1]
+			c.ClassName = names[0]
+			c.Name = names[1]
 		} else {
-			c.name = args[0]
+			c.Name = args[0]
 		}
 	}
-	if c.classFilter != "" {
-		if c.lookupByKubeName {
-			c.classKubeName = c.classFilter
+	if c.ClassFilter != "" {
+		if c.LookupByKubeName {
+			c.ClassKubeName = c.ClassFilter
 		} else {
-			c.className = c.classFilter
+			c.ClassName = c.ClassFilter
 		}
 	}
 
 	return nil
 }
 
-func (c *getCmd) Run() error {
-	if c.kubeName == "" && c.name == "" {
+// Run determines if we are fetching all plans or a specific one, and calls
+// the corresponding method
+func (c *GetCmd) Run() error {
+	if c.KubeName == "" && c.Name == "" {
 		return c.getAll()
 	}
 
 	return c.get()
 }
 
-func (c *getCmd) getAll() error {
-
+func (c *GetCmd) getAll() error {
 	// Retrieve the classes as well because plans don't have the external class name
 	classOpts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
@@ -136,29 +148,28 @@ func (c *getCmd) getAll() error {
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
 	}
-	if c.classFilter != "" {
-		if !c.lookupByKubeName {
+	if c.ClassFilter != "" {
+		if !c.LookupByKubeName {
 			// Map the external class name to the class name.
 			for _, class := range classes {
-				if c.className == class.GetExternalName() {
-					c.classKubeName = class.GetName()
+				if c.ClassName == class.GetExternalName() {
+					c.ClassKubeName = class.GetName()
 					break
 				}
 			}
 		}
-		classID = c.classKubeName
+		classID = c.ClassKubeName
 	}
 
 	plans, err := c.App.RetrievePlans(classID, opts)
 	if err != nil {
 		return fmt.Errorf("unable to list plans (%s)", err)
 	}
-
 	output.WritePlanList(c.Output, c.OutputFormat, plans, classes)
 	return nil
 }
 
-func (c *getCmd) get() error {
+func (c *GetCmd) get() error {
 	var plan servicecatalog.Plan
 	var err error
 
@@ -168,14 +179,14 @@ func (c *getCmd) get() error {
 	}
 
 	switch {
-	case c.lookupByKubeName:
-		plan, err = c.App.RetrievePlanByID(c.kubeName, opts)
+	case c.LookupByKubeName:
+		plan, err = c.App.RetrievePlanByID(c.KubeName, opts)
 
-	case c.className != "":
-		plan, err = c.App.RetrievePlanByClassAndName(c.className, c.name, opts)
+	case c.ClassName != "":
+		plan, err = c.App.RetrievePlanByClassAndName(c.ClassName, c.Name, opts)
 
 	default:
-		plan, err = c.App.RetrievePlanByName(c.name, opts)
+		plan, err = c.App.RetrievePlanByName(c.Name, opts)
 
 	}
 	if err != nil {

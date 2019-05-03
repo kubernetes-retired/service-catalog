@@ -26,18 +26,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type describeCmd struct {
+// DescribeCmd contains the needed info to fetch detailed info about a specific
+// plan
+type DescribeCmd struct {
 	*command.Namespaced
 	*command.Scoped
-	lookupByKubeName bool
-	showSchemas      bool
-	kubeName         string
-	name             string
+	LookupByKubeName bool
+	ShowSchemas      bool
+	KubeName         string
+	Name             string
 }
 
 // NewDescribeCmd builds a "svcat describe plan" command
 func NewDescribeCmd(cxt *command.Context) *cobra.Command {
-	describeCmd := &describeCmd{
+	describeCmd := &DescribeCmd{
 		Namespaced: command.NewNamespaced(cxt),
 		Scoped:     command.NewScoped(),
 	}
@@ -55,14 +57,14 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(describeCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&describeCmd.lookupByKubeName,
+		&describeCmd.LookupByKubeName,
 		"kube-name",
 		"k",
 		false,
 		"Whether or not to get the class by its Kubernetes name (the default is by external name)",
 	)
 	cmd.Flags().BoolVarP(
-		&describeCmd.showSchemas,
+		&describeCmd.ShowSchemas,
 		"show-schemas",
 		"",
 		true,
@@ -74,26 +76,24 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 }
 
 // Validate and load the arguments passed to the svcat command.
-func (c *describeCmd) Validate(args []string) error {
+func (c *DescribeCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("a plan name or Kubernetes name is required")
 	}
 
-	if c.lookupByKubeName {
-		c.kubeName = args[0]
+	if c.LookupByKubeName {
+		c.KubeName = args[0]
 	} else {
-		c.name = args[0]
+		c.Name = args[0]
 	}
 
 	return nil
 }
 
-// Run a validated svcat command.
-func (c *describeCmd) Run() error {
-	return c.describe()
-}
-
-func (c *describeCmd) describe() error {
+// Run determines how we are fetching a plan based
+// on the provided arugments, and fetches the specified
+// plan
+func (c *DescribeCmd) Run() error {
 	var plan servicecatalog.Plan
 	var err error
 
@@ -102,16 +102,16 @@ func (c *describeCmd) describe() error {
 		Scope:     c.Scope,
 	}
 
-	if c.lookupByKubeName {
-		plan, err = c.App.RetrievePlanByID(c.kubeName, opts)
-	} else if strings.Contains(c.name, "/") {
-		names := strings.Split(c.name, "/")
+	if c.LookupByKubeName {
+		plan, err = c.App.RetrievePlanByID(c.KubeName, opts)
+	} else if strings.Contains(c.Name, "/") {
+		names := strings.Split(c.Name, "/")
 		if len(names) != 2 {
-			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
+			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.Name)
 		}
 		plan, err = c.App.RetrievePlanByClassAndName(names[0], names[1], opts)
 	} else {
-		plan, err = c.App.RetrievePlanByName(c.name, opts)
+		plan, err = c.App.RetrievePlanByName(c.Name, opts)
 	}
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (c *describeCmd) describe() error {
 	}
 	output.WriteAssociatedInstances(c.Output, instances)
 
-	if c.showSchemas {
+	if c.ShowSchemas {
 		output.WritePlanSchemas(c.Output, plan)
 	}
 

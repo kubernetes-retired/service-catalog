@@ -195,9 +195,15 @@ func (sdk *SDK) RetrieveClassByID(kubeName string, opts ScopeOptions) (Class, er
 }
 
 // RetrieveClassByPlan gets the class associated to a plan.
-func (sdk *SDK) RetrieveClassByPlan(plan Plan) (*v1beta1.ClusterServiceClass, error) {
-	// Retrieve the class as well because plans don't have the external class name
-	class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.GetClassID(), metav1.GetOptions{})
+func (sdk *SDK) RetrieveClassByPlan(plan Plan) (Class, error) {
+	var class Class
+	var err error
+
+	if plan.GetNamespace() == "" {
+		class, err = sdk.ServiceCatalog().ClusterServiceClasses().Get(plan.GetClassID(), metav1.GetOptions{})
+	} else {
+		class, err = sdk.ServiceCatalog().ServiceClasses(plan.GetNamespace()).Get(plan.GetClassID(), metav1.GetOptions{})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to get class (%s)", err)
 	}

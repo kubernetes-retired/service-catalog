@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plan
+package plan_test
 
 import (
 	"bytes"
 	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
+	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
@@ -64,161 +65,154 @@ var _ = Describe("Describe Command", func() {
 	})
 	Describe("Validate", func() {
 		It("errors if no argument is provided", func() {
-			cmd := describeCmd{}
+			cmd := DescribeCmd{}
 			err := cmd.Validate([]string{})
 			Expect(err).To(HaveOccurred())
 		})
 	})
 
 	Describe("Run", func() {
-		It("Calls the pkg/svcat libs RetrievePlanByName with cluster scope options", func() {
-			planName := "clusterplan"
-			className := "clusterclass"
-
-			planToReturn := &v1beta1.ClusterServicePlan{
-				Spec: v1beta1.ClusterServicePlanSpec{
-					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
-						ExternalName: planName,
-					},
-				},
-			}
-
-			classToReturn := &v1beta1.ClusterServiceClass{
-				Spec: v1beta1.ClusterServiceClassSpec{
-					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-						ExternalName: className,
-					},
-				},
-			}
-
-			outputBuffer := &bytes.Buffer{}
-
-			fakeApp, _ := svcat.NewApp(nil, nil, "default")
-			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.RetrievePlanByNameReturns(planToReturn, nil)
-			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
+		var (
+			clusterServiceClass *v1beta1.ClusterServiceClass
+			clusterServicePlan  *v1beta1.ClusterServicePlan
+			cmd                 *DescribeCmd
+			defaultNamespace    string
+			defaultServiceClass *v1beta1.ServiceClass
+			defaultServicePlan  *v1beta1.ServicePlan
+			fakeApp             *svcat.App
+			fakeSDK             *servicecatalogfakes.FakeSvcatClient
+			outputBuffer        *bytes.Buffer
+		)
+		BeforeEach(func() {
+			defaultNamespace = "default"
+			fakeApp, _ = svcat.NewApp(nil, nil, "default")
+			fakeSDK = new(servicecatalogfakes.FakeSvcatClient)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := describeCmd{
+			outputBuffer = &bytes.Buffer{}
+
+			cmd = &DescribeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
+
+			clusterServiceClass = &v1beta1.ClusterServiceClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "csc-123",
+				},
+				Spec: v1beta1.ClusterServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalName: "myclusterserviclass",
+					},
+				},
+			}
+			clusterServicePlan = &v1beta1.ClusterServicePlan{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "csp-123",
+				},
+				Spec: v1beta1.ClusterServicePlanSpec{
+					ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+						Name: clusterServiceClass.Name,
+					},
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: "myclusterserviceplan",
+					},
+				},
+			}
+			defaultServiceClass = &v1beta1.ServiceClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dsc-456",
+					Namespace: defaultNamespace,
+				},
+				Spec: v1beta1.ServiceClassSpec{
+					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+						ExternalName: "mydefaultserviceclass",
+					},
+				},
+			}
+			defaultServicePlan = &v1beta1.ServicePlan{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dsp-456",
+					Namespace: defaultNamespace,
+				},
+				Spec: v1beta1.ServicePlanSpec{
+					ServiceClassRef: v1beta1.LocalObjectReference{
+						Name: defaultServiceClass.Name,
+					},
+					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
+						ExternalName: "mydefaultserviceplan",
+					},
+				},
+			}
+		})
+		It("Calls the pkg/svcat libs RetrievePlanByName with cluster scope options", func() {
+			fakeSDK.RetrievePlanByNameReturns(clusterServicePlan, nil)
+			fakeSDK.RetrieveClassByPlanReturns(clusterServiceClass, nil)
+
 			cmd.Scope = servicecatalog.ClusterScope
-			cmd.lookupByKubeName = false
-			cmd.name = planName
+			cmd.LookupByKubeName = false
+			cmd.Name = clusterServicePlan.Spec.ExternalName
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			nameArg, scopeArg := fakeSDK.RetrievePlanByNameArgsForCall(0)
-			Expect(nameArg).To(Equal(planName))
+			Expect(nameArg).To(Equal(clusterServicePlan.Spec.ExternalName))
 			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 				Scope: servicecatalog.ClusterScope,
 			}))
 
 			output := outputBuffer.String()
-			Expect(output).To(ContainSubstring(planName))
-			Expect(output).To(ContainSubstring(className))
+			Expect(output).To(ContainSubstring(clusterServicePlan.Spec.ExternalName))
+			Expect(output).To(ContainSubstring(clusterServiceClass.Spec.ExternalName))
 		})
 		It("Calls the pkg/svcat libs RetrievePlanByName with namespace scope options", func() {
-			namespaceName := "default"
-			planName := "namespaceplan"
-			className := "clusterclass"
-
-			planToReturn := &v1beta1.ServicePlan{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: namespaceName,
-				},
-				Spec: v1beta1.ServicePlanSpec{
-					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
-						ExternalName: planName,
-					},
-				},
-			}
-
-			classToReturn := &v1beta1.ClusterServiceClass{
-				Spec: v1beta1.ClusterServiceClassSpec{
-					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-						ExternalName: className,
-					},
-				},
-			}
-
-			outputBuffer := &bytes.Buffer{}
-
-			fakeApp, _ := svcat.NewApp(nil, nil, "default")
-			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.RetrievePlanByNameReturns(planToReturn, nil)
-			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
-			fakeApp.SvcatClient = fakeSDK
-			cmd := describeCmd{
+			fakeSDK.RetrievePlanByNameReturns(defaultServicePlan, nil)
+			fakeSDK.RetrieveClassByPlanReturns(defaultServiceClass, nil)
+			cmd := DescribeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.NamespaceScope
-			cmd.Namespace = namespaceName
-			cmd.lookupByKubeName = false
-			cmd.name = planName
-			err := cmd.Run()
+			cmd.Namespace = defaultNamespace
+			cmd.LookupByKubeName = false
+			cmd.Name = defaultServicePlan.Spec.ExternalName
 
+			err := cmd.Run()
 			Expect(err).NotTo(HaveOccurred())
 			nameArg, scopeArg := fakeSDK.RetrievePlanByNameArgsForCall(0)
-			Expect(nameArg).To(Equal(planName))
+			Expect(nameArg).To(Equal(defaultServicePlan.Spec.ExternalName))
 			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 				Scope:     servicecatalog.NamespaceScope,
-				Namespace: namespaceName,
+				Namespace: defaultNamespace,
 			}))
 
 			output := outputBuffer.String()
-			Expect(output).To(ContainSubstring(planName))
-			Expect(output).To(ContainSubstring(className))
+			Expect(output).To(ContainSubstring(defaultServicePlan.Spec.ExternalName))
+			Expect(output).To(ContainSubstring(defaultServiceClass.Spec.ExternalName))
 		})
 		It("Calls the pkg/svcat libs RetrievePlanByClassAndName with cluster scope options", func() {
-			planName := "clusterplan"
-			className := "clusterclass"
-
-			planToReturn := &v1beta1.ClusterServicePlan{
-				Spec: v1beta1.ClusterServicePlanSpec{
-					CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
-						ExternalName: planName,
-					},
-				},
-			}
-
-			classToReturn := &v1beta1.ClusterServiceClass{
-				Spec: v1beta1.ClusterServiceClassSpec{
-					CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
-						ExternalName: className,
-					},
-				},
-			}
-
-			outputBuffer := &bytes.Buffer{}
-
-			fakeApp, _ := svcat.NewApp(nil, nil, "default")
-			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
-			fakeSDK.RetrievePlanByClassAndNameReturns(planToReturn, nil)
-			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
-			fakeApp.SvcatClient = fakeSDK
-			cmd := describeCmd{
+			fakeSDK.RetrievePlanByClassAndNameReturns(clusterServicePlan, nil)
+			fakeSDK.RetrieveClassByPlanReturns(clusterServiceClass, nil)
+			cmd := DescribeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.ClusterScope
-			cmd.lookupByKubeName = false
-			s := []string{className, planName}
-			cmd.name = strings.Join(s, "/")
+			cmd.LookupByKubeName = false
+			s := []string{clusterServiceClass.Spec.ExternalName, clusterServicePlan.Spec.ExternalName}
+			cmd.Name = strings.Join(s, "/")
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
 			classArg, nameArg, scopeArg := fakeSDK.RetrievePlanByClassAndNameArgsForCall(0)
-			Expect(classArg).To(Equal(className))
-			Expect(nameArg).To(Equal(planName))
+			Expect(classArg).To(Equal(clusterServiceClass.Spec.ExternalName))
+			Expect(nameArg).To(Equal(clusterServicePlan.Spec.ExternalName))
 			Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 				Scope: servicecatalog.ClusterScope,
 			}))
 
 			output := outputBuffer.String()
-			Expect(output).To(ContainSubstring(planName))
-			Expect(output).To(ContainSubstring(className))
+			Expect(output).To(ContainSubstring(clusterServicePlan.Spec.ExternalName))
+			Expect(output).To(ContainSubstring(clusterServiceClass.Spec.ExternalName))
 		})
 		It("Calls the pkg/svcat libs RetrievePlanByClassAndName with namespace scope options", func() {
 			namespaceName := "default"
@@ -251,15 +245,15 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByClassAndNameReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := describeCmd{
+			cmd := DescribeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Namespace = namespaceName
-			cmd.lookupByKubeName = false
+			cmd.LookupByKubeName = false
 			s := []string{className, planName}
-			cmd.name = strings.Join(s, "/")
+			cmd.Name = strings.Join(s, "/")
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
@@ -303,13 +297,13 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByIDReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := describeCmd{
+			cmd := DescribeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.ClusterScope
-			cmd.lookupByKubeName = true
-			cmd.kubeName = planID
+			cmd.LookupByKubeName = true
+			cmd.KubeName = planID
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
@@ -355,14 +349,14 @@ var _ = Describe("Describe Command", func() {
 			fakeSDK.RetrievePlanByIDReturns(planToReturn, nil)
 			fakeSDK.RetrieveClassByPlanReturns(classToReturn, nil)
 			fakeApp.SvcatClient = fakeSDK
-			cmd := describeCmd{
+			cmd := DescribeCmd{
 				Namespaced: &command.Namespaced{Context: svcattest.NewContext(outputBuffer, fakeApp)},
 				Scoped:     command.NewScoped(),
 			}
 			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Namespace = namespaceName
-			cmd.lookupByKubeName = true
-			cmd.kubeName = planID
+			cmd.LookupByKubeName = true
+			cmd.KubeName = planID
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
