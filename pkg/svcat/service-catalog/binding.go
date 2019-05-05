@@ -320,7 +320,12 @@ func (sdk *SDK) RemoveFinalizerForBindings(bindings []types.NamespacedName) ([]t
 }
 
 // RemoveBindingFinalizerByInstance removes v1beta1.FinalizerServiceCatalog from all bindings for the specified instance.
-func (sdk *SDK) RemoveBindingFinalizerByInstance(instance *v1beta1.ServiceInstance) ([]types.NamespacedName, error) {
+func (sdk *SDK) RemoveBindingFinalizerByInstance(ns, name string) ([]types.NamespacedName, error) {
+	instance, err := sdk.RetrieveInstance(ns, name)
+	if err != nil {
+		return nil, err
+	}
+
 	instanceBindings, err := sdk.RetrieveBindingsByInstance(instance)
 	if err != nil {
 		return nil, err

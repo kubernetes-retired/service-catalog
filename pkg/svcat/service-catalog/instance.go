@@ -296,7 +296,7 @@ func (sdk *SDK) InstanceHasStatus(instance *v1beta1.ServiceInstance, status v1be
 // RemoveFinalizerForInstance removes v1beta1.FinalizerServiceCatalog from the specified instance.
 func (sdk *SDK) RemoveFinalizerForInstance(ns, name string) error {
 	instance, err := sdk.RetrieveInstance(ns, name)
-    if err != nil {
+	if err != nil {
 		return err
 	}
 

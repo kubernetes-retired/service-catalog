@@ -27,10 +27,8 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -114,8 +112,9 @@ func (c *unbindCmd) Run() error {
 			s := bufio.NewScanner(os.Stdin)
 			s.Scan()
 
-			err = s.Err()
-			fmt.Fprintln(c.Output, err)
+			if err = s.Err(); err != nil {
+				return err
+			}
 
 			if strings.ToLower(s.Text()) != "y" {
 				err = fmt.Errorf("aborted abandon operation")
@@ -124,8 +123,7 @@ func (c *unbindCmd) Run() error {
 		}
 
 		if c.instanceName != "" {
-			si := &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: c.instanceName, Namespace: c.Namespace}}
-			_, err = c.App.RemoveBindingFinalizerByInstance(si)
+			_, err = c.App.RemoveBindingFinalizerByInstance(c.Namespace, c.instanceName)
 		} else {
 			retrievedBindings := c.getBindingsToDelete()
 			_, err = c.App.RemoveFinalizerForBindings(retrievedBindings)

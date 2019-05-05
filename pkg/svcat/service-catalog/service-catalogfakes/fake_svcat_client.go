@@ -237,10 +237,11 @@ type FakeSvcatClient struct {
 		result1 servicecatalog.Broker
 		result2 error
 	}
-	RemoveBindingFinalizerByInstanceStub        func(*v1beta1.ServiceInstance) ([]types.NamespacedName, error)
+	RemoveBindingFinalizerByInstanceStub        func(string, string) ([]types.NamespacedName, error)
 	removeBindingFinalizerByInstanceMutex       sync.RWMutex
 	removeBindingFinalizerByInstanceArgsForCall []struct {
-		arg1 *v1beta1.ServiceInstance
+		arg1 string
+		arg2 string
 	}
 	removeBindingFinalizerByInstanceReturns struct {
 		result1 []types.NamespacedName
@@ -1642,16 +1643,17 @@ func (fake *FakeSvcatClient) RegisterReturnsOnCall(i int, result1 servicecatalog
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstance(arg1 *v1beta1.ServiceInstance) ([]types.NamespacedName, error) {
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstance(arg1 string, arg2 string) ([]types.NamespacedName, error) {
 	fake.removeBindingFinalizerByInstanceMutex.Lock()
 	ret, specificReturn := fake.removeBindingFinalizerByInstanceReturnsOnCall[len(fake.removeBindingFinalizerByInstanceArgsForCall)]
 	fake.removeBindingFinalizerByInstanceArgsForCall = append(fake.removeBindingFinalizerByInstanceArgsForCall, struct {
-		arg1 *v1beta1.ServiceInstance
-	}{arg1})
-	fake.recordInvocation("RemoveBindingFinalizerByInstance", []interface{}{arg1})
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("RemoveBindingFinalizerByInstance", []interface{}{arg1, arg2})
 	fake.removeBindingFinalizerByInstanceMutex.Unlock()
 	if fake.RemoveBindingFinalizerByInstanceStub != nil {
-		return fake.RemoveBindingFinalizerByInstanceStub(arg1)
+		return fake.RemoveBindingFinalizerByInstanceStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1666,17 +1668,17 @@ func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceCallCount() int {
 	return len(fake.removeBindingFinalizerByInstanceArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceCalls(stub func(*v1beta1.ServiceInstance) ([]types.NamespacedName, error)) {
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceCalls(stub func(string, string) ([]types.NamespacedName, error)) {
 	fake.removeBindingFinalizerByInstanceMutex.Lock()
 	defer fake.removeBindingFinalizerByInstanceMutex.Unlock()
 	fake.RemoveBindingFinalizerByInstanceStub = stub
 }
 
-func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceArgsForCall(i int) *v1beta1.ServiceInstance {
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceArgsForCall(i int) (string, string) {
 	fake.removeBindingFinalizerByInstanceMutex.RLock()
 	defer fake.removeBindingFinalizerByInstanceMutex.RUnlock()
 	argsForCall := fake.removeBindingFinalizerByInstanceArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceReturns(result1 []types.NamespacedName, result2 error) {
