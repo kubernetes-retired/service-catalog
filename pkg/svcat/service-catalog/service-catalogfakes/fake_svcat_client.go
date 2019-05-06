@@ -302,12 +302,13 @@ type FakeSvcatClient struct {
 	syncReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WaitForBrokerStub        func(string, time.Duration, *time.Duration) (servicecatalog.Broker, error)
+	WaitForBrokerStub        func(string, *servicecatalog.ScopeOptions, time.Duration, *time.Duration) (servicecatalog.Broker, error)
 	waitForBrokerMutex       sync.RWMutex
 	waitForBrokerArgsForCall []struct {
 		arg1 string
-		arg2 time.Duration
-		arg3 *time.Duration
+		arg2 *servicecatalog.ScopeOptions
+		arg3 time.Duration
+		arg4 *time.Duration
 	}
 	waitForBrokerReturns struct {
 		result1 servicecatalog.Broker
@@ -1706,18 +1707,19 @@ func (fake *FakeSvcatClient) SyncReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeSvcatClient) WaitForBroker(arg1 string, arg2 time.Duration, arg3 *time.Duration) (servicecatalog.Broker, error) {
+func (fake *FakeSvcatClient) WaitForBroker(arg1 string, arg2 *servicecatalog.ScopeOptions, arg3 time.Duration, arg4 *time.Duration) (servicecatalog.Broker, error) {
 	fake.waitForBrokerMutex.Lock()
 	ret, specificReturn := fake.waitForBrokerReturnsOnCall[len(fake.waitForBrokerArgsForCall)]
 	fake.waitForBrokerArgsForCall = append(fake.waitForBrokerArgsForCall, struct {
 		arg1 string
-		arg2 time.Duration
-		arg3 *time.Duration
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("WaitForBroker", []interface{}{arg1, arg2, arg3})
+		arg2 *servicecatalog.ScopeOptions
+		arg3 time.Duration
+		arg4 *time.Duration
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("WaitForBroker", []interface{}{arg1, arg2, arg3, arg4})
 	fake.waitForBrokerMutex.Unlock()
 	if fake.WaitForBrokerStub != nil {
-		return fake.WaitForBrokerStub(arg1, arg2, arg3)
+		return fake.WaitForBrokerStub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1731,10 +1733,10 @@ func (fake *FakeSvcatClient) WaitForBrokerCallCount() int {
 	return len(fake.waitForBrokerArgsForCall)
 }
 
-func (fake *FakeSvcatClient) WaitForBrokerArgsForCall(i int) (string, time.Duration, *time.Duration) {
+func (fake *FakeSvcatClient) WaitForBrokerArgsForCall(i int) (string, *servicecatalog.ScopeOptions, time.Duration, *time.Duration) {
 	fake.waitForBrokerMutex.RLock()
 	defer fake.waitForBrokerMutex.RUnlock()
-	return fake.waitForBrokerArgsForCall[i].arg1, fake.waitForBrokerArgsForCall[i].arg2, fake.waitForBrokerArgsForCall[i].arg3
+	return fake.waitForBrokerArgsForCall[i].arg1, fake.waitForBrokerArgsForCall[i].arg2, fake.waitForBrokerArgsForCall[i].arg3, fake.waitForBrokerArgsForCall[i].arg4
 }
 
 func (fake *FakeSvcatClient) WaitForBrokerReturns(result1 servicecatalog.Broker, result2 error) {
