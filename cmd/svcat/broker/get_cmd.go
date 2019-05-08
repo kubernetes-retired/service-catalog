@@ -17,22 +17,27 @@ limitations under the License.
 package broker
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
-type getCmd struct {
+// GetCmd contains the information needed to get a broker or list of brokers
+type GetCmd struct {
 	*command.Namespaced
 	*command.Formatted
 	*command.Scoped
-	name string
+
+	Name string
 }
 
 // NewGetCmd builds a "svcat get brokers" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{
+	getCmd := &GetCmd{
 		Namespaced: command.NewNamespaced(cxt),
 		Formatted:  command.NewFormatted(),
 		Scoped:     command.NewScoped(),
@@ -56,23 +61,26 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *getCmd) Validate(args []string) error {
+// Validate checks that the required arguments have been provided
+func (c *GetCmd) Validate(args []string) error {
 	if len(args) > 0 {
-		c.name = args[0]
+		c.Name = args[0]
 	}
 
 	return nil
 }
 
-func (c *getCmd) Run() error {
-	if c.name == "" {
+// Run determines if we're getting all brokers or a single broker,
+// then queries the backend to get that information
+func (c *GetCmd) Run() error {
+	if c.Name == "" {
 		return c.getAll()
 	}
 
 	return c.get()
 }
 
-func (c *getCmd) getAll() error {
+func (c *GetCmd) getAll() error {
 	opts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
@@ -86,12 +94,18 @@ func (c *getCmd) getAll() error {
 	return nil
 }
 
-func (c *getCmd) get() error {
-	broker, err := c.App.RetrieveBroker(c.name)
+func (c *GetCmd) get() error {
+	scopeOpts := servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	}
+	broker, err := c.App.RetrieveBrokerByID(c.Name, scopeOpts)
 	if err != nil {
+		if strings.Contains(err.Error(), servicecatalog.MultipleBrokersFoundError) {
+			return fmt.Errorf(err.Error() + ", please specify a scope with --scope")
+		}
 		return err
 	}
-
-	output.WriteBroker(c.Output, c.OutputFormat, *broker)
+	output.WriteBroker(c.Output, c.OutputFormat, broker)
 	return nil
 }

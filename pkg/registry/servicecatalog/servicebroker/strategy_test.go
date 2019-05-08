@@ -106,15 +106,15 @@ func TestServiceBrokerUpdate(t *testing.T) {
 		shouldGenerationIncrement bool
 	}{
 		{
-			name:  "no spec change",
-			older: serviceBrokerWithOldSpec(),
-			newer: serviceBrokerWithOldSpec(),
+			name:                      "no spec change",
+			older:                     serviceBrokerWithOldSpec(),
+			newer:                     serviceBrokerWithOldSpec(),
 			shouldGenerationIncrement: false,
 		},
 		{
-			name:  "spec change",
-			older: serviceBrokerWithOldSpec(),
-			newer: serviceBrokerWithNewSpec(),
+			name:                      "spec change",
+			older:                     serviceBrokerWithOldSpec(),
+			newer:                     serviceBrokerWithNewSpec(),
 			shouldGenerationIncrement: true,
 		},
 	}

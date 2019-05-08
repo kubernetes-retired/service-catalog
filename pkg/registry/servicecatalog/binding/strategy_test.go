@@ -34,7 +34,7 @@ func getTestInstanceCredential() *servicecatalog.ServiceBinding {
 			Generation: 1,
 		},
 		Spec: servicecatalog.ServiceBindingSpec{
-			ServiceInstanceRef: servicecatalog.LocalObjectReference{
+			InstanceRef: servicecatalog.LocalObjectReference{
 				Name: "some-string",
 			},
 		},
@@ -71,7 +71,7 @@ func TestInstanceCredentialUpdate(t *testing.T) {
 		//			older: getTestInstanceCredential(),
 		//			newer: func() *v1beta1.ServiceBinding {
 		//				ic := getTestInstanceCredential()
-		//				ic.Spec.ServiceInstanceRef = servicecatalog.LocalObjectReference{
+		//				ic.Spec.InstanceRef = servicecatalog.LocalObjectReference{
 		//					Name: "new-string",
 		//				}
 		//				return ic
@@ -99,7 +99,7 @@ func TestInstanceCredentialUpdate(t *testing.T) {
 func TestInstanceCredentialUserInfo(t *testing.T) {
 	// Enable the OriginatingIdentity feature
 	prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, true)
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 	creatorUserName := "creator"
 	createdInstanceCredential := getTestInstanceCredential()

@@ -1,6 +1,6 @@
 # Default values for Service Catalog
 # service-catalog image to use
-image: quay.io/kubernetes-service-catalog/service-catalog:v0.1.38
+image: quay.io/kubernetes-service-catalog/service-catalog:v0.1.43
 # imagePullPolicy for the service-catalog; valid values are "IfNotPresent",
 # "Never", and "Always"
 imagePullPolicy: Always
@@ -9,6 +9,7 @@ useAggregator: true
 ## If true, create & use RBAC resources
 ##
 rbacEnable: true
+rbacApiVersion: rbac.authorization.k8s.io/v1
 apiserver:
   replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
@@ -17,7 +18,7 @@ apiserver:
   # annotations is a collection of annotations to add to the apiserver pods.
   annotations: {}
   # nodeSelector to apply to the apiserver pods
-  nodeSelector: 
+  nodeSelector:
   # PodPreset is an optional feature and can be enabled by uncommenting the line below
   # featureGates: "PodPreset=true"
   aggregator:
@@ -47,7 +48,7 @@ apiserver:
     requestHeaderCA:
   # Attributes of the apiserver's service resource
   service:
-    # Type of service; valid values are "LoadBalancer" and "NodePort"
+    # Type of service; valid values are "LoadBalancer", "NodePort" or "ClusterIP"
     # NodePort is useful if deploying on bare metal or hacking locally on
     # minikube
     type: NodePort
@@ -69,7 +70,7 @@ apiserver:
         ## etcd-client-ca.crt - SSL Certificate Authority file used to secure etcd communication
         ## etcd-client.crt - SSL certification file used to secure etcd communication.
         ## etcd-client.key - SSL key file used to secure etcd communication.
-        clientCertSecretName: 
+        clientCertSecretName:
       # Whether to embed an etcd container in the apiserver pod
       # THIS IS INADEQUATE FOR PRODUCTION USE!
       useEmbedded: true
@@ -121,10 +122,10 @@ apiserver:
   resources:
     requests:
       cpu: 100m
-      memory: 20Mi
+      memory: 40Mi
     limits:
       cpu: 100m
-      memory: 30Mi
+      memory: 50Mi
 controllerManager:
   replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
@@ -133,7 +134,7 @@ controllerManager:
   # annotations is a collection of annotations to add to the controllerManager pod.
   annotations: {}
   # nodeSelector to apply to the controllerManager pods
-  nodeSelector: 
+  nodeSelector:
   # healthcheck configures the readiness and liveliness probes for the controllerManager pod.
   healthcheck:
     enabled: true
@@ -143,9 +144,11 @@ controllerManager:
   resyncInterval: 5m
   # Broker relist interval; format is a duration (`20m`, `1h`, etc)
   brokerRelistInterval: 24h
-  # Whether or not the controller supports a --broker-relist-interval flag. If this is 
+  # Whether or not the controller supports a --broker-relist-interval flag. If this is
   # set to true, brokerRelistInterval will be used as the value for that flag
   brokerRelistIntervalActivated: true
+   # The maximum amount of time to back-off while polling an OSB API operation; format is a duration (`20m`, `1h`, etc)
+  operationPollingMaximumBackoffDuration: 20m
   # enables profiling via web interface host:port/debug/pprof/
   profiling:
     # Disable profiling via web interface host:port/debug/pprof/
@@ -160,6 +163,17 @@ controllerManager:
   apiserverSkipVerify: true
   # Whether the controller will expose metrics on /metrics
   enablePrometheusScrape: false
+  # Attributes of the controller's service resource
+  service:
+    # Type of service; valid values are "LoadBalancer", "NodePort" and "ClusterIP"
+    # NodePort is useful if deploying on bare metal or hacking locally on
+    # minikube
+    type: ClusterIP
+    # Further configuration for services of type NodePort
+    nodePort:
+      # Available port in allowable range (e.g. 30000 - 32767 on minikube)
+      # The TLS-enabled endpoint will be exposed here
+      securePort: 30444
   # Controller Manager resource requests and limits
   # Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   resources:
@@ -177,3 +191,7 @@ asyncBindingOperationsEnabled: false
 namespacedServiceBrokerDisabled: false
 # Whether the ServicePlanDefaults alpha feature should be enabled
 servicePlanDefaultsEnabled: false
+## Security context give the opportunity to run container as nonroot by setting a securityContext 
+## by example :
+## securityContext: { runAsUser: 1001 }
+securityContext: {}

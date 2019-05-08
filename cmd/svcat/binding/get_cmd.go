@@ -53,6 +53,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
+// Validate checks that the required arguments have been provided
 func (c *getCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		c.name = args[0]
@@ -61,6 +62,8 @@ func (c *getCmd) Validate(args []string) error {
 	return nil
 }
 
+// Run get all bindings when the name of the getcmd is not empty,
+// otherwise get single.
 func (c *getCmd) Run() error {
 	if c.name == "" {
 		return c.getAll()

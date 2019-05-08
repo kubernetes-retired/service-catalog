@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ func (c *FakeServiceClasses) DeleteCollection(options *v1.DeleteOptions, listOpt
 // Patch applies the patch and returns the patched serviceClass.
 func (c *FakeServiceClasses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *servicecatalog.ServiceClass, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(serviceclassesResource, c.ns, name, data, subresources...), &servicecatalog.ServiceClass{})
+		Invokes(testing.NewPatchSubresourceAction(serviceclassesResource, c.ns, name, pt, data, subresources...), &servicecatalog.ServiceClass{})
 
 	if obj == nil {
 		return nil, err

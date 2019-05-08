@@ -19,13 +19,13 @@ package validation
 import (
 	"fmt"
 
-	"github.com/ghodss/yaml"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"sigs.k8s.io/yaml"
 )
 
 const lastOperationMaxLength int = 10000
@@ -209,7 +209,7 @@ func validateServiceInstancePropertiesState(propertiesState *sc.ServiceInstanceP
 	}
 
 	if propertiesState.Parameters == nil {
-		if propertiesState.ParametersChecksum != "" {
+		if propertiesState.ParameterChecksum != "" {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Child("parametersChecksum"), "parametersChecksum must be empty when there are no parameters"))
 		}
 	} else {
@@ -221,17 +221,17 @@ func validateServiceInstancePropertiesState(propertiesState *sc.ServiceInstanceP
 				allErrs = append(allErrs, field.Invalid(fldPath.Child("parameters").Child("raw"), propertiesState.Parameters.Raw, "raw must be valid yaml"))
 			}
 		}
-		if propertiesState.ParametersChecksum == "" {
+		if propertiesState.ParameterChecksum == "" {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Child("parametersChecksum"), "parametersChecksum must not be empty when there are parameters"))
 		}
 	}
 
-	if propertiesState.ParametersChecksum != "" {
-		if len(propertiesState.ParametersChecksum) != 64 {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParametersChecksum, "parametersChecksum must be exactly 64 digits"))
+	if propertiesState.ParameterChecksum != "" {
+		if len(propertiesState.ParameterChecksum) != 64 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParameterChecksum, "parametersChecksum must be exactly 64 digits"))
 		}
-		if !stringIsHexadecimal(propertiesState.ParametersChecksum) {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParametersChecksum, "parametersChecksum must be a hexadecimal number"))
+		if !stringIsHexadecimal(propertiesState.ParameterChecksum) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("parametersChecksum"), propertiesState.ParameterChecksum, "parametersChecksum must be a hexadecimal number"))
 		}
 	}
 

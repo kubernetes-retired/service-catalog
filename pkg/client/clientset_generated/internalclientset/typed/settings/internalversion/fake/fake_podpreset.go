@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ func (c *FakePodPresets) DeleteCollection(options *v1.DeleteOptions, listOptions
 // Patch applies the patch and returns the patched podPreset.
 func (c *FakePodPresets) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *settings.PodPreset, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(podpresetsResource, c.ns, name, data, subresources...), &settings.PodPreset{})
+		Invokes(testing.NewPatchSubresourceAction(podpresetsResource, c.ns, name, pt, data, subresources...), &settings.PodPreset{})
 
 	if obj == nil {
 		return nil, err

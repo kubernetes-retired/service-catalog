@@ -314,6 +314,7 @@ var _ = Describe("Register Command", func() {
 			}
 			cmd.Wait = true
 			cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
+			cmd.Scope = servicecatalog.NamespaceScope
 			cmd.Waitable.ApplyWaitFlags()
 			cmd.Interval = interval
 			cmd.Timeout = &timeout
@@ -331,8 +332,13 @@ var _ = Describe("Register Command", func() {
 			Expect(*returnedOpts).To(Equal(opts))
 
 			Expect(fakeSDK.WaitForBrokerCallCount()).To(Equal(1))
-			waitName, waitInterval, waitTimeout := fakeSDK.WaitForBrokerArgsForCall(0)
+			waitName, returnedScope, waitInterval, waitTimeout := fakeSDK.WaitForBrokerArgsForCall(0)
+
 			Expect(waitName).To(Equal(brokerName))
+			Expect(returnedScope).To(Equal(&servicecatalog.ScopeOptions{
+				Namespace: namespace,
+				Scope:     servicecatalog.NamespaceScope,
+			}))
 			Expect(waitInterval).To(Equal(interval))
 			Expect(*waitTimeout).To(Equal(timeout))
 

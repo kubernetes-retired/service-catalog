@@ -30,6 +30,7 @@ const (
 )
 
 type TestContextType struct {
+	BrokerImage           string
 	KubeHost              string
 	KubeConfig            string
 	KubeContext           string
@@ -51,6 +52,8 @@ func RegisterCommonFlags() {
 	// Randomize specs as well as suites
 	config.GinkgoConfig.RandomizeAllSpecs = true
 
+	flag.StringVar(&TestContext.BrokerImage, "broker-image", "quay.io/kubernetes-service-catalog/user-broker:latest",
+		"The container image for the broker to test against")
 	flag.StringVar(&TestContext.KubeHost, "kubernetes-host", "http://127.0.0.1:8080", "The kubernetes host, or apiserver, to connect to")
 	flag.StringVar(&TestContext.KubeConfig, "kubernetes-config", os.Getenv(clientcmd.RecommendedConfigPathEnvVar), "Path to config containing embedded authinfo for kubernetes. Default value is from environment variable "+clientcmd.RecommendedConfigPathEnvVar)
 	flag.StringVar(&TestContext.KubeContext, "kubernetes-context", "", "config context to use for kubernetes. If unset, will use value from 'current-context'")

@@ -57,8 +57,8 @@ func TestReconcileServiceBindingNonExistingServiceInstance(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testNonExistentClusterServiceClassName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testNonExistentClusterServiceClassName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -120,8 +120,8 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -151,7 +151,7 @@ func TestReconcileServiceBindingUnresolvedClusterServiceClassReference(t *testin
 
 	expectedEvent := warningEventBuilder(errorServiceInstanceRefsUnresolved).msgf(
 		"Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for ServiceInstance \"%s/%s\" have not been resolved yet",
-		binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+		binding.Namespace, binding.Spec.InstanceRef.Name,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -186,8 +186,8 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -218,7 +218,7 @@ func TestReconcileServiceBindingUnresolvedClusterServicePlanReference(t *testing
 
 	expectedEvent := warningEventBuilder(errorServiceInstanceRefsUnresolved).msgf(
 		"Binding cannot begin because ClusterServiceClass and ClusterServicePlan references for ServiceInstance \"%s/%s\" have not been resolved yet",
-		binding.Namespace, binding.Spec.ServiceInstanceRef.Name,
+		binding.Namespace, binding.Spec.InstanceRef.Name,
 	)
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -254,8 +254,8 @@ func TestReconcileServiceBindingNonExistingClusterServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -324,9 +324,9 @@ func TestReconcileServiceBindingWithSecretConflict(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -422,9 +422,9 @@ func TestReconcileServiceBindingWithParameters(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -569,9 +569,9 @@ func TestReconcileServiceBindingWithSecretTransform(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -688,8 +688,8 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -717,7 +717,7 @@ func TestReconcileServiceBindingNonbindableClusterServiceClass(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		"UNBINDABLE-CLUSTERSERVICECLASS", "test-unbindable-clusterserviceclass", "test-unbindable-clusterserviceplan",
+		"unbindable-clusterserviceclass", "test-unbindable-clusterserviceclass", "test-unbindable-clusterserviceplan",
 	).String()
 	expectedEvents := []string{expectedEvent, expectedEvent}
 	if err := checkEvents(events, expectedEvents); err != nil {
@@ -767,9 +767,9 @@ func TestReconcileServiceBindingNonbindableClusterServiceClassBindablePlan(t *te
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -864,8 +864,8 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -893,7 +893,7 @@ func TestReconcileServiceBindingBindableClusterServiceClassNonbindablePlan(t *te
 
 	expectedEvent := warningEventBuilder(errorNonbindableClusterServiceClassReason).msgf(
 		"References a non-bindable ClusterServiceClass (K8S: %q ExternalName: %q) and Plan (%q) combination",
-		"CSCGUID", "test-clusterserviceclass", "test-unbindable-clusterserviceplan",
+		"cscguid", "test-clusterserviceclass", "test-unbindable-clusterserviceplan",
 	).String()
 	expectedEvents := []string{
 		expectedEvent,
@@ -924,8 +924,8 @@ func TestReconcileServiceBindingServiceInstanceNotReady(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -984,8 +984,8 @@ func TestReconcileServiceBindingNamespaceError(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -1039,9 +1039,9 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 					Generation:        2,
 				},
 				Spec: v1beta1.ServiceBindingSpec{
-					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-					ExternalID:         testServiceBindingGUID,
-					SecretName:         testServiceBindingSecretName,
+					InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:  testServiceBindingGUID,
+					SecretName:  testServiceBindingSecretName,
 				},
 				Status: v1beta1.ServiceBindingStatus{
 					ReconciledGeneration: 1,
@@ -1079,9 +1079,9 @@ func TestReconcileServiceBindingDelete(t *testing.T) {
 					Generation:        2,
 				},
 				Spec: v1beta1.ServiceBindingSpec{
-					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-					ExternalID:         testServiceBindingGUID,
-					SecretName:         testServiceBindingSecretName,
+					InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:  testServiceBindingGUID,
+					SecretName:  testServiceBindingSecretName,
 				},
 				Status: v1beta1.ServiceBindingStatus{
 					ReconciledGeneration: 1,
@@ -1193,8 +1193,8 @@ func TestReconcileServiceBindingDeleteUnresolvedClusterServiceClassReference(t *
 			Generation:        1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -1468,9 +1468,9 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -1499,7 +1499,7 @@ func TestReconcileServiceBindingWithClusterServiceBrokerError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1534,9 +1534,9 @@ func TestReconcileServiceBindingWithClusterServiceBrokerHTTPError(t *testing.T) 
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -1666,7 +1666,7 @@ func TestReconcileServiceBindingWithServiceBindingCallFailure(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorBindCallReason).msgf(
 		"Error creating ServiceBinding for ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("fake creation failure")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1912,9 +1912,9 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 			Generation:        1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			ExternalProperties: &v1beta1.ServiceBindingPropertiesState{},
@@ -1946,7 +1946,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Unexpected action")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -1980,9 +1980,9 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 			Generation:        1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			ExternalProperties: &v1beta1.ServiceBindingPropertiesState{},
@@ -2014,7 +2014,7 @@ func TestReconcileUnbindingWithClusterServiceBrokerHTTPError(t *testing.T) {
 
 	expectedEvent := warningEventBuilder(errorUnbindCallReason).msgf(
 		"Error unbinding from ServiceInstance %q of ClusterServiceClass (K8S: %q ExternalName: %q) at ClusterServiceBroker %q:",
-		"test-ns/test-instance", "CSCGUID", "test-clusterserviceclass", "test-clusterservicebroker",
+		"test-ns/test-instance", "cscguid", "test-clusterserviceclass", "test-clusterservicebroker",
 	).msg("Status: 410; ErrorMessage: <nil>; Description: <nil>; ResponseError: <nil>")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
@@ -2025,7 +2025,7 @@ func TestReconcileBindingUsingOriginatingIdentity(t *testing.T) {
 	for _, tc := range originatingIdentityTestCases {
 		func() {
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				BindReaction: &fakeosb.BindReaction{
@@ -2082,7 +2082,7 @@ func TestReconcileBindingDeleteUsingOriginatingIdentity(t *testing.T) {
 	for _, tc := range originatingIdentityTestCases {
 		func() {
 			prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, tc.enableOriginatingIdentity)
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 			fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 				UnbindReaction: &fakeosb.UnbindReaction{
@@ -2279,9 +2279,9 @@ func TestReconcileBindingWithSecretConflictFailedAfterFinalRetry(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			CurrentOperation:     v1beta1.ServiceBindingOperationBind,
@@ -2422,9 +2422,9 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -2631,9 +2631,9 @@ func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 					Generation: 1,
 				},
 				Spec: v1beta1.ServiceBindingSpec{
-					ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-					ExternalID:         testServiceBindingGUID,
-					SecretName:         testServiceBindingSecretName,
+					InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+					ExternalID:  testServiceBindingGUID,
+					SecretName:  testServiceBindingSecretName,
 				},
 				Status: v1beta1.ServiceBindingStatus{
 					UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
@@ -2723,9 +2723,9 @@ func TestReconcileBindingWithOrphanMitigationInProgress(t *testing.T) {
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			UnbindStatus: v1beta1.ServiceBindingUnbindStatusRequired,
@@ -2788,9 +2788,9 @@ func TestReconcileBindingWithOrphanMitigationReconciliationRetryTimeOut(t *testi
 			Generation: 1,
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			Conditions: []v1beta1.ServiceBindingCondition{
@@ -2864,9 +2864,9 @@ func TestReconcileServiceBindingDeleteDuringOngoingOperation(t *testing.T) {
 			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			CurrentOperation:     v1beta1.ServiceBindingOperationBind,
@@ -2960,9 +2960,9 @@ func TestReconcileServiceBindingDeleteDuringOrphanMitigation(t *testing.T) {
 			Finalizers:        []string{v1beta1.FinalizerServiceCatalog},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
-			ExternalID:         testServiceBindingGUID,
-			SecretName:         testServiceBindingSecretName,
+			InstanceRef: v1beta1.LocalObjectReference{Name: testServiceInstanceName},
+			ExternalID:  testServiceBindingGUID,
+			SecretName:  testServiceBindingSecretName,
 		},
 		Status: v1beta1.ServiceBindingStatus{
 			CurrentOperation:           v1beta1.ServiceBindingOperationBind,
@@ -3047,8 +3047,8 @@ func TestReconcileServiceBindingAsynchronousBind(t *testing.T) {
 		},
 	})
 
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	addGetNamespaceReaction(fakeKubeClient)
 	addGetSecretNotFoundReaction(fakeKubeClient)
@@ -3140,8 +3140,8 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 		},
 	})
 
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	sharedInformers.ClusterServiceBrokers().Informer().GetStore().Add(getTestClusterServiceBroker())
 	sharedInformers.ClusterServiceClasses().Informer().GetStore().Add(getTestBindingRetrievableClusterServiceClass())
@@ -3210,8 +3210,8 @@ func TestReconcileServiceBindingAsynchronousUnbind(t *testing.T) {
 }
 
 func TestPollServiceBinding(t *testing.T) {
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 	goneError := osb.HTTPStatusCodeError{
 		StatusCode: http.StatusGone,

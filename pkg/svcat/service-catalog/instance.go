@@ -77,7 +77,7 @@ func (sdk *SDK) RetrieveInstance(ns, name string) (*v1beta1.ServiceInstance, err
 func (sdk *SDK) RetrieveInstanceByBinding(b *v1beta1.ServiceBinding,
 ) (*v1beta1.ServiceInstance, error) {
 	ns := b.Namespace
-	instName := b.Spec.ServiceInstanceRef.Name
+	instName := b.Spec.InstanceRef.Name
 	inst, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(instName, v1.GetOptions{})
 	if err != nil {
 		return nil, err

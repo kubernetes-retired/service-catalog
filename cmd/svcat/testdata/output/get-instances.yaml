@@ -1,6 +1,6 @@
 items:
 - metadata:
-    creationTimestamp: 2018-01-11T20:59:47Z
+    creationTimestamp: "2018-01-11T20:59:47Z"
     finalizers:
     - kubernetes-incubator/service-catalog
     generation: 1
@@ -22,7 +22,7 @@ items:
   status:
     asyncOpInProgress: false
     conditions:
-    - lastTransitionTime: 2018-01-11T20:59:47Z
+    - lastTransitionTime: "2018-01-11T20:59:47Z"
       message: The instance was provisioned successfully
       reason: ProvisionedSuccessfully
       status: "True"

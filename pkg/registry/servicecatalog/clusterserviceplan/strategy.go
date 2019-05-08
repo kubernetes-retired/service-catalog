@@ -27,9 +27,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for service planes
@@ -73,7 +73,7 @@ var (
 func (clusterServicePlanRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to create")
+		klog.Fatal("received a non-ClusterServicePlan object to create")
 	}
 }
 
@@ -86,7 +86,7 @@ func (clusterServicePlanRESTStrategy) NamespaceScoped() bool {
 func (clusterServicePlanRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to create")
+		klog.Fatal("received a non-ClusterServicePlan object to create")
 	}
 	// service plan is a data record and has no status to track
 }
@@ -106,11 +106,11 @@ func (clusterServicePlanRESTStrategy) AllowUnconditionalUpdate() bool {
 func (clusterServicePlanRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to update to")
+		klog.Fatal("received a non-ClusterServicePlan object to update to")
 	}
 	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to update from")
+		klog.Fatal("received a non-ClusterServicePlan object to update from")
 	}
 
 	newServicePlan.Spec.ClusterServiceClassRef = oldServicePlan.Spec.ClusterServiceClassRef
@@ -120,11 +120,11 @@ func (clusterServicePlanRESTStrategy) PrepareForUpdate(ctx context.Context, new,
 func (clusterServicePlanRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to validate to")
+		klog.Fatal("received a non-ClusterServicePlan object to validate to")
 	}
 	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to validate from")
+		klog.Fatal("received a non-ClusterServicePlan object to validate from")
 	}
 
 	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)
@@ -133,11 +133,11 @@ func (clusterServicePlanRESTStrategy) ValidateUpdate(ctx context.Context, new, o
 func (clusterServicePlanStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newServiceClass, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to update to")
+		klog.Fatal("received a non-ClusterServicePlan object to update to")
 	}
 	oldServiceClass, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to update from")
+		klog.Fatal("received a non-ClusterServicePlan object to update from")
 	}
 	// Status changes are not allowed to update spec
 	newServiceClass.Spec = oldServiceClass.Spec
@@ -146,11 +146,11 @@ func (clusterServicePlanStatusRESTStrategy) PrepareForUpdate(ctx context.Context
 func (clusterServicePlanStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newServicePlan, ok := new.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to validate to")
+		klog.Fatal("received a non-ClusterServicePlan object to validate to")
 	}
 	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
 	if !ok {
-		glog.Fatal("received a non-ClusterServicePlan object to validate from")
+		klog.Fatal("received a non-ClusterServicePlan object to validate from")
 	}
 
 	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)

@@ -25,16 +25,16 @@ import (
 	"os"
 	"path"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/service-catalog/pkg/version"
+	"k8s.io/klog"
 
 	"github.com/spf13/pflag"
 
 	utiltemplate "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/template"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server"
-	utilflag "k8s.io/apiserver/pkg/util/flag"
-	"k8s.io/apiserver/pkg/util/logs"
+	utilflag "k8s.io/component-base/cli/flag"
+	"k8s.io/component-base/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/pkg"
 )
@@ -189,7 +189,7 @@ RunAgain:
 
 	logs.InitLogs()
 	defer logs.FlushLogs()
-	glog.Infof("Service Catalog version %s (built %s)", version.Get().String(), version.Get().BuildDate)
+	klog.Infof("Service Catalog version %s (built %s)", version.Get().String(), version.Get().BuildDate)
 	if !s.RespectsStopCh {
 		// For commands that do not respect the stopCh, we run them in a go
 		// routine and leave them running when stopCh is closed.

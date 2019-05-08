@@ -35,7 +35,7 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
 
@@ -52,6 +52,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
 	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
+	k8sinformers "k8s.io/client-go/informers"
 )
 
 const (
@@ -114,8 +115,8 @@ func TestBasicFlows(t *testing.T) {
 			//t.Parallel()
 			if tc.asyncForBindings {
 				// Enable the AsyncBindingOperations feature
-				utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-				defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+				utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+				defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 			}
 
 			ct := &controllerTest{
@@ -231,7 +232,7 @@ func verifyUsernameInLastBrokerAction(t *testing.T, osbClient *fakeosb.FakeClien
 func TestBasicFlowsWithOriginatingIdentity(t *testing.T) {
 	// Enable the OriginatingIdentity feature
 	prevOrigIDEnablement := sctestutil.EnableOriginatingIdentity(t, true)
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=%v", scfeatures.OriginatingIdentity, prevOrigIDEnablement))
 
 	createChangeUsernameFunc := func(username string) func(*controllerTest) {
 		return func(ct *controllerTest) {
@@ -554,8 +555,8 @@ func TestServiceBindingDeleteWithAsyncBindInProgress(t *testing.T) {
 			//t.Parallel()
 
 			// Enable the AsyncBindingOperations feature
-			utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
+			utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.AsyncBindingOperations))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.AsyncBindingOperations))
 
 			var done int32 = 0
 			ct := controllerTest{
@@ -617,11 +618,11 @@ func getProvisionResponseByPollCountReactions(numOfResponses int, stateProgressi
 		var reaction fakeosb.ProvisionReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Provision instance state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Provision instance state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Provision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Provision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -642,11 +643,11 @@ func getDeprovisionResponseByPollCountReactions(numOfResponses int, stateProgres
 		var reaction fakeosb.DeprovisionReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Deprovision instance state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Deprovision instance state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Deprovision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Deprovision instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -667,11 +668,11 @@ func getUpdateInstanceResponseByPollCountReactions(numOfResponses int, stateProg
 		var reaction fakeosb.UpdateInstanceReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Update instance state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Update instance state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Update instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Update instance state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -692,11 +693,11 @@ func getLastOperationResponseByPollCountReactions(numOfResponses int, stateProgr
 		var reaction fakeosb.PollLastOperationReaction
 		if numberOfPolls > (numOfResponses*numberOfStates)-1 {
 			reaction = stateProgressions[numberOfStates-1]
-			glog.V(5).Infof("Last operation state progressions done, ended on %v", reaction)
+			klog.V(5).Infof("Last operation state progressions done, ended on %v", reaction)
 		} else {
 			idx := numberOfPolls / numOfResponses
 			reaction = stateProgressions[idx]
-			glog.V(5).Infof("Last operation state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
+			klog.V(5).Infof("Last operation state progression on %v (polls:%v, idx:%v)", reaction, numberOfPolls, idx)
 		}
 		numberOfPolls++
 		if reaction.Response != nil {
@@ -762,6 +763,9 @@ func newControllerTestTestController(ct *controllerTest) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
+	coreInformerFactory := k8sinformers.NewSharedInformerFactory(fakeKubeClient, time.Minute)
+	coreInformers := coreInformerFactory.Core()
+
 	// WARNING: Should you try to record more events than the buffer size
 	// passed here, the recording function will hang indefinitely.
 	fakeRecorder := record.NewFakeRecorder(50)
@@ -769,6 +773,7 @@ func newControllerTestTestController(ct *controllerTest) (
 	// create a test controller
 	testController, err := controller.NewController(
 		fakeKubeClient,
+		coreInformers.V1().Secrets(),
 		catalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
@@ -807,11 +812,13 @@ func newControllerTestTestController(ct *controllerTest) (
 
 	stopCh := make(chan struct{})
 
-	glog.V(4).Info("Waiting for caches to sync")
+	klog.V(4).Info("Waiting for caches to sync")
 	informerFactory.Start(stopCh)
+	coreInformerFactory.Start(stopCh)
 
-	glog.V(4).Info("Waiting for caches to sync")
+	klog.V(4).Info("Waiting for caches to sync")
 	informerFactory.WaitForCacheSync(stopCh)
+	coreInformerFactory.WaitForCacheSync(stopCh)
 
 	controllerStopped := make(chan struct{})
 
@@ -922,6 +929,9 @@ func newTestController(t *testing.T) (
 	informerFactory := scinformers.NewSharedInformerFactory(catalogClient, 10*time.Second)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
 
+	coreInformerFactory := k8sinformers.NewSharedInformerFactory(fakeKubeClient, time.Minute)
+	coreInformers := coreInformerFactory.Core()
+
 	// WARNING: Should you try to record more events than the buffer size
 	// passed here, the recording function will hang indefinitely.
 	fakeRecorder := record.NewFakeRecorder(50)
@@ -929,6 +939,7 @@ func newTestController(t *testing.T) (
 	// create a test controller
 	testController, err := controller.NewController(
 		fakeKubeClient,
+		coreInformers.V1().Secrets(),
 		catalogClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
@@ -959,6 +970,7 @@ func newTestController(t *testing.T) (
 		controllerStopped <- struct{}{}
 	}()
 	informerFactory.Start(stopCh)
+	coreInformerFactory.Start(stopCh)
 	t.Log("informers start")
 
 	shutdownController := func() {
@@ -1149,7 +1161,7 @@ func verifyBrokerCreated(t *testing.T, client clientsetsc.ServicecatalogV1beta1I
 		t.Fatalf("error waiting for broker to become ready: %v", err)
 	}
 
-	if err := util.WaitForClusterServiceClassToExist(client, testClusterServiceClassGUID); err != nil {
+	if err := util.WaitForServiceClassToExist(client, testClusterServiceClassGUID); err != nil {
 		t.Fatalf("error waiting from ClusterServiceClass to exist: %v", err)
 	}
 
@@ -1167,7 +1179,7 @@ func deleteBroker(t *testing.T, client clientsetsc.ServicecatalogV1beta1Interfac
 		t.Fatalf("broker should be deleted (%s)", err)
 	}
 
-	if err := util.WaitForClusterServiceClassToNotExist(client, testClusterServiceClassName); err != nil {
+	if err := util.WaitForServiceClassToNotExist(client, testClusterServiceClassName); err != nil {
 		t.Fatalf("error waiting for ClusterServiceClass to not exist: %v", err)
 	}
 
@@ -1227,7 +1239,7 @@ func getTestBinding() *v1beta1.ServiceBinding {
 	return &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace, Name: testBindingName},
 		Spec: v1beta1.ServiceBindingSpec{
-			ServiceInstanceRef: v1beta1.LocalObjectReference{
+			InstanceRef: v1beta1.LocalObjectReference{
 				Name: testInstanceName,
 			},
 		},

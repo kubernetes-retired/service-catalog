@@ -57,7 +57,7 @@ STAT           = stat -c '%Y %n'
 endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION    ?= 1.10
+GO_VERSION    ?= 1.11
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
@@ -89,6 +89,8 @@ SERVICE_CATALOG_IMAGE             = $(REGISTRY)service-catalog-$(ARCH):$(VERSION
 SERVICE_CATALOG_MUTABLE_IMAGE     = $(REGISTRY)service-catalog-$(ARCH):$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
 USER_BROKER_MUTABLE_IMAGE         = $(REGISTRY)user-broker-$(ARCH):$(MUTABLE_TAG)
+TEST_BROKER_IMAGE                 = $(REGISTRY)test-broker-$(ARCH):$(VERSION)
+TEST_BROKER_MUTABLE_IMAGE         = $(REGISTRY)test-broker-$(ARCH):$(MUTABLE_TAG)
 HEALTHCHECK_IMAGE                 = $(REGISTRY)healthcheck-$(ARCH):$(VERSION)
 HEALTHCHECK_MUTABLE_IMAGE         = $(REGISTRY)healthcheck-$(ARCH):$(MUTABLE_TAG)
 ifdef UNIT_TESTS
@@ -124,6 +126,7 @@ endif
 build: .init .generate_files \
 	$(BINDIR)/service-catalog \
 	$(BINDIR)/user-broker \
+	$(BINDIR)/test-broker \
 	$(BINDIR)/healthcheck
 
 .PHONY: $(BINDIR)/user-broker
@@ -132,6 +135,13 @@ $(BINDIR)/user-broker: .init contrib/cmd/user-broker \
 	  $(shell find contrib/cmd/user-broker -type f) \
 	  $(shell find contrib/pkg/broker -type f)
 	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/user-broker
+
+.PHONY: $(BINDIR)/test-broker
+test-broker: $(BINDIR)/test-broker
+$(BINDIR)/test-broker: .init contrib/cmd/test-broker \
+	  $(shell find contrib/cmd/test-broker -type f) \
+	  $(shell find contrib/pkg/broker -type f)
+	$(DOCKER_CMD) $(GO_BUILD) -o $@ $(SC_PKG)/contrib/cmd/test-broker
 
 .PHONY: $(BINDIR)/healthcheck
 healthcheck: $(BINDIR)/healthcheck
@@ -154,6 +164,9 @@ generators: $(GENERATORS)
 
 .SECONDEXPANSION:
 
+$(BINDIR)/openapi-gen: $$(shell find vendor/k8s.io/kube-openapi/cmd/openapi-gen vendor/k8s.io/gengo) .init
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
+
 # We specify broad dependencies for these generator binaries: each one depends
 # on everything under its source tree as well as gengo's.  This uses GNU Make's
 # secondary expansion feature to pass $* to `find`.
@@ -162,7 +175,7 @@ $(BINDIR)/%-gen: $$(shell find vendor/k8s.io/code-generator/cmd/$$*-gen vendor/k
 
 .PHONY: $(BINDIR)/e2e.test
 $(BINDIR)/e2e.test: .init
-	$(DOCKER_CMD) go test -c -o $@ $(SC_PKG)/test/e2e
+	$(DOCKER_CMD) env GOOS=$(CLIENT_PLATFORM) GOARCH=$(ARCH) go test -c -o $@ $(SC_PKG)/test/e2e
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init generators $(TYPES_FILES)
@@ -326,7 +339,7 @@ clean-coverage:
 
 # Building Docker Images for our executables
 ############################################
-images: user-broker-image service-catalog-image healthcheck-image
+images: user-broker-image test-broker-image service-catalog-image healthcheck-image
 
 images-all: $(addprefix arch-image-,$(ALL_ARCH))
 arch-image-%:
@@ -357,6 +370,13 @@ ifeq ($(ARCH),amd64)
 	docker tag $(USER_BROKER_MUTABLE_IMAGE) $(REGISTRY)user-broker:$(MUTABLE_TAG)
 endif
 
+test-broker-image: contrib/build/test-broker/Dockerfile $(BINDIR)/test-broker
+	$(call build-and-tag,"test-broker",$(TEST_BROKER_IMAGE),$(TEST_BROKER_MUTABLE_IMAGE),"contrib/")
+ifeq ($(ARCH),amd64)
+	docker tag $(TEST_BROKER_IMAGE) $(REGISTRY)test-broker:$(VERSION)
+	docker tag $(TEST_BROKER_MUTABLE_IMAGE) $(REGISTRY)test-broker:$(MUTABLE_TAG)
+endif
+
 service-catalog-image: build/service-catalog/Dockerfile $(BINDIR)/service-catalog
 	$(call build-and-tag,"service-catalog",$(SERVICE_CATALOG_IMAGE),$(SERVICE_CATALOG_MUTABLE_IMAGE))
 ifeq ($(ARCH),amd64)
@@ -373,7 +393,7 @@ endif
 
 # Push our Docker Images to a registry
 ######################################
-push: user-broker-push service-catalog-push
+push: user-broker-push test-broker-push service-catalog-push
 
 user-broker-push: user-broker-image
 	docker push $(USER_BROKER_IMAGE)
@@ -381,6 +401,14 @@ user-broker-push: user-broker-image
 ifeq ($(ARCH),amd64)
 	docker push $(REGISTRY)user-broker:$(VERSION)
 	docker push $(REGISTRY)user-broker:$(MUTABLE_TAG)
+endif
+
+test-broker-push: test-broker-image
+	docker push $(TEST_BROKER_IMAGE)
+	docker push $(TEST_BROKER_MUTABLE_IMAGE)
+ifeq ($(ARCH),amd64)
+	docker push $(REGISTRY)test-broker:$(VERSION)
+	docker push $(REGISTRY)test-broker:$(MUTABLE_TAG)
 endif
 
 service-catalog-push: service-catalog-image

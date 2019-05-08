@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 // internal message body types
@@ -95,7 +95,7 @@ func (c *client) ProvisionInstance(r *ProvisionRequest) (*ProvisionResponse, err
 		}
 
 		if c.Verbose {
-			glog.Infof("broker %q: received asynchronous response", c.Name)
+			klog.Infof("broker %q: received asynchronous response", c.Name)
 		}
 
 		return userResponse, nil

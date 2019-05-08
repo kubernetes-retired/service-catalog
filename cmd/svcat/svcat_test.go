@@ -44,16 +44,23 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 	k8stesting "k8s.io/client-go/testing"
+	"k8s.io/klog"
+	"sigs.k8s.io/yaml"
 )
 
 var catalogRequestRegex = regexp.MustCompile("/apis/servicecatalog.k8s.io/v1beta1/(.*)")
 var coreRequestRegex = regexp.MustCompile("/api/v1/(.*)")
+
+func TestMain(m *testing.M) {
+	// Init klog flags because tests rely on flags to be globally registered
+	klog.InitFlags(nil)
+	os.Exit(m.Run())
+}
 
 // Verify that svcat gracefully handles when the namespaced broker feature flag is disabled
 // TODO: Once we take Namespaced brokers out from behind the feature flag, this test won't be necessary
@@ -142,7 +149,7 @@ func TestCommandValidation(t *testing.T) {
 		{"viper bug workaround: provision", "provision name --class class --plan plan", ""},
 		{"viper bug workaround: bind", "bind name", ""},
 		{"describe broker requires name", "describe broker", "a broker name is required"},
-		{"describe class requires name", "describe class", "a class name or Kubernetes name is required"},
+		{"describe class requires name", "describe class", "a class external name or Kubernetes name is required"},
 		{"describe plan requires name", "describe plan", "a plan name or Kubernetes name is required"},
 		{"describe instance requires name", "describe instance", "an instance name is required"},
 		{"describe binding requires name", "describe binding", "a binding name is required"},
@@ -180,10 +187,10 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all brokers", cmd: "get brokers", golden: "output/get-brokers.txt"},
 		{name: "list all brokers (json)", cmd: "get brokers -o json", golden: "output/get-brokers.json"},
 		{name: "list all brokers (yaml)", cmd: "get brokers -o yaml", golden: "output/get-brokers.yaml"},
-		{name: "get broker", cmd: "get broker ups-broker", golden: "output/get-broker.txt"},
-		{name: "get broker (json)", cmd: "get broker ups-broker -o json", golden: "output/get-broker.json"},
-		{name: "get broker (yaml)", cmd: "get broker ups-broker -o yaml", golden: "output/get-broker.yaml"},
-		{name: "describe broker", cmd: "describe broker ups-broker", golden: "output/describe-broker.txt"},
+		{name: "get cluster scoped broker", cmd: "get broker ups-broker --scope cluster", golden: "output/get-broker.txt"},
+		{name: "get cluster scoped broker (json)", cmd: "get broker ups-broker --scope cluster -o json", golden: "output/get-broker.json"},
+		{name: "get cluster scoped broker (yaml)", cmd: "get broker ups-broker --scope cluster -o yaml", golden: "output/get-broker.yaml"},
+		{name: "describe cluster broker", cmd: "describe broker ups-broker --scope cluster", golden: "output/describe-broker.txt"},
 		{name: "register broker", cmd: "register ups-broker --url http://upsbroker.com", golden: "output/register-broker.txt"},
 		{name: "deregister broker", cmd: "deregister ups-broker", golden: "output/deregister-broker.txt"},
 
@@ -198,9 +205,9 @@ func TestCommandOutput(t *testing.T) {
 		{name: "get class not found（all namespaces）", cmd: "get class foo --scope namespace --all-namespaces", golden: "output/get-class-not-found-all-namespaces.txt", continueOnError: true},
 		{name: "get class by name (json)", cmd: "get class user-provided-service -o json", golden: "output/get-class.json"},
 		{name: "get class by name (yaml)", cmd: "get class user-provided-service -o yaml", golden: "output/get-class.yaml"},
-		{name: "get class by Kubernetes name", cmd: "get class --kube-name 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/get-class.txt"},
+		{name: "get class by Kubernetes name", cmd: "get class --kube-name 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 --scope cluster", golden: "output/get-class.txt"},
 		{name: "describe class by name", cmd: "describe class user-provided-service", golden: "output/describe-class.txt"},
-		{name: "describe class by Kubernetes name", cmd: "describe class --kube-name 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468", golden: "output/describe-class.txt"},
+		{name: "describe class by Kubernetes name", cmd: "describe class --kube-name 4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468 --scope cluster", golden: "output/describe-class.txt"},
 		{name: "create cluster class", cmd: "create class new-class --from user-provided-service --scope cluster", golden: "output/create-cluster-class.txt"},
 		{name: "create cluster class not found", cmd: "create class new-class --from foo --scope cluster", golden: "output/create-cluster-class-not-found.txt", continueOnError: true},
 		{name: "create namespace class", cmd: "create class new-class --from user-provided-namespaced-service --scope namespace --namespace default", golden: "output/create-namespace-class.txt"},

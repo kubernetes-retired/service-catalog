@@ -88,7 +88,7 @@ func WritePlanList(w io.Writer, outputFormat string, plans []servicecatalog.Plan
 }
 
 // WritePlan prints a single plan in the specified output format.
-func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class v1beta1.ClusterServiceClass) {
+func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class servicecatalog.Class) {
 
 	switch outputFormat {
 	case FormatJSON:
@@ -97,7 +97,7 @@ func WritePlan(w io.Writer, outputFormat string, plan servicecatalog.Plan, class
 		writeYAML(w, plan, 0)
 	case FormatTable:
 		classNames := map[string]string{}
-		classNames[class.Name] = class.Spec.ExternalName
+		classNames[class.GetName()] = class.GetExternalName()
 		writePlanListTable(w, []servicecatalog.Plan{plan}, classNames)
 	}
 }
@@ -137,7 +137,7 @@ func WriteParentPlan(w io.Writer, plan *v1beta1.ClusterServicePlan) {
 }
 
 // WritePlanDetails prints details for a single plan.
-func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.ClusterServiceClass) {
+func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class servicecatalog.Class) {
 	t := NewDetailsTable(w)
 
 	t.AppendBulk([][]string{
@@ -146,7 +146,7 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class *v1beta1.Clus
 		{"Kubernetes Name:", string(plan.GetName())},
 		{"Status:", plan.GetShortStatus()},
 		{"Free:", strconv.FormatBool(plan.GetFree())},
-		{"Class:", class.Spec.ExternalName},
+		{"Class:", class.GetExternalName()},
 	})
 
 	t.Render()

@@ -3,3 +3,4 @@
 image: quay.io/kubernetes-service-catalog/healthcheck:v0.1.9
 # ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
 imagePullPolicy: IfNotPresent
+rbacApiVersion: rbac.authorization.k8s.io/v1

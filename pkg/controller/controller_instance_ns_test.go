@@ -37,11 +37,11 @@ import (
 
 // TestReconcileServiceInstanceNamespacedRefs tests synchronously provisioning a new service
 func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		ProvisionReaction: &fakeosb.ProvisionReaction{
@@ -120,11 +120,11 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 // in a async response. Resulting status will indicate not ready and polling
 // in progress.
 func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	key := osb.OperationKey(testOperation)
 
@@ -200,11 +200,11 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 // (background/asynchronously) and is still in progress (should be re-polled)
 // The instance being provisioned here refers to namespaced classes and plans.
 func TestPollServiceInstanceInProgressProvisioningWithOperationNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -263,11 +263,11 @@ func TestPollServiceInstanceInProgressProvisioningWithOperationNamespacedRefs(t 
 // polling an instance that is already in process of provisioning (background/
 // asynchronously) and is found to be ready.
 func TestPollServiceInstanceSuccessProvisioningWithOperationNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -324,11 +324,11 @@ func TestPollServiceInstanceSuccessProvisioningWithOperationNamespacedRefs(t *te
 // polling an instance where provision was in process asynchronously but has an
 // updated status of failed to provision.
 func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -355,7 +355,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 	}
 
 	if testController.instancePollingQueue.NumRequeues(instanceKey) == 0 {
-		t.Fatalf("Expected polling queue to have a record of test instance as provisioning should have retried")
+		t.Fatalf("Expected polling queue to have a record of test instance to process orphan mitigation")
 	}
 
 	brokerActions := fakeBrokerClient.Actions()
@@ -382,7 +382,7 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationProvision,
 		startingInstanceOrphanMitigationReason,
-		"",
+		errorProvisionCallFailedReason,
 		errorProvisionCallFailedReason,
 		instance,
 	)
@@ -391,11 +391,11 @@ func TestPollServiceInstanceFailureProvisioningWithOperationNamespacedRefs(t *te
 // TestReconcileServiceInstanceDeleteWithNamespacedRefs tests
 // deletingdeprovisioning an instance with namespaced refs
 func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		DeprovisionReaction: &fakeosb.DeprovisionReaction{
@@ -466,11 +466,11 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 }
 
 func TestReconcileServiceInstanceDeleteAsynchronousWithNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	key := osb.OperationKey(testOperation)
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
@@ -560,11 +560,11 @@ func TestReconcileServiceInstanceDeleteAsynchronousWithNamespacedRefs(t *testing
 // polling an instance that was asynchronously being deprovisioned and is still
 // in progress.
 func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizerNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	cases := []struct {
 		name  string
@@ -647,11 +647,11 @@ func TestPollServiceInstanceInProgressDeprovisioningWithOperationNoFinalizerName
 // polling an instance that was asynchronously being deprovisioned and its
 // current poll status succeeded.  Verify instance is deprovisioned.
 func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -714,11 +714,11 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 // instance that has a async deprovision in progress where the broker responds
 // with Failed.
 func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Could not enable NamespacedServiceBroker feature flag.")
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		PollLastOperationReaction: &fakeosb.PollLastOperationReaction{
@@ -771,7 +771,7 @@ func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
 		t,
 		updatedServiceInstance,
 		v1beta1.ServiceInstanceOperationDeprovision,
-		errorDeprovisionCalledReason,
+		errorDeprovisionCallFailedReason,
 		testServicePlanName,
 		testServicePlanGUID,
 		instance,
@@ -779,13 +779,13 @@ func TestPollServiceInstanceFailureDeprovisioningNamespacedRefs(t *testing.T) {
 
 	events := getRecordedEvents(testController)
 
-	expectedEvent := warningEventBuilder(errorDeprovisionCalledReason).msg("Deprovision call failed: (no description provided)")
+	expectedEvent := warningEventBuilder(errorDeprovisionCallFailedReason).msg("Deprovision call failed: (no description provided)")
 	if err := checkEvents(events, expectedEvent.stringArr()); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// TestResolveNamespacedReferences tests that resolveReferences works
+// TestResolveNamespacedReferencesWorks tests that resolveReferences works
 // correctly and resolves references when the references are of namespaced.
 func TestResolveNamespacedReferencesWorks(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
@@ -829,7 +829,7 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=SCGUID"),
+		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=scguid"),
 	}
 	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
 

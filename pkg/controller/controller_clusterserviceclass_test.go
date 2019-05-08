@@ -18,16 +18,16 @@ package controller
 
 import (
 	"errors"
+	"reflect"
 	"testing"
-
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/test/fake"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
-	"reflect"
+
+	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-incubator/service-catalog/test/fake"
 )
 
 func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
@@ -59,7 +59,7 @@ func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "CSCGUID"),
+					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "cscguid"),
 				}
 
 				assertNumberOfActions(t, actions, 1)
@@ -74,7 +74,7 @@ func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "CSCGUID"),
+					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "cscguid"),
 				}
 
 				assertNumberOfActions(t, actions, 2)
@@ -96,7 +96,7 @@ func TestReconcileClusterServiceClassRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "CSCGUID"),
+					Fields: fields.OneTermEqualSelector("spec.clusterServiceClassRef.name", "cscguid"),
 				}
 
 				assertNumberOfActions(t, actions, 2)

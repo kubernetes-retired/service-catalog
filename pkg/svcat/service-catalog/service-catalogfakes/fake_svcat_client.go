@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -184,6 +184,43 @@ type FakeSvcatClient struct {
 		result1 *apiv1beta1.ServiceBinding
 		result2 error
 	}
+	RemoveBindingFinalizerByInstanceStub        func(*apiv1beta1.ServiceInstance) ([]types.NamespacedName, error)
+	removeBindingFinalizerByInstanceMutex       sync.RWMutex
+	removeBindingFinalizerByInstanceArgsForCall []struct {
+		arg1 *apiv1beta1.ServiceInstance
+	}
+	removeBindingFinalizerByInstanceReturns struct {
+		result1 []types.NamespacedName
+		result2 error
+	}
+	removeBindingFinalizerByInstanceReturnsOnCall map[int]struct {
+		result1 []types.NamespacedName
+		result2 error
+	}
+	RemoveFinalizerForBindingsStub        func([]types.NamespacedName) ([]types.NamespacedName, error)
+	removeFinalizerForBindingsMutex       sync.RWMutex
+	removeFinalizerForBindingsArgsForCall []struct {
+		arg1 []types.NamespacedName
+	}
+	removeFinalizerForBindingsReturns struct {
+		result1 []types.NamespacedName
+		result2 error
+	}
+	removeFinalizerForBindingsReturnsOnCall map[int]struct {
+		result1 []types.NamespacedName
+		result2 error
+	}
+	RemoveFinalizerForBindingStub        func(types.NamespacedName) error
+	removeFinalizerForBindingMutex       sync.RWMutex
+	removeFinalizerForBindingArgsForCall []struct {
+		arg1 types.NamespacedName
+	}
+	removeFinalizerForBindingReturns struct {
+		result1 error
+	}
+	removeFinalizerForBindingReturnsOnCall map[int]struct {
+		result1 error
+	}
 	DeregisterStub        func(string, *servicecatalog.ScopeOptions) error
 	deregisterMutex       sync.RWMutex
 	deregisterArgsForCall []struct {
@@ -209,17 +246,18 @@ type FakeSvcatClient struct {
 		result1 []servicecatalog.Broker
 		result2 error
 	}
-	RetrieveBrokerStub        func(string) (*apiv1beta1.ClusterServiceBroker, error)
-	retrieveBrokerMutex       sync.RWMutex
-	retrieveBrokerArgsForCall []struct {
+	RetrieveBrokerByIDStub        func(string, servicecatalog.ScopeOptions) (servicecatalog.Broker, error)
+	retrieveBrokerByIDMutex       sync.RWMutex
+	retrieveBrokerByIDArgsForCall []struct {
 		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
-	retrieveBrokerReturns struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+	retrieveBrokerByIDReturns struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}
-	retrieveBrokerReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+	retrieveBrokerByIDReturnsOnCall map[int]struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}
 	RetrieveBrokerByClassStub        func(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
@@ -264,12 +302,13 @@ type FakeSvcatClient struct {
 	syncReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WaitForBrokerStub        func(string, time.Duration, *time.Duration) (servicecatalog.Broker, error)
+	WaitForBrokerStub        func(string, *servicecatalog.ScopeOptions, time.Duration, *time.Duration) (servicecatalog.Broker, error)
 	waitForBrokerMutex       sync.RWMutex
 	waitForBrokerArgsForCall []struct {
 		arg1 string
-		arg2 time.Duration
-		arg3 *time.Duration
+		arg2 *servicecatalog.ScopeOptions
+		arg3 time.Duration
+		arg4 *time.Duration
 	}
 	waitForBrokerReturns struct {
 		result1 servicecatalog.Broker
@@ -306,30 +345,31 @@ type FakeSvcatClient struct {
 		result1 servicecatalog.Class
 		result2 error
 	}
-	RetrieveClassByIDStub        func(string) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByIDStub        func(string, servicecatalog.ScopeOptions) (servicecatalog.Class, error)
 	retrieveClassByIDMutex       sync.RWMutex
 	retrieveClassByIDArgsForCall []struct {
 		arg1 string
+		arg2 servicecatalog.ScopeOptions
 	}
 	retrieveClassByIDReturns struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}
 	retrieveClassByIDReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}
-	RetrieveClassByPlanStub        func(servicecatalog.Plan) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByPlanStub        func(servicecatalog.Plan) (servicecatalog.Class, error)
 	retrieveClassByPlanMutex       sync.RWMutex
 	retrieveClassByPlanArgsForCall []struct {
 		arg1 servicecatalog.Plan
 	}
 	retrieveClassByPlanReturns struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}
 	retrieveClassByPlanReturnsOnCall map[int]struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}
 	CreateClassFromStub        func(servicecatalog.CreateClassFromOptions) (servicecatalog.Class, error)
@@ -1205,6 +1245,161 @@ func (fake *FakeSvcatClient) WaitForBindingReturnsOnCall(i int, result1 *apiv1be
 	}{result1, result2}
 }
 
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstance(arg1 *apiv1beta1.ServiceInstance) ([]types.NamespacedName, error) {
+	fake.removeBindingFinalizerByInstanceMutex.Lock()
+	ret, specificReturn := fake.removeBindingFinalizerByInstanceReturnsOnCall[len(fake.removeBindingFinalizerByInstanceArgsForCall)]
+	fake.removeBindingFinalizerByInstanceArgsForCall = append(fake.removeBindingFinalizerByInstanceArgsForCall, struct {
+		arg1 *apiv1beta1.ServiceInstance
+	}{arg1})
+	fake.recordInvocation("RemoveBindingFinalizerByInstance", []interface{}{arg1})
+	fake.removeBindingFinalizerByInstanceMutex.Unlock()
+	if fake.RemoveBindingFinalizerByInstanceStub != nil {
+		return fake.RemoveBindingFinalizerByInstanceStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.removeBindingFinalizerByInstanceReturns.result1, fake.removeBindingFinalizerByInstanceReturns.result2
+}
+
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceCallCount() int {
+	fake.removeBindingFinalizerByInstanceMutex.RLock()
+	defer fake.removeBindingFinalizerByInstanceMutex.RUnlock()
+	return len(fake.removeBindingFinalizerByInstanceArgsForCall)
+}
+
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceArgsForCall(i int) *apiv1beta1.ServiceInstance {
+	fake.removeBindingFinalizerByInstanceMutex.RLock()
+	defer fake.removeBindingFinalizerByInstanceMutex.RUnlock()
+	return fake.removeBindingFinalizerByInstanceArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceReturns(result1 []types.NamespacedName, result2 error) {
+	fake.RemoveBindingFinalizerByInstanceStub = nil
+	fake.removeBindingFinalizerByInstanceReturns = struct {
+		result1 []types.NamespacedName
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) RemoveBindingFinalizerByInstanceReturnsOnCall(i int, result1 []types.NamespacedName, result2 error) {
+	fake.RemoveBindingFinalizerByInstanceStub = nil
+	if fake.removeBindingFinalizerByInstanceReturnsOnCall == nil {
+		fake.removeBindingFinalizerByInstanceReturnsOnCall = make(map[int]struct {
+			result1 []types.NamespacedName
+			result2 error
+		})
+	}
+	fake.removeBindingFinalizerByInstanceReturnsOnCall[i] = struct {
+		result1 []types.NamespacedName
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindings(arg1 []types.NamespacedName) ([]types.NamespacedName, error) {
+	var arg1Copy []types.NamespacedName
+	if arg1 != nil {
+		arg1Copy = make([]types.NamespacedName, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.removeFinalizerForBindingsMutex.Lock()
+	ret, specificReturn := fake.removeFinalizerForBindingsReturnsOnCall[len(fake.removeFinalizerForBindingsArgsForCall)]
+	fake.removeFinalizerForBindingsArgsForCall = append(fake.removeFinalizerForBindingsArgsForCall, struct {
+		arg1 []types.NamespacedName
+	}{arg1Copy})
+	fake.recordInvocation("RemoveFinalizerForBindings", []interface{}{arg1Copy})
+	fake.removeFinalizerForBindingsMutex.Unlock()
+	if fake.RemoveFinalizerForBindingsStub != nil {
+		return fake.RemoveFinalizerForBindingsStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.removeFinalizerForBindingsReturns.result1, fake.removeFinalizerForBindingsReturns.result2
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingsCallCount() int {
+	fake.removeFinalizerForBindingsMutex.RLock()
+	defer fake.removeFinalizerForBindingsMutex.RUnlock()
+	return len(fake.removeFinalizerForBindingsArgsForCall)
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingsArgsForCall(i int) []types.NamespacedName {
+	fake.removeFinalizerForBindingsMutex.RLock()
+	defer fake.removeFinalizerForBindingsMutex.RUnlock()
+	return fake.removeFinalizerForBindingsArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingsReturns(result1 []types.NamespacedName, result2 error) {
+	fake.RemoveFinalizerForBindingsStub = nil
+	fake.removeFinalizerForBindingsReturns = struct {
+		result1 []types.NamespacedName
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingsReturnsOnCall(i int, result1 []types.NamespacedName, result2 error) {
+	fake.RemoveFinalizerForBindingsStub = nil
+	if fake.removeFinalizerForBindingsReturnsOnCall == nil {
+		fake.removeFinalizerForBindingsReturnsOnCall = make(map[int]struct {
+			result1 []types.NamespacedName
+			result2 error
+		})
+	}
+	fake.removeFinalizerForBindingsReturnsOnCall[i] = struct {
+		result1 []types.NamespacedName
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBinding(arg1 types.NamespacedName) error {
+	fake.removeFinalizerForBindingMutex.Lock()
+	ret, specificReturn := fake.removeFinalizerForBindingReturnsOnCall[len(fake.removeFinalizerForBindingArgsForCall)]
+	fake.removeFinalizerForBindingArgsForCall = append(fake.removeFinalizerForBindingArgsForCall, struct {
+		arg1 types.NamespacedName
+	}{arg1})
+	fake.recordInvocation("RemoveFinalizerForBinding", []interface{}{arg1})
+	fake.removeFinalizerForBindingMutex.Unlock()
+	if fake.RemoveFinalizerForBindingStub != nil {
+		return fake.RemoveFinalizerForBindingStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.removeFinalizerForBindingReturns.result1
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingCallCount() int {
+	fake.removeFinalizerForBindingMutex.RLock()
+	defer fake.removeFinalizerForBindingMutex.RUnlock()
+	return len(fake.removeFinalizerForBindingArgsForCall)
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingArgsForCall(i int) types.NamespacedName {
+	fake.removeFinalizerForBindingMutex.RLock()
+	defer fake.removeFinalizerForBindingMutex.RUnlock()
+	return fake.removeFinalizerForBindingArgsForCall[i].arg1
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingReturns(result1 error) {
+	fake.RemoveFinalizerForBindingStub = nil
+	fake.removeFinalizerForBindingReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeSvcatClient) RemoveFinalizerForBindingReturnsOnCall(i int, result1 error) {
+	fake.RemoveFinalizerForBindingStub = nil
+	if fake.removeFinalizerForBindingReturnsOnCall == nil {
+		fake.removeFinalizerForBindingReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.removeFinalizerForBindingReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeSvcatClient) Deregister(arg1 string, arg2 *servicecatalog.ScopeOptions) error {
 	fake.deregisterMutex.Lock()
 	ret, specificReturn := fake.deregisterReturnsOnCall[len(fake.deregisterArgsForCall)]
@@ -1305,53 +1500,54 @@ func (fake *FakeSvcatClient) RetrieveBrokersReturnsOnCall(i int, result1 []servi
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveBroker(arg1 string) (*apiv1beta1.ClusterServiceBroker, error) {
-	fake.retrieveBrokerMutex.Lock()
-	ret, specificReturn := fake.retrieveBrokerReturnsOnCall[len(fake.retrieveBrokerArgsForCall)]
-	fake.retrieveBrokerArgsForCall = append(fake.retrieveBrokerArgsForCall, struct {
+func (fake *FakeSvcatClient) RetrieveBrokerByID(arg1 string, arg2 servicecatalog.ScopeOptions) (servicecatalog.Broker, error) {
+	fake.retrieveBrokerByIDMutex.Lock()
+	ret, specificReturn := fake.retrieveBrokerByIDReturnsOnCall[len(fake.retrieveBrokerByIDArgsForCall)]
+	fake.retrieveBrokerByIDArgsForCall = append(fake.retrieveBrokerByIDArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("RetrieveBroker", []interface{}{arg1})
-	fake.retrieveBrokerMutex.Unlock()
-	if fake.RetrieveBrokerStub != nil {
-		return fake.RetrieveBrokerStub(arg1)
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrieveBrokerByID", []interface{}{arg1, arg2})
+	fake.retrieveBrokerByIDMutex.Unlock()
+	if fake.RetrieveBrokerByIDStub != nil {
+		return fake.RetrieveBrokerByIDStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.retrieveBrokerReturns.result1, fake.retrieveBrokerReturns.result2
+	return fake.retrieveBrokerByIDReturns.result1, fake.retrieveBrokerByIDReturns.result2
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerCallCount() int {
-	fake.retrieveBrokerMutex.RLock()
-	defer fake.retrieveBrokerMutex.RUnlock()
-	return len(fake.retrieveBrokerArgsForCall)
+func (fake *FakeSvcatClient) RetrieveBrokerByIDCallCount() int {
+	fake.retrieveBrokerByIDMutex.RLock()
+	defer fake.retrieveBrokerByIDMutex.RUnlock()
+	return len(fake.retrieveBrokerByIDArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerArgsForCall(i int) string {
-	fake.retrieveBrokerMutex.RLock()
-	defer fake.retrieveBrokerMutex.RUnlock()
-	return fake.retrieveBrokerArgsForCall[i].arg1
+func (fake *FakeSvcatClient) RetrieveBrokerByIDArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
+	fake.retrieveBrokerByIDMutex.RLock()
+	defer fake.retrieveBrokerByIDMutex.RUnlock()
+	return fake.retrieveBrokerByIDArgsForCall[i].arg1, fake.retrieveBrokerByIDArgsForCall[i].arg2
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerReturns(result1 *apiv1beta1.ClusterServiceBroker, result2 error) {
-	fake.RetrieveBrokerStub = nil
-	fake.retrieveBrokerReturns = struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+func (fake *FakeSvcatClient) RetrieveBrokerByIDReturns(result1 servicecatalog.Broker, result2 error) {
+	fake.RetrieveBrokerByIDStub = nil
+	fake.retrieveBrokerByIDReturns = struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveBrokerReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceBroker, result2 error) {
-	fake.RetrieveBrokerStub = nil
-	if fake.retrieveBrokerReturnsOnCall == nil {
-		fake.retrieveBrokerReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServiceBroker
+func (fake *FakeSvcatClient) RetrieveBrokerByIDReturnsOnCall(i int, result1 servicecatalog.Broker, result2 error) {
+	fake.RetrieveBrokerByIDStub = nil
+	if fake.retrieveBrokerByIDReturnsOnCall == nil {
+		fake.retrieveBrokerByIDReturnsOnCall = make(map[int]struct {
+			result1 servicecatalog.Broker
 			result2 error
 		})
 	}
-	fake.retrieveBrokerReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServiceBroker
+	fake.retrieveBrokerByIDReturnsOnCall[i] = struct {
+		result1 servicecatalog.Broker
 		result2 error
 	}{result1, result2}
 }
@@ -1511,18 +1707,19 @@ func (fake *FakeSvcatClient) SyncReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeSvcatClient) WaitForBroker(arg1 string, arg2 time.Duration, arg3 *time.Duration) (servicecatalog.Broker, error) {
+func (fake *FakeSvcatClient) WaitForBroker(arg1 string, arg2 *servicecatalog.ScopeOptions, arg3 time.Duration, arg4 *time.Duration) (servicecatalog.Broker, error) {
 	fake.waitForBrokerMutex.Lock()
 	ret, specificReturn := fake.waitForBrokerReturnsOnCall[len(fake.waitForBrokerArgsForCall)]
 	fake.waitForBrokerArgsForCall = append(fake.waitForBrokerArgsForCall, struct {
 		arg1 string
-		arg2 time.Duration
-		arg3 *time.Duration
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("WaitForBroker", []interface{}{arg1, arg2, arg3})
+		arg2 *servicecatalog.ScopeOptions
+		arg3 time.Duration
+		arg4 *time.Duration
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("WaitForBroker", []interface{}{arg1, arg2, arg3, arg4})
 	fake.waitForBrokerMutex.Unlock()
 	if fake.WaitForBrokerStub != nil {
-		return fake.WaitForBrokerStub(arg1, arg2, arg3)
+		return fake.WaitForBrokerStub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1536,10 +1733,10 @@ func (fake *FakeSvcatClient) WaitForBrokerCallCount() int {
 	return len(fake.waitForBrokerArgsForCall)
 }
 
-func (fake *FakeSvcatClient) WaitForBrokerArgsForCall(i int) (string, time.Duration, *time.Duration) {
+func (fake *FakeSvcatClient) WaitForBrokerArgsForCall(i int) (string, *servicecatalog.ScopeOptions, time.Duration, *time.Duration) {
 	fake.waitForBrokerMutex.RLock()
 	defer fake.waitForBrokerMutex.RUnlock()
-	return fake.waitForBrokerArgsForCall[i].arg1, fake.waitForBrokerArgsForCall[i].arg2, fake.waitForBrokerArgsForCall[i].arg3
+	return fake.waitForBrokerArgsForCall[i].arg1, fake.waitForBrokerArgsForCall[i].arg2, fake.waitForBrokerArgsForCall[i].arg3, fake.waitForBrokerArgsForCall[i].arg4
 }
 
 func (fake *FakeSvcatClient) WaitForBrokerReturns(result1 servicecatalog.Broker, result2 error) {
@@ -1667,16 +1864,17 @@ func (fake *FakeSvcatClient) RetrieveClassByNameReturnsOnCall(i int, result1 ser
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByID(arg1 string) (*apiv1beta1.ClusterServiceClass, error) {
+func (fake *FakeSvcatClient) RetrieveClassByID(arg1 string, arg2 servicecatalog.ScopeOptions) (servicecatalog.Class, error) {
 	fake.retrieveClassByIDMutex.Lock()
 	ret, specificReturn := fake.retrieveClassByIDReturnsOnCall[len(fake.retrieveClassByIDArgsForCall)]
 	fake.retrieveClassByIDArgsForCall = append(fake.retrieveClassByIDArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("RetrieveClassByID", []interface{}{arg1})
+		arg2 servicecatalog.ScopeOptions
+	}{arg1, arg2})
+	fake.recordInvocation("RetrieveClassByID", []interface{}{arg1, arg2})
 	fake.retrieveClassByIDMutex.Unlock()
 	if fake.RetrieveClassByIDStub != nil {
-		return fake.RetrieveClassByIDStub(arg1)
+		return fake.RetrieveClassByIDStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1690,35 +1888,35 @@ func (fake *FakeSvcatClient) RetrieveClassByIDCallCount() int {
 	return len(fake.retrieveClassByIDArgsForCall)
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByIDArgsForCall(i int) string {
+func (fake *FakeSvcatClient) RetrieveClassByIDArgsForCall(i int) (string, servicecatalog.ScopeOptions) {
 	fake.retrieveClassByIDMutex.RLock()
 	defer fake.retrieveClassByIDMutex.RUnlock()
-	return fake.retrieveClassByIDArgsForCall[i].arg1
+	return fake.retrieveClassByIDArgsForCall[i].arg1, fake.retrieveClassByIDArgsForCall[i].arg2
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByIDReturns(result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassByIDReturns(result1 servicecatalog.Class, result2 error) {
 	fake.RetrieveClassByIDStub = nil
 	fake.retrieveClassByIDReturns = struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByIDReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassByIDReturnsOnCall(i int, result1 servicecatalog.Class, result2 error) {
 	fake.RetrieveClassByIDStub = nil
 	if fake.retrieveClassByIDReturnsOnCall == nil {
 		fake.retrieveClassByIDReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServiceClass
+			result1 servicecatalog.Class
 			result2 error
 		})
 	}
 	fake.retrieveClassByIDReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByPlan(arg1 servicecatalog.Plan) (*apiv1beta1.ClusterServiceClass, error) {
+func (fake *FakeSvcatClient) RetrieveClassByPlan(arg1 servicecatalog.Plan) (servicecatalog.Class, error) {
 	fake.retrieveClassByPlanMutex.Lock()
 	ret, specificReturn := fake.retrieveClassByPlanReturnsOnCall[len(fake.retrieveClassByPlanArgsForCall)]
 	fake.retrieveClassByPlanArgsForCall = append(fake.retrieveClassByPlanArgsForCall, struct {
@@ -1747,24 +1945,24 @@ func (fake *FakeSvcatClient) RetrieveClassByPlanArgsForCall(i int) servicecatalo
 	return fake.retrieveClassByPlanArgsForCall[i].arg1
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByPlanReturns(result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassByPlanReturns(result1 servicecatalog.Class, result2 error) {
 	fake.RetrieveClassByPlanStub = nil
 	fake.retrieveClassByPlanReturns = struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeSvcatClient) RetrieveClassByPlanReturnsOnCall(i int, result1 *apiv1beta1.ClusterServiceClass, result2 error) {
+func (fake *FakeSvcatClient) RetrieveClassByPlanReturnsOnCall(i int, result1 servicecatalog.Class, result2 error) {
 	fake.RetrieveClassByPlanStub = nil
 	if fake.retrieveClassByPlanReturnsOnCall == nil {
 		fake.retrieveClassByPlanReturnsOnCall = make(map[int]struct {
-			result1 *apiv1beta1.ClusterServiceClass
+			result1 servicecatalog.Class
 			result2 error
 		})
 	}
 	fake.retrieveClassByPlanReturnsOnCall[i] = struct {
-		result1 *apiv1beta1.ClusterServiceClass
+		result1 servicecatalog.Class
 		result2 error
 	}{result1, result2}
 }
@@ -2876,12 +3074,18 @@ func (fake *FakeSvcatClient) Invocations() map[string][][]interface{} {
 	defer fake.unbindMutex.RUnlock()
 	fake.waitForBindingMutex.RLock()
 	defer fake.waitForBindingMutex.RUnlock()
+	fake.removeBindingFinalizerByInstanceMutex.RLock()
+	defer fake.removeBindingFinalizerByInstanceMutex.RUnlock()
+	fake.removeFinalizerForBindingsMutex.RLock()
+	defer fake.removeFinalizerForBindingsMutex.RUnlock()
+	fake.removeFinalizerForBindingMutex.RLock()
+	defer fake.removeFinalizerForBindingMutex.RUnlock()
 	fake.deregisterMutex.RLock()
 	defer fake.deregisterMutex.RUnlock()
 	fake.retrieveBrokersMutex.RLock()
 	defer fake.retrieveBrokersMutex.RUnlock()
-	fake.retrieveBrokerMutex.RLock()
-	defer fake.retrieveBrokerMutex.RUnlock()
+	fake.retrieveBrokerByIDMutex.RLock()
+	defer fake.retrieveBrokerByIDMutex.RUnlock()
 	fake.retrieveBrokerByClassMutex.RLock()
 	defer fake.retrieveBrokerByClassMutex.RUnlock()
 	fake.registerMutex.RLock()

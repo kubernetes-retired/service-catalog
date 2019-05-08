@@ -95,12 +95,12 @@ func toSelectableFields(broker *servicecatalog.ServiceBroker) fields.Set {
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
-func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
+func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	broker, ok := obj.(*servicecatalog.ServiceBroker)
 	if !ok {
-		return nil, nil, false, fmt.Errorf("given object is not a ServiceBroker")
+		return nil, nil, fmt.Errorf("given object is not a ServiceBroker")
 	}
-	return labels.Set(broker.ObjectMeta.Labels), toSelectableFields(broker), broker.Initializers != nil, nil
+	return labels.Set(broker.ObjectMeta.Labels), toSelectableFields(broker), nil
 }
 
 // NewStorage creates a new rest.Storage responsible for accessing

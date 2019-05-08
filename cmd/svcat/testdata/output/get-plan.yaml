@@ -1,5 +1,5 @@
 metadata:
-  creationTimestamp: 2018-01-11T20:53:31Z
+  creationTimestamp: "2018-01-11T20:53:31Z"
   name: 86064792-7ea2-467b-af93-ac9694d96d52
   resourceVersion: "4"
   selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/86064792-7ea2-467b-af93-ac9694d96d52

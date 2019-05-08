@@ -28,6 +28,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
 	"github.com/kubernetes-incubator/service-catalog/test/util"
 )
 
@@ -46,6 +47,7 @@ func testServer(n string) *Server {
 		},
 	}
 }
+
 func testServerError(n string) *Server {
 	return &Server{
 		SimpleUsage: n,
@@ -319,4 +321,37 @@ func TestCobraSubCommandDefaultMessage(t *testing.T) {
 func TestCobraSubCommandMessage(t *testing.T) {
 	x := runFull(t, "hyperkube test-cobra-command subcommand --submsg foobar", wait.NeverStop)
 	util.AssertContains(t, x.output, "submsg: foobar")
+}
+
+func testRunServer(n string) *Server {
+	s := server.NewServiceCatalogServerOptions()
+	return &Server{
+		PrimaryName:     "testserver",
+		AlternativeName: "service-catalog-testserver",
+		SimpleUsage:     "testserver",
+		Long:            fmt.Sprintf("A simple server named %s", n),
+		Run: func(_ *Server, args []string, stopCh <-chan struct{}) error {
+			return server.RunServer(s, stopCh)
+		},
+		RespectsStopCh: true,
+	}
+}
+
+func TestStopChannelWithRespectsStopCh(t *testing.T) {
+	expect := fmt.Errorf("%v", "stop channel was not set when starting the api server")
+	hk := HyperKube{
+		Name: "hyperkube",
+		Long: "hyperkube is an all-in-one server binary.",
+	}
+
+	hk.AddServer(testRunServer("test1"))
+	args := []string{"testserver"}
+
+	defer func() {
+		if value := recover(); value != nil {
+			util.AssertEqualError(t, expect, value.(string))
+		}
+	}()
+
+	hk.Run(args, nil)
 }

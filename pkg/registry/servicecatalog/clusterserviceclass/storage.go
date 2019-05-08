@@ -106,12 +106,12 @@ func toSelectableFields(clusterServiceClass *servicecatalog.ClusterServiceClass)
 }
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
-func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
+func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	serviceclass, ok := obj.(*servicecatalog.ClusterServiceClass)
 	if !ok {
-		return nil, nil, false, fmt.Errorf("given object is not a ClusterServiceClass")
+		return nil, nil, fmt.Errorf("given object is not a ClusterServiceClass")
 	}
-	return labels.Set(serviceclass.ObjectMeta.Labels), toSelectableFields(serviceclass), serviceclass.Initializers != nil, nil
+	return labels.Set(serviceclass.ObjectMeta.Labels), toSelectableFields(serviceclass), nil
 }
 
 // NewStorage creates a new rest.Storage responsible for accessing

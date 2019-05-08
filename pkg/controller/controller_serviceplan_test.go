@@ -24,10 +24,11 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/test/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"reflect"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	clientgotesting "k8s.io/client-go/testing"
-	"reflect"
 )
 
 func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
@@ -59,7 +60,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.servicePlanRef.name", "SPGUID"),
+					Fields: fields.OneTermEqualSelector("spec.servicePlanRef.name", "spguid"),
 				}
 
 				assertNumberOfActions(t, actions, 1)
@@ -74,7 +75,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.servicePlanRef.name", "SPGUID"),
+					Fields: fields.OneTermEqualSelector("spec.servicePlanRef.name", "spguid"),
 				}
 
 				assertNumberOfActions(t, actions, 2)
@@ -96,7 +97,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.Everything(),
-					Fields: fields.OneTermEqualSelector("spec.servicePlanRef.name", "SPGUID"),
+					Fields: fields.OneTermEqualSelector("spec.servicePlanRef.name", "spguid"),
 				}
 
 				assertNumberOfActions(t, actions, 2)

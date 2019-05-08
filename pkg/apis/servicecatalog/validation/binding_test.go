@@ -33,7 +33,7 @@ func validServiceBinding() *servicecatalog.ServiceBinding {
 			Namespace: "test-ns",
 		},
 		Spec: servicecatalog.ServiceBindingSpec{
-			ServiceInstanceRef: servicecatalog.LocalObjectReference{
+			InstanceRef: servicecatalog.LocalObjectReference{
 				Name: "test-instance",
 			},
 			SecretName: "test-secret",
@@ -57,8 +57,8 @@ func validServiceBindingWithInProgressBind() *servicecatalog.ServiceBinding {
 
 func validServiceBindingPropertiesState() *servicecatalog.ServiceBindingPropertiesState {
 	return &servicecatalog.ServiceBindingPropertiesState{
-		Parameters:         &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
-		ParametersChecksum: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		Parameters:        &runtime.RawExtension{Raw: []byte("a: 1\nb: \"2\"")},
+		ParameterChecksum: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 	}
 }
 
@@ -96,7 +96,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			name: "missing instance name",
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBinding()
-				b.Spec.ServiceInstanceRef.Name = ""
+				b.Spec.InstanceRef.Name = ""
 				return b
 			}(),
 			valid: false,
@@ -105,7 +105,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			name: "invalid instance name",
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBinding()
-				b.Spec.ServiceInstanceRef.Name = "test-instance-)*!"
+				b.Spec.InstanceRef.Name = "test-instance-)*!"
 				return b
 			}(),
 			valid: false,
@@ -284,7 +284,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBindingWithInProgressBind()
 				b.Status.InProgressProperties.Parameters = nil
-				b.Status.InProgressProperties.ParametersChecksum = ""
+				b.Status.InProgressProperties.ParameterChecksum = ""
 				return b
 			}(),
 			valid: true,
@@ -293,7 +293,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			name: "in-progress properties parameters with missing parameters checksum",
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBindingWithInProgressBind()
-				b.Status.InProgressProperties.ParametersChecksum = ""
+				b.Status.InProgressProperties.ParameterChecksum = ""
 				return b
 			}(),
 			valid: false,
@@ -329,7 +329,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			name: "in-progress properties parameters checksum too small",
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBindingWithInProgressBind()
-				b.Status.InProgressProperties.ParametersChecksum = "0123456"
+				b.Status.InProgressProperties.ParameterChecksum = "0123456"
 				return b
 			}(),
 			valid: false,
@@ -338,7 +338,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			name: "in-progress properties parameters checksum malformed",
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBindingWithInProgressBind()
-				b.Status.InProgressProperties.ParametersChecksum = "not hex"
+				b.Status.InProgressProperties.ParameterChecksum = "not hex"
 				return b
 			}(),
 			valid: false,
@@ -358,7 +358,7 @@ func TestValidateServiceBinding(t *testing.T) {
 				b := validServiceBinding()
 				b.Status.ExternalProperties = validServiceBindingPropertiesState()
 				b.Status.ExternalProperties.Parameters = nil
-				b.Status.ExternalProperties.ParametersChecksum = ""
+				b.Status.ExternalProperties.ParameterChecksum = ""
 				return b
 			}(),
 			valid: true,
@@ -368,7 +368,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBinding()
 				b.Status.ExternalProperties = validServiceBindingPropertiesState()
-				b.Status.ExternalProperties.ParametersChecksum = ""
+				b.Status.ExternalProperties.ParameterChecksum = ""
 				return b
 			}(),
 			valid: false,
@@ -408,7 +408,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBinding()
 				b.Status.ExternalProperties = validServiceBindingPropertiesState()
-				b.Status.ExternalProperties.ParametersChecksum = "0123456"
+				b.Status.ExternalProperties.ParameterChecksum = "0123456"
 				return b
 			}(),
 			valid: false,
@@ -418,7 +418,7 @@ func TestValidateServiceBinding(t *testing.T) {
 			binding: func() *servicecatalog.ServiceBinding {
 				b := validServiceBinding()
 				b.Status.ExternalProperties = validServiceBindingPropertiesState()
-				b.Status.ExternalProperties.ParametersChecksum = "not hex"
+				b.Status.ExternalProperties.ParameterChecksum = "not hex"
 				return b
 			}(),
 			valid: false,

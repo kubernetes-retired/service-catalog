@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 const (
@@ -185,7 +185,7 @@ func (c *client) prepareAndDo(method, URL string, params map[string]string, body
 	}
 
 	if c.Verbose {
-		glog.Infof("broker %q: doing request to %q", c.Name, URL)
+		klog.Infof("broker %q: doing request to %q", c.Name, URL)
 	}
 
 	return c.doRequestFunc(request)
@@ -204,7 +204,7 @@ func (c *client) unmarshalResponse(response *http.Response, obj interface{}) err
 	}
 
 	if c.Verbose {
-		glog.Infof("broker %q: response body: %v, type: %T", c.Name, string(body), obj)
+		klog.Infof("broker %q: response body: %v, type: %T", c.Name, string(body), obj)
 	}
 
 	err = json.Unmarshal(body, obj)
@@ -218,7 +218,7 @@ func (c *client) unmarshalResponse(response *http.Response, obj interface{}) err
 // handleFailureResponse returns an HTTPStatusCodeError for the given
 // response.
 func (c *client) handleFailureResponse(response *http.Response) error {
-	glog.Info("handling failure responses")
+	klog.Info("handling failure responses")
 
 	httpErr := HTTPStatusCodeError{
 		StatusCode: response.StatusCode,

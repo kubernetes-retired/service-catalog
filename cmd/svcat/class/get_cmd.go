@@ -17,24 +17,29 @@ limitations under the License.
 package class
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
-type getCmd struct {
+// GetCmd contains the information needed to Get a specific class or all classes
+type GetCmd struct {
 	*command.Namespaced
 	*command.Scoped
 	*command.Formatted
-	lookupByKubeName bool
-	kubeName         string
-	name             string
+
+	LookupByKubeName bool
+	KubeName         string
+	Name             string
 }
 
 // NewGetCmd builds a "svcat get classes" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
-	getCmd := &getCmd{
+	getCmd := &GetCmd{
 		Namespaced: command.NewNamespaced(cxt),
 		Scoped:     command.NewScoped(),
 		Formatted:  command.NewFormatted(),
@@ -54,7 +59,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		RunE:    command.RunE(getCmd),
 	}
 	cmd.Flags().BoolVarP(
-		&getCmd.lookupByKubeName,
+		&getCmd.LookupByKubeName,
 		"kube-name",
 		"k",
 		false,
@@ -66,27 +71,30 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *getCmd) Validate(args []string) error {
+// Validate checks that the required arguments have been provided
+func (c *GetCmd) Validate(args []string) error {
 	if len(args) > 0 {
-		if c.lookupByKubeName {
-			c.kubeName = args[0]
+		if c.LookupByKubeName {
+			c.KubeName = args[0]
 		} else {
-			c.name = args[0]
+			c.Name = args[0]
 		}
 	}
 
 	return nil
 }
 
-func (c *getCmd) Run() error {
-	if c.kubeName == "" && c.name == "" {
+// Run determines if we're getting a single class or all classes,
+// and calls the pertinent function
+func (c *GetCmd) Run() error {
+	if c.KubeName == "" && c.Name == "" {
 		return c.getAll()
 	}
 
 	return c.get()
 }
 
-func (c *getCmd) getAll() error {
+func (c *GetCmd) getAll() error {
 	opts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
@@ -95,21 +103,26 @@ func (c *getCmd) getAll() error {
 	if err != nil {
 		return err
 	}
-
 	output.WriteClassList(c.Output, c.OutputFormat, classes...)
 	return nil
 }
 
-func (c *getCmd) get() error {
+func (c *GetCmd) get() error {
 	var class servicecatalog.Class
 	var err error
-
-	if c.lookupByKubeName {
-		class, err = c.App.RetrieveClassByID(c.kubeName)
-	} else if c.name != "" {
-		class, err = c.App.RetrieveClassByName(c.name, servicecatalog.ScopeOptions{Scope: c.Scope, Namespace: c.Namespace})
+	scopeOpts := servicecatalog.ScopeOptions{
+		Scope:     c.Scope,
+		Namespace: c.Namespace,
+	}
+	if c.LookupByKubeName {
+		class, err = c.App.RetrieveClassByID(c.KubeName, scopeOpts)
+	} else if c.Name != "" {
+		class, err = c.App.RetrieveClassByName(c.Name, scopeOpts)
 	}
 	if err != nil {
+		if strings.Contains(err.Error(), servicecatalog.MultipleClassesFoundError) {
+			return fmt.Errorf(err.Error() + ", please specify a scope with --scope or an exact Kubernetes name with --kube-name")
+		}
 		return err
 	}
 

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/google/gofuzz"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 
@@ -169,8 +170,8 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			csp.Spec.ExternalMetadata = metadata
 			csp.Spec.ServiceBindingCreateResponseSchema = metadata
 			csp.Spec.ServiceBindingCreateParameterSchema = metadata
-			csp.Spec.ServiceInstanceCreateParameterSchema = metadata
-			csp.Spec.ServiceInstanceUpdateParameterSchema = metadata
+			csp.Spec.InstanceCreateParameterSchema = metadata
+			csp.Spec.InstanceUpdateParameterSchema = metadata
 		},
 		func(sp *servicecatalog.ServicePlan, c fuzz.Continue) {
 			c.FuzzNoCustom(sp)
@@ -181,8 +182,8 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 			sp.Spec.ExternalMetadata = metadata
 			sp.Spec.ServiceBindingCreateResponseSchema = metadata
 			sp.Spec.ServiceBindingCreateParameterSchema = metadata
-			sp.Spec.ServiceInstanceCreateParameterSchema = metadata
-			sp.Spec.ServiceInstanceUpdateParameterSchema = metadata
+			sp.Spec.InstanceCreateParameterSchema = metadata
+			sp.Spec.InstanceUpdateParameterSchema = metadata
 		},
 	}
 }

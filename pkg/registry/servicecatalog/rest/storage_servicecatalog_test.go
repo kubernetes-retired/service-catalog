@@ -46,8 +46,8 @@ import (
 var _ = Describe("ensure that our storage types implement the appropriate interfaces", func() {
 	It("checks v1beta1 standard storage", func() {
 
-		defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
-		Expect(utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))).Should(Succeed())
+		defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+		Expect(utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))).Should(Succeed())
 
 		checkStorageType := func(t GinkgoTInterface, s rest.Storage) {
 			// Our normal stores are all of these things

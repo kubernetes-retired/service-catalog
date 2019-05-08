@@ -19,18 +19,18 @@ package e2e
 import (
 	"testing"
 
-	"k8s.io/apiserver/pkg/util/logs"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/component-base/logs"
 
 	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
 
-	"github.com/golang/glog"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/gomega"
+	"k8s.io/klog"
 )
 
-// TestE2E checks configuration parameters (specified through flags) and then runs
+// RunE2ETests checks configuration parameters (specified through flags) and then runs
 // E2E tests using the Ginkgo runner.
 func RunE2ETests(t *testing.T) {
 	logs.InitLogs()
@@ -42,6 +42,6 @@ func RunE2ETests(t *testing.T) {
 		config.GinkgoConfig.SkipString = `\[Flaky\]|\[Feature:.+\]`
 	}
 
-	glog.Infof("Starting e2e run %q on Ginkgo node %d", framework.RunId, config.GinkgoConfig.ParallelNode)
+	klog.Infof("Starting e2e run %q on Ginkgo node %d", framework.RunId, config.GinkgoConfig.ParallelNode)
 	ginkgo.RunSpecs(t, "Service Catalog e2e suite")
 }

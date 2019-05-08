@@ -214,7 +214,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL: "http://example.com",
+						URL:                   "http://example.com",
 						InsecureSkipTLSVerify: true,
 						CABundle:              []byte("fake CABundle"),
 						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
@@ -232,7 +232,7 @@ func TestValidateClusterServiceBroker(t *testing.T) {
 				},
 				Spec: servicecatalog.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL: "http://example.com",
+						URL:                   "http://example.com",
 						InsecureSkipTLSVerify: true,
 						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
 						RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},
@@ -820,7 +820,7 @@ func TestValidateServiceBroker(t *testing.T) {
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL: "http://example.com",
+						URL:                   "http://example.com",
 						InsecureSkipTLSVerify: true,
 						CABundle:              []byte("fake CABundle"),
 						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
@@ -839,7 +839,7 @@ func TestValidateServiceBroker(t *testing.T) {
 				},
 				Spec: servicecatalog.ServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalog.CommonServiceBrokerSpec{
-						URL: "http://example.com",
+						URL:                   "http://example.com",
 						InsecureSkipTLSVerify: true,
 						RelistBehavior:        servicecatalog.ServiceBrokerRelistBehaviorDuration,
 						RelistDuration:        &metav1.Duration{Duration: 15 * time.Minute},

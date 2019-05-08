@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -274,7 +274,7 @@ func TestWithListFailure(t *testing.T) {
 	instance := newServiceInstance("dummy")
 	instance.Spec.ClusterServiceClassExternalName = "foo"
 
-	err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+	err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil), nil)
 	if err == nil {
 		t.Errorf("unexpected success with no ClusterServiceClasses.List succeeding")
 	} else if !strings.Contains(err.Error(), "simulated test failure") {
@@ -322,7 +322,7 @@ func TestWithPlanWorks(t *testing.T) {
 			instance := newServiceInstance("dummy")
 			instance.Spec.PlanReference = tc.requestedPlan
 
-			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil), nil)
 			if err != nil {
 				actions := ""
 				for _, action := range fakeClient.Actions() {
@@ -366,7 +366,7 @@ func TestWithNoPlanFailsWithNoClass(t *testing.T) {
 			instance := newServiceInstance("dummy")
 			instance.Spec.PlanReference = tc.requestedPlan
 
-			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil), nil)
 			if err == nil {
 				t.Errorf("unexpected success with no plan specified and no serviceclass existing")
 			} else if !strings.Contains(err.Error(), "does not exist, can not figure") {
@@ -408,12 +408,12 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
 				sps := newServicePlans(1, false)
-				glog.V(4).Infof("Created Service as %+v", sc)
+				klog.V(4).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, "" /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
 				csps := newClusterServicePlans(1, false)
-				glog.V(4).Infof("Created Service as %+v", csc)
+				klog.V(4).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, "" /* do not use get */)
 			}
 
@@ -426,7 +426,7 @@ func TestWithNoPlanWorksWithSinglePlan(t *testing.T) {
 			instance := newServiceInstance("dummy")
 			instance.Spec.PlanReference = tc.requestedPlan
 
-			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil), nil)
 			if err != nil {
 				actions := ""
 				for _, action := range fakeClient.Actions() {
@@ -462,12 +462,12 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
 				sps := newServicePlans(2, false)
-				glog.V(4).Infof("Created Service as %+v", sc)
+				klog.V(4).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, "" /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
 				csps := newClusterServicePlans(2, false)
-				glog.V(4).Infof("Created Service as %+v", csc)
+				klog.V(4).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, "" /* do not use get */)
 			}
 			handler, informerFactory, err := newHandlerForTest(fakeClient)
@@ -479,7 +479,7 @@ func TestWithNoPlanFailsWithMultiplePlans(t *testing.T) {
 			instance := newServiceInstance("dummy")
 			instance.Spec.PlanReference = tc.requestedPlan
 
-			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil), nil)
 			if err == nil {
 				t.Errorf("unexpected success with no plan specified and no serviceclass existing")
 				return
@@ -525,12 +525,12 @@ func TestWithNoPlanSucceedsWithMultiplePlansFromDifferentClasses(t *testing.T) {
 			if tc.namespaced {
 				sc := newServiceClass("foo-id", "foo")
 				sps := newServicePlans(2, true)
-				glog.V(4).Infof("Created Service as %+v", sc)
+				klog.V(4).Infof("Created Service as %+v", sc)
 				fakeClient = newFakeServiceCatalogClientForNamespacedTest(sc, sps, classFilter /* do not use get */)
 			} else {
 				csc := newClusterServiceClass("foo-id", "foo")
 				csps := newClusterServicePlans(2, true)
-				glog.V(4).Infof("Created Service as %+v", csc)
+				klog.V(4).Infof("Created Service as %+v", csc)
 				fakeClient = newFakeServiceCatalogClientForTest(csc, csps, classFilter /* do not use get */)
 			}
 
@@ -543,7 +543,7 @@ func TestWithNoPlanSucceedsWithMultiplePlansFromDifferentClasses(t *testing.T) {
 			instance := newServiceInstance("dummy")
 			instance.Spec.PlanReference = tc.requestedPlan
 
-			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil))
+			err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&instance, nil, servicecatalog.Kind("ServiceInstance").WithVersion("version"), instance.Namespace, instance.Name, servicecatalog.Resource("serviceinstances").WithVersion("version"), "", admission.Create, false, nil), nil)
 			if err != nil {
 				actions := ""
 				for _, action := range fakeClient.Actions() {

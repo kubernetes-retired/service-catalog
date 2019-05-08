@@ -43,19 +43,22 @@ type SvcatClient interface {
 	RetrieveBindingsByInstance(*apiv1beta1.ServiceInstance) ([]apiv1beta1.ServiceBinding, error)
 	Unbind(string, string) ([]types.NamespacedName, error)
 	WaitForBinding(string, string, time.Duration, *time.Duration) (*apiv1beta1.ServiceBinding, error)
+	RemoveBindingFinalizerByInstance(*apiv1beta1.ServiceInstance) ([]types.NamespacedName, error)
+	RemoveFinalizerForBindings([]types.NamespacedName) ([]types.NamespacedName, error)
+	RemoveFinalizerForBinding(types.NamespacedName) error
 
 	Deregister(string, *ScopeOptions) error
 	RetrieveBrokers(opts ScopeOptions) ([]Broker, error)
-	RetrieveBroker(string) (*apiv1beta1.ClusterServiceBroker, error)
+	RetrieveBrokerByID(string, ScopeOptions) (Broker, error)
 	RetrieveBrokerByClass(*apiv1beta1.ClusterServiceClass) (*apiv1beta1.ClusterServiceBroker, error)
 	Register(string, string, *RegisterOptions, *ScopeOptions) (Broker, error)
 	Sync(string, ScopeOptions, int) error
-	WaitForBroker(string, time.Duration, *time.Duration) (Broker, error)
+	WaitForBroker(string, *ScopeOptions, time.Duration, *time.Duration) (Broker, error)
 
 	RetrieveClasses(ScopeOptions) ([]Class, error)
 	RetrieveClassByName(string, ScopeOptions) (Class, error)
-	RetrieveClassByID(string) (*apiv1beta1.ClusterServiceClass, error)
-	RetrieveClassByPlan(Plan) (*apiv1beta1.ClusterServiceClass, error)
+	RetrieveClassByID(string, ScopeOptions) (Class, error)
+	RetrieveClassByPlan(Plan) (Class, error)
 	CreateClassFrom(CreateClassFromOptions) (Class, error)
 
 	Deprovision(string, string) error

@@ -1,5 +1,9 @@
 bigheader: "Tasks"
-abstract: "Step-by-step instructions for performing operations with Kubernetes."
-landing_page: /docs/tasks/index/
+abstract: "Instructions for performing various Service Catalog tasks."
+landing_page: /docs/tasks
 toc:
-- docs/docs/tasks/index.md
+- docs/tasks/index.md
+- title: Install a Broker
+  path: /docs/tasks/install_broker
+- title: Sync a Broker
+  path: /docs/tasks/sync_broker

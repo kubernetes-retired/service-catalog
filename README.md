@@ -1,7 +1,6 @@
 ## `service-catalog`
 
 [![Build Status](https://travis-ci.org/kubernetes-incubator/service-catalog.svg?branch=master)](https://travis-ci.org/kubernetes-incubator/service-catalog "Travis")
-[![Build Status](https://service-catalog-jenkins.appspot.com/buildStatus/icon?job=service-catalog-master-testing)](https://service-catalog-jenkins.appspot.com/job/service-catalog-master-testing/ "Jenkins")
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-incubator/service-catalog)](https://goreportcard.com/report/github.com/kubernetes-incubator/service-catalog)
 
 <p align="center">
@@ -26,7 +25,8 @@ Open Service Broker API project's [Getting Started guide](https://github.com/ope
 
 #### Video links
 
-- [Service Catalog Basic Concepts](https://goo.gl/6xINOa)
+- [Service Catalog Intro](https://www.youtube.com/watch?v=bm59dpmMhAk)
+- [Service Catalog Deep-Dive](https://www.youtube.com/watch?v=0zp0y8Mo_BE)
 - [Service Catalog Basic Demo](https://goo.gl/IJ6CV3)
 - [SIG Service Catalog Meeting Playlist](https://goo.gl/ZmLNX9)
 
@@ -78,7 +78,7 @@ The project was established 2016-Sept-12. The incubator team for the project is:
 - Sponsor: Brian Grant ([@bgrant0607](https://github.com/bgrant0607))
 - Champion: Paul Morie ([@pmorie](https://github.com/pmorie))
 - SIG: [sig-service-catalog](https://github.com/kubernetes/community/tree/master/sig-service-catalog)
-- See our "working" [SIG Charter](https://github.com/carolynvs/community/blob/sig-service-catalog-charter/sig-service-catalog/charter.md), which should be ratified by the Kubernetes Steering Committee soon.
+- Our [SIG Charter](https://github.com/kubernetes/community/blob/master/sig-service-catalog/charter.md)
 
 For more information about sig-service-catalog, such as meeting times and agenda,
 check out the [community site](https://github.com/kubernetes/community/tree/master/sig-service-catalog).

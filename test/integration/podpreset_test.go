@@ -52,18 +52,18 @@ func TestPodPresetClient(t *testing.T) {
 }
 
 func enablePodPresetFeature() {
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", features.PodPreset))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", features.PodPreset))
 }
 
 func disablePodPresetFeature() {
-	utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", features.PodPreset))
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", features.PodPreset))
 }
 
 func testPodPresetClient(client servicecatalogclient.Interface, name string) error {
 	testNamespace := "test-namespace"
 	podPresetName := "test-podpreset"
 
-	cl := client.Settings().PodPresets(testNamespace)
+	cl := client.SettingsV1alpha1().PodPresets(testNamespace)
 
 	// table driven tests for podpresets so that we can expand the input dataset
 	tests := []struct{ input *settingsapi.PodPreset }{

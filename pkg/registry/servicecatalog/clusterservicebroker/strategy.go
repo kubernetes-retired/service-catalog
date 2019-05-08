@@ -28,9 +28,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/golang/glog"
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	"k8s.io/klog"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for brokers
@@ -74,7 +74,7 @@ var (
 func (clusterServiceBrokerRESTStrategy) Canonicalize(obj runtime.Object) {
 	_, ok := obj.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to create")
+		klog.Fatal("received a non-clusterservicebroker object to create")
 	}
 }
 
@@ -89,7 +89,7 @@ func (clusterServiceBrokerRESTStrategy) NamespaceScoped() bool {
 func (clusterServiceBrokerRESTStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	broker, ok := obj.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to create")
+		klog.Fatal("received a non-clusterservicebroker object to create")
 	}
 	// Is there anything to pull out of the context `ctx`?
 
@@ -118,11 +118,11 @@ func (clusterServiceBrokerRESTStrategy) AllowUnconditionalUpdate() bool {
 func (clusterServiceBrokerRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to update to")
+		klog.Fatal("received a non-clusterservicebroker object to update to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to update from")
+		klog.Fatal("received a non-clusterservicebroker object to update from")
 	}
 
 	newClusterServiceBroker.Status = oldClusterServiceBroker.Status
@@ -142,11 +142,11 @@ func (clusterServiceBrokerRESTStrategy) PrepareForUpdate(ctx context.Context, ne
 func (clusterServiceBrokerRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to validate to")
+		klog.Fatal("received a non-clusterservicebroker object to validate to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to validate from")
+		klog.Fatal("received a non-clusterservicebroker object to validate from")
 	}
 
 	return scv.ValidateClusterServiceBrokerUpdate(newClusterServiceBroker, oldClusterServiceBroker)
@@ -155,11 +155,11 @@ func (clusterServiceBrokerRESTStrategy) ValidateUpdate(ctx context.Context, new,
 func (clusterServiceBrokerStatusRESTStrategy) PrepareForUpdate(ctx context.Context, new, old runtime.Object) {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to update to")
+		klog.Fatal("received a non-clusterservicebroker object to update to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to update from")
+		klog.Fatal("received a non-clusterservicebroker object to update from")
 	}
 	// status changes are not allowed to update spec
 	newClusterServiceBroker.Spec = oldClusterServiceBroker.Spec
@@ -168,11 +168,11 @@ func (clusterServiceBrokerStatusRESTStrategy) PrepareForUpdate(ctx context.Conte
 func (clusterServiceBrokerStatusRESTStrategy) ValidateUpdate(ctx context.Context, new, old runtime.Object) field.ErrorList {
 	newClusterServiceBroker, ok := new.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to validate to")
+		klog.Fatal("received a non-clusterservicebroker object to validate to")
 	}
 	oldClusterServiceBroker, ok := old.(*sc.ClusterServiceBroker)
 	if !ok {
-		glog.Fatal("received a non-clusterservicebroker object to validate from")
+		klog.Fatal("received a non-clusterservicebroker object to validate from")
 	}
 
 	return scv.ValidateClusterServiceBrokerStatusUpdate(newClusterServiceBroker, oldClusterServiceBroker)
