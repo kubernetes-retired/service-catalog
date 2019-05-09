@@ -89,6 +89,7 @@ const (
 	testServiceInstanceCredentialSecretName = "test-secret"
 	testOperation                           = "test-operation"
 	testClusterID                           = "test-cluster-id"
+	testOSBTimeOut                          = 80 * time.Second
 )
 
 var (
@@ -2354,6 +2355,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		7*24*time.Hour,
 		DefaultClusterIDConfigMapName,
 		DefaultClusterIDConfigMapNamespace,
+		60*time.Second,
 	)
 
 	if err != nil {
