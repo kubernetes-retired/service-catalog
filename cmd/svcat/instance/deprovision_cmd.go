@@ -17,7 +17,10 @@ limitations under the License.
 package instance
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -31,6 +34,8 @@ type deprovisonCmd struct {
 	*command.Waitable
 
 	instanceName string
+	abandon      bool
+	skipPrompt   bool
 }
 
 // NewDeprovisionCmd builds a "svcat deprovision" command
@@ -44,12 +49,26 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 		Short: "Deletes an instance of a service",
 		Example: command.NormalizeExamples(`
   svcat deprovision wordpress-mysql-instance
+  svcat deprovision --abandon wordpress-mysql-instance
 `),
 		PreRunE: command.PreRunE(deprovisonCmd),
 		RunE:    command.RunE(deprovisonCmd),
 	}
 	deprovisonCmd.AddNamespaceFlags(cmd.Flags(), false)
 	deprovisonCmd.AddWaitFlags(cmd)
+	cmd.Flags().BoolVar(
+		&deprovisonCmd.abandon,
+		"abandon",
+		false,
+		"Forcefully and immediately delete the resource from Service Catalog ONLY, potentially abandoning any broker resources that you may continue to be charged for.",
+	)
+	cmd.Flags().BoolVarP(
+		&deprovisonCmd.skipPrompt,
+		"yes",
+		"y",
+		false,
+		`Automatic yes to prompts. Assume "yes" as answer to all prompts and run non-interactively.`,
+	)
 
 	return cmd
 }
@@ -68,7 +87,32 @@ func (c *deprovisonCmd) Run() error {
 }
 
 func (c *deprovisonCmd) deprovision() error {
-	err := c.App.Deprovision(c.Namespace, c.instanceName)
+	var err error
+	if c.abandon {
+		fmt.Fprintln(c.Output, "This action is not reversible and may cause you to be charged for the broker resources that are abandoned. If you have any bindings for this instance, please delete them manually with svcat unbind --abandon --name bindingName")
+		if !c.skipPrompt {
+			fmt.Fprintln(c.Output, "Are you sure? [y|n]: ")
+			s := bufio.NewScanner(os.Stdin)
+			s.Scan()
+
+			err = s.Err()
+			if err != nil {
+				return err
+			}
+
+			if strings.ToLower(s.Text()) != "y" {
+				err = fmt.Errorf("aborted abandon operation")
+				return err
+			}
+		}
+
+		// Only delete the instance finalizer here. The bindings will still exist for this instance.
+		if err = c.App.RemoveFinalizerForInstance(c.Namespace, c.instanceName); err != nil {
+			return err
+		}
+	}
+
+	err = c.App.Deprovision(c.Namespace, c.instanceName)
 	if err != nil {
 		return err
 	}

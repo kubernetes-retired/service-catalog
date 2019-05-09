@@ -166,7 +166,7 @@ func TestUnbindCommand(t *testing.T) {
 			instanceName: "myinstance",
 			abandon:      true,
 			userResponse: "y",
-			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\ndeleted mybinding",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \ndeleted mybinding",
 		},
 		{
 			name:         "delete all finalizers with user skip prompt flag",
@@ -185,7 +185,7 @@ func TestUnbindCommand(t *testing.T) {
 			instanceName: "myinstance",
 			abandon:      true,
 			userResponse: "n",
-			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\naborted abandon operation",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \naborted abandon operation",
 			wantError:    true,
 		},
 		{
@@ -195,7 +195,7 @@ func TestUnbindCommand(t *testing.T) {
 			instanceName: "myinstance",
 			abandon:      true,
 			userResponse: "foo",
-			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\naborted abandon operation",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \naborted abandon operation",
 			wantError:    true,
 		},
 		{
@@ -206,7 +206,7 @@ func TestUnbindCommand(t *testing.T) {
 			instanceName: "",
 			abandon:      true,
 			userResponse: "y",
-			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \n<nil>\ndeleted mybinding",
+			wantOutput:   "This action is not reversible and may cause you to be charged for the broker resources that are abandoned.\nAre you sure? [y|n]: \ndeleted mybinding",
 			wantError:    false,
 		},
 	}
