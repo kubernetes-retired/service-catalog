@@ -137,7 +137,7 @@ func (c *controller) clusterServiceBrokerClient(broker *v1beta1.ClusterServiceBr
 		}
 		return nil, err
 	}
-	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
+	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig, c.OSBAPITimeOut)
 	brokerClient, err := c.brokerClientManager.UpdateBrokerClient(NewClusterServiceBrokerKey(broker.Name), clientConfig)
 	if err != nil {
 		s := fmt.Sprintf("Error creating client for broker %q: %s", broker.Name, err)
@@ -148,6 +148,7 @@ func (c *controller) clusterServiceBrokerClient(broker *v1beta1.ClusterServiceBr
 		}
 		return nil, err
 	}
+
 	return brokerClient, nil
 }
 

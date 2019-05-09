@@ -791,6 +791,7 @@ func newControllerTestTestController(ct *controllerTest) (
 		7*24*time.Hour,
 		controller.DefaultClusterIDConfigMapName,
 		controller.DefaultClusterIDConfigMapNamespace,
+		60*time.Second,
 	)
 	t.Log("controller start")
 	if err != nil {
@@ -957,6 +958,7 @@ func newTestController(t *testing.T) (
 		7*24*time.Hour,
 		controller.DefaultClusterIDConfigMapName,
 		controller.DefaultClusterIDConfigMapNamespace,
+		60*time.Second,
 	)
 	t.Log("controller start")
 	if err != nil {
