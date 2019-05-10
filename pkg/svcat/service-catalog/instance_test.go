@@ -231,8 +231,8 @@ var _ = Describe("Instances", func() {
 		It("Properly increments the update requests field", func() {
 			namespace := "cherry_namespace"
 			instanceName := "cherry"
-			className := "cherry_class"
-			planName := "cherry_plan"
+			classKubeName := "cherry_class"
+			planKubeName := "cherry_plan"
 			params := make(map[string]string)
 			params["foo"] = "bar"
 			secrets := make(map[string]string)
@@ -246,7 +246,7 @@ var _ = Describe("Instances", func() {
 				Secrets:    secrets,
 			}
 
-			provisionedInstance, err := sdk.Provision(instanceName, className, planName, opts)
+			provisionedInstance, err := sdk.Provision(instanceName, classKubeName, planKubeName, true, opts)
 			Expect(err).To(BeNil())
 			// once for the provision request
 			actions := svcCatClient.Actions()
@@ -491,8 +491,8 @@ var _ = Describe("Instances", func() {
 			namespace := "cherry_namespace"
 			instanceName := "cherry"
 			externalID := "cherry-external-id"
-			className := "cherry_class"
-			planName := "cherry_plan"
+			classKubeName := "cherry_class"
+			planKubeName := "cherry_plan"
 			params := make(map[string]string)
 			params["foo"] = "bar"
 			secrets := make(map[string]string)
@@ -505,13 +505,13 @@ var _ = Describe("Instances", func() {
 				Secrets:    secrets,
 			}
 
-			service, err := sdk.Provision(instanceName, className, planName, opts)
+			service, err := sdk.Provision(instanceName, classKubeName, planKubeName, true, opts)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(service.Namespace).To(Equal(namespace))
 			Expect(service.Name).To(Equal(instanceName))
-			Expect(service.Spec.PlanReference.ClusterServiceClassExternalName).To(Equal(className))
-			Expect(service.Spec.PlanReference.ClusterServicePlanExternalName).To(Equal(planName))
+			Expect(service.Spec.PlanReference.ClusterServiceClassName).To(Equal(classKubeName))
+			Expect(service.Spec.PlanReference.ClusterServicePlanName).To(Equal(planKubeName))
 			Expect(service.Spec.ExternalID).To(Equal(externalID))
 
 			actions := svcCatClient.Actions()
@@ -519,8 +519,8 @@ var _ = Describe("Instances", func() {
 			objectFromRequest := actions[0].(testing.CreateActionImpl).Object.(*v1beta1.ServiceInstance)
 			Expect(objectFromRequest.ObjectMeta.Name).To(Equal(instanceName))
 			Expect(objectFromRequest.ObjectMeta.Namespace).To(Equal(namespace))
-			Expect(objectFromRequest.Spec.PlanReference.ClusterServiceClassExternalName).To(Equal(className))
-			Expect(objectFromRequest.Spec.PlanReference.ClusterServicePlanExternalName).To(Equal(planName))
+			Expect(objectFromRequest.Spec.PlanReference.ClusterServiceClassName).To(Equal(classKubeName))
+			Expect(objectFromRequest.Spec.PlanReference.ClusterServicePlanName).To(Equal(planKubeName))
 			Expect(objectFromRequest.Spec.Parameters.Raw).To(Equal([]byte("{\"foo\":\"bar\"}")))
 			param := v1beta1.ParametersFromSource{
 				SecretKeyRef: &v1beta1.SecretKeyReference{
@@ -541,8 +541,8 @@ var _ = Describe("Instances", func() {
 			errorMessage := "error retrieving list"
 			namespace := "cherry_namespace"
 			instanceName := "cherry"
-			className := "cherry_class"
-			planName := "cherry_plan"
+			classKubeName := "cherry_class"
+			planKubeName := "cherry_plan"
 			params := make(map[string]string)
 			params["foo"] = "bar"
 			secrets := make(map[string]string)
@@ -560,7 +560,7 @@ var _ = Describe("Instances", func() {
 				Secrets:    secrets,
 			}
 
-			service, err := sdk.Provision(instanceName, className, planName, opts)
+			service, err := sdk.Provision(instanceName, classKubeName, planKubeName, true, opts)
 			Expect(service).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(errorMessage))

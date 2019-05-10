@@ -67,7 +67,7 @@ type SvcatClient interface {
 	InstanceToServiceClassAndPlan(*apiv1beta1.ServiceInstance) (*apiv1beta1.ClusterServiceClass, *apiv1beta1.ClusterServicePlan, error)
 	IsInstanceFailed(*apiv1beta1.ServiceInstance) bool
 	IsInstanceReady(*apiv1beta1.ServiceInstance) bool
-	Provision(string, string, string, *ProvisionOptions) (*apiv1beta1.ServiceInstance, error)
+	Provision(string, string, string, bool, *ProvisionOptions) (*apiv1beta1.ServiceInstance, error)
 	RetrieveInstance(string, string) (*apiv1beta1.ServiceInstance, error)
 	RetrieveInstanceByBinding(*apiv1beta1.ServiceBinding) (*apiv1beta1.ServiceInstance, error)
 	RetrieveInstances(string, string, string) (*apiv1beta1.ServiceInstanceList, error)
