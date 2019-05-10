@@ -165,24 +165,44 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 	}
 }
 
-// Provision creates an instance of a service class and plan.
-func (sdk *SDK) Provision(instanceName, className, planName string, opts *ProvisionOptions) (*v1beta1.ServiceInstance, error) {
-	request := &v1beta1.ServiceInstance{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      instanceName,
-			Namespace: opts.Namespace,
-		},
-		Spec: v1beta1.ServiceInstanceSpec{
-			ExternalID: opts.ExternalID,
-			PlanReference: v1beta1.PlanReference{
-				ClusterServiceClassExternalName: className,
-				ClusterServicePlanExternalName:  planName,
+// Provision creates an instance of a specific service class and plan specified
+// by their k8s names. Depending on provisionClusterInstance, it will create either
+// an instance of a cluster class/plan or a namespaced class/plan
+func (sdk *SDK) Provision(instanceName, classKubeName, planKubeName string, provisionClusterInstance bool, opts *ProvisionOptions) (*v1beta1.ServiceInstance, error) {
+	var request *v1beta1.ServiceInstance
+	if provisionClusterInstance {
+		request = &v1beta1.ServiceInstance{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      instanceName,
+				Namespace: opts.Namespace,
 			},
-			Parameters:     BuildParameters(opts.Params),
-			ParametersFrom: BuildParametersFrom(opts.Secrets),
-		},
+			Spec: v1beta1.ServiceInstanceSpec{
+				ExternalID: opts.ExternalID,
+				PlanReference: v1beta1.PlanReference{
+					ClusterServiceClassName: classKubeName,
+					ClusterServicePlanName:  planKubeName,
+				},
+				Parameters:     BuildParameters(opts.Params),
+				ParametersFrom: BuildParametersFrom(opts.Secrets),
+			},
+		}
+	} else {
+		request = &v1beta1.ServiceInstance{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      instanceName,
+				Namespace: opts.Namespace,
+			},
+			Spec: v1beta1.ServiceInstanceSpec{
+				ExternalID: opts.ExternalID,
+				PlanReference: v1beta1.PlanReference{
+					ServiceClassName: classKubeName,
+					ServicePlanName:  planKubeName,
+				},
+				Parameters:     BuildParameters(opts.Params),
+				ParametersFrom: BuildParametersFrom(opts.Secrets),
+			},
+		}
 	}
-
 	result, err := sdk.ServiceCatalog().ServiceInstances(opts.Namespace).Create(request)
 	if err != nil {
 		return nil, fmt.Errorf("provision request failed (%s)", err)

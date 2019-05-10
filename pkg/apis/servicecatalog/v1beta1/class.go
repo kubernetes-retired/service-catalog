@@ -98,3 +98,13 @@ func (c *CommonServiceClassStatus) GetStatusText() string {
 	}
 	return statusActive
 }
+
+// IsClusterServiceClass returns true for ClusterServiceClasses
+func (c *ClusterServiceClass) IsClusterServiceClass() bool {
+	return true
+}
+
+// IsClusterServiceClass returns false for ServiceClasses
+func (c *ServiceClass) IsClusterServiceClass() bool {
+	return false
+}

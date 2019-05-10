@@ -66,6 +66,9 @@ type Class interface {
 
 	// GetStatusText returns the status of the class.
 	GetStatusText() string
+
+	// IsClusterServiceCLass returns true if the class is a ClusterServiceClass
+	IsClusterServiceClass() bool
 }
 
 // RetrieveClasses lists all classes defined in the cluster.

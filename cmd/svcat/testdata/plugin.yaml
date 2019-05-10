@@ -342,6 +342,10 @@ tree:
   - desc: 'Poll interval for --wait, specified in human readable format: 30s, 1m,
       1h'
     name: interval
+  - desc: Whether or not to interpret the Class/Plan names as Kubernetes names (the
+      default is by external name)
+    name: kube-name
+    shorthand: k
   - desc: 'Additional parameter to use when provisioning the service, format: NAME=VALUE.
       Cannot be combined with --params-json, Sensitive information should be placed
       in a secret and specified with --secret'
