@@ -60,6 +60,7 @@ const (
 	defaultLeaderElectionNamespace                = "kube-system"
 	defaultReconciliationRetryDuration            = 7 * 24 * time.Hour
 	defaultOperationPollingMaximumBackoffDuration = 20 * time.Minute
+	defaultOSBAPITimeOut                          = 60 * time.Second
 )
 
 var defaultOSBAPIPreferredVersion = osb.LatestAPIVersion().HeaderValue()
@@ -78,6 +79,7 @@ func NewControllerManagerServer() *ControllerManagerServer {
 			ServiceBrokerRelistInterval:            defaultServiceBrokerRelistInterval,
 			OSBAPIContextProfile:                   defaultOSBAPIContextProfile,
 			OSBAPIPreferredVersion:                 defaultOSBAPIPreferredVersion,
+			OSBAPITimeOut:                          defaultOSBAPITimeOut,
 			ConcurrentSyncs:                        defaultConcurrentSyncs,
 			LeaderElection:                         leaderelectionconfig.DefaultLeaderElectionConfiguration(),
 			LeaderElectionNamespace:                defaultLeaderElectionNamespace,
@@ -119,6 +121,7 @@ func (s *ControllerManagerServer) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.LeaderElectionNamespace, "leader-election-namespace", s.LeaderElectionNamespace, "Namespace to use for leader election lock")
 	fs.DurationVar(&s.ReconciliationRetryDuration, "reconciliation-retry-duration", s.ReconciliationRetryDuration, "The maximum amount of time to retry reconciliations on a resource before failing")
 	fs.DurationVar(&s.OperationPollingMaximumBackoffDuration, "operation-polling-maximum-backoff-duration", s.OperationPollingMaximumBackoffDuration, "The maximum amount of time to back-off while polling an OSB API operation")
+	fs.DurationVar(&s.OSBAPITimeOut, "osb-api-timeout", s.OSBAPITimeOut, "The length of the timeout of any request to the broker, in seconds.")
 	s.SecureServingOptions.AddFlags(fs)
 	utilfeature.DefaultMutableFeatureGate.AddFlag(fs)
 	fs.StringVar(&s.ClusterIDConfigMapName, "cluster-id-configmap-name", controller.DefaultClusterIDConfigMapName, "k8s name for clusterid configmap")

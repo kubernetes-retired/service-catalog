@@ -74,8 +74,10 @@ type ControllerManagerConfiguration struct {
 
 	// Whether or not to send the proposed optional
 	// OpenServiceBroker API Context Profile field
+	// OSBAPITimeOut the length of the timeout of any request to the broker, in seconds.
 	OSBAPIContextProfile   bool
 	OSBAPIPreferredVersion string
+	OSBAPITimeOut          time.Duration
 
 	// ConcurrentSyncs is the number of resources, per resource type,
 	// that are allowed to sync concurrently. Larger number = more responsive

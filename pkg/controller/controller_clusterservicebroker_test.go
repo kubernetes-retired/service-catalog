@@ -286,6 +286,18 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 	assertNumberOfActions(t, kubeActions, 0)
 }
 
+func TestReconcileClusterServiceBrokerSetOSBTimeOut(t *testing.T) {
+	_, _, _, testController, _ := newTestController(t, getTestCatalogConfig())
+	testController.OSBAPITimeOut = testOSBTimeOut
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err == nil {
+		t.Fatal("The same service class should not belong to two different brokers.")
+	}
+	if !reflect.DeepEqual(testController.brokerClientManager.clients[NewClusterServiceBrokerKey(
+		getTestClusterServiceBroker().Name)].clientConfig.TimeoutSeconds, int(testController.OSBAPITimeOut.Seconds())) {
+		t.Errorf("Unexpected diff between expected and actual OSBTimeOut: %v", diff.ObjectReflectDiff(testController.brokerClientManager.clients[NewClusterServiceBrokerKey(getTestClusterServiceBroker().Name)].clientConfig.TimeoutSeconds, int(testController.OSBAPITimeOut.Seconds())))
+	}
+}
+
 func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestCatalogConfig())
 
