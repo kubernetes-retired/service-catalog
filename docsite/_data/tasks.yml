@@ -7,3 +7,5 @@ toc:
   path: /docs/tasks/install_broker
 - title: Sync a Broker
   path: /docs/tasks/sync_broker
+- title: Remove a stuck instance/binding
+  path: /docs/tasks/stuck_instance
