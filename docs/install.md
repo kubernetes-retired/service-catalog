@@ -92,21 +92,6 @@ and run `helm init --upgrade`.
 For more details on installation, see the
 [Helm installation instructions](https://github.com/kubernetes/helm/blob/master/docs/install.md).
 
-### Tiller Permissions
-
-Tiller is the in-cluster server component of Helm. By default,
-`helm init` installs the Tiller pod into the `kube-system` namespace,
-and configures Tiller to use the `default` service account.
-
-Tiller will need to be configured with `cluster-admin` access to properly install
-Service Catalog:
-
-```console
-kubectl create clusterrolebinding tiller-cluster-admin \
-    --clusterrole=cluster-admin \
-    --serviceaccount=kube-system:default
-```
-
 ## Helm Repository Setup
 
 Service Catalog is easily installed via a
