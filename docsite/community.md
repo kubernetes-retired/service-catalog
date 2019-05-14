@@ -53,10 +53,7 @@ cid: community
     <main>
         <h3>Leadership</h3>
         <div id="usersGrid">
-          <a target="_blank" href="https://github.com/carolynvs"><img src="https://avatars1.githubusercontent.com/u/1368985" width="100"><br/>Carolyn Van Slyck<br/>Microsoft</a><br/>
-          <a target="_blank" href="https://github.com/kibbles-n-bytes"><img src="https://avatars0.githubusercontent.com/u/4024724" width="100"><br/>Michael Kibbe<br/>Google</a><br/>
           <a target="_blank" href="https://github.com/jberkhahn"><img src="https://avatars3.githubusercontent.com/u/5873242" width="100"><br/>Jonathan Berkhahn<br/>IBM</a><br/>
-          <a target="_blank" href="https://github.com/jboyd01"><img src="https://avatars1.githubusercontent.com/u/4184708" width="100"><br/>Jay Boyd<br/>Red Hat</a><br/>
         </div>
     </main>
 </section>
