@@ -23,7 +23,8 @@ different Service Catalog.
 |---------|---------|-------|-------|-------|
 | `AsyncBindingOperations` | `false` | Alpha | v0.1.7 | |
 | `NamespacedServiceBroker` | `false` | Alpha | v0.1.10 | v0.1.28 |
-| `NamespacedServiceBroker` | `true` | GA | v0.1.29 | |
+| `NamespacedServiceBroker` | `true` | Alpha | v0.1.29 | v0.1.43 |
+| `NamespacedServiceBroker` | `true` | GA | v0.2.0 | |
 | `OriginatingIdentity` | `false` | Alpha | v0.1.7 | v0.1.29 |
 | `OriginatingIdentity` | `true` | GA | v0.1.30 | |
 | `OriginatingIdentityLocking` | `true` | Alpha | v0.1.14 | |
