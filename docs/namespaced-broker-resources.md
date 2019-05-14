@@ -73,9 +73,9 @@ control over service instance provisioning.
 
 ## Disabling Namespace Scoped Broker Resources
 
-Currently, namespace-scoped broker resources are an alpha-feature of Service 
-Catalog that is on by default. To disable use of these resources, you will need 
-to pass an argument to the API Server when you install Service Catalog:
+Currently, namespace-scoped broker resources enabled by default. To disable
+use of these resources, you will need  to pass an argument to the API
+Server when you install Service Catalog:
  `--feature-gates NamespacedServiceBroker=false`.
 
 If you are using Helm, you can use the `namespacedServiceBrokerDisabled` setting
