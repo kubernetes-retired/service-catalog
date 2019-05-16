@@ -39,18 +39,6 @@ type AccessToBroker struct {
 var _ admission.DecoderInjector = &AccessToBroker{}
 var _ inject.Client = &AccessToBroker{}
 
-// InjectDecoder injects the decoder
-func (h *AccessToBroker) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
-}
-
-// InjectClient injects the client
-func (h *AccessToBroker) InjectClient(c client.Client) error {
-	h.client = c
-	return nil
-}
-
 // Validate checks if client has access to service broker if broker requires authentication
 // This feature was copied from Service Catalog admission plugin https://github.com/kubernetes-incubator/service-catalog/blob/v0.1.41/plugin/pkg/admission/broker/authsarcheck/admission.go
 // If you want to track previous changes please check there.
@@ -120,4 +108,16 @@ func convertToSARExtra(extra map[string]authenticationapi.ExtraValue) map[string
 	}
 
 	return ret
+}
+
+// InjectDecoder injects the decoder
+func (h *AccessToBroker) InjectDecoder(d *admission.Decoder) error {
+	h.decoder = d
+	return nil
+}
+
+// InjectClient injects the client
+func (h *AccessToBroker) InjectClient(c client.Client) error {
+	h.client = c
+	return nil
 }

@@ -19,16 +19,14 @@ package servicecatalog
 import (
 	"errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 )
 
 const (
-	// FieldExternalClassName is the jsonpath to a class's external name.
-	FieldExternalClassName = "spec.externalName"
 	// MultipleClassesFoundError is the error returned when we find a clusterserviceclass
 	// and a serviceclass with the same name
 	MultipleClassesFoundError = "More than one class found"
@@ -108,7 +106,9 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 	var searchResults []Class
 
 	lopts := metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(FieldExternalClassName, name).String(),
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: name,
+		}).String(),
 	}
 
 	if opts.Scope.Matches(ClusterScope) {
@@ -133,7 +133,6 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 				return nil, fmt.Errorf("unable to search classes by name (%s)", err)
 			}
 		}
-
 		for _, c := range sc.Items {
 			class := c
 			searchResults = append(searchResults, &class)

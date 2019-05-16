@@ -97,9 +97,9 @@ var _ = Describe("Secret", func() {
 			Expect(secret).To(BeNil())
 		})
 		It("Bubbles up errors", func() {
-			badClient := &k8sfake.Clientset{}
+			badClient := k8sfake.NewSimpleClientset()
 			errorMessage := "resource not found"
-			badClient.AddReactor("get", "secrets", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("get", "secrets", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.K8sClient = badClient

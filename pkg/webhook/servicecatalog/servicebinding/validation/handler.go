@@ -32,28 +32,28 @@ type Validator interface {
 	Validate(context.Context, admission.Request, *sc.ServiceBinding, *webhookutil.TracedLogger) *webhookutil.WebhookError
 }
 
-// AdmissionHandler handles ServiceBinding validation
-type AdmissionHandler struct {
+// SpecValidationHandler handles ServiceBinding validation
+type SpecValidationHandler struct {
 	decoder *admission.Decoder
 
 	CreateValidators []Validator
 	UpdateValidators []Validator
 }
 
-var _ admission.Handler = &AdmissionHandler{}
-var _ admission.DecoderInjector = &AdmissionHandler{}
-var _ inject.Client = &AdmissionHandler{}
+var _ admission.Handler = &SpecValidationHandler{}
+var _ admission.DecoderInjector = &SpecValidationHandler{}
+var _ inject.Client = &SpecValidationHandler{}
 
-// NewAdmissionHandler creates new AdmissionHandler and initializes validators list
-func NewAdmissionHandler() *AdmissionHandler {
-	return &AdmissionHandler{
+// NewSpecValidationHandler creates new SpecValidationHandler and initializes validators list
+func NewSpecValidationHandler() *SpecValidationHandler {
+	return &SpecValidationHandler{
 		CreateValidators: []Validator{&ReferenceDeletion{}, &StaticCreate{}},
 		UpdateValidators: []Validator{&StaticUpdate{}},
 	}
 }
 
 // Handle handles admission requests.
-func (h *AdmissionHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *SpecValidationHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
 	traced.Infof("Start handling validation operation: %s for %s", req.Operation, req.Kind.Kind)
 
@@ -102,11 +102,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req admission.Request) ad
 	}
 
 	traced.Infof("Completed successfully validation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
-	return admission.Allowed("ServiceBinding AdmissionHandler successful")
+	return admission.Allowed("ServiceBinding validation successful")
 }
 
 // InjectDecoder injects the decoder into the handlers
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
+func (h *SpecValidationHandler) InjectDecoder(d *admission.Decoder) error {
 	h.decoder = d
 
 	for _, v := range h.CreateValidators {
@@ -126,7 +126,7 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 // InjectClient injects the client into the handlers
-func (h *AdmissionHandler) InjectClient(c client.Client) error {
+func (h *SpecValidationHandler) InjectClient(c client.Client) error {
 	for _, v := range h.CreateValidators {
 		_, err := inject.ClientInto(c, v)
 		if err != nil {

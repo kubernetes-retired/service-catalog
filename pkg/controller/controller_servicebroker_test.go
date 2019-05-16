@@ -405,11 +405,11 @@ func TestReconcileServicePlanFromServiceBrokerCatalog(t *testing.T) {
 }
 
 func TestReconcileServiceBrokerExistingServiceClassAndServicePlan(t *testing.T) {
-	err := utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
+	err := utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.NamespacedServiceBroker))
 	if err != nil {
 		t.Fatalf("Failed to enable namespaced service broker feature: %v", err)
 	}
-	defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.NamespacedServiceBroker))
 
 	fakeKubeClient, fakeCatalogClient, fakeServiceBrokerClient, testController, sharedInformers := newTestController(t, getTestNamespacedCatalogConfig())
 

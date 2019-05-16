@@ -107,10 +107,10 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 			decoder, err := admission.NewDecoder(scheme.Scheme)
 			require.NoError(t, err)
 
-			err = utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+			err = utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
 			require.NoError(t, err, "cannot disable OriginatingIdentity feature")
 			// restore default state
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
 
 			fixReq := admission.Request{
 				AdmissionRequest: admissionv1beta1.AdmissionRequest{
@@ -206,10 +206,10 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
 			decoder, err := admission.NewDecoder(scheme.Scheme)
 			require.NoError(t, err)
 
-			err = utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+			err = utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
 			require.NoError(t, err, "cannot disable OriginatingIdentity feature")
 			// restore default state
-			defer utilfeature.DefaultFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+			defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
 
 			fixReq := admission.Request{
 				AdmissionRequest: admissionv1beta1.AdmissionRequest{

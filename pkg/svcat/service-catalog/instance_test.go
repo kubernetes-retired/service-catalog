@@ -26,7 +26,6 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/testing"
@@ -97,9 +96,9 @@ var _ = Describe("Instances", func() {
 		})
 		It("Bubbles up errors", func() {
 			namespace := si.Namespace
-			badClient := &fake.Clientset{}
+			badClient := fake.NewSimpleClientset()
 			errorMessage := "error retrieving list"
-			badClient.AddReactor("list", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("list", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
@@ -160,7 +159,7 @@ var _ = Describe("Instances", func() {
 			sb.Spec.InstanceRef.Name = instanceName
 			badClient := &fake.Clientset{}
 			errorMessage := "no instance found"
-			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
@@ -200,11 +199,14 @@ var _ = Describe("Instances", func() {
 			Expect(err).NotTo(HaveOccurred())
 			actions := linkedClient.Actions()
 			Expect(actions[0].Matches("list", "serviceinstances")).To(BeTrue())
-			opts := fields.Set{"spec.clusterServicePlanRef.name": plan.Name}
-			Expect(actions[0].(testing.ListActionImpl).GetListRestrictions().Fields.Matches(opts)).To(BeTrue())
+
+			requirements, selectable := actions[0].(testing.ListActionImpl).GetListRestrictions().Labels.Requirements()
+			Expect(selectable).Should(BeTrue())
+			Expect(requirements).ShouldNot(BeEmpty())
+			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.clusterServicePlanRef.name=foobar_plan"))
 		})
 		It("Bubbles up errors", func() {
-			badClient := &fake.Clientset{}
+			badClient := fake.NewSimpleClientset()
 			errorMessage := "no instances found"
 			plan := &v1beta1.ClusterServicePlan{
 				ObjectMeta: metav1.ObjectMeta{
@@ -212,7 +214,7 @@ var _ = Describe("Instances", func() {
 				},
 				Spec: v1beta1.ClusterServicePlanSpec{},
 			}
-			badClient.AddReactor("list", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("list", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
@@ -223,8 +225,11 @@ var _ = Describe("Instances", func() {
 			Expect(err.Error()).To(ContainSubstring(errorMessage))
 			actions := badClient.Actions()
 			Expect(actions[0].Matches("list", "serviceinstances")).To(BeTrue())
-			opts := fields.Set{"spec.clusterServicePlanRef.name": plan.Name}
-			Expect(actions[0].(testing.ListActionImpl).GetListRestrictions().Fields.Matches(opts)).To(BeTrue())
+
+			requirements, selectable := actions[0].(testing.ListActionImpl).GetListRestrictions().Labels.Requirements()
+			Expect(selectable).Should(BeTrue())
+			Expect(requirements).ShouldNot(BeEmpty())
+			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.clusterServicePlanRef.name=foobar_plan"))
 		})
 	})
 	Describe("UpdateInstance", func() {
@@ -376,12 +381,12 @@ var _ = Describe("Instances", func() {
 					},
 				},
 			}
-			badClient := &fake.Clientset{}
+			badClient := fake.NewSimpleClientset()
 			errorMessage := "error retrieving thing"
-			badClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
-			badClient.AddReactor("get", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("get", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
@@ -469,12 +474,12 @@ var _ = Describe("Instances", func() {
 					},
 				},
 			}
-			badClient := &fake.Clientset{}
+			badClient := fake.NewSimpleClientset()
 			errorMessage := "error retrieving thing"
-			badClient.AddReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("get", "clusterserviceclasses", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
-			badClient.AddReactor("get", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient.PrependReactor("get", "clusterserviceplans", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
@@ -548,8 +553,8 @@ var _ = Describe("Instances", func() {
 			secrets := make(map[string]string)
 			secrets["username"] = "admin"
 			secrets["password"] = "abc123"
-			badClient := &fake.Clientset{}
-			badClient.AddReactor("create", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient := fake.NewSimpleClientset()
+			badClient.PrependReactor("create", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient
@@ -577,8 +582,8 @@ var _ = Describe("Instances", func() {
 	})
 	It("Bubbles up errors", func() {
 		errorMessage := "instance not found"
-		badClient := &fake.Clientset{}
-		badClient.AddReactor("delete", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+		badClient := fake.NewSimpleClientset()
+		badClient.PrependReactor("delete", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 			return true, nil, fmt.Errorf(errorMessage)
 		})
 		sdk.ServiceCatalogClient = badClient
@@ -606,8 +611,8 @@ var _ = Describe("Instances", func() {
 			notReadyInstance = &v1beta1.ServiceInstance{ObjectMeta: metav1.ObjectMeta{Name: si.Name}}
 			notReadyInstance.Status.Conditions = []v1beta1.ServiceInstanceCondition{notReady}
 			timeout = 1 * time.Second
-			waitClient = &fake.Clientset{}
-			waitClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			waitClient = fake.NewSimpleClientset()
+			waitClient.PrependReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				counter++
 				return true, notReadyInstance, nil
 			})
@@ -686,8 +691,8 @@ var _ = Describe("Instances", func() {
 			counter = 0
 			interval = 100 * time.Millisecond
 			timeout = 1 * time.Second
-			waitClient = &fake.Clientset{}
-			waitClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			waitClient = fake.NewSimpleClientset()
+			waitClient.PrependReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				counter++
 				return true, si, nil
 			})
@@ -760,8 +765,8 @@ var _ = Describe("Instances", func() {
 		})
 		It("Bubbles up errors", func() {
 			errorMessage := "instance not found"
-			badClient := &fake.Clientset{}
-			badClient.AddReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
+			badClient := fake.NewSimpleClientset()
+			badClient.PrependReactor("get", "serviceinstances", func(action testing.Action) (bool, runtime.Object, error) {
 				return true, nil, fmt.Errorf(errorMessage)
 			})
 			sdk.ServiceCatalogClient = badClient

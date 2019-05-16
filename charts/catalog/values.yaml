@@ -7,6 +7,7 @@ imagePullPolicy: Always
 ## If true, create & use RBAC resources
 ##
 rbacEnable: true
+rbacApiVersion: rbac.authorization.k8s.io/v1
 webhook:
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
   updateStrategy: RollingUpdate
@@ -87,11 +88,26 @@ controllerManager:
     limits:
       cpu: 100m
       memory: 30Mi
+  # Attributes of the controller's service resource
+  service:
+    # Type of service; valid values are "LoadBalancer", "NodePort" and "ClusterIP"
+    # NodePort is useful if deploying on bare metal or hacking locally on
+    # minikube
+    type: ClusterIP
+    # Further configuration for services of type NodePort
+    nodePort:
+      # Available port in allowable range (e.g. 30000 - 32767 on minikube)
+      # The TLS-enabled endpoint will be exposed here
+      securePort: 30444
 # Whether the OriginatingIdentity feature should be enabled
 originatingIdentityEnabled: true
 # Whether the AsyncBindingOperations alpha feature should be enabled
 asyncBindingOperationsEnabled: false
-# Whether the NamespacedServiceBroker alpha feature should be disabled
+# Whether the NamespacedServiceBroker feature should be disabled
 namespacedServiceBrokerDisabled: false
 # Whether the ServicePlanDefaults alpha feature should be enabled
 servicePlanDefaultsEnabled: false
+## Security context give the opportunity to run container as nonroot by setting a securityContext
+## by example :
+## securityContext: { runAsUser: 1001 }
+securityContext: {}

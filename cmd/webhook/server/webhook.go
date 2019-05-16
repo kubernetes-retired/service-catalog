@@ -1,4 +1,5 @@
 /*
+/*
 Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,7 +70,10 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		return errors.Wrap(err, "while set up overall controller manager for webhook server")
 	}
 
-	scTypes.AddToScheme(mgr.GetScheme())
+	err = scTypes.AddToScheme(mgr.GetScheme())
+	if err != nil {
+		return errors.Wrap(err, "while register Service Catalog scheme into manager")
+	}
 
 	// setup webhook server
 	webhookSvr := &webhook.Server{
@@ -86,20 +90,20 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		"/mutating-servicebrokers":   &brmutation.CreateUpdateHandler{},
 		"/mutating-serviceclasses":   &scmutation.CreateUpdateHandler{},
 		"/mutating-serviceplans":     &spmutation.CreateUpdateHandler{},
-		"/mutating-serviceinstances": simutation.New(),
+		"/mutating-serviceinstances": simutation.NewCreateUpdateHandler(),
 
-		"/validating-clusterservicebrokers":        csbrvalidation.NewAdmissionHandler(),
-		"/validating-clusterservicebrokers/status": &csbrvalidation.StatusUpdateHandler{},
-		"/validating-clusterserviceclasses":        cscvalidation.NewAdmissionHandler(),
-		"/validating-clusterserviceplans":          cspvalidation.NewAdmissionHandler(),
+		"/validating-clusterservicebrokers":        csbrvalidation.NewSpecValidationHandler(),
+		"/validating-clusterservicebrokers/status": &csbrvalidation.StatusValidationHandler{},
+		"/validating-clusterserviceclasses":        cscvalidation.NewSpecValidationHandler(),
+		"/validating-clusterserviceplans":          cspvalidation.NewSpecValidationHandler(),
 
-		"/validating-servicebindings":        sbvalidation.NewAdmissionHandler(),
-		"/validating-servicebindings/status": &sbvalidation.StatusUpdateValidationHandler{},
-		"/validating-servicebrokers":         sbrvalidation.NewAdmissionHandler(),
-		"/validating-servicebrokers/status":  &sbrvalidation.StatusUpdateHandler{},
-		"/validating-serviceclasses":         scvalidation.NewAdmissionHandler(),
-		"/validating-serviceplans":           spvalidation.NewAdmissionHandler(),
-		"/validating-serviceinstances":       sivalidation.NewAdmissionHandler(),
+		"/validating-servicebindings":        sbvalidation.NewSpecValidationHandler(),
+		"/validating-servicebindings/status": &sbvalidation.StatusValidationHandler{},
+		"/validating-servicebrokers":         sbrvalidation.NewSpecValidationHandler(),
+		"/validating-servicebrokers/status":  &sbrvalidation.StatusValidationHandler{},
+		"/validating-serviceclasses":         scvalidation.NewSpecValidationHandler(),
+		"/validating-serviceplans":           spvalidation.NewSpecValidationHandler(),
+		"/validating-serviceinstances":       sivalidation.NewSpecValidationHandler(),
 	}
 
 	for path, handler := range webhooks {

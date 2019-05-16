@@ -72,7 +72,7 @@ func TestHandlerStatusValidate(t *testing.T) {
 			sc.AddToScheme(scheme.Scheme)
 			decoder, err := admission.NewDecoder(scheme.Scheme)
 			require.NoError(t, err)
-			handler := &validation.StatusUpdateHandler{}
+			handler := &validation.StatusValidationHandler{}
 			handler.InjectDecoder(decoder)
 
 			req := admission.Request{

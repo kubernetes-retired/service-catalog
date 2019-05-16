@@ -78,12 +78,6 @@ func IsAppEngine() bool {
 	return internal.IsAppEngine()
 }
 
-// IsSecondGen reports whether the App Engine app is running on the second generation
-// runtimes (>= Go 1.11).
-func IsSecondGen() bool {
-	return internal.IsSecondGen()
-}
-
 // NewContext returns a context for an in-flight HTTP request.
 // This function is cheap.
 func NewContext(req *http.Request) context.Context {
@@ -96,6 +90,8 @@ func NewContext(req *http.Request) context.Context {
 func WithContext(parent context.Context, req *http.Request) context.Context {
 	return internal.WithContext(parent, req)
 }
+
+// TODO(dsymonds): Add a Call function here? Otherwise other packages can't access internal.Call.
 
 // BlobKey is a key for a blobstore blob.
 //

@@ -23,14 +23,14 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil/tester"
 )
 
-func TestAdmissionHandlerHandleDecoderErrors(t *testing.T) {
+func TestSpecValidationHandlerHandleDecoderErrors(t *testing.T) {
 	tester.DiscardLoggedMsg()
 
 	for _, fn := range []func(t *testing.T, handler tester.TestDecoderHandler, kind string){
 		tester.AssertHandlerReturnErrorIfReqObjIsMalformed,
 		tester.AssertHandlerReturnErrorIfGVKMismatch,
 	} {
-		handler := validation.AdmissionHandler{}
+		handler := validation.SpecValidationHandler{}
 		fn(t, &handler, "ClusterServicePlan")
 	}
 }

@@ -59,7 +59,7 @@ func (m *fakedClient) Create(ctx context.Context, obj runtime.Object, opts ...cl
 	return nil
 }
 
-func TestAdmissionHandlerAccessToBrokerAllowed(t *testing.T) {
+func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
 	// given
 	err := sc.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestAdmissionHandlerAccessToBrokerAllowed(t *testing.T) {
 	for desc, test := range tests {
 		t.Run(desc, func(t *testing.T) {
 			// given
-			handler := validation.AdmissionHandler{}
+			handler := validation.SpecValidationHandler{}
 			handler.CreateValidators = []validation.Validator{&validation.AccessToBroker{}}
 			handler.UpdateValidators = []validation.Validator{&validation.AccessToBroker{}}
 
@@ -187,7 +187,7 @@ func TestAdmissionHandlerAccessToBrokerAllowed(t *testing.T) {
 	}
 }
 
-func TestAdmissionHandlerAccessToBrokerDenied(t *testing.T) {
+func TestSpecValidationHandlerAccessToBrokerDenied(t *testing.T) {
 	// given
 	err := sc.AddToScheme(scheme.Scheme)
 	require.NoError(t, err)
@@ -266,7 +266,7 @@ func TestAdmissionHandlerAccessToBrokerDenied(t *testing.T) {
 	for desc, test := range tests {
 		t.Run(desc, func(t *testing.T) {
 			// given
-			handler := validation.AdmissionHandler{}
+			handler := validation.SpecValidationHandler{}
 			handler.CreateValidators = []validation.Validator{&validation.AccessToBroker{}}
 			handler.UpdateValidators = []validation.Validator{&validation.AccessToBroker{}}
 

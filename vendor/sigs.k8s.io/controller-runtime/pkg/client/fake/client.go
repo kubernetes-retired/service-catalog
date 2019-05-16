@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -32,12 +31,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 	"sigs.k8s.io/controller-runtime/pkg/internal/objectutil"
-)
-
-var (
-	log = logf.RuntimeLog.WithName("fake-client")
 )
 
 type fakeClient struct {
@@ -63,9 +57,7 @@ func NewFakeClientWithScheme(clientScheme *runtime.Scheme, initObjs ...runtime.O
 	for _, obj := range initObjs {
 		err := tracker.Add(obj)
 		if err != nil {
-			log.Error(err, "failed to add object to fake client", "object", obj)
-			os.Exit(1)
-			return nil
+			panic(fmt.Errorf("failed to add object %v to fake client: %v", obj, err))
 		}
 	}
 	return &fakeClient{
@@ -93,7 +85,7 @@ func (c *fakeClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.
 }
 
 func (c *fakeClient) List(ctx context.Context, obj runtime.Object, opts ...client.ListOptionFunc) error {
-	gvk, err := apiutil.GVKForObject(obj, scheme.Scheme)
+	gvk, err := apiutil.GVKForObject(obj, c.scheme)
 	if err != nil {
 		return err
 	}
@@ -195,6 +187,15 @@ func (c *fakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 }
 
 func (c *fakeClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOptionFunc) error {
+	patchOptions := &client.PatchOptions{}
+	patchOptions.ApplyOptions(opts)
+
+	for _, dryRunOpt := range patchOptions.DryRun {
+		if dryRunOpt == metav1.DryRunAll {
+			return nil
+		}
+	}
+
 	gvr, err := getGVRFromObject(obj, c.scheme)
 	if err != nil {
 		return err

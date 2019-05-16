@@ -34,6 +34,7 @@ type CreateUpdateHandler struct {
 }
 
 var _ admission.Handler = &CreateUpdateHandler{}
+var _ admission.DecoderInjector = &CreateUpdateHandler{}
 
 // Handle handles admission requests.
 func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
@@ -73,11 +74,9 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	traced.Infof("Completed successfully operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
+	traced.Infof("Completed successfully mutation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 	return admission.PatchResponseFromRaw(req.AdmissionRequest.Object.Raw, rawMutated)
 }
-
-var _ admission.DecoderInjector = &CreateUpdateHandler{}
 
 // InjectDecoder injects the decoder
 func (h *CreateUpdateHandler) InjectDecoder(d *admission.Decoder) error {

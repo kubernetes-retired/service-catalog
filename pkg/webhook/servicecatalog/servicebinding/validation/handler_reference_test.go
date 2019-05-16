@@ -37,7 +37,7 @@ const (
 	OutOfDateInstance = "out-of-date-instance"
 )
 
-func TestAdmissionHandlerServiceInstanceReferenceUpToDate(t *testing.T) {
+func TestSpecValidationHandlerServiceInstanceReferenceUpToDate(t *testing.T) {
 	// given
 	namespace := "test-handler"
 	err := sc.AddToScheme(scheme.Scheme)
@@ -89,7 +89,7 @@ func TestAdmissionHandlerServiceInstanceReferenceUpToDate(t *testing.T) {
 	for desc, test := range tests {
 		t.Run(desc, func(t *testing.T) {
 			// given
-			handler := validation.AdmissionHandler{}
+			handler := validation.SpecValidationHandler{}
 			handler.CreateValidators = []validation.Validator{&validation.ReferenceDeletion{}}
 
 			fakeClient := fake.NewFakeClientWithScheme(sch, &sc.ServiceInstance{
@@ -115,7 +115,7 @@ func TestAdmissionHandlerServiceInstanceReferenceUpToDate(t *testing.T) {
 	}
 }
 
-func TestAdmissionHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
+func TestSpecValidationHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
 	// given
 	namespace := "test-handler"
 	err := sc.AddToScheme(scheme.Scheme)
@@ -167,7 +167,7 @@ func TestAdmissionHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
 	for desc, test := range tests {
 		t.Run(desc, func(t *testing.T) {
 			// given
-			handler := validation.AdmissionHandler{}
+			handler := validation.SpecValidationHandler{}
 			handler.CreateValidators = []validation.Validator{&validation.ReferenceDeletion{}}
 
 			fakeClient := fake.NewFakeClientWithScheme(sch, &sc.ServiceInstance{

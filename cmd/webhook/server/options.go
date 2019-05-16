@@ -55,7 +55,7 @@ func (s *WebhookServerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&s.HealthzServerBindPort, "healthz-server-bind-port", defaultHealthzServerPort, "The port on which to serve HTTP  /healthz endpoint")
 
 	s.SecureServingOptions.AddFlags(fs)
-	utilfeature.DefaultFeatureGate.AddFlag(fs)
+	utilfeature.DefaultMutableFeatureGate.AddFlag(fs)
 }
 
 // Validate checks all subOptions flags have been set and that they

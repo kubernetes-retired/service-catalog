@@ -32,7 +32,7 @@ import (
 	"testing"
 )
 
-func TestAdmissionHandlerDenyPlanChangeIfNotUpdatableSimpleScenarios(t *testing.T) {
+func TestSpecValidationHandlerDenyPlanChangeIfNotUpdatableSimpleScenarios(t *testing.T) {
 	tester.DiscardLoggedMsg()
 
 	// given
@@ -81,14 +81,14 @@ func TestAdmissionHandlerDenyPlanChangeIfNotUpdatableSimpleScenarios(t *testing.
 			clusterServiceClassName,
 			false,
 			true,
-			"ServiceInstance AdmissionHandler successful",
+			"ServiceInstance validation successful",
 		},
 		"UpdateablePlan set to true": {
 			admissionv1beta1.Update,
 			clusterServiceClassName,
 			true,
 			true,
-			"ServiceInstance AdmissionHandler successful",
+			"ServiceInstance validation successful",
 		},
 		"Non-existing service class": {
 			admissionv1beta1.Update,
@@ -102,7 +102,7 @@ func TestAdmissionHandlerDenyPlanChangeIfNotUpdatableSimpleScenarios(t *testing.
 	for desc, test := range tests {
 		t.Run(desc, func(t *testing.T) {
 			// given
-			handler := validation.AdmissionHandler{}
+			handler := validation.SpecValidationHandler{}
 			handler.UpdateValidators = []validation.Validator{&validation.DenyPlanChangeIfNotUpdatable{}}
 			fakeClient := fake.NewFakeClientWithScheme(sch, &sc.ClusterServiceClass{
 				ObjectMeta: metav1.ObjectMeta{
@@ -131,7 +131,7 @@ func TestAdmissionHandlerDenyPlanChangeIfNotUpdatableSimpleScenarios(t *testing.
 	}
 }
 
-func TestAdmissionHandlerDenyPlanChangeIfNotUpdatablePlanNameChanged(t *testing.T) {
+func TestSpecValidationHandlerDenyPlanChangeIfNotUpdatablePlanNameChanged(t *testing.T) {
 	tester.DiscardLoggedMsg()
 
 	// given
@@ -197,7 +197,7 @@ func TestAdmissionHandlerDenyPlanChangeIfNotUpdatablePlanNameChanged(t *testing.
 	for desc, test := range tests {
 		t.Run(desc, func(t *testing.T) {
 			// given
-			handler := validation.AdmissionHandler{}
+			handler := validation.SpecValidationHandler{}
 			handler.UpdateValidators = []validation.Validator{&validation.DenyPlanChangeIfNotUpdatable{}}
 			fakeClient := fake.NewFakeClientWithScheme(sch, &sc.ClusterServiceClass{
 				ObjectMeta: metav1.ObjectMeta{

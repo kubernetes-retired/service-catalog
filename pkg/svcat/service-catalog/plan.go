@@ -157,6 +157,9 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: class.GetName(),
 		}
 	}
+
+
+
 	listOpts := metav1.ListOptions{
 		LabelSelector: labels.Merge(classRefSet,
 			labels.Set{

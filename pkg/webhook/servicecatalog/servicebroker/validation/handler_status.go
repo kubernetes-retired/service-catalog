@@ -27,13 +27,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// StatusUpdateHandler provides status update resource validation handler
-type StatusUpdateHandler struct {
+// StatusValidationHandler provides status update resource validation handler
+type StatusValidationHandler struct {
 	decoder *admission.Decoder
 }
 
 // Handle handles admission requests.
-func (h *StatusUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *StatusValidationHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
 	traced.Infof("Start handling validation operation: %s for %s/%s: %q", req.Operation, req.Kind.Kind, req.SubResource, req.Name)
 
@@ -65,7 +65,7 @@ func (h *StatusUpdateHandler) Handle(ctx context.Context, req admission.Request)
 }
 
 // InjectDecoder injects the decoder into the handlers
-func (h *StatusUpdateHandler) InjectDecoder(d *admission.Decoder) error {
+func (h *StatusValidationHandler) InjectDecoder(d *admission.Decoder) error {
 	h.decoder = d
 	return nil
 }

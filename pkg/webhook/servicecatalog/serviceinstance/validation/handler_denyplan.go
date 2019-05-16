@@ -38,18 +38,6 @@ type DenyPlanChangeIfNotUpdatable struct {
 var _ admission.DecoderInjector = &DenyPlanChangeIfNotUpdatable{}
 var _ inject.Client = &DenyPlanChangeIfNotUpdatable{}
 
-// InjectDecoder injects the decoder
-func (h *DenyPlanChangeIfNotUpdatable) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
-}
-
-// InjectClient injects the client
-func (h *DenyPlanChangeIfNotUpdatable) InjectClient(c client.Client) error {
-	h.client = c
-	return nil
-}
-
 // Validate checks if Plan can be changed
 func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admission.Request, si *sc.ServiceInstance, traced *webhookutil.TracedLogger) *webhookutil.WebhookError {
 	traced.Info("Starting validation - DenyPlanChangeIfNotUpdatable")
@@ -104,5 +92,17 @@ func (h *DenyPlanChangeIfNotUpdatable) Validate(ctx context.Context, req admissi
 		}
 	}
 
+	return nil
+}
+
+// InjectDecoder injects the decoder
+func (h *DenyPlanChangeIfNotUpdatable) InjectDecoder(d *admission.Decoder) error {
+	h.decoder = d
+	return nil
+}
+
+// InjectClient injects the client
+func (h *DenyPlanChangeIfNotUpdatable) InjectClient(c client.Client) error {
+	h.client = c
 	return nil
 }

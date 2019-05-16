@@ -32,7 +32,7 @@ required = [
 
 [[constraint]]
   name="sigs.k8s.io/controller-runtime"
-  revision="8d94f663b1f552f74805cd8c44a1e03387f5a5d2"
+  version="v0.2.0-alpha.1"
 
 # All dependencies of Kubernetes from branch release-1.13 converted to override clauses. This include dependencies that
 # are not used in this project. See

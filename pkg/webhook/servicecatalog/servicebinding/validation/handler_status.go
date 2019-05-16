@@ -28,13 +28,13 @@ import (
 	webhookutil "github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
 )
 
-// StatusUpdateValidationHandler provides status resource validation
-type StatusUpdateValidationHandler struct {
+// StatusValidationHandler provides status resource validation
+type StatusValidationHandler struct {
 	decoder *admission.Decoder
 }
 
 // Handle handles admission requests.
-func (h *StatusUpdateValidationHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *StatusValidationHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
 	traced.Infof("Start handling validation operation: %s for %s/%s: %q", req.Operation, req.Kind.Kind, req.SubResource, req.Name)
 
@@ -66,7 +66,7 @@ func (h *StatusUpdateValidationHandler) Handle(ctx context.Context, req admissio
 }
 
 // InjectDecoder injects the decoder into the handlers
-func (h *StatusUpdateValidationHandler) InjectDecoder(d *admission.Decoder) error {
+func (h *StatusValidationHandler) InjectDecoder(d *admission.Decoder) error {
 	h.decoder = d
 	return nil
 }
