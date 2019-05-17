@@ -41,6 +41,11 @@ func ServiceInstanceName(instance *v1beta1.ServiceInstance) string {
 	return fmt.Sprintf(`%s "%s/%s"`, ServiceInstance, instance.Namespace, instance.Name)
 }
 
+// ServiceBindingName returns a string with the type, namespace and name of a binding.
+func ServiceBindingName(binding *v1beta1.ServiceBinding) string {
+	return fmt.Sprintf(`%s "%s/%s"`, ServiceBinding, binding.Namespace, binding.Name)
+}
+
 // ClusterServiceBrokerName returns a string with the type and name of a broker
 func ClusterServiceBrokerName(clusterServiceBrokerName string) string {
 	return fmt.Sprintf(`%s %q`, ClusterServiceBroker, clusterServiceBrokerName)

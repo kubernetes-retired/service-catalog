@@ -34,6 +34,7 @@ const (
 // WebhookServerOptions holds configuration for mutating/validating webhook server.
 type WebhookServerOptions struct {
 	SecureServingOptions  *genericserveroptions.SecureServingOptions
+	ReleaseName           string
 	HealthzServerBindPort int
 }
 

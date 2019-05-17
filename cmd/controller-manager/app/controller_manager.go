@@ -33,12 +33,10 @@ import (
 
 	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/util/configz"
 	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 	"github.com/kubernetes-sigs/service-catalog/pkg/metrics/osbclientproxy"
@@ -55,6 +53,8 @@ import (
 	settingsv1alpha1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
+	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"context"
 
@@ -82,8 +82,6 @@ the core control loops shipped with the service catalog.`,
 
 const controllerManagerAgentName = "service-catalog-controller-manager"
 const controllerDiscoveryAgentName = "service-catalog-controller-discovery"
-
-var catalogGVR = schema.GroupVersionResource{Group: "servicecatalog.k8s.io", Version: "v1beta1", Resource: "clusterservicebrokers"}
 
 // Run runs the service-catalog controller-manager; should never exit.
 func Run(controllerManagerOptions *options.ControllerManagerServer) error {
@@ -156,20 +154,24 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		return fmt.Errorf("failed to establish SecureServingOptions %v", err)
 	}
 
+	apiextensionsClient, err := apiextensionsclientset.NewForConfig(serviceCatalogKubeconfig)
+	if err != nil {
+		return fmt.Errorf("failed to create apiextension clientset", err)
+	}
+	readinessProbe, err := probe.NewReadinessCRDProbe(apiextensionsClient)
+	if err != nil {
+		return fmt.Errorf("failed to register readiness probe: %s", err)
+	}
+
 	klog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers
 	go func() {
 		mux := http.NewServeMux()
-		apiAvailableChecker := checkAPIAvailableResources{
-			controller.SimpleClientBuilder{
-				ClientConfig: serviceCatalogKubeconfig,
-			},
-		}
 		// liveness registered at /healthz indicates if the container is responding
 		healthz.InstallHandler(mux, healthz.PingHealthz)
 
 		// readiness registered at /healthz/ready indicates if traffic should be routed to this container
-		healthz.InstallPathHandler(mux, "/healthz/ready", apiAvailableChecker)
+		healthz.InstallPathHandler(mux, "/healthz/ready", readinessProbe)
 
 		configz.InstallHandler(mux)
 		metrics.RegisterMetricsAndInstallHandler(mux)
@@ -232,7 +234,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// 	k8sClientBuilder = rootClientBuilder
 		// }
 
-		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, ctx.Done())
+		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, readinessProbe, ctx.Done())
 		klog.Fatalf("error running controllers: %v", err)
 		panic("unreachable")
 	}
@@ -286,78 +288,24 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	panic("unreachable")
 }
 
-// getAvailableResources uses the discovery client to determine which API
-// groups are available in the endpoint reachable from the given client and
-// returns a map of them.
-func getAvailableResources(clientBuilder controller.ClientBuilder, version schema.GroupVersion) (map[schema.GroupVersionResource]struct{}, error) {
-	var apiResourceList *metav1.APIResourceList
-	var clientError error
-
-	// If apiserver is not running we should wait for some time and fail only then. This is particularly
-	// important when we start apiserver and controller manager at the same time.
-	err := wait.PollImmediate(time.Second, 60*time.Second, func() (bool, error) {
-		var client clientset.Interface
-		client, clientError = clientBuilder.Client(controllerDiscoveryAgentName)
-		if clientError != nil {
-			klog.Errorf("Failed to get api versions from server: %v", clientError)
-			return false, nil
-		}
-
-		klog.V(4).Info("Created client for API discovery")
-
-		discoveryClient := client.Discovery()
-		apiResourceList, clientError = discoveryClient.ServerResourcesForGroupVersion(version.String())
-		if clientError != nil {
-			klog.Errorf("Failed to get supported resources from server: %v", clientError)
-			return false, nil
-		}
-
-		return true, nil
-	})
-
-	// err will be nil or indicate timeout
-	if err != nil {
-		if clientError != nil {
-			return nil, fmt.Errorf("failed to get api versions from server: %q, %q", err, clientError)
-		}
-		return nil, fmt.Errorf("failed to get api versions from server: %v", err)
-	}
-
-	allResources := map[schema.GroupVersionResource]struct{}{}
-	for _, apiResource := range apiResourceList.APIResources {
-		allResources[version.WithResource(apiResource.Name)] = struct{}{}
-	}
-
-	return allResources, nil
-}
-
 // StartControllers starts all the controllers in the service-catalog
 // controller manager.
 func StartControllers(s *options.ControllerManagerServer,
 	coreKubeconfig *rest.Config,
 	serviceCatalogClientBuilder controller.ClientBuilder,
 	recorder record.EventRecorder,
+	rProbe *probe.ReadinessCRD,
 	stop <-chan struct{}) error {
 
 	// When Catalog Controller and Catalog API Server are started at the
 	// same time with API Aggregation enabled, it may take some time before
 	// Catalog registration shows up in API Server.  Attempt to get resources
 	// every 10 seconds and quit after 3 minutes if unsuccessful.
-	var availableResources map[schema.GroupVersionResource]struct{}
-	err := wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) {
-		var err error
-		availableResources, err = getAvailableResources(serviceCatalogClientBuilder, servicecatalogv1beta1.SchemeGroupVersion)
-		if err != nil {
-			return false, err
-		}
-		_, ok := availableResources[catalogGVR]
-		return ok, nil
-	},
-	)
+	err := wait.PollImmediate(10*time.Second, 3*time.Minute, rProbe.IsReady)
 
 	if err != nil {
 		if err == wait.ErrWaitTimeout {
-			return fmt.Errorf("unable to start service-catalog controller: API GroupVersion %q is not available; found %#v", catalogGVR, availableResources)
+			return fmt.Errorf("unable to start service-catalog controller: CRDs are not available")
 		}
 		return err
 	}
@@ -420,26 +368,4 @@ func StartControllers(s *options.ControllerManagerServer,
 	go serviceCatalogController.Run(s.ConcurrentSyncs, stop)
 
 	select {}
-}
-
-// checkAPIAvailableResourcesServer is a HealthzChecker that makes sure the
-// Service-Catalog APIServer is contactable.
-type checkAPIAvailableResources struct {
-	serviceCatalogClientBuilder controller.ClientBuilder
-}
-
-func (c checkAPIAvailableResources) Name() string {
-	return "checkAPIAvailableResources"
-}
-
-func (c checkAPIAvailableResources) Check(_ *http.Request) error {
-	klog.Info("Health-checking connection with service-catalog API server")
-	availableResources, err := getAvailableResources(c.serviceCatalogClientBuilder, servicecatalogv1beta1.SchemeGroupVersion)
-	if err != nil {
-		return err
-	}
-	if _, ok := availableResources[catalogGVR]; !ok {
-		return fmt.Errorf("failed to get API GroupVersion %q; found: %#v", catalogGVR, availableResources)
-	}
-	return nil
 }

@@ -41,7 +41,9 @@ import (
 	sivalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/validation"
 	spvalidation "github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceplan/validation"
 
+	"github.com/kubernetes-incubator/service-catalog/pkg/probe"
 	"github.com/pkg/errors"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apiserver/pkg/server/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -65,9 +67,14 @@ func RunServer(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 }
 
 func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
-	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{})
+	cfg := config.GetConfigOrDie()
+	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
 		return errors.Wrap(err, "while set up overall controller manager for webhook server")
+	}
+	apiextensionsClient, err := apiextensionsclientset.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "while create apiextension clientset")
 	}
 
 	err = scTypes.AddToScheme(mgr.GetScheme())
@@ -113,6 +120,14 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 	// setup healthz server
 	healthzSvr := manager.RunnableFunc(func(stopCh <-chan struct{}) error {
 		mux := http.NewServeMux()
+
+		readinessProbe, err := probe.NewReadinessCRDProbe(apiextensionsClient)
+		if err != nil {
+			return fmt.Errorf("while register readiness probe: %s", err)
+		}
+		// readiness registered at /healthz/ready indicates if traffic should be routed to this container
+		healthz.InstallPathHandler(mux, "/healthz/ready", readinessProbe)
+
 		// liveness registered at /healthz indicates if the container is responding
 		healthz.InstallHandler(mux, healthz.PingHealthz)
 
