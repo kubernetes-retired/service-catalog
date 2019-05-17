@@ -156,11 +156,11 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 
 	apiextensionsClient, err := apiextensionsclientset.NewForConfig(serviceCatalogKubeconfig)
 	if err != nil {
-		return fmt.Errorf("failed to create apiextension clientset", err)
+		return fmt.Errorf("failed to create apiextension clientset: %v", err)
 	}
 	readinessProbe, err := probe.NewReadinessCRDProbe(apiextensionsClient)
 	if err != nil {
-		return fmt.Errorf("failed to register readiness probe: %s", err)
+		return fmt.Errorf("failed to register readiness probe: %v", err)
 	}
 
 	klog.V(4).Info("Starting http server and mux")

@@ -112,7 +112,7 @@ func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 		if ready == 0 && available == 0 {
 			return true, nil
 		}
-		klog.V(4).Info("Controller manager is not down, (ready: %d, available: %d) retry...", ready, available)
+		klog.V(4).Infof("Controller manager is not down, (ready: %d, available: %d) retry...", ready, available)
 		return false, nil
 	})
 	if err != nil {

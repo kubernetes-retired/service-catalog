@@ -66,6 +66,7 @@ func (c *CleanerOptions) Validate() error {
 	}
 }
 
+// WebhookConfigurationsName returns webhook configuration names based on flags passed to application
 func (c *CleanerOptions) WebhookConfigurationsName() []string {
 	return strings.Split(c.WebhookConfigurations, " ")
 }

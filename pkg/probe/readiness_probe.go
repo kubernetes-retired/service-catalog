@@ -26,16 +26,25 @@ import (
 )
 
 const (
+	// CRDsAmount define the whole number of CRDs registered by the Service Catalog
 	CRDsAmount = 8
 
+	// ClusterServiceBroker define the name of the ClusterServiceBroker CRD
 	ClusterServiceBroker = "clusterservicebrokers.servicecatalog.k8s.io"
-	ServiceBroker        = "servicebrokers.servicecatalog.k8s.io"
-	ServiceClass         = "serviceclasses.servicecatalog.k8s.io"
-	ClusterServiceClass  = "clusterserviceclasses.servicecatalog.k8s.io"
-	ServicePlan          = "serviceplans.servicecatalog.k8s.io"
-	ClusterServicePlan   = "clusterserviceplans.servicecatalog.k8s.io"
-	ServiceInstance      = "serviceinstances.servicecatalog.k8s.io"
-	ServiceBinding       = "servicebindings.servicecatalog.k8s.io"
+	// ServiceBroker define the name of the ServiceBroker CRD
+	ServiceBroker = "servicebrokers.servicecatalog.k8s.io"
+	// ServiceClass define the name of the ServiceClass CRD
+	ServiceClass = "serviceclasses.servicecatalog.k8s.io"
+	// ClusterServiceClass define the name of the ClusterServiceClass CRD
+	ClusterServiceClass = "clusterserviceclasses.servicecatalog.k8s.io"
+	// ServicePlan define the name of the ServicePlan CRD
+	ServicePlan = "serviceplans.servicecatalog.k8s.io"
+	// ClusterServicePlan define the name of the ClusterServicePlan CRD
+	ClusterServicePlan = "clusterserviceplans.servicecatalog.k8s.io"
+	// ServiceInstance define the name of the ServiceInstance CRD
+	ServiceInstance = "serviceinstances.servicecatalog.k8s.io"
+	// ServiceBinding define the name of the ServiceBinding CRD
+	ServiceBinding = "servicebindings.servicecatalog.k8s.io"
 )
 
 var customResourceDefinitionNames = []string{

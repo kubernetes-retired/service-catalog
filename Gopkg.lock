@@ -1073,6 +1073,22 @@
   revision = "1634385ce4626e4da21367d139c4ee5d72437e3b"
 
 [[projects]]
+  branch = "release-1.14"
+  digest = "1:78432a78895b9e4d2b206d246f486d35f9080914f8a0c8a33badf75a1415e1c6"
+  name = "k8s.io/apiextensions-apiserver"
+  packages = [
+    "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/fake",
+    "pkg/client/clientset/clientset/scheme",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake",
+  ]
+  pruneopts = "NUT"
+  revision = "53c4693659ed354d76121458fb819202dd1635fa"
+
+[[projects]]
   branch = "release-1.15"
   digest = "1:3bffc9e8a04b940ac3e2e7521b53bbd53ecf19b0b9522ad9d0a3efa923a031d6"
   name = "k8s.io/apimachinery"
@@ -1568,7 +1584,7 @@
   revision = "21c4ce38f2a793ec01e925ddc31216500183b773"
 
 [[projects]]
-  digest = "1:2fe0a3a24276341cbe6c3ca06d8083ae33864780a91c4f93706f7b0da904b112"
+  digest = "1:0e4645882242e3b163f4c5bdcde13ed762445fab6ea8664ddbd858e4f5e408ac"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -1577,6 +1593,7 @@
     "pkg/client/apiutil",
     "pkg/client/config",
     "pkg/client/fake",
+    "pkg/conversion",
     "pkg/internal/log",
     "pkg/internal/objectutil",
     "pkg/internal/recorder",
@@ -1589,11 +1606,12 @@
     "pkg/scheme",
     "pkg/webhook",
     "pkg/webhook/admission",
+    "pkg/webhook/conversion",
     "pkg/webhook/internal/metrics",
   ]
   pruneopts = "NUT"
-  revision = "6fc7baa65f8966f45353903c0e886fe23a21af73"
-  version = "v0.2.0-alpha.1"
+  revision = "fe0f6ddfff5b96211d0c810106335b959331f07d"
+  version = "v0.2.0-beta.0"
 
 [[projects]]
   digest = "1:fef5992ddf85e9ccad899b11338339858936a10fbce96b9d5c43767669d95398"
@@ -1650,10 +1668,14 @@
     "github.com/stretchr/testify/require",
     "golang.org/x/lint/golint",
     "k8s.io/api/admission/v1beta1",
+    "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/apps/v1beta1",
     "k8s.io/api/authentication/v1",
     "k8s.io/api/authorization/v1",
     "k8s.io/api/core/v1",
+    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake",
     "k8s.io/apimachinery/pkg/api/apitesting/fuzzer",
     "k8s.io/apimachinery/pkg/api/apitesting/roundtrip",
     "k8s.io/apimachinery/pkg/api/equality",

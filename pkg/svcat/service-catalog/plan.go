@@ -158,8 +158,6 @@ func (sdk *SDK) RetrievePlanByClassAndName(className, planName string, opts Scop
 		}
 	}
 
-
-
 	listOpts := metav1.ListOptions{
 		LabelSelector: labels.Merge(classRefSet,
 			labels.Set{

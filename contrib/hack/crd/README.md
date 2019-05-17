@@ -28,4 +28,4 @@ When you execute `svcat get classes`, then you should see:
 
 ### Testing Scenario
 
-Follow the [Walkthrough Scenario](../../../docs/walkthrough.md) and start with **Step 3 - Viewing ClusterServiceClasses and ClusterServicePlans**. 
+Follow the [walkthrough scenario](../../../docs/walkthrough.md) and start with step 3.
