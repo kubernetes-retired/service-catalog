@@ -68,11 +68,13 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 	})
 
 	AfterEach(func() {
-		rc, err := f.KubeClientSet.CoreV1().Pods(f.Namespace.Name).GetLogs(upsbrokername, &v1.PodLogOptions{}).Stream()
-		defer rc.Close()
+		rc, err := f.KubeClientSet.CoreV1().Pods(f.Namespace.Name).GetLogs(upsbrokername, &v1.PodLogOptions{
+			Container: upsbrokername,
+		}).Stream()
 		if err != nil {
 			framework.Logf("Error getting logs for pod %s: %v", upsbrokername, err)
 		} else {
+			defer rc.Close()
 			buf := new(bytes.Buffer)
 			buf.ReadFrom(rc)
 			framework.Logf("Pod %s has the following logs:\n%sEnd %s logs", upsbrokername, buf.String(), upsbrokername)
