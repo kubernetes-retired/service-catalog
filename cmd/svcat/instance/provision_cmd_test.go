@@ -220,7 +220,7 @@ var _ = Describe("Provision Command", func() {
 			cxt = svcattest.NewContext(outputBuffer, fakeApp)
 		})
 
-		It("Calls the pkg/svcat libs Provision method with the passed in variables and prints output to the user", func() {
+		It("Calls the pkg/svcat lib methods to find the correct k8s names, and then calls provision method with those names, and prints output to the user", func() {
 			cmd := ProvisionCmd{
 				ClassName:    className,
 				ExternalID:   externalID,
@@ -237,6 +237,26 @@ var _ = Describe("Provision Command", func() {
 			err := cmd.Run()
 
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fakeSDK.RetrieveClassByIDCallCount()).To(Equal(0))
+
+			Expect(fakeSDK.RetrieveClassByNameCallCount()).To(Equal(1))
+			returnedClassName, returnedScopeOpts := fakeSDK.RetrieveClassByNameArgsForCall(0)
+			Expect(returnedClassName).To(Equal(className))
+			Expect(returnedScopeOpts).To(Equal(servicecatalog.ScopeOptions{
+				Namespace: namespace,
+				Scope:     servicecatalog.AllScope,
+			}))
+
+			Expect(fakeSDK.RetrievePlanByClassIDAndNameCallCount()).To(Equal(1))
+			returnedClassKubeName, returnedPlanName, returnedScopeOpts := fakeSDK.RetrievePlanByClassIDAndNameArgsForCall(0)
+			Expect(returnedClassKubeName).To(Equal(classKubeName))
+			Expect(returnedPlanName).To(Equal(planName))
+			Expect(returnedScopeOpts).To(Equal(servicecatalog.ScopeOptions{
+				Namespace: namespace,
+				Scope:     servicecatalog.ClusterScope,
+			}))
+
 			Expect(fakeSDK.ProvisionCallCount()).To(Equal(1))
 			returnedInstanceName, returnedClassKubeName, returnedPlanKubeName, returnedProvisionClusterInstance, returnedOpts := fakeSDK.ProvisionArgsForCall(0)
 			Expect(returnedInstanceName).To(Equal(instanceName))
@@ -329,7 +349,7 @@ var _ = Describe("Provision Command", func() {
 			_, _, _, returnedProvisionClusterInstance, _ := fakeSDK.ProvisionArgsForCall(0)
 			Expect(returnedProvisionClusterInstance).To(BeTrue())
 		})
-		It("sets ProvisionClusterInstance to false if provisioning a namespace class instance", func() {
+		It("sets scope to namespaced for RetrievePlanByClassIDAndName and sets ProvisionClusterInstance to false if provisioning a namespace class instance", func() {
 			instanceToReturn = &v1beta1.ServiceInstance{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      instanceName,
@@ -387,6 +407,16 @@ var _ = Describe("Provision Command", func() {
 				Namespace: namespace,
 				Scope:     servicecatalog.AllScope,
 			}))
+
+			Expect(fakeSDK.RetrievePlanByClassIDAndNameCallCount()).To(Equal(1))
+			returnedClassKubeName, returnedPlanName, returnedScopeOpts := fakeSDK.RetrievePlanByClassIDAndNameArgsForCall(0)
+			Expect(returnedClassKubeName).To(Equal(classKubeName))
+			Expect(returnedPlanName).To(Equal(planName))
+			Expect(returnedScopeOpts).To(Equal(servicecatalog.ScopeOptions{
+				Namespace: namespace,
+				Scope:     servicecatalog.NamespaceScope,
+			}))
+
 			Expect(cmd.ProvisionClusterInstance).To(BeFalse())
 			Expect(fakeSDK.ProvisionCallCount()).To(Equal(1))
 			_, _, _, returnedProvisionClusterInstance, _ := fakeSDK.ProvisionArgsForCall(0)
