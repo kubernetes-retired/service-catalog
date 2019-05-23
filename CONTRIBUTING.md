@@ -39,7 +39,8 @@ be reviewed.
 
 ## Development status
 
-We're currently collecting use-cases and requirements for our [v1 milestone](./docs/v1).
+We have finished the work for the v0.2 release.
+We are currently working towards our [v0.3 milestone](https://github.com/kubernetes-incubator/service-catalog/milestone/51).
 
 ## Methodology
 
