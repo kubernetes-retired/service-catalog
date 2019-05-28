@@ -37,6 +37,7 @@ func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 		"Name",
 		"Namespace",
 		"Description",
+		"Broker",
 	})
 	t.SetVariableColumn(3)
 
@@ -45,6 +46,7 @@ func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 			class.GetExternalName(),
 			class.GetNamespace(),
 			class.GetDescription(),
+			class.GetBrokerName(),
 		})
 	}
 

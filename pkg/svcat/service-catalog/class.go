@@ -29,6 +29,8 @@ import (
 const (
 	// FieldExternalClassName is the jsonpath to a class's external name.
 	FieldExternalClassName = "spec.externalName"
+	// FieldClusterServiceBrokerName is the json path to a classe's associated broker
+	FieldClusterServiceBrokerName = "spec.BrokerName"
 	// MultipleClassesFoundError is the error returned when we find a clusterserviceclass
 	// and a serviceclass with the same name
 	MultipleClassesFoundError = "More than one class found"

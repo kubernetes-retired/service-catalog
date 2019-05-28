@@ -34,6 +34,7 @@ type GetCmd struct {
 	LookupByKubeName bool
 	KubeName         string
 	Name             string
+	Broker           string
 
 	ClassFilter   string
 	ClassKubeName string
@@ -62,6 +63,7 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
   svcat get plan --class CLASS_NAME PLAN_NAME
   svcat get plans --kube-name --class CLASS_KUBE_NAME
   svcat get plan --kube-name --class CLASS_KUBE_NAME PLAN_KUBE_NAME
+  svcat get plans --broker CLASS_BROKER
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -79,6 +81,13 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
 		"c",
 		"",
 		"Filter plans based on class. When --kube-name is specified, the class name is interpreted as a kubernetes name.",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.Broker,
+		"broker",
+		"b",
+		"",
+		"Display the associated broker",
 	)
 	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
@@ -137,6 +146,7 @@ func (c *GetCmd) getAll() error {
 	classOpts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
+		Broker:    c.Broker,
 	}
 	classes, err := c.App.RetrieveClasses(classOpts)
 	if err != nil {

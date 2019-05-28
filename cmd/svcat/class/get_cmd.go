@@ -35,6 +35,7 @@ type GetCmd struct {
 	LookupByKubeName bool
 	KubeName         string
 	Name             string
+	Broker           string
 }
 
 // NewGetCmd builds a "svcat get classes" command
@@ -54,6 +55,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get classes --scope namespace --namespace dev
   svcat get class mysqldb
   svcat get class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5
+  svcat get classess --broker 
 `),
 		PreRunE: command.PreRunE(getCmd),
 		RunE:    command.RunE(getCmd),
@@ -64,6 +66,13 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 		"k",
 		false,
 		"Whether or not to get the class by its Kubernetes name (the default is by external name)",
+	)
+	cmd.Flags().StringVarP(
+		&getCmd.Broker,
+		"broker",
+		"b",
+		"",
+		"Filters the classes by a broker name",
 	)
 	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
@@ -76,11 +85,16 @@ func (c *GetCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		if c.LookupByKubeName {
 			c.KubeName = args[0]
+		} else if c.Brober != "" {
+			c.Broker = args[0]
 		} else {
 			c.Name = args[0]
 		}
 	}
 
+	if c.KubeName != "" && c.Broker != "" {
+		return fmt.Errorf("Both flags are not set")
+	}
 	return nil
 }
 
@@ -98,6 +112,7 @@ func (c *GetCmd) getAll() error {
 	opts := servicecatalog.ScopeOptions{
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
+		Broker:    c.Broker,
 	}
 	classes, err := c.App.RetrieveClasses(opts)
 	if err != nil {
@@ -113,11 +128,14 @@ func (c *GetCmd) get() error {
 	scopeOpts := servicecatalog.ScopeOptions{
 		Scope:     c.Scope,
 		Namespace: c.Namespace,
+		Broker:    c.Broker,
 	}
 	if c.LookupByKubeName {
 		class, err = c.App.RetrieveClassByID(c.KubeName, scopeOpts)
 	} else if c.Name != "" {
 		class, err = c.App.RetrieveClassByName(c.Name, scopeOpts)
+	} else if c.Broker != "" {
+		class, err = c.App.retrieveClassByBroker(c.Broker, scopeOpts)
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), servicecatalog.MultipleClassesFoundError) {

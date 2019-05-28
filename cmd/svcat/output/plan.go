@@ -57,6 +57,7 @@ func writePlanListTable(w io.Writer, plans []servicecatalog.Plan, classNames map
 		"Namespace",
 		"Class",
 		"Description",
+		"Broker",
 	})
 	for _, plan := range plans {
 		t.Append([]string{
@@ -64,6 +65,7 @@ func writePlanListTable(w io.Writer, plans []servicecatalog.Plan, classNames map
 			plan.GetNamespace(),
 			classNames[plan.GetClassID()],
 			plan.GetDescription(),
+			plan.GetBrokerName(),
 		})
 	}
 	t.SetVariableColumn(4)
@@ -147,6 +149,7 @@ func WritePlanDetails(w io.Writer, plan servicecatalog.Plan, class servicecatalo
 		{"Status:", plan.GetShortStatus()},
 		{"Free:", strconv.FormatBool(plan.GetFree())},
 		{"Class:", class.GetExternalName()},
+		{"Broker:", class.GetBrokerName()},
 	})
 
 	t.Render()

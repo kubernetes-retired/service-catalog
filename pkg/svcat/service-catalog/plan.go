@@ -57,6 +57,9 @@ type Plan interface {
 	// GetDescription returns the plan description.
 	GetDescription() string
 
+	// GetBrokerName returns the broker's name.
+	GetBrokerName() string
+
 	// GetFree returns if the plan is free.
 	GetFree() bool
 
@@ -83,13 +86,13 @@ func (sdk *SDK) RetrievePlans(classID string, opts ScopeOptions) ([]Plan, error)
 		return nil, err
 	}
 
-	if classID == "" {
+	if classID == "" || opts.Broker != "" {
 		return plans, nil
 	}
 
 	var filtered []Plan
 	for _, p := range plans {
-		if p.GetClassID() == classID {
+		if p.GetClassID() == classID || p.GetBrokerName() == opts.Broker {
 			filtered = append(filtered, p)
 		}
 	}
