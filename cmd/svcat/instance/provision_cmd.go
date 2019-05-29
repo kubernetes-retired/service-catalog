@@ -161,6 +161,11 @@ func (c *ProvisionCmd) findKubeNames() error {
 	}
 	c.ClassKubeName = class.GetName()
 	c.ProvisionClusterInstance = class.IsClusterServiceClass()
+	if class.IsClusterServiceClass() {
+		scopeOpts.Scope = servicecatalog.ClusterScope
+	} else {
+		scopeOpts.Scope = servicecatalog.NamespaceScope
+	}
 	plan, err := c.App.RetrievePlanByClassIDAndName(c.ClassKubeName, c.PlanName, scopeOpts)
 	if err != nil {
 		return fmt.Errorf("Unable to find plan '%s': %s", c.PlanName, err.Error())
