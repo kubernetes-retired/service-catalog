@@ -74,7 +74,7 @@ FILE_EXT=
 endif
 
 # TODO: Consider using busybox instead of debian
-BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):0.3
+BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):v1.0.0
 
 GO_BUILD       = env CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) \
                   go build $(GOFLAGS) -a -tags netgo -installsuffix netgo \
