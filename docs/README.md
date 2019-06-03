@@ -37,5 +37,5 @@ Afterward, see the topics below.
 
 ## Request for Comments
 
-As Service Catalog is in beta, we are collecting use-cases and other 
-fundamental documentation for our eventual [V1 GA release here](./v1).
+As Service Catalog is in beta, we are collecting use-cases as issues.
+Please file an issue and bring it up in the weekly meeting.
