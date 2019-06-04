@@ -37,7 +37,7 @@ RUN curl -sLo /usr/local/bin/az https://github.com/carolynvs/az-cli/releases/dow
     chmod +x /usr/local/bin/az
 
 # Create the full dir tree that we'll mount our src into when we run the image
-RUN mkdir -p /go/src/github.com/kubernetes-incubator/service-catalog
+RUN mkdir -p /go/src/github.com/kubernetes-sigs/service-catalog
 
 # Default to our src dir
-WORKDIR /go/src/github.com/kubernetes-incubator/service-catalog
+WORKDIR /go/src/github.com/kubernetes-sigs/service-catalog

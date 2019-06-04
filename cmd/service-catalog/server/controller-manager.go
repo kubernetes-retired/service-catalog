@@ -17,9 +17,9 @@ limitations under the License.
 package server
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app"
-	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
-	"github.com/kubernetes-incubator/service-catalog/pkg/hyperkube"
+	"github.com/kubernetes-sigs/service-catalog/cmd/controller-manager/app"
+	"github.com/kubernetes-sigs/service-catalog/cmd/controller-manager/app/options"
+	"github.com/kubernetes-sigs/service-catalog/pkg/hyperkube"
 )
 
 // NewControllerManager creates a new hyperkube Server object that includes the

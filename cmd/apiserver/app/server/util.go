@@ -40,14 +40,14 @@ import (
 	kubeclientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apiserver/authenticator"
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
-	"github.com/kubernetes-incubator/service-catalog/pkg/openapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/util/kube"
-	"github.com/kubernetes-incubator/service-catalog/pkg/version"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
+	scadmission "github.com/kubernetes-sigs/service-catalog/pkg/apiserver/admission"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apiserver/authenticator"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset"
+	informers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/internalversion"
+	"github.com/kubernetes-sigs/service-catalog/pkg/openapi"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util/kube"
+	"github.com/kubernetes-sigs/service-catalog/pkg/version"
 )
 
 const (
@@ -128,10 +128,10 @@ func buildGenericConfig(s *ServiceCatalogServerOptions) (*genericapiserver.Recom
 	}
 
 	// TODO: investigate if we need metrics unique to service catalog, but take defaults for now
-	// see https://github.com/kubernetes-incubator/service-catalog/issues/677
+	// see https://github.com/kubernetes-sigs/service-catalog/issues/677
 	genericConfig.EnableMetrics = true
 	// TODO: add support to default these values in build
-	// see https://github.com/kubernetes-incubator/service-catalog/issues/722
+	// see https://github.com/kubernetes-sigs/service-catalog/issues/722
 	serviceCatalogVersion := version.Get()
 	genericConfig.Version = &serviceCatalogVersion
 

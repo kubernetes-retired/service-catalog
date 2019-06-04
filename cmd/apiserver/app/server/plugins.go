@@ -23,10 +23,10 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 
 	// Admission controllers
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/broker/authsarcheck"
-	siclifecycle "github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/servicebindings/lifecycle"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/changevalidator"
-	"github.com/kubernetes-incubator/service-catalog/plugin/pkg/admission/serviceplan/defaultserviceplan"
+	"github.com/kubernetes-sigs/service-catalog/plugin/pkg/admission/broker/authsarcheck"
+	siclifecycle "github.com/kubernetes-sigs/service-catalog/plugin/pkg/admission/servicebindings/lifecycle"
+	"github.com/kubernetes-sigs/service-catalog/plugin/pkg/admission/serviceplan/changevalidator"
+	"github.com/kubernetes-sigs/service-catalog/plugin/pkg/admission/serviceplan/defaultserviceplan"
 )
 
 // registerAllAdmissionPlugins registers all admission plugins

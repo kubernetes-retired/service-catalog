@@ -22,13 +22,13 @@ import (
 
 	"k8s.io/klog"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
-	internalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	informers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/internalversion"
+	internalversion "github.com/kubernetes-sigs/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apiserver/pkg/admission"
 
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
+	scadmission "github.com/kubernetes-sigs/service-catalog/pkg/apiserver/admission"
 )
 
 const (

@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	api "github.com/kubernetes-incubator/service-catalog/pkg/api"
+	api "github.com/kubernetes-sigs/service-catalog/pkg/api"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,8 +30,8 @@ import (
 	apistorage "k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/validation"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/validation"
 )
 
 // NewScopeStrategy returns a new NamespaceScopedStrategy for PodPreset.

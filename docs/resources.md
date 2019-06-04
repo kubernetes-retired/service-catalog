@@ -9,7 +9,7 @@ The Service Catalog resource model specifies all the behaviors that
 Service Catalog supports. This document details each resource.
 
 All of these resources are also defined in Go code at
-[`pkg/apis/servicecatalog/v1beta1/types.go`](https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go).
+[`pkg/apis/servicecatalog/v1beta1/types.go`](https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go).
 
 
 ## Service Brokers

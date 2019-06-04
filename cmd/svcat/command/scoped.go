@@ -21,7 +21,7 @@ import (
 
 	"errors"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/pflag"
 )
 

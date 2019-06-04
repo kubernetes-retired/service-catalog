@@ -37,9 +37,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -350,7 +350,7 @@ func (c *controller) initObservedGeneration(instance *v1beta1.ServiceInstance) (
 	if instance.Status.ObservedGeneration == 0 && instance.Status.ReconciledGeneration != 0 {
 		instance = instance.DeepCopy()
 		instance.Status.ObservedGeneration = instance.Status.ReconciledGeneration
-		// Before we implement https://github.com/kubernetes-incubator/service-catalog/issues/1715
+		// Before we implement https://github.com/kubernetes-sigs/service-catalog/issues/1715
 		// and switch to non-terminal errors, the "Failed":"True" is a sign that the provisioning failed
 		provisioned := !isServiceInstanceFailed(instance)
 		if provisioned {

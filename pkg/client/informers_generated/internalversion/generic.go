@@ -21,8 +21,8 @@ package internalversion
 import (
 	"fmt"
 
-	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	settings "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )

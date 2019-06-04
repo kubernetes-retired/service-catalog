@@ -19,8 +19,8 @@ limitations under the License.
 package fake
 
 import (
-	servicecataloginternalversion "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	settingsinternalversion "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
+	servicecataloginternalversion "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	settingsinternalversion "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

@@ -19,7 +19,7 @@ package v1beta1
 import (
 	"strconv"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/filter"
+	"github.com/kubernetes-sigs/service-catalog/pkg/filter"
 	"k8s.io/apimachinery/pkg/labels"
 )
 

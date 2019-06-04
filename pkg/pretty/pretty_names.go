@@ -19,7 +19,7 @@ package pretty
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 // Name prints in the form `<Kind> (K8S: <K8S-Name> ExternalName: <External-Name>)`

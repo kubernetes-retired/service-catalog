@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
 	"github.com/spf13/pflag"
 )
 

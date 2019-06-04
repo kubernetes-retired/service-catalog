@@ -17,9 +17,9 @@ limitations under the License.
 package e2e
 
 import (
-	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
-	"github.com/kubernetes-incubator/service-catalog/test/util"
+	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/test/e2e/framework"
+	"github.com/kubernetes-sigs/service-catalog/test/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo"

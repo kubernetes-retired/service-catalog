@@ -20,7 +20,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 )
 
 func getScope(class servicecatalog.Class) string {

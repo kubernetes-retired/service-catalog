@@ -17,7 +17,7 @@ limitations under the License.
 package controller_test
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"testing"
 )

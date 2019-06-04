@@ -27,9 +27,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	scmeta "github.com/kubernetes-sigs/service-catalog/pkg/api/meta"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testapi"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

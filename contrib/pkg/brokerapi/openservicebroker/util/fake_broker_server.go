@@ -23,9 +23,9 @@ import (
 	"github.com/gorilla/mux"
 	"k8s.io/klog"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
-	"github.com/kubernetes-incubator/service-catalog/pkg/util"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 const asyncProvisionQueryParamKey = "accepts_incomplete"

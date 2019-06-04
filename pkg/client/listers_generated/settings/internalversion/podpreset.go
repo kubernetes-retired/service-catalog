@@ -19,7 +19,7 @@ limitations under the License.
 package internalversion
 
 import (
-	settings "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
+	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"

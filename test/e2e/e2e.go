@@ -22,7 +22,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/component-base/logs"
 
-	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
+	"github.com/kubernetes-sigs/service-catalog/test/e2e/framework"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"

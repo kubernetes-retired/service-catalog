@@ -23,9 +23,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )

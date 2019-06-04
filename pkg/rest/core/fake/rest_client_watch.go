@@ -22,7 +22,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	pkgwatch "k8s.io/apimachinery/pkg/watch"

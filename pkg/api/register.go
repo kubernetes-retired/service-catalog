@@ -22,8 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	servicecataloginstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	settingsinstall "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install"
+	servicecataloginstall "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
+	settingsinstall "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/install"
 )
 
 var (

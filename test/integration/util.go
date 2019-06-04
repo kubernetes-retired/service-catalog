@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/apiserver/pkg/util/feature"
 
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 )
 
 var (

@@ -23,10 +23,10 @@ import (
 
 	"github.com/google/gofuzz"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
-	sctesting "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testing"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testapi"
+	sctesting "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testing"
 
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"

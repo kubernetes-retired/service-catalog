@@ -17,8 +17,8 @@ limitations under the License.
 package validation
 
 import (
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"

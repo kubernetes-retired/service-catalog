@@ -19,4 +19,4 @@ limitations under the License.
 
 // Package settings implements PodPreset CRUD APIs
 // +groupName=settings.servicecatalog.k8s.io
-package settings // import "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
+package settings // import "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"

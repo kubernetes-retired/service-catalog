@@ -19,7 +19,7 @@ package meta
 import (
 	"testing"
 
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
