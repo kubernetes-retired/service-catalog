@@ -17,9 +17,9 @@ limitations under the License.
 package versions
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-sigs/service-catalog/pkg"
 	"github.com/spf13/cobra"
 )
 

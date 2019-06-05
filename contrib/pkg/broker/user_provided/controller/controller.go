@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/broker/controller"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/brokerapi"
 	"k8s.io/klog"
 )
 

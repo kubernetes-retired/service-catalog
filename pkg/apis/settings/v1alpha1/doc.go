@@ -15,11 +15,11 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/kubernetes-incubator/service-catalog/pkg/apis/settings
+// +k8s:conversion-gen=github.com/kubernetes-sigs/service-catalog/pkg/apis/settings
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
 
 // Package v1alpha1 defines all of the versioned (v1alpha1) definitions
 // of the settings group.
 // +groupName=settings.servicecatalog.k8s.io
-package v1alpha1 // import "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+package v1alpha1 // import "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"

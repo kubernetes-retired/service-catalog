@@ -2,7 +2,7 @@ items:
 - metadata:
     creationTimestamp: "2018-01-11T20:59:47Z"
     finalizers:
-    - kubernetes-incubator/service-catalog
+    - kubernetes-sigs/service-catalog
     generation: 1
     name: ups-instance
     namespace: test-ns

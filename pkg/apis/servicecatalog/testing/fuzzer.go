@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"github.com/google/gofuzz"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	genericfuzzer "k8s.io/apimachinery/pkg/apis/meta/fuzzer"

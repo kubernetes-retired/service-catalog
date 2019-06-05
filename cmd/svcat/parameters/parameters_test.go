@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
+	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 )
 
 func TestParseVariableAssignments(t *testing.T) {

@@ -21,8 +21,8 @@ package internalversion
 import (
 	"time"
 
-	settings "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
-	scheme "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/scheme"
+	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
+	scheme "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

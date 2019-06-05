@@ -21,13 +21,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/features"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	settingsapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	settingsapi "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"
 	// our versioned client
-	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	servicecatalogclient "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"

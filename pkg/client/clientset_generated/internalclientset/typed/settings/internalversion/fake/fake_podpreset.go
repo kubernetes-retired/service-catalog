@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	settings "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
+	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

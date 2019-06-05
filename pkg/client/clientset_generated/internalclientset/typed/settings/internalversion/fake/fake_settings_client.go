@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	internalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset/typed/settings/internalversion"
+	internalversion "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset/typed/settings/internalversion"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

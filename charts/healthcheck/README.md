@@ -3,7 +3,7 @@
 HealthCheck is a tool that can be used to monitor the basic health of the Service Catalog deployment.  It utilizes the User Provided Service Broker to perform basic end to end tests such as creating a Service Instance and Binding and verifying the operations are successful and then tearing it down.  It collects Prometheus metrics which can be scraped for analysis and alerting (ie error rate, execution time to create an instance or binding, etc).
 
 For more information,
-[visit the Service Catalog project on github](https://github.com/kubernetes-incubator/service-catalog).
+[visit the Service Catalog project on github](https://github.com/kubernetes-sigs/service-catalog).
 
 ## Installing the Chart
 

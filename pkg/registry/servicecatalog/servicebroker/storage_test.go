@@ -19,7 +19,7 @@ package servicebroker
 import (
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 )
 
 func TestNewListNilItems(t *testing.T) {

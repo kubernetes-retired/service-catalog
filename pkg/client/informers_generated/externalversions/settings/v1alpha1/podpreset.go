@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	time "time"
 
-	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
-	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces"
-	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/settings/v1alpha1"
+	settingsv1alpha1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"
+	clientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	internalinterfaces "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces"
+	v1alpha1 "github.com/kubernetes-sigs/service-catalog/pkg/client/listers_generated/settings/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

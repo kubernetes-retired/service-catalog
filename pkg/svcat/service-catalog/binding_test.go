@@ -19,14 +19,14 @@ package servicecatalog_test
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/testing"
 
-	. "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
+	. "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

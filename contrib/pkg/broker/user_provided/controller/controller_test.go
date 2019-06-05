@@ -17,7 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/broker/controller"
 	"testing"
 )
 

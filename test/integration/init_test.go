@@ -19,10 +19,10 @@ package integration
 import (
 	"log"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testapi"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	_ "k8s.io/client-go/rest"
 )

@@ -31,72 +31,72 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform":                schema_pkg_apis_servicecatalog_v1beta1_AddKeyTransform(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform":           schema_pkg_apis_servicecatalog_v1beta1_AddKeysFromTransform(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig":                schema_pkg_apis_servicecatalog_v1beta1_BasicAuthConfig(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig":          schema_pkg_apis_servicecatalog_v1beta1_BearerTokenAuthConfig(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions":            schema_pkg_apis_servicecatalog_v1beta1_CatalogRestrictions(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig":         schema_pkg_apis_servicecatalog_v1beta1_ClusterBasicAuthConfig(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig":   schema_pkg_apis_servicecatalog_v1beta1_ClusterBearerTokenAuthConfig(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference":         schema_pkg_apis_servicecatalog_v1beta1_ClusterObjectReference(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker":           schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBroker(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo":   schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerAuthInfo(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerList":       schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec":       schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus":     schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClass":            schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClass(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassList":        schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec":        schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus":      schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlan":             schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlan(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanList":         schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec":         schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus":       schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerSpec":        schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerStatus":      schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassSpec":         schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassStatus":       schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServicePlanSpec":          schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServicePlanStatus":        schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference":           schema_pkg_apis_servicecatalog_v1beta1_LocalObjectReference(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference":                schema_pkg_apis_servicecatalog_v1beta1_ObjectReference(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource":           schema_pkg_apis_servicecatalog_v1beta1_ParametersFromSource(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.PlanReference":                  schema_pkg_apis_servicecatalog_v1beta1_PlanReference(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RemoveKeyTransform":             schema_pkg_apis_servicecatalog_v1beta1_RemoveKeyTransform(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform":             schema_pkg_apis_servicecatalog_v1beta1_RenameKeyTransform(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretKeyReference":             schema_pkg_apis_servicecatalog_v1beta1_SecretKeyReference(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform":                schema_pkg_apis_servicecatalog_v1beta1_SecretTransform(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding":                 schema_pkg_apis_servicecatalog_v1beta1_ServiceBinding(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition":        schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingCondition(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingList":             schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState":  schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingPropertiesState(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec":             schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus":           schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBroker":                  schema_pkg_apis_servicecatalog_v1beta1_ServiceBroker(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo":          schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerAuthInfo(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition":         schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerCondition(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerList":              schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerSpec":              schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus":            schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass":                   schema_pkg_apis_servicecatalog_v1beta1_ServiceClass(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassList":               schema_pkg_apis_servicecatalog_v1beta1_ServiceClassList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec":               schema_pkg_apis_servicecatalog_v1beta1_ServiceClassSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus":             schema_pkg_apis_servicecatalog_v1beta1_ServiceClassStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance":                schema_pkg_apis_servicecatalog_v1beta1_ServiceInstance(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition":       schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceCondition(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceList":            schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState": schema_pkg_apis_servicecatalog_v1beta1_ServiceInstancePropertiesState(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec":            schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus":          schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlan":                    schema_pkg_apis_servicecatalog_v1beta1_ServicePlan(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanList":                schema_pkg_apis_servicecatalog_v1beta1_ServicePlanList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanSpec":                schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanStatus":              schema_pkg_apis_servicecatalog_v1beta1_ServicePlanStatus(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo":                       schema_pkg_apis_servicecatalog_v1beta1_UserInfo(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPreset":                           schema_pkg_apis_settings_v1alpha1_PodPreset(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPresetList":                       schema_pkg_apis_settings_v1alpha1_PodPresetList(ref),
-		"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPresetSpec":                       schema_pkg_apis_settings_v1alpha1_PodPresetSpec(ref),
-		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                                                            schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform":                schema_pkg_apis_servicecatalog_v1beta1_AddKeyTransform(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform":           schema_pkg_apis_servicecatalog_v1beta1_AddKeysFromTransform(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig":                schema_pkg_apis_servicecatalog_v1beta1_BasicAuthConfig(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig":          schema_pkg_apis_servicecatalog_v1beta1_BearerTokenAuthConfig(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions":            schema_pkg_apis_servicecatalog_v1beta1_CatalogRestrictions(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig":         schema_pkg_apis_servicecatalog_v1beta1_ClusterBasicAuthConfig(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig":   schema_pkg_apis_servicecatalog_v1beta1_ClusterBearerTokenAuthConfig(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference":         schema_pkg_apis_servicecatalog_v1beta1_ClusterObjectReference(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker":           schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBroker(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo":   schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerAuthInfo(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerList":       schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec":       schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus":     schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClass":            schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClass(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassList":        schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec":        schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus":      schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlan":             schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlan(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanList":         schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec":         schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus":       schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerSpec":        schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceBrokerStatus":      schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassSpec":         schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServiceClassStatus":       schema_pkg_apis_servicecatalog_v1beta1_CommonServiceClassStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServicePlanSpec":          schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CommonServicePlanStatus":        schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference":           schema_pkg_apis_servicecatalog_v1beta1_LocalObjectReference(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference":                schema_pkg_apis_servicecatalog_v1beta1_ObjectReference(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource":           schema_pkg_apis_servicecatalog_v1beta1_ParametersFromSource(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.PlanReference":                  schema_pkg_apis_servicecatalog_v1beta1_PlanReference(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.RemoveKeyTransform":             schema_pkg_apis_servicecatalog_v1beta1_RemoveKeyTransform(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform":             schema_pkg_apis_servicecatalog_v1beta1_RenameKeyTransform(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretKeyReference":             schema_pkg_apis_servicecatalog_v1beta1_SecretKeyReference(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform":                schema_pkg_apis_servicecatalog_v1beta1_SecretTransform(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding":                 schema_pkg_apis_servicecatalog_v1beta1_ServiceBinding(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition":        schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingCondition(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingList":             schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState":  schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingPropertiesState(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec":             schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus":           schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBroker":                  schema_pkg_apis_servicecatalog_v1beta1_ServiceBroker(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo":          schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerAuthInfo(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition":         schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerCondition(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerList":              schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerSpec":              schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus":            schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass":                   schema_pkg_apis_servicecatalog_v1beta1_ServiceClass(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassList":               schema_pkg_apis_servicecatalog_v1beta1_ServiceClassList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec":               schema_pkg_apis_servicecatalog_v1beta1_ServiceClassSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus":             schema_pkg_apis_servicecatalog_v1beta1_ServiceClassStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance":                schema_pkg_apis_servicecatalog_v1beta1_ServiceInstance(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition":       schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceCondition(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceList":            schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState": schema_pkg_apis_servicecatalog_v1beta1_ServiceInstancePropertiesState(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec":            schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus":          schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlan":                    schema_pkg_apis_servicecatalog_v1beta1_ServicePlan(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanList":                schema_pkg_apis_servicecatalog_v1beta1_ServicePlanList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanSpec":                schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanStatus":              schema_pkg_apis_servicecatalog_v1beta1_ServicePlanStatus(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo":                       schema_pkg_apis_servicecatalog_v1beta1_UserInfo(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPreset":                           schema_pkg_apis_settings_v1alpha1_PodPreset(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPresetList":                       schema_pkg_apis_settings_v1alpha1_PodPresetList(ref),
+		"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPresetSpec":                       schema_pkg_apis_settings_v1alpha1_PodPresetSpec(ref),
+		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                                                       schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
 		"k8s.io/api/core/v1.Affinity":                                    schema_k8sio_api_core_v1_Affinity(ref),
 		"k8s.io/api/core/v1.AttachedVolume":                              schema_k8sio_api_core_v1_AttachedVolume(ref),
 		"k8s.io/api/core/v1.AvoidPods":                                   schema_k8sio_api_core_v1_AvoidPods(ref),
@@ -395,14 +395,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_AddKeysFromTransform(ref common.Refe
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The reference to the Secret that should be merged into the credentials Secret.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 	}
 }
 
@@ -416,14 +416,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_BasicAuthConfig(ref common.Reference
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
 	}
 }
 
@@ -437,14 +437,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_BearerTokenAuthConfig(ref common.Ref
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"},
 	}
 }
 
@@ -499,14 +499,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterBasicAuthConfig(ref common.Re
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired at least one of the fields: - Secret.Data[\"username\"] - username used for authentication - Secret.Data[\"password\"] - password or token needed for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 	}
 }
 
@@ -520,14 +520,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterBearerTokenAuthConfig(ref com
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SecretRef is a reference to a Secret containing information the catalog should use to authenticate to this ServiceBroker.\n\nRequired field: - Secret.Data[\"token\"] - bearer token for authentication",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ObjectReference"},
 	}
 }
 
@@ -581,13 +581,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBroker(ref common.Refe
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the broker.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of a broker.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus"),
 						},
 					},
 				},
@@ -599,7 +599,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBroker(ref common.Refe
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -613,20 +613,20 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerAuthInfo(ref com
 					"basic": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterBasicAuthConfigprovides configuration for basic authentication.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig"),
 						},
 					},
 					"bearer": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterBearerTokenAuthConfig provides configuration to send an opaque value as a bearer token. The value is referenced from the 'token' field of the given secret.  This value should only contain the token value and not the `Bearer` scheme.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBasicAuthConfig", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterBearerTokenAuthConfig"},
 	}
 }
 
@@ -662,7 +662,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerList(ref common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker"),
 									},
 								},
 							},
@@ -673,7 +673,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerList(ref common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBroker", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -728,13 +728,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerSpec(ref common.
 					"catalogRestrictions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
 						},
 					},
 					"authInfo": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AuthInfo contains the data that the service catalog should use to authenticate with the ClusterServiceBroker.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo"),
 						},
 					},
 				},
@@ -742,7 +742,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerSpec(ref common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -759,7 +759,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerStatus(ref commo
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition"),
 									},
 								},
 							},
@@ -789,7 +789,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerStatus(ref commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -823,13 +823,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClass(ref common.Refer
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the cluster service class.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of the cluster service class.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus"),
 						},
 					},
 				},
@@ -841,7 +841,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClass(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -877,7 +877,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassList(ref common.R
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClass"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClass"),
 									},
 								},
 							},
@@ -888,7 +888,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceClassList(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServiceClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -1048,13 +1048,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlan(ref common.Refere
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the service plan.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of the service plan.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus"),
 						},
 					},
 				},
@@ -1066,7 +1066,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlan(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1102,7 +1102,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanList(ref common.Re
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlan"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlan"),
 									},
 								},
 							},
@@ -1113,7 +1113,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanList(ref common.Re
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlan", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterServicePlan", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -1205,7 +1205,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref common.Re
 					"clusterServiceClassRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterServiceClassRef is a reference to the service class that owns this plan.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 						},
 					},
 				},
@@ -1213,7 +1213,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref common.Re
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -1289,7 +1289,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerSpec(ref common.R
 					"catalogRestrictions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
 						},
 					},
 				},
@@ -1297,7 +1297,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerSpec(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -1314,7 +1314,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerStatus(ref common
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition"),
 									},
 								},
 							},
@@ -1344,7 +1344,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerStatus(ref common
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -1632,14 +1632,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_ParametersFromSource(ref common.Refe
 					"secretKeyRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The Secret key to select from. The value must be a JSON object.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretKeyReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretKeyReference"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretKeyReference"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretKeyReference"},
 	}
 }
 
@@ -1827,32 +1827,32 @@ func schema_pkg_apis_servicecatalog_v1beta1_SecretTransform(ref common.Reference
 					"renameKey": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RenameKey represents a transform that renames a credentials Secret entry's key",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"),
 						},
 					},
 					"addKey": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AddKey represents a transform that adds an additional key to the credentials Secret",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform"),
 						},
 					},
 					"addKeysFrom": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AddKeysFrom represents a transform that merges all the entries of an existing Secret into the credentials Secret",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform"),
 						},
 					},
 					"removeKey": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RemoveKey represents a transform that removes a credentials Secret entry",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RemoveKeyTransform"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.RemoveKeyTransform"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RemoveKeyTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeyTransform", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.AddKeysFromTransform", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.RemoveKeyTransform", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.RenameKeyTransform"},
 	}
 }
 
@@ -1886,13 +1886,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBinding(ref common.ReferenceC
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec represents the desired state of a ServiceBinding.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of a ServiceBinding.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus"),
 						},
 					},
 				},
@@ -1904,7 +1904,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBinding(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1990,7 +1990,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingList(ref common.Refere
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding"),
 									},
 								},
 							},
@@ -2001,7 +2001,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingList(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2028,14 +2028,14 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingPropertiesState(ref co
 					"userInfo": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UserInfo is information about the user that made the request.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -2049,7 +2049,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 					"instanceRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InstanceRef is the reference to the Instance this ServiceBinding is to.\n\nImmutable.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 						},
 					},
 					"parameters": {
@@ -2065,7 +2065,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource"),
 									},
 								},
 							},
@@ -2085,7 +2085,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform"),
 									},
 								},
 							},
@@ -2101,7 +2101,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 					"userInfo": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this ServiceBinding. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 						},
 					},
 				},
@@ -2109,7 +2109,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.SecretTransform", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -2126,7 +2126,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref common.Refe
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition"),
 									},
 								},
 							},
@@ -2169,13 +2169,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref common.Refe
 					"inProgressProperties": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InProgressProperties is the properties state of the ServiceBinding when a Bind is in progress. If the current operation is an Unbind, this will be nil.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState"),
 						},
 					},
 					"externalProperties": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExternalProperties is the properties state of the ServiceBinding which the broker knows about.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState"),
 						},
 					},
 					"orphanMitigationInProgress": {
@@ -2197,7 +2197,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref common.Refe
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingCondition", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBindingPropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2231,13 +2231,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBroker(ref common.ReferenceCa
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the broker.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of a broker.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus"),
 						},
 					},
 				},
@@ -2249,7 +2249,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBroker(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2263,20 +2263,20 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerAuthInfo(ref common.Ref
 					"basic": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BasicAuthConfig provides configuration for basic authentication.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig"),
 						},
 					},
 					"bearer": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BearerTokenAuthConfig provides configuration to send an opaque value as a bearer token. The value is referenced from the 'token' field of the given secret.  This value should only contain the token value and not the `Bearer` scheme.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.BasicAuthConfig", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.BearerTokenAuthConfig"},
 	}
 }
 
@@ -2362,7 +2362,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerList(ref common.Referen
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBroker"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBroker"),
 									},
 								},
 							},
@@ -2373,7 +2373,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerList(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBroker", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBroker", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2428,13 +2428,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerSpec(ref common.Referen
 					"catalogRestrictions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CatalogRestrictions is a set of restrictions on which of a broker's services and plans have resources created for them.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions"),
 						},
 					},
 					"authInfo": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AuthInfo contains the data that the service catalog should use to authenticate with the ServiceBroker.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo"),
 						},
 					},
 				},
@@ -2442,7 +2442,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerSpec(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.CatalogRestrictions", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerAuthInfo", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -2459,7 +2459,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerStatus(ref common.Refer
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition"),
 									},
 								},
 							},
@@ -2489,7 +2489,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerStatus(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceBrokerCondition", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2523,20 +2523,20 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClass(ref common.ReferenceCal
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the service class.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of a service class.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClassStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2572,7 +2572,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassList(ref common.Referenc
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass"),
 									},
 								},
 							},
@@ -2583,7 +2583,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceClassList(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2743,13 +2743,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstance(ref common.Reference
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the service instance.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of a service instance.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus"),
 						},
 					},
 				},
@@ -2761,7 +2761,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstance(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2847,7 +2847,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceList(ref common.Refer
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance"),
 									},
 								},
 							},
@@ -2858,7 +2858,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceList(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstance", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2913,7 +2913,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstancePropertiesState(ref c
 					"userInfo": {
 						SchemaProps: spec.SchemaProps{
 							Description: "UserInfo is information about the user that made the request.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 						},
 					},
 				},
@@ -2921,7 +2921,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstancePropertiesState(ref c
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -3019,25 +3019,25 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 					"clusterServiceClassRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on the cluster-scoped values specified in the PlanReference.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 						},
 					},
 					"clusterServicePlanRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on the cluster-scoped values specified in the PlanReference.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference"),
 						},
 					},
 					"serviceClassRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on the namespace-scoped values specified in the PlanReference.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 						},
 					},
 					"servicePlanRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on the namespace-scoped values specified in the PlanReference.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 						},
 					},
 					"parameters": {
@@ -3053,7 +3053,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource"),
 									},
 								},
 							},
@@ -3069,7 +3069,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 					"userInfo": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this instance. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 						},
 					},
 					"updateRequests": {
@@ -3083,7 +3083,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ClusterObjectReference", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ParametersFromSource", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -3101,7 +3101,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition"),
 									},
 								},
 							},
@@ -3165,13 +3165,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 					"inProgressProperties": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InProgressProperties is the properties state of the ServiceInstance when a Provision, Update or Deprovision is in progress.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
 						},
 					},
 					"externalProperties": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExternalProperties is the properties state of the ServiceInstance which the broker knows about.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState"),
 						},
 					},
 					"provisionStatus": {
@@ -3199,7 +3199,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstanceCondition", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServiceInstancePropertiesState", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -3233,13 +3233,13 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlan(ref common.ReferenceCall
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Spec defines the behavior of the service plan.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanSpec"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Status represents the current status of the service plan.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanStatus"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanStatus"),
 						},
 					},
 				},
@@ -3251,7 +3251,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlan(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanSpec", "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanSpec", "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlanStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3287,7 +3287,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanList(ref common.Reference
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlan"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlan"),
 									},
 								},
 							},
@@ -3298,7 +3298,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanList(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlan", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.ServicePlan", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -3390,7 +3390,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref common.Reference
 					"serviceClassRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ServiceClassRef is a reference to the service class that owns this plan.",
-							Ref:         ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
+							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference"),
 						},
 					},
 				},
@@ -3398,7 +3398,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.LocalObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -3511,14 +3511,14 @@ func schema_pkg_apis_settings_v1alpha1_PodPreset(ref common.ReferenceCallback) c
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPresetSpec"),
+							Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPresetSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPresetSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPresetSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -3554,7 +3554,7 @@ func schema_pkg_apis_settings_v1alpha1_PodPresetList(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPreset"),
+										Ref: ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPreset"),
 									},
 								},
 							},
@@ -3565,7 +3565,7 @@ func schema_pkg_apis_settings_v1alpha1_PodPresetList(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1.PodPreset", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1.PodPreset", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 

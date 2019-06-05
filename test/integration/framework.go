@@ -36,10 +36,10 @@ import (
 
 	genericserveroptions "k8s.io/apiserver/pkg/server/options"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/apiserver/app/server"
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/install"
-	servicecatalogclient "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/cmd/apiserver/app/server"
+	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
+	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/install"
+	servicecatalogclient "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

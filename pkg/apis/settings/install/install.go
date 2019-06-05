@@ -22,8 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"
 )
 
 // Install registers the API group and adds types to a scheme

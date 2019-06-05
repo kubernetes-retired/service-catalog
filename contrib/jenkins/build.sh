@@ -17,7 +17,7 @@ set -o nounset
 set -o errexit
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-GOPATH="${GOPATH:-${ROOT%/src/github.com/kubernetes-incubator/service-catalog}}"
+GOPATH="${GOPATH:-${ROOT%/src/github.com/kubernetes-sigs/service-catalog}}"
 
 . "${ROOT}/contrib/hack/utilities.sh" || { echo 'Cannot load bash utilities.'; exit 1; }
 

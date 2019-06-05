@@ -19,7 +19,7 @@ package controller
 import (
 	restclient "k8s.io/client-go/rest"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 
 	"k8s.io/klog"
 )

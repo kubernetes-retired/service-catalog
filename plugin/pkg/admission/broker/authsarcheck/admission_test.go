@@ -32,8 +32,8 @@ import (
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	core "k8s.io/client-go/testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	scadmission "github.com/kubernetes-sigs/service-catalog/pkg/apiserver/admission"
 )
 
 // newHandlerForTest returns a configured handler for testing.

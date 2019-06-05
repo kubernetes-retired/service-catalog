@@ -26,9 +26,9 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/user_provided/controller"
-	"github.com/kubernetes-incubator/service-catalog/pkg"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/broker/server"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/broker/user_provided/controller"
+	"github.com/kubernetes-sigs/service-catalog/pkg"
 	"k8s.io/klog"
 )
 

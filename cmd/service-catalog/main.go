@@ -22,8 +22,8 @@ package main
 import (
 	"os"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/service-catalog/server"
-	"github.com/kubernetes-incubator/service-catalog/pkg/hyperkube"
+	"github.com/kubernetes-sigs/service-catalog/cmd/service-catalog/server"
+	"github.com/kubernetes-sigs/service-catalog/pkg/hyperkube"
 )
 
 func main() {

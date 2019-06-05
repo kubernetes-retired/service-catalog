@@ -21,10 +21,10 @@ package internalversion
 import (
 	time "time"
 
-	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	internalclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
-	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion/internalinterfaces"
-	internalversion "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	internalclientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset"
+	internalinterfaces "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/internalversion/internalinterfaces"
+	internalversion "github.com/kubernetes-sigs/service-catalog/pkg/client/listers_generated/servicecatalog/internalversion"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

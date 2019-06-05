@@ -21,7 +21,7 @@ package binding
 import (
 	"context"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,9 +32,9 @@ import (
 	"k8s.io/apiserver/pkg/storage/names"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"k8s.io/klog"
 )
 

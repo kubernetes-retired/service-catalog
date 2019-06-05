@@ -32,15 +32,15 @@ import (
 	"k8s.io/apiserver/pkg/storage/storagebackend/factory"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/binding"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/instance"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/servicebroker"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/serviceplan"
 )
 
 var _ = Describe("ensure that our storage types implement the appropriate interfaces", func() {

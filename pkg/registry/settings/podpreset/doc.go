@@ -14,4 +14,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package podpreset // import "github.com/kubernetes-incubator/service-catalog/pkg/registry/settings/podpreset"
+package podpreset // import "github.com/kubernetes-sigs/service-catalog/pkg/registry/settings/podpreset"

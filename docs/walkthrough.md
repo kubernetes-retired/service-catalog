@@ -21,19 +21,19 @@ server, we'll need to install one in order to proceed with a demo.
 
 In this repository, there's a simple, "dummy" server called the User Provided
 Service (UPS) broker. The codebase for that broker is
-[here](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/pkg/broker/user_provided/controller).
+[here](https://github.com/kubernetes-sigs/service-catalog/tree/master/contrib/pkg/broker/user_provided/controller).
 
 We're going to deploy the UPS broker to our Kubernetes cluster before
 proceeding, and we'll do so with the UPS helm chart. You can find details about
 that chart in the chart's
-[README](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/ups-broker/README.md).
+[README](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/ups-broker/README.md).
 
 Otherwise, to install with sensible defaults, run the following command:
 
 ```console
 helm install ./charts/ups-broker --name ups-broker --namespace ups-broker
 ```
-**NOTE:** The walkthrough installs a [cluster-wide UPS Broker](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/examples/walkthrough/ups-clusterservicebroker.yaml). For a namespace-scoped service broker, see [this](https://github.com/kubernetes-incubator/service-catalog/tree/master/contrib/examples/walkthrough/ups-servicebroker.yaml) file.
+**NOTE:** The walkthrough installs a [cluster-wide UPS Broker](https://github.com/kubernetes-sigs/service-catalog/tree/master/contrib/examples/walkthrough/ups-clusterservicebroker.yaml). For a namespace-scoped service broker, see [this](https://github.com/kubernetes-sigs/service-catalog/tree/master/contrib/examples/walkthrough/ups-servicebroker.yaml) file.
 
 # Step 2 - Creating a ClusterServiceBroker Resource
 
@@ -75,7 +75,7 @@ kind: ClusterServiceBroker
 metadata:
   creationTimestamp: 2018-10-09T08:25:25Z
   finalizers:
-  - kubernetes-incubator/service-catalog
+  - kubernetes-sigs/service-catalog
   generation: 1
   name: ups-broker
   resourceVersion: "10"
@@ -280,7 +280,7 @@ kind: ServiceInstance
 metadata:
   creationTimestamp: 2018-10-09T08:30:39Z
   finalizers:
-  - kubernetes-incubator/service-catalog
+  - kubernetes-sigs/service-catalog
   generation: 1
   name: ups-instance
   namespace: test-ns
@@ -370,7 +370,7 @@ kind: ServiceBinding
 metadata:
   creationTimestamp: 2018-10-09T08:31:38Z
   finalizers:
-  - kubernetes-incubator/service-catalog
+  - kubernetes-sigs/service-catalog
   generation: 1
   name: ups-binding
   namespace: test-ns

@@ -17,7 +17,7 @@ limitations under the License.
 package fake
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	testing "k8s.io/client-go/testing"
 )

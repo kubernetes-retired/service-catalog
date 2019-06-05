@@ -41,7 +41,7 @@ type CatalogClient interface {
 // InstanceClient defines the interface for managing service instances with a
 // broker.
 type InstanceClient interface {
-	// TODO: these should return appropriate response objects (https://github.com/kubernetes-incubator/service-catalog/issues/116).
+	// TODO: these should return appropriate response objects (https://github.com/kubernetes-sigs/service-catalog/issues/116).
 
 	// CreateServiceInstance creates a service instance in the respective broker.
 	CreateServiceInstance(ID string, req *CreateServiceInstanceRequest) (*CreateServiceInstanceResponse, int, error)

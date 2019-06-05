@@ -22,8 +22,8 @@ import (
 
 	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	"github.com/spf13/viper"
 )
 

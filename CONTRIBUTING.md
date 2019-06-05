@@ -13,7 +13,7 @@ to indicate issues that are ideal for new contributors.
 Once you have found an issue that you'd like to work on, comment on it with
 "#dibs", or "I would like to work on this". If someone else said that they would
 like to work on it, but there's no open PR and it's been more than 2 weeks,
-comment with "@kubernetes-incubator/maintainers-service-catalog Is it okay if I
+comment with "@kubernetes-sigs/service-catalog-maintainers Is it okay if I
 take this?" and a maintainer will help out.
 
 ## Submitting a Pull Request (PR)
@@ -40,7 +40,7 @@ be reviewed.
 ## Development status
 
 We have finished the work for the v0.2 release.
-We are currently working towards our [v0.3 milestone](https://github.com/kubernetes-incubator/service-catalog/milestone/51).
+We are currently working towards our [v0.3 milestone](https://github.com/kubernetes-sigs/service-catalog/milestone/51).
 
 ## Methodology
 
@@ -56,5 +56,5 @@ project, adding or altering a file within the `docs` directory.
 We'll update this space as we begin developing code with relevant dev
 information.
 
-[help-wanted]: https://github.com/kubernetes-incubator/service-catalog/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22
-[good-first-issue]: https://github.com/kubernetes-incubator/service-catalog/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+
+[help-wanted]: https://github.com/kubernetes-sigs/service-catalog/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22
+[good-first-issue]: https://github.com/kubernetes-sigs/service-catalog/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+

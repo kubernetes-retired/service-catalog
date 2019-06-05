@@ -26,7 +26,7 @@ ROOT           = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BINDIR        ?= bin
 BUILD_DIR     ?= build
 COVERAGE      ?= $(CURDIR)/coverage.html
-SC_PKG         = github.com/kubernetes-incubator/service-catalog
+SC_PKG         = github.com/kubernetes-sigs/service-catalog
 TOP_SRC_DIRS   = cmd contrib pkg plugin
 SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
@@ -80,7 +80,7 @@ GO_BUILD       = env CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) \
                   go build $(GOFLAGS) -a -tags netgo -installsuffix netgo \
                   -ldflags '-s -w -X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)'
 
-BASE_PATH      = $(ROOT:/src/github.com/kubernetes-incubator/service-catalog/=)
+BASE_PATH      = $(ROOT:/src/github.com/kubernetes-sigs/service-catalog/=)
 ORIG_GOPATH   ?= $(shell go env GOPATH)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
@@ -238,7 +238,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@echo Running tag verification:
 	@$(DOCKER_CMD) build/verify-tags.sh
 	@echo Validating golden file flag is defined:
-	@$(DOCKER_CMD) go test -run DRYRUN ./cmd/svcat/... -update || printf "\n\nmake test-update-goldenfiles is broken. For each failed package above, add the following empty import to one of the test files to define the -update flag:\n_ \"github.com/kubernetes-incubator/service-catalog/internal/test\""
+	@$(DOCKER_CMD) go test -run DRYRUN ./cmd/svcat/... -update || printf "\n\nmake test-update-goldenfiles is broken. For each failed package above, add the following empty import to one of the test files to define the -update flag:\n_ \"github.com/kubernetes-sigs/service-catalog/internal/test\""
 
 verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
@@ -283,7 +283,7 @@ test-update-goldenfiles: .init
 	$(DOCKER_CMD) go test ./cmd/svcat/... -update
 
 build-integration: .generate_files
-	$(DOCKER_CMD) go test -race github.com/kubernetes-incubator/service-catalog/test/integration/... -c
+	$(DOCKER_CMD) go test -race github.com/kubernetes-sigs/service-catalog/test/integration/... -c
 
 test-integration: .init $(scBuildImageTarget) build build-integration
 	# test kubectl

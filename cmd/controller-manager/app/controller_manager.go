@@ -38,10 +38,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/util/configz"
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics/osbclientproxy"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/util/configz"
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics/osbclientproxy"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -50,11 +50,11 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/controller-manager/app/options"
-	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	settingsv1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/settings/v1alpha1"
-	servicecataloginformers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
+	"github.com/kubernetes-sigs/service-catalog/cmd/controller-manager/app/options"
+	servicecatalogv1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	settingsv1alpha1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"
+	servicecataloginformers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions"
+	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
 
 	"context"
 
