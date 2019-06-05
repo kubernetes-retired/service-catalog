@@ -21,7 +21,7 @@ package internalinterfaces
 import (
 	time "time"
 
-	clientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
+	clientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"

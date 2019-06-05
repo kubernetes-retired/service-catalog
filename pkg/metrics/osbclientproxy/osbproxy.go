@@ -21,7 +21,7 @@ package osbclientproxy
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"k8s.io/klog"
 )

@@ -19,7 +19,7 @@ package main
 import (
 	"os"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/healthcheck/framework"
+	"github.com/kubernetes-sigs/service-catalog/cmd/healthcheck/framework"
 	"k8s.io/klog"
 )
 

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	"github.com/spf13/pflag"
 )
 

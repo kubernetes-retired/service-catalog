@@ -19,9 +19,9 @@ package e2e
 import (
 	"bytes"
 
-	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/test/e2e/framework"
-	"github.com/kubernetes-incubator/service-catalog/test/util"
+	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/test/e2e/framework"
+	"github.com/kubernetes-sigs/service-catalog/test/util"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

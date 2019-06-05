@@ -24,11 +24,11 @@ cid: community
                   </p>
               </div>
               <div class="case-study">
-                  <a href="https://github.com/kubernetes-incubator/service-catalog"><img src="/images/github-logo.png" alt="GitHub" width="150"></a>
+                  <a href="https://github.com/kubernetes-sigs/service-catalog"><img src="/images/github-logo.png" alt="GitHub" width="150"></a>
                   <p>
-                    <a href="https://github.com/kubernetes-incubator/service-catalog">GitHub</a><br/>
+                    <a href="https://github.com/kubernetes-sigs/service-catalog">GitHub</a><br/>
                     <a href="/docs/devguide/">Developer Guide</a><br/>
-                    <a href="https://github.com/kubernetes-incubator/service-catalog/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">Issues that Need Help</a><br/>
+                    <a href="https://github.com/kubernetes-sigs/service-catalog/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">Issues that Need Help</a><br/>
                   </p>
               </div>
               <div class="case-study">

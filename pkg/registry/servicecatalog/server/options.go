@@ -19,7 +19,7 @@ package server
 import (
 	"context"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
+	"github.com/kubernetes-sigs/service-catalog/pkg/storage/etcd"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"

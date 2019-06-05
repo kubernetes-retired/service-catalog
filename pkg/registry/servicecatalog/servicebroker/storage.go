@@ -21,10 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	scmeta "github.com/kubernetes-incubator/service-catalog/pkg/api/meta"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/tableconvertor"
+	scmeta "github.com/kubernetes-sigs/service-catalog/pkg/api/meta"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/tableconvertor"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"

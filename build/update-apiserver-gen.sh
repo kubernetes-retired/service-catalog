@@ -23,7 +23,7 @@ set -o xtrace
 
 REPO_ROOT=$(realpath $(dirname "${BASH_SOURCE}")/..)
 BINDIR=${REPO_ROOT}/bin
-SC_PKG='github.com/kubernetes-incubator/service-catalog'
+SC_PKG='github.com/kubernetes-sigs/service-catalog'
 
 # Generate defaults
 ${BINDIR}/defaulter-gen "$@" \
@@ -40,7 +40,7 @@ ${BINDIR}/deepcopy-gen "$@" \
 	 --go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog" \
 	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1" \
-	 --bounding-dirs "github.com/kubernetes-incubator/service-catalog" \
+	 --bounding-dirs "github.com/kubernetes-sigs/service-catalog" \
 	 --output-file-base zz_generated.deepcopy
 # Generate conversions
 ${BINDIR}/conversion-gen "$@" \
@@ -70,7 +70,7 @@ ${BINDIR}/deepcopy-gen "$@" \
 	--go-header-file "vendor/github.com/kubernetes/repo-infra/verify/boilerplate/boilerplate.go.txt" \
 	--input-dirs "${SC_PKG}/pkg/apis/settings" \
 	--input-dirs "${SC_PKG}/pkg/apis/settings/v1alpha1" \
-	--bounding-dirs "github.com/kubernetes-incubator/service-catalog" \
+	--bounding-dirs "github.com/kubernetes-sigs/service-catalog" \
 	--output-file-base zz_generated.deepcopy
 # Generate conversions
 ${BINDIR}/conversion-gen "$@" \

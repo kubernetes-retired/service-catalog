@@ -22,8 +22,8 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	kubeclientset "k8s.io/client-go/kubernetes"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/internalclientset"
-	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/internalversion"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset"
+	informers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/internalversion"
 )
 
 // WantsInternalServiceCatalogClientSet defines a function which sets ClientSet for admission plugins that need it

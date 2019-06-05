@@ -6,7 +6,7 @@ for manually testing & demonstrating the Kubernetes
 Service Catalog.
 
 For more information,
-[visit the Service Catalog project on github](https://github.com/kubernetes-incubator/service-catalog).
+[visit the Service Catalog project on github](https://github.com/kubernetes-sigs/service-catalog).
 
 ## Installing the Chart
 

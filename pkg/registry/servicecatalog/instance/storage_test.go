@@ -19,7 +19,7 @@ package instance
 import (
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 )
 
 func TestNewListNilField(t *testing.T) {

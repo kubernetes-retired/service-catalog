@@ -17,10 +17,10 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/klog"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"

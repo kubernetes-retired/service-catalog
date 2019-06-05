@@ -19,7 +19,7 @@ package command
 import (
 	"io"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	"github.com/spf13/viper"
 )
 

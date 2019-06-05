@@ -25,9 +25,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/server"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/broker/controller"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/broker/server"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/brokerapi"
 	"k8s.io/klog"
 )
 

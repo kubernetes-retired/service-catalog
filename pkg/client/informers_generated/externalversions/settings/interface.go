@@ -19,8 +19,8 @@ limitations under the License.
 package settings
 
 import (
-	internalinterfaces "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces"
-	v1alpha1 "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/settings/v1alpha1"
+	internalinterfaces "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions/internalinterfaces"
+	v1alpha1 "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions/settings/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

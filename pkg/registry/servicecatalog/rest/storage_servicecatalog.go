@@ -17,19 +17,19 @@ limitations under the License.
 package rest
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
-	servicecatalogv1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/servicebroker"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceclass"
-	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
-	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	servicecatalogv1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/binding"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/clusterservicebroker"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/instance"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/servicebroker"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/serviceclass"
+	"github.com/kubernetes-sigs/service-catalog/pkg/registry/servicecatalog/serviceplan"
+	"github.com/kubernetes-sigs/service-catalog/pkg/storage/etcd"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -37,7 +37,7 @@ import (
 	"k8s.io/apiserver/pkg/storage"
 	restclient "k8s.io/client-go/rest"
 
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 

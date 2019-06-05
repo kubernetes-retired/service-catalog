@@ -60,7 +60,7 @@ jobs:
         provider: script
         script: contrib/travis/deploy.sh
         on:
-          repo: kubernetes-incubator/service-catalog
+          repo: kubernetes-sigs/service-catalog
           all_branches: true
     - stage: push-chart
       script:

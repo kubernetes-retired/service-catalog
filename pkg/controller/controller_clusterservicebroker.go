@@ -30,9 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/metrics"
-	"github.com/kubernetes-incubator/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
+	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 

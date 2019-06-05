@@ -27,9 +27,9 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	proto "github.com/golang/protobuf/proto"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/api"
-	testapi "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testapi"
-	apitesting "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/testing"
+	"github.com/kubernetes-sigs/service-catalog/pkg/api"
+	testapi "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testapi"
+	apitesting "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/testing"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,11 +37,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	"k8s.io/apimachinery/pkg/api/apitesting/roundtrip"
 
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
 )
 
 func init() {

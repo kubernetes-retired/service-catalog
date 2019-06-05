@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"testing"
 
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"

@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
-	v1beta1 "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	util "github.com/kubernetes-incubator/service-catalog/test/util"
+	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	util "github.com/kubernetes-sigs/service-catalog/test/util"
 	"github.com/spf13/cobra"
 	pflag "github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"

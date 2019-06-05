@@ -22,13 +22,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	// avoid error `servicecatalog/v1beta1 is not enabled`
-	_ "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/install"
+	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 
 	"time"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/test/util"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/test/util"
 	"github.com/pmorie/go-open-service-broker-client/v2/generator"
 )
 

@@ -20,18 +20,18 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/plan"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
-	servicecatalogfakes "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/plan"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	_ "github.com/kubernetes-incubator/service-catalog/internal/test"
+	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 )
 
 var _ = Describe("Get Plans Command", func() {

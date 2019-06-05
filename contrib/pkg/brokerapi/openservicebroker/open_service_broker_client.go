@@ -27,11 +27,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
-	"github.com/kubernetes-incubator/service-catalog/pkg/util"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/brokerapi"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"k8s.io/klog"
 
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
+	"github.com/kubernetes-sigs/service-catalog/contrib/pkg/brokerapi/openservicebroker/constants"
 )
 
 const (
@@ -179,7 +179,7 @@ func (c *openServiceBrokerClient) CreateServiceInstance(ID string, req *brokerap
 }
 
 func (c *openServiceBrokerClient) UpdateServiceInstance(ID string, req *brokerapi.CreateServiceInstanceRequest) (*brokerapi.ServiceInstance, int, error) {
-	// TODO: https://github.com/kubernetes-incubator/service-catalog/issues/114
+	// TODO: https://github.com/kubernetes-sigs/service-catalog/issues/114
 	return nil, 0, fmt.Errorf("Not implemented")
 }
 

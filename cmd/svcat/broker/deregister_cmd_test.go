@@ -19,12 +19,12 @@ package broker_test
 import (
 	"bytes"
 
-	. "github.com/kubernetes-incubator/service-catalog/cmd/svcat/broker"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/test"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat"
-	servicecatalog "github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog"
-	"github.com/kubernetes-incubator/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
+	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"

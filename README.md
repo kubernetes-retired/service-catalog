@@ -1,7 +1,7 @@
 ## `service-catalog`
 
-[![Build Status](https://travis-ci.org/kubernetes-incubator/service-catalog.svg?branch=master)](https://travis-ci.org/kubernetes-incubator/service-catalog "Travis")
-[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-incubator/service-catalog)](https://goreportcard.com/report/github.com/kubernetes-incubator/service-catalog)
+[![Build Status](https://travis-ci.org/kubernetes-sigs/service-catalog.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/service-catalog "Travis")
+[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/service-catalog)](https://goreportcard.com/report/github.com/kubernetes-sigs/service-catalog)
 
 <p align="center">
     <a href="https://svc-cat.io">
@@ -36,14 +36,14 @@ Open Service Broker API project's [Getting Started guide](https://github.com/ope
 
 We are currently working toward a beta-quality release to be used in conjunction with
 Kubernetes 1.9. See the
-[milestones list](https://github.com/kubernetes-incubator/service-catalog/milestones?direction=desc&sort=due_date&state=open)
+[milestones list](https://github.com/kubernetes-sigs/service-catalog/milestones?direction=desc&sort=due_date&state=open)
 for information about the issues and PRs in current and future milestones.
 
-The project [roadmap](https://github.com/kubernetes-incubator/service-catalog/wiki/Roadmap)
+The project [roadmap](https://github.com/kubernetes-sigs/service-catalog/wiki/Roadmap)
 contains information about our high-level goals for future milestones.
 
 We are currently making weekly releases; see the
-[release process](https://github.com/kubernetes-incubator/service-catalog/wiki/Release-Process)
+[release process](https://github.com/kubernetes-sigs/service-catalog/wiki/Release-Process)
 for more information.
 
 ### Terminology

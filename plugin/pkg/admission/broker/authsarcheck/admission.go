@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 	"k8s.io/klog"
 
 	authorizationapi "k8s.io/api/authorization/v1"
@@ -29,7 +29,7 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	kubeclientset "k8s.io/client-go/kubernetes"
 
-	scadmission "github.com/kubernetes-incubator/service-catalog/pkg/apiserver/admission"
+	scadmission "github.com/kubernetes-sigs/service-catalog/pkg/apiserver/admission"
 )
 
 const (

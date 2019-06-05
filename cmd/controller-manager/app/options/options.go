@@ -26,10 +26,10 @@ import (
 	"github.com/spf13/pflag"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/componentconfig"
-	"github.com/kubernetes-incubator/service-catalog/pkg/controller"
-	k8scomponentconfig "github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/apis/componentconfig"
-	"github.com/kubernetes-incubator/service-catalog/pkg/kubernetes/pkg/client/leaderelectionconfig"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/componentconfig"
+	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
+	k8scomponentconfig "github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/apis/componentconfig"
+	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/client/leaderelectionconfig"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 )
