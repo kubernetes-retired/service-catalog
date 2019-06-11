@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/appscode/jsonpatch"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebroker/mutation"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil/tester"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/servicebroker/mutation"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil/tester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -57,7 +57,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-incubator/service-catalog",
+						"kubernetes-sigs/service-catalog",
 					},
 				},
 				{
@@ -86,7 +86,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-incubator/service-catalog",
+						"kubernetes-sigs/service-catalog",
 					},
 				},
 			},

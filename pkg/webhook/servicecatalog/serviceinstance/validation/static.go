@@ -20,11 +20,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
 )
 
 // StaticCreate runs basic ServiceInstance validation for Create operation.

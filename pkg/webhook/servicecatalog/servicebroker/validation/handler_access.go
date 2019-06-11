@@ -19,8 +19,8 @@ package validation
 import (
 	"context"
 	"fmt"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	authenticationapi "k8s.io/api/authentication/v1"
 	authorizationapi "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +40,7 @@ var _ admission.DecoderInjector = &AccessToBroker{}
 var _ inject.Client = &AccessToBroker{}
 
 // Validate checks if client has access to service broker if broker requires authentication
-// This feature was copied from Service Catalog admission plugin https://github.com/kubernetes-incubator/service-catalog/blob/v0.1.41/plugin/pkg/admission/broker/authsarcheck/admission.go
+// This feature was copied from Service Catalog admission plugin https://github.com/kubernetes-sigs/service-catalog/blob/v0.1.41/plugin/pkg/admission/broker/authsarcheck/admission.go
 // If you want to track previous changes please check there.
 func (h *AccessToBroker) Validate(ctx context.Context, req admission.Request, sb *sc.ServiceBroker, traced *webhookutil.TracedLogger) *webhookutil.WebhookError {
 	if sb.Spec.AuthInfo == nil {

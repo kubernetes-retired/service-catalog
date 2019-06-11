@@ -19,8 +19,8 @@ package validation_test
 import (
 	"context"
 	"errors"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebroker/validation"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/servicebroker/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -91,7 +91,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -106,7 +106,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -121,7 +121,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -144,7 +144,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -221,7 +221,7 @@ func TestSpecValidationHandlerAccessToBrokerDenied(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -244,7 +244,7 @@ func TestSpecValidationHandlerAccessToBrokerDenied(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},

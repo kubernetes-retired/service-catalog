@@ -17,8 +17,8 @@ limitations under the License.
 package cleaner
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfake "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	apimachinaryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"

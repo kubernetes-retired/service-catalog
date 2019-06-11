@@ -19,8 +19,8 @@ package validation
 import (
 	"context"
 	"fmt"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +51,7 @@ func (h *ReferenceDeletion) InjectClient(c client.Client) error {
 
 // Validate checks if instance reference for ServiceBinding is not marked for deletion
 // fail ServiceBinding operation if the ServiceInstance is marked for deletion
-// This feature was copied from Service Catalog admission plugin https://github.com/kubernetes-incubator/service-catalog/blob/v0.1.41/plugin/pkg/admission/servicebindings/lifecycle/admission.go
+// This feature was copied from Service Catalog admission plugin https://github.com/kubernetes-sigs/service-catalog/blob/v0.1.41/plugin/pkg/admission/servicebindings/lifecycle/admission.go
 // If you want to track previous changes please check there.
 func (h *ReferenceDeletion) Validate(ctx context.Context, req admission.Request, sb *sc.ServiceBinding, traced *webhookutil.TracedLogger) *webhookutil.WebhookError {
 	instanceRef := sb.Spec.InstanceRef

@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	webhookutil "github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	webhookutil "github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 
 	admissionTypes "k8s.io/api/admission/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"

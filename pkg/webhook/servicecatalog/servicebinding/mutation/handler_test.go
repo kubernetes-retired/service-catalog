@@ -22,10 +22,10 @@ import (
 	"testing"
 
 	"github.com/appscode/jsonpatch"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebinding/mutation"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil/tester"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/servicebinding/mutation"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil/tester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -63,7 +63,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-incubator/service-catalog",
+						"kubernetes-sigs/service-catalog",
 					},
 				},
 				{
@@ -99,7 +99,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-incubator/service-catalog",
+						"kubernetes-sigs/service-catalog",
 					},
 				},
 			},
@@ -285,7 +285,7 @@ func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *t
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-binding"
   				},

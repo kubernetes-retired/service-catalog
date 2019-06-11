@@ -19,8 +19,8 @@ package validation_test
 import (
 	"testing"
 
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/serviceinstance/validation"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil/tester"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/serviceinstance/validation"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil/tester"
 )
 
 func TestSpecValidationHandlerDecoderErrors(t *testing.T) {

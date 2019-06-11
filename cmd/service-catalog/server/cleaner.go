@@ -17,8 +17,8 @@ limitations under the License.
 package server
 
 import (
-	"github.com/kubernetes-incubator/service-catalog/cmd/cleaner/server"
-	"github.com/kubernetes-incubator/service-catalog/pkg/hyperkube"
+	"github.com/kubernetes-sigs/service-catalog/cmd/cleaner/server"
+	"github.com/kubernetes-sigs/service-catalog/pkg/hyperkube"
 )
 
 // NewCleaner creates a new hyperkube Server object that includes the

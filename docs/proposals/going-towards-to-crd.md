@@ -9,7 +9,7 @@ Below you can find our concerns about having a single executable binary that sup
 ### Business concerns
 
 Adding CRDs via a feature flag directly in a Helm chart can be misleading for the client. 
-The CRDs approach is not a feature. It is just a new implementation for already existing features. The current [`apiserver.storage.type`: crds/etcd](https://github.com/kubernetes-incubator/service-catalog/blob/master/charts/catalog/values.yaml#L61-L62) configuration indicates that etcd is rather expanding than deprecating. We do not want to make customers think that **CRD** or **etcd** are storage options. Customers should know that the etcd is depreciating and that they should consider switching for CRDs approach as soon as possible.  
+The CRDs approach is not a feature. It is just a new implementation for already existing features. The current [`apiserver.storage.type`: crds/etcd](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/values.yaml#L61-L62) configuration indicates that etcd is rather expanding than deprecating. We do not want to make customers think that **CRD** or **etcd** are storage options. Customers should know that the etcd is depreciating and that they should consider switching for CRDs approach as soon as possible.  
 
 Moreover, fixing bugs and adding new features both in Aggregated API Server and CRDs may slow down the development process.   
 

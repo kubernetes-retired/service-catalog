@@ -18,8 +18,8 @@ package cleaner
 
 import (
 	"fmt"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-incubator/service-catalog/pkg/probe"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"

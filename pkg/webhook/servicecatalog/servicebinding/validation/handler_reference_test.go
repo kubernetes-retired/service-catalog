@@ -18,8 +18,8 @@ package validation_test
 
 import (
 	"context"
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhook/servicecatalog/servicebinding/validation"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/servicebinding/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -57,7 +57,7 @@ func TestSpecValidationHandlerServiceInstanceReferenceUpToDate(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-binding"
   				},
@@ -135,7 +135,7 @@ func TestSpecValidationHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",
   				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
+				  "finalizers": ["kubernetes-sigs/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-binding"
   				},

@@ -22,11 +22,11 @@ import (
 	"net"
 	"reflect"
 
-	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"

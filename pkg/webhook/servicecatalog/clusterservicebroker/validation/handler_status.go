@@ -17,9 +17,9 @@ limitations under the License.
 package validation
 
 import (
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scv "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/validation"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	admissionTypes "k8s.io/api/admission/v1beta1"
 
 	"context"

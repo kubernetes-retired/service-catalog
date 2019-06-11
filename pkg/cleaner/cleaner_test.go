@@ -17,8 +17,8 @@ limitations under the License.
 package cleaner
 
 import (
-	scfake "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	"github.com/kubernetes-incubator/service-catalog/pkg/probe"
+	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	"github.com/stretchr/testify/assert"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"k8s.io/api/apps/v1beta1"

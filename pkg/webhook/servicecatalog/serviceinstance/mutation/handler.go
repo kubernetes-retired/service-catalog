@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
-	"github.com/kubernetes-incubator/service-catalog/pkg/webhookutil"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	admissionTypes "k8s.io/api/admission/v1beta1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
@@ -109,7 +109,7 @@ func (h *CreateUpdateHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.Request, instance *sc.ServiceInstance) {
-	// This feature was copied from Service Catalog registry: https://github.com/kubernetes-incubator/service-catalog/blob/master/pkg/registry/servicecatalog/instance/strategy.go
+	// This feature was copied from Service Catalog registry: https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/registry/servicecatalog/instance/strategy.go
 	// If you want to track previous changes please check there.
 
 	if instance.Spec.ExternalID == "" {
