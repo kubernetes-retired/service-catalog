@@ -575,7 +575,7 @@ func (c *testController) RemoveServiceInstance(
 				}, nil
 			}
 
-			if service.DeprovisionFailTimes > 0 && instance.deprovisionAttempts < service.DeprovisionFailTimes  {
+			if service.DeprovisionFailTimes > 0 && instance.deprovisionAttempts < service.DeprovisionFailTimes {
 				instance.deprovisionAttempts++
 				return nil, server.NewErrorWithHTTPStatus("Service is configured to fail deprovisioning", service.HTTPErrorStatus)
 			}
