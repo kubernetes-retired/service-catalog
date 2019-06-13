@@ -79,7 +79,7 @@ func CreateController() controller.Controller {
 			"2f2e85b5-030d-4776-ba7e-e26eb312f10f",
 			"A test service that only has a single plan",
 			"35b6030d-f81e-49cd-9d1f-2f5eaec57048",
-			false, noHTTPError, 0, 0, 0, 0),
+			false, http.StatusBadRequest, 0, 0, 0, 0),
 		newTestService(
 			"test-service-provision-fail400",
 			"308c0400-2edb-45d6-a63e-67f18226a404",
@@ -226,6 +226,7 @@ func CreateController() controller.Controller {
 				Bindable:       true,
 				PlanUpdateable: true,
 			},
+			DeprovisionFailTimes: 0,
 		},
 		{
 			Service: brokerapi.Service{
@@ -318,6 +319,7 @@ func CreateController() controller.Controller {
 				Bindable:       true,
 				PlanUpdateable: true,
 			},
+			DeprovisionFailTimes: 0,
 		},
 	}
 
@@ -573,7 +575,8 @@ func (c *testController) RemoveServiceInstance(
 				}, nil
 			}
 
-			if instance.deprovisionAttempts <= service.DeprovisionFailTimes {
+			if service.DeprovisionFailTimes > 0 && instance.deprovisionAttempts < service.DeprovisionFailTimes {
+				instance.deprovisionAttempts++
 				return nil, server.NewErrorWithHTTPStatus("Service is configured to fail deprovisioning", service.HTTPErrorStatus)
 			}
 
