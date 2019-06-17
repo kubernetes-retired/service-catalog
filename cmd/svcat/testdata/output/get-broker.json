@@ -7,7 +7,7 @@
       "generation": 2,
       "creationTimestamp": "2018-01-11T20:53:30Z",
       "finalizers": [
-         "kubernetes-sigs/service-catalog"
+         "kubernetes-incubator/service-catalog"
       ]
    },
    "spec": {
