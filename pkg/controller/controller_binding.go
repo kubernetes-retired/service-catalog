@@ -672,7 +672,7 @@ func setServiceBindingCondition(toUpdate *v1beta1.ServiceBinding,
 	reason, message string) {
 
 	setServiceBindingConditionInternal(toUpdate, conditionType, status, reason, message, metav1.Now())
-	toUpdate.Status.LastConditionState = getServiceBindingLastConditionState(toUpdate.Status)
+	toUpdate.RecalculatePrinterColumnStatusFields()
 }
 
 // setServiceBindingConditionInternal is
@@ -1634,15 +1634,4 @@ func (c *controller) handleServiceBindingPollingError(binding *v1beta1.ServiceBi
 	pcb := pretty.NewBindingContextBuilder(binding)
 	klog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceBinding(binding)
-}
-
-func getServiceBindingLastConditionState(status v1beta1.ServiceBindingStatus) string {
-	if len(status.Conditions) > 0 {
-		condition := status.Conditions[len(status.Conditions)-1]
-		if condition.Status == v1beta1.ConditionTrue {
-			return string(condition.Type)
-		}
-		return condition.Reason
-	}
-	return ""
 }

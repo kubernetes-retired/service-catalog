@@ -334,9 +334,13 @@ func checkFinalizerIsRemoved(cr FinalizerGetter, err error) (bool, error) {
 }
 
 func removeServiceCatalogFinalizer(finalizersList []string) []string {
+	const k8sIncubatorFinalizer = "kubernetes-incubator/service-catalog"
 	finalizers := sets.NewString(finalizersList...)
 	if finalizers.Has(v1beta1.FinalizerServiceCatalog) {
 		finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	}
+	if finalizers.Has(k8sIncubatorFinalizer) {
+		finalizers.Delete(k8sIncubatorFinalizer)
 	}
 
 	return finalizers.List()
