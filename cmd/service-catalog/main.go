@@ -35,6 +35,7 @@ func main() {
 	hk.AddServer(server.NewWebhookServer())
 	hk.AddServer(server.NewControllerManager())
 	hk.AddServer(server.NewCleaner())
+	hk.AddServer(server.NewMigration())
 
 	hk.RunToExit(os.Args)
 }
