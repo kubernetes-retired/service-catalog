@@ -1,7 +1,7 @@
 metadata:
   creationTimestamp: "2018-01-11T20:53:30Z"
   finalizers:
-  - kubernetes-sigs/service-catalog
+  - kubernetes-incubator/service-catalog
   generation: 2
   name: ups-broker
   resourceVersion: "103"
