@@ -91,7 +91,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -106,7 +106,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -121,7 +121,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -144,7 +144,7 @@ func TestSpecValidationHandlerAccessToBrokerAllowed(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -221,7 +221,7 @@ func TestSpecValidationHandlerAccessToBrokerDenied(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},
@@ -244,7 +244,7 @@ func TestSpecValidationHandlerAccessToBrokerDenied(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBroker",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-broker"
   				},

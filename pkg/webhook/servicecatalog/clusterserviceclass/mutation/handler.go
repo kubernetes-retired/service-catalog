@@ -67,7 +67,7 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 		traced.Infof("ClusterServiceClass mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
 	}
-	h.syncLabels(mutated)
+	h.SyncLabels(mutated)
 	rawMutated, err := json.Marshal(mutated)
 	if err != nil {
 		traced.Errorf("Error marshaling mutated object: %v", err)
@@ -91,7 +91,9 @@ func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, oldClusterServ
 	newClusterServiceClass.Spec.ClusterServiceBrokerName = oldClusterServiceClass.Spec.ClusterServiceBrokerName
 }
 
-func (h *CreateUpdateHandler) syncLabels(obj *sc.ClusterServiceClass) {
+// SyncLabels fills ClusterServiceClass with labels
+// exported for integration tests
+func (h *CreateUpdateHandler) SyncLabels(obj *sc.ClusterServiceClass) {
 	if obj.Labels == nil {
 		obj.Labels = make(map[string]string)
 	}

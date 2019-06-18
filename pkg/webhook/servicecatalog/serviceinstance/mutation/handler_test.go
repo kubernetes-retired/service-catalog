@@ -63,7 +63,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-sigs/service-catalog",
+						"kubernetes-incubator/service-catalog",
 					},
 				},
 				{
@@ -93,7 +93,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-sigs/service-catalog",
+						"kubernetes-incubator/service-catalog",
 					},
 				},
 			},
@@ -282,7 +282,7 @@ func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *t
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceInstance",
   				"metadata": {
-				  "finalizers": [ "kubernetes-sigs/service-catalog" ],
+				  "finalizers": [ "kubernetes-incubator/service-catalog" ],
   				  "creationTimestamp": null,
   				  "name": "test-instance"
   				},

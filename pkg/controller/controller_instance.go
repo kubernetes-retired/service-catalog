@@ -880,6 +880,15 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 		return c.processServiceInstanceGracefulDeletionSuccess(instance)
 	}
 
+	// DeprovisionStatus can be empty only when the 'reconcileServiceInstanceAdd' handler
+	// was not triggered at all. It may happen when creation and deletion operations
+	// were requested immediately one after another. This is a corner case scenario,
+	// happens during e2e tests
+	if instance.Status.DeprovisionStatus == "" {
+		klog.V(4).Info(pcb.Message("Deprovision status is empty"))
+		return c.processServiceInstanceGracefulDeletionSuccess(instance)
+	}
+
 	// At this point, if the deprovision status is not Required, then it is
 	// either an invalid value or there is a logical error in the controller.
 	// Set the deprovision status to Failed and bail out.
@@ -2001,8 +2010,7 @@ func (c *controller) initializeServiceInstanceStatus(instance *v1beta1.ServiceIn
 		Conditions:        []v1beta1.ServiceInstanceCondition{},
 		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 	}
-
-	_, err := c.serviceCatalogClient.ServiceInstances(updated.Namespace).UpdateStatus(updated)
+	_, err := c.updateServiceInstanceStatus(updated)
 	if err != nil {
 		return err
 	}

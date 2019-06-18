@@ -82,7 +82,7 @@ spec:
     JSONPath: .spec.externalName
   - name: Broker
     type: string
-    JSONPath: .spec.clusterServiceBrokerName
+    JSONPath: .spec.serviceBrokerName
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp

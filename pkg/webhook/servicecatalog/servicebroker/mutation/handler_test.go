@@ -57,7 +57,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-sigs/service-catalog",
+						"kubernetes-incubator/service-catalog",
 					},
 				},
 				{
@@ -86,7 +86,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/finalizers",
 					Value: []interface{}{
-						"kubernetes-sigs/service-catalog",
+						"kubernetes-incubator/service-catalog",
 					},
 				},
 			},

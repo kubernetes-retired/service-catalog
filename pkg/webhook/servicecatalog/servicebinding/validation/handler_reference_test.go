@@ -57,7 +57,7 @@ func TestSpecValidationHandlerServiceInstanceReferenceUpToDate(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-binding"
   				},
@@ -135,7 +135,7 @@ func TestSpecValidationHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",
   				"metadata": {
-				  "finalizers": ["kubernetes-sigs/service-catalog"],
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
   				  "name": "test-binding"
   				},
