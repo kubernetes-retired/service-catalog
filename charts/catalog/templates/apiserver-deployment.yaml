@@ -122,7 +122,7 @@ spec:
         - --listen-client-urls
         - http://0.0.0.0:2379
         - --advertise-client-urls
-        - http://localhost:2379
+        - {{ .Values.apiserver.storage.etcd.servers }}
         ports:
         - containerPort: 2379
         volumeMounts:
