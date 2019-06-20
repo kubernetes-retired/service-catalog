@@ -25,6 +25,7 @@ contrib/examples/consumer/Gopkg.lock
 contrib/examples/consumer
 contrib/examples/vendor/*
 integration.test*
+controller.test*
 debug.test*
 .cache
 /api_violations.txt
