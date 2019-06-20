@@ -37,11 +37,11 @@ func TestProvisionInstanceWithRetries(t *testing.T) {
 	}{
 		"With orphan mitigation": {
 			isOrphanMitigation: true,
-			statusCode: http.StatusInternalServerError,
+			statusCode:         http.StatusInternalServerError,
 		},
 		"Without orphan mitigation": {
 			isOrphanMitigation: false,
-			statusCode: http.StatusUnauthorized,
+			statusCode:         http.StatusUnauthorized,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

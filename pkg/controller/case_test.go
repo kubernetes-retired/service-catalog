@@ -144,7 +144,6 @@ func newControllerTest(t *testing.T) *controllerTest {
 		t.Fatal(err)
 	}
 
-
 	sbHandler := &serviceBindingHandler{}
 	serviceBindingInformer := serviceCatalogSharedInformers.ServiceBindings().Informer()
 	serviceBindingInformer.AddEventHandler(sbHandler)
