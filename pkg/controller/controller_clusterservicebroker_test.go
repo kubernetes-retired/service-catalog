@@ -232,6 +232,21 @@ func TestShouldReconcileClusterServiceBroker(t *testing.T) {
 	}
 }
 
+// TestReconcileClusterServiceBrokerSetOSBTimeOut
+// verifies that timeout of any request to the
+// broker takes effect.
+func TestReconcileClusterServiceBrokerSetOSBTimeOut(t *testing.T) {
+	_, _, _, testController, _ := newTestController(t, getTestCatalogConfig())
+	testController.OSBAPITimeOut = time.Second * 80
+	if err := reconcileClusterServiceBroker(t, testController, getTestClusterServiceBroker()); err != nil {
+		t.Fatalf("This should not fail : %v", err)
+	}
+	createdClient := testController.brokerClientManager.clients[NewClusterServiceBrokerKey(getTestClusterServiceBroker().Name)]
+	if createdClient.clientConfig.TimeoutSeconds != int(testController.OSBAPITimeOut.Seconds()) {
+		t.Errorf("Unexpected OSBTimeOut: got %v, expeted %v", createdClient.clientConfig.TimeoutSeconds, int(testController.OSBAPITimeOut.Seconds()))
+	}
+}
+
 // TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan
 // verifies a simple, successful run of reconcileClusterServiceBroker() when a
 // ClusterServiceClass and plan already exist.  This test will cause

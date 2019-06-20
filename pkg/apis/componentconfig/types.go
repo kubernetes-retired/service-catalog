@@ -77,6 +77,9 @@ type ControllerManagerConfiguration struct {
 	OSBAPIContextProfile   bool
 	OSBAPIPreferredVersion string
 
+	// OSBAPITimeOut the length of the timeout of any request to the broker.
+	OSBAPITimeOut time.Duration
+
 	// ConcurrentSyncs is the number of resources, per resource type,
 	// that are allowed to sync concurrently. Larger number = more responsive
 	// SC operations, but more CPU (and network) load.

@@ -127,7 +127,7 @@ func (c *controller) serviceBrokerClient(broker *v1beta1.ServiceBroker) (osb.Cli
 		return nil, err
 	}
 
-	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig)
+	clientConfig := NewClientConfigurationForBroker(broker.ObjectMeta, &broker.Spec.CommonServiceBrokerSpec, authConfig, c.OSBAPITimeOut)
 
 	brokerClient, err := c.brokerClientManager.UpdateBrokerClient(NewServiceBrokerKey(broker.Namespace, broker.Name), clientConfig)
 	if err != nil {
