@@ -94,7 +94,7 @@ the basic concepts of the OSB API.
 
 ## Service Catalog Design
 
-<img src="/docs/images/current.png" width="75%" height="75%">
+![Service Catalog Design](images/sc-design.svg)
 
 The above is the high level architecture of Service Catalog.
 Service Catalog has two basic building blocks: a Webhook Server and a controller.

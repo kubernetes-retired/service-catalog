@@ -41,6 +41,7 @@ The API Server implementation will be supported by providing bug fixes for the n
 - [Using Namespaced Broker Resources](./namespaced-broker-resources.md)
 - [Filtering Broker Catalogs](./catalog-restrictions.md)
 - [Setting Defaults for Service Instances](./service-plan-defaults.md)
+- [Migrating from API Server to CRDs](./migration-apiserver-to-crds.md)
 
 ## Request for Comments
 
