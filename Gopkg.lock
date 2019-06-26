@@ -801,6 +801,14 @@
   revision = "bdcc60b419d136a85cdf2e7cbcac34b3f1cd6e57"
 
 [[projects]]
+  digest = "1:2b6cc5f08ea4ec1499cb7f9282fef8d1558423152d1b7f046f30187bbc5076be"
+  name = "github.com/vrischmann/envconfig"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7a443243d539c9595dd8aa7f03a6f68707b80e66"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:e4ffb3b860a4c71f7805415b4ba1e9a27e04eb9c4c03ddd943e9ff1790eda506"
   name = "github.com/xiang90/probing"
   packages = ["."]
@@ -1659,6 +1667,7 @@
     "github.com/spf13/viper",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/vrischmann/envconfig",
     "golang.org/x/lint/golint",
     "k8s.io/api/admission/v1beta1",
     "k8s.io/api/admissionregistration/v1beta1",
