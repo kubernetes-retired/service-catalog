@@ -4675,6 +4675,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 			},
 			"name": "test-param",
 		},
+		PreviousValues: &osb.PreviousValues{PlanID: testClusterServicePlanGUID, ServiceID: testClusterServiceClassGUID},
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4772,6 +4773,7 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 		PlanID:            nil, // no change to plan
 		Context:           testContext,
 		Parameters:        make(map[string]interface{}),
+		PreviousValues:    &osb.PreviousValues{PlanID: testClusterServicePlanGUID, ServiceID: testClusterServiceClassGUID},
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -4995,6 +4997,7 @@ func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
 			PlanID:            &expectedPlanID,
 			Context:           testContext,
 			Parameters:        nil, // no change to parameters
+			PreviousValues:    &osb.PreviousValues{PlanID: "old-plan-id", ServiceID: testClusterServiceClassGUID},
 		})
 
 		actions := fakeCatalogClient.Actions()
@@ -5106,6 +5109,7 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 		PlanID:            &expectedPlanID,
 		Context:           testContext,
 		Parameters:        nil, // no change to parameters
+		PreviousValues:    &osb.PreviousValues{PlanID: "old-plan-id", ServiceID: testClusterServiceClassGUID},
 	})
 
 	actions := fakeCatalogClient.Actions()
@@ -5176,7 +5180,9 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context:           testContext})
+		Context:           testContext,
+		PreviousValues:    &osb.PreviousValues{PlanID: "old-plan-id", ServiceID: testClusterServiceClassGUID},
+	})
 
 	// verify no kube resources created
 	// One single action comes from getting namespace uid
@@ -5275,7 +5281,9 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 				InstanceID:        testServiceInstanceGUID,
 				ServiceID:         testClusterServiceClassGUID,
 				PlanID:            &expectedPlanID,
-				Context:           testContext})
+				Context:           testContext,
+				PreviousValues:    &osb.PreviousValues{PlanID: "old-plan-id", ServiceID: testClusterServiceClassGUID},
+			})
 
 			// verify one kube action occurred
 			kubeActions := fakeKubeClient.Actions()
@@ -5545,7 +5553,9 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 		InstanceID:        testServiceInstanceGUID,
 		ServiceID:         testClusterServiceClassGUID,
 		PlanID:            &expectedPlanID,
-		Context:           testContext})
+		Context:           testContext,
+		PreviousValues:    &osb.PreviousValues{PlanID: "old-plan-id", ServiceID: testClusterServiceClassGUID},
+	})
 
 	actions := fakeCatalogClient.Actions()
 	assertNumberOfActions(t, actions, 1)

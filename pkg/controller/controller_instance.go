@@ -2269,6 +2269,10 @@ func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInsta
 			ServiceID:           serviceClass.Spec.ExternalID,
 			Context:             rh.requestContext,
 			OriginatingIdentity: rh.originatingIdentity,
+			PreviousValues: &osb.PreviousValues{
+				PlanID:    instance.Status.ExternalProperties.ClusterServicePlanExternalID,
+				ServiceID: serviceClass.Spec.ExternalID,
+			},
 		}
 
 		// Only send the plan ID if the plan ID has changed from what the Broker has
@@ -2304,6 +2308,10 @@ func (c *controller) prepareUpdateInstanceRequest(instance *v1beta1.ServiceInsta
 			ServiceID:           serviceClass.Spec.ExternalID,
 			Context:             rh.requestContext,
 			OriginatingIdentity: rh.originatingIdentity,
+			PreviousValues: &osb.PreviousValues{
+				PlanID:    instance.Status.ExternalProperties.ClusterServicePlanExternalID,
+				ServiceID: serviceClass.Spec.ExternalID,
+			},
 		}
 
 		// Only send the plan ID if the plan ID has changed from what the Broker has
