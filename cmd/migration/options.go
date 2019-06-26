@@ -26,6 +26,7 @@ const (
 	restoreActionName = "restore"
 
 	storagePathParameter             = "storage-path"
+	apiserverNameParameter           = "apiserver-deployment"
 	controllerManagerNameParameter   = "controller-manager-deployment"
 	serviceCatalogNamespaceParameter = "service-catalog-namespace"
 )
@@ -36,6 +37,7 @@ type Options struct {
 	StoragePath           string
 	ReleaseNamespace      string
 	ControllerManagerName string
+	ApiserverName         string
 }
 
 // NewMigrationOptions creates and returns a new Options
@@ -49,6 +51,7 @@ func (c *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&c.StoragePath, storagePathParameter, "", "Path to a directory, where all Service Catalog resources must be saved")
 	fs.StringVar(&c.ReleaseNamespace, serviceCatalogNamespaceParameter, "", "Name of namespace where Service Catalog is released")
 	fs.StringVar(&c.ControllerManagerName, controllerManagerNameParameter, "", "Name of controller manager deployment")
+	fs.StringVar(&c.ApiserverName, apiserverNameParameter, "", "Name of apiserver deployment")
 }
 
 // Validate checks flag has been set and has a proper value

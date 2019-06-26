@@ -25,6 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	appsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 
@@ -32,24 +33,31 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
 type Service struct {
-	scInterface   v1beta1.ServicecatalogV1beta1Interface
-	storagePath   string
-	marshaller    func(interface{}) ([]byte, error)
-	unmarshaller  func([]byte, interface{}) error
-	coreInterface corev1.CoreV1Interface
+	scInterface      v1beta1.ServicecatalogV1beta1Interface
+	storagePath      string
+	releaseNamespace string
+	apiserverName    string
+	marshaller       func(interface{}) ([]byte, error)
+	unmarshaller     func([]byte, interface{}) error
+	coreInterface    corev1.CoreV1Interface
+	appInterface     appsv1.AppsV1Interface
 }
 
 // NewMigrationService creates a new instance of a Service
-func NewMigrationService(scInterface v1beta1.ServicecatalogV1beta1Interface, storagePath string, coreInterface corev1.CoreV1Interface) *Service {
+func NewMigrationService(scInterface v1beta1.ServicecatalogV1beta1Interface, storagePath string, releaseNamespace string, apiserverName string, coreInterface corev1.CoreV1Interface, appInterface appsv1.AppsV1Interface) *Service {
 	return &Service{
-		scInterface:   scInterface,
-		coreInterface: coreInterface,
-		storagePath:   storagePath,
-		marshaller:    yaml.Marshal,
+		scInterface:      scInterface,
+		coreInterface:    coreInterface,
+		appInterface:     appInterface,
+		storagePath:      storagePath,
+		releaseNamespace: releaseNamespace,
+		apiserverName:    apiserverName,
+		marshaller:       yaml.Marshal,
 		unmarshaller: func(b []byte, obj interface{}) error {
 			return yaml.Unmarshal(b, obj)
 		},
@@ -106,6 +114,18 @@ func (m *Service) adjustOwnerReference(om *metav1.ObjectMeta, uidMap map[string]
 	if len(om.OwnerReferences) > 0 {
 		om.OwnerReferences[0].UID = uidMap[om.OwnerReferences[0].Name]
 	}
+}
+
+func (m *Service) IsMigrationRequired() (bool, error) {
+	_, err := m.appInterface.Deployments(m.releaseNamespace).Get(m.apiserverName, metav1.GetOptions{});
+	switch {
+	case err == nil:
+	case apiErrors.IsNotFound(err):
+		return false, nil
+	default:
+		return false, fmt.Errorf("other type of error: %s", err)
+	}
+	return true, nil
 }
 
 // Restore restores Service Catalog resources and adds necessary owner reference to all secrets pointed by service bindings.
@@ -216,6 +236,8 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 		si.RecalculatePrinterColumnStatusFields()
 		si.ResourceVersion = ""
 
+		instance := si.DeepCopy()
+
 		// ServiceInstance must not have class/plan refs when it is created
 		// These fields must be filled using an update
 		si.Spec.ClusterServiceClassRef = nil
@@ -227,18 +249,19 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 			return err
 		}
 
-		created.Status = si.Status
-		updated, err := m.scInterface.ServiceInstances(si.Namespace).UpdateStatus(created)
+		created.Spec.ClusterServiceClassRef = instance.Spec.ClusterServiceClassRef
+		created.Spec.ClusterServicePlanRef = instance.Spec.ClusterServicePlanRef
+		created.Spec.ServiceClassRef = instance.Spec.ServiceClassRef
+		created.Spec.ServicePlanRef = instance.Spec.ServicePlanRef
+
+		updated, err := m.scInterface.ServiceInstances(si.Namespace).Update(created)
 		if err != nil {
 			return err
 		}
 
-		updated.Spec.ClusterServiceClassRef = si.Spec.ClusterServiceClassRef
-		updated.Spec.ClusterServicePlanRef = si.Spec.ClusterServicePlanRef
-		updated.Spec.ServiceClassRef = si.Spec.ServiceClassRef
-		updated.Spec.ServicePlanRef = si.Spec.ServicePlanRef
-
-		_, err = m.scInterface.ServiceInstances(si.Namespace).Update(updated)
+		updated.Status = si.Status
+		updated.Status.ObservedGeneration = updated.Generation
+		updated, err = m.scInterface.ServiceInstances(si.Namespace).UpdateStatus(updated)
 		if err != nil {
 			return err
 		}
