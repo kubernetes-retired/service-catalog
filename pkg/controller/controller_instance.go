@@ -2211,6 +2211,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, pla
 		"platform":           ContextProfilePlatformKubernetes,
 		"namespace":          instance.Namespace,
 		clusterIdentifierKey: id,
+		"instance_name":      instance.Name,
 	}
 	return rh, nil
 }

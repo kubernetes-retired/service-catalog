@@ -1218,6 +1218,7 @@ func (c *controller) prepareBindRequest(
 		"platform":           ContextProfilePlatformKubernetes,
 		"namespace":          instance.Namespace,
 		clusterIdentifierKey: clusterID,
+		"instance_name":      instance.Name,
 	}
 
 	request := &osb.BindRequest{
