@@ -6,6 +6,10 @@ layout: docwithnav
 Service Catalog upgrade from version 0.2.x (and earlier) to 0.3.x needs a data migration. 
 This document describes how the migration works and what actions must be performed. 
 
+>**NOTE:**
+Before starting the migration, make sure that you performed a full backup of your cluster.
+You should also test the procedure on a testing environment first.
+
 ![Service Catalog upgrade](images/sc-migration-to-crds.svg)
 
 The above picture describes changes in the Service Catalog architecture made between versions 0.2.0 and 0.3.0:
@@ -63,6 +67,8 @@ Execute `restore action` to restore all resources and scale up the Controller Ma
 
 ## Migration tool
 
+Migration tool is a set of helper functions integrated into the Service Catalog binary.
+
 ### Build
 To run the migration tool, compile the `service-catalog` binary by executing the following command:
 ```bash
@@ -91,6 +97,27 @@ You can run the `service-catalog` binary with the `migration` parameter which tr
 | service-catalog-namespace | Specifies the namespace in which the Service Catalog is installed. |
 | controller-manager-deployment | Provides the Controller Manager deployment name. |
 | apiserver-deployment | Provides the Apiserver deployment name. It is required only for the `backup` phase. |
+
+### Implementation details
+
+In order to get a consistent backup, we have to make sure that no resources are modified during the backup process.
+To achieve that, the migration tool creates `ValidatingWebhookConfiguration` at the beginning of the backup process 
+to intercept and reject all attempts to mutate Service Catalog resources. Because of the limitation of the Aggregated API Server used in the previous version of Service Catalog, this webhook call fails with the following message:
+```bash
+failed calling webhook "validating.reject-changes-to-sc-crds.servicecatalog.k8s.io": 
+webhook does not accept v1beta1 AdmissionReviewRequest
+```
+This error message is presented in case of a modification or creation attempt of any Service Catalog resource during the backup process, and it means that the write protection works as expected.
+
+To test the mutation blocking feature, execute the following commands:
+- to enable the write protection:
+  ```bash
+  ./service-catalog migration --action deploy-blocker --service-catalog-namespace=default
+  ```
+- to disable the write protection:
+  ```bash
+  ./service-catalog migration --action undeploy-blocker --service-catalog-namespace=default
+  ```
 
 ## Troubleshooting
 

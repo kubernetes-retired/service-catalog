@@ -21,43 +21,50 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	appsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
-	"k8s.io/client-go/util/retry"
-	"k8s.io/klog"
-
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/yaml"
+	"k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	k8sClientSet "k8s.io/client-go/kubernetes"
+	admissionregistrationv1beta1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
+	appsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/klog"
+	"sigs.k8s.io/yaml"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
 type Service struct {
-	scInterface      v1beta1.ServicecatalogV1beta1Interface
 	storagePath      string
 	releaseNamespace string
 	apiserverName    string
-	marshaller       func(interface{}) ([]byte, error)
-	unmarshaller     func([]byte, interface{}) error
-	coreInterface    corev1.CoreV1Interface
-	appInterface     appsv1.AppsV1Interface
+
+	admInterface  admissionregistrationv1beta1.AdmissionregistrationV1beta1Interface
+	appInterface  appsv1.AppsV1Interface
+	coreInterface corev1.CoreV1Interface
+	scInterface   v1beta1.ServicecatalogV1beta1Interface
+
+	marshaller   func(interface{}) ([]byte, error)
+	unmarshaller func([]byte, interface{}) error
 }
 
 // NewMigrationService creates a new instance of a Service
-func NewMigrationService(scInterface v1beta1.ServicecatalogV1beta1Interface, storagePath string, releaseNamespace string, apiserverName string, coreInterface corev1.CoreV1Interface, appInterface appsv1.AppsV1Interface) *Service {
+func NewMigrationService(scInterface v1beta1.ServicecatalogV1beta1Interface, storagePath string, releaseNamespace string, apiserverName string, k8sclient *k8sClientSet.Clientset) *Service {
 	return &Service{
-		scInterface:      scInterface,
-		coreInterface:    coreInterface,
-		appInterface:     appInterface,
 		storagePath:      storagePath,
 		releaseNamespace: releaseNamespace,
 		apiserverName:    apiserverName,
-		marshaller:       yaml.Marshal,
+
+		admInterface:  k8sclient.AdmissionregistrationV1beta1(),
+		appInterface:  k8sclient.AppsV1(),
+		coreInterface: k8sclient.CoreV1(),
+		scInterface:   scInterface,
+
+		marshaller: yaml.Marshal,
 		unmarshaller: func(b []byte, obj interface{}) error {
 			return yaml.Unmarshal(b, obj)
 		},
@@ -116,8 +123,9 @@ func (m *Service) adjustOwnerReference(om *metav1.ObjectMeta, uidMap map[string]
 	}
 }
 
+// IsMigrationRequired checks if current version of Service Catalog needs to be migrated
 func (m *Service) IsMigrationRequired() (bool, error) {
-	_, err := m.appInterface.Deployments(m.releaseNamespace).Get(m.apiserverName, metav1.GetOptions{});
+	_, err := m.appInterface.Deployments(m.releaseNamespace).Get(m.apiserverName, metav1.GetOptions{})
 	switch {
 	case err == nil:
 	case apiErrors.IsNotFound(err):

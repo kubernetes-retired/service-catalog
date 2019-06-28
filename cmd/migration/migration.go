@@ -29,6 +29,10 @@ import (
 	"k8s.io/klog"
 )
 
+const (
+	blockerBaseName string = "service-catalog-migration-blocker"
+)
+
 // RunCommand executes migration action
 func RunCommand(opt *Options) error {
 	if err := opt.Validate(); nil != err {
@@ -49,7 +53,7 @@ func RunCommand(opt *Options) error {
 	}
 	scInterface := scClient.ServicecatalogV1beta1()
 
-	svc := migration.NewMigrationService(scInterface, opt.StoragePath, opt.ReleaseNamespace, opt.ApiserverName, k8sCli.CoreV1(), k8sCli.AppsV1())
+	svc := migration.NewMigrationService(scInterface, opt.StoragePath, opt.ReleaseNamespace, opt.ApiserverName, k8sCli)
 	scalingSvc := migration.NewScalingService(opt.ReleaseNamespace, opt.ControllerManagerName, k8sCli.AppsV1())
 
 	switch opt.Action {
@@ -64,6 +68,17 @@ func RunCommand(opt *Options) error {
 		}
 
 		klog.Infoln("Executing backup action")
+
+		svc.DisableBlocker(blockerBaseName)
+		err = svc.EnableBlocker(blockerBaseName)
+		if err != nil {
+			return err
+		}
+
+		// This defer is a fail-safe to clean up in case of any issue in backup process
+		// DisableBlocker can be safely called multiple times without generating errors
+		defer svc.DisableBlocker(blockerBaseName)
+
 		err = scalingSvc.ScaleDown()
 		if err != nil {
 			return err
@@ -79,6 +94,9 @@ func RunCommand(opt *Options) error {
 			return err
 		}
 
+		// Blocker has to be disabled cause we are about to remove protected objects
+		svc.DisableBlocker(blockerBaseName)
+
 		err = svc.Cleanup(res)
 		if err != nil {
 			return err
@@ -86,9 +104,12 @@ func RunCommand(opt *Options) error {
 
 		klog.Infoln("Removing finalizers")
 		finalizerCleaner := cleaner.NewFinalizerCleaner(scClient)
-		err = finalizerCleaner.RemoveFinalizers()
+		if err = finalizerCleaner.RemoveFinalizers(); err != nil {
+			return err
+		}
+
 		klog.Infoln("...done")
-		return err
+		return nil
 	case restoreActionName:
 		klog.Infoln("Executing restore action")
 		err := scalingSvc.ScaleDown()
@@ -110,6 +131,10 @@ func RunCommand(opt *Options) error {
 		if err != nil {
 			return err
 		}
+	case deployBlockerActionName:
+		return svc.EnableBlocker(blockerBaseName)
+	case undeployBlockerActionName:
+		svc.DisableBlocker(blockerBaseName)
 	default:
 		return fmt.Errorf("unknown action %s", opt.Action)
 	}
