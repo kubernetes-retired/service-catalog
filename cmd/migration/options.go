@@ -31,6 +31,8 @@ const (
 	apiserverNameParameter           = "apiserver-deployment"
 	controllerManagerNameParameter   = "controller-manager-deployment"
 	serviceCatalogNamespaceParameter = "service-catalog-namespace"
+	webhookServiceNameParameter      = "webhook-service-name"
+	webhookServicePortParameter      = "webhook-service-port"
 )
 
 // Options holds configuration for the migration job
@@ -40,6 +42,8 @@ type Options struct {
 	ReleaseNamespace      string
 	ControllerManagerName string
 	ApiserverName         string
+	WebhookServiceName    string
+	WebhookServicePort    string
 }
 
 // NewMigrationOptions creates and returns a new Options
@@ -54,6 +58,8 @@ func (c *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&c.ReleaseNamespace, serviceCatalogNamespaceParameter, "", "Name of namespace where Service Catalog is released")
 	fs.StringVar(&c.ControllerManagerName, controllerManagerNameParameter, "", "Name of controller manager deployment")
 	fs.StringVar(&c.ApiserverName, apiserverNameParameter, "", "Name of apiserver deployment")
+	fs.StringVar(&c.WebhookServiceName, webhookServiceNameParameter, "", "Name of webhook service")
+	fs.StringVar(&c.WebhookServicePort, webhookServicePortParameter, "", "Port of the webhook service")
 }
 
 // Validate checks flag has been set and has a proper value

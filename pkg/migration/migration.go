@@ -35,13 +35,19 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/yaml"
+	"net/http"
+	"crypto/tls"
+	"time"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
 type Service struct {
-	storagePath      string
-	releaseNamespace string
-	apiserverName    string
+	storagePath        string
+	releaseNamespace   string
+	apiserverName      string
+	webhookServiceName string
+	webhookServicePort string
 
 	admInterface  admissionregistrationv1beta1.AdmissionregistrationV1beta1Interface
 	appInterface  appsv1.AppsV1Interface
@@ -53,11 +59,13 @@ type Service struct {
 }
 
 // NewMigrationService creates a new instance of a Service
-func NewMigrationService(scInterface v1beta1.ServicecatalogV1beta1Interface, storagePath string, releaseNamespace string, apiserverName string, k8sclient *k8sClientSet.Clientset) *Service {
+func NewMigrationService(scInterface v1beta1.ServicecatalogV1beta1Interface, storagePath string, releaseNamespace string, apiserverName string, webhookServiceName string, webhookServerPort string, k8sclient *k8sClientSet.Clientset) *Service {
 	return &Service{
-		storagePath:      storagePath,
-		releaseNamespace: releaseNamespace,
-		apiserverName:    apiserverName,
+		storagePath:        storagePath,
+		releaseNamespace:   releaseNamespace,
+		apiserverName:      apiserverName,
+		webhookServiceName: webhookServiceName,
+		webhookServicePort: webhookServerPort,
 
 		admInterface:  k8sclient.AdmissionregistrationV1beta1(),
 		appInterface:  k8sclient.AppsV1(),
@@ -121,6 +129,34 @@ func (m *Service) adjustOwnerReference(om *metav1.ObjectMeta, uidMap map[string]
 	if len(om.OwnerReferences) > 0 {
 		om.OwnerReferences[0].UID = uidMap[om.OwnerReferences[0].Name]
 	}
+}
+
+func (m *Service) AssertWebhookServerIsUp() error {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr, Timeout: 3 * time.Second}
+
+	protocol := "http"
+	if m.webhookServicePort == "443" {
+		protocol = "https"
+	}
+
+	return wait.Poll(1*time.Second, 60*time.Second, func() (done bool, err error) {
+		url := fmt.Sprintf("%s://%s.%s.svc:%s/mutating-clusterserviceclasses", protocol, m.webhookServiceName, m.releaseNamespace, m.webhookServicePort)
+		response, err := client.Get(url)
+		if err != nil {
+			klog.Infof("while send request to webhook service: %s. Retry...", err)
+			return false, nil
+		}
+		if response.StatusCode != http.StatusOK {
+			klog.Infof("Webhook server is not ready. Status cose: %s. Retry...", response.StatusCode)
+			return false, nil
+		}
+
+		klog.Info("Webhook server is ready")
+		return true, nil
+	})
 }
 
 // IsMigrationRequired checks if current version of Service Catalog needs to be migrated
