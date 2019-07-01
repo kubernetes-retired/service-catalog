@@ -45,6 +45,9 @@ rules:
     - "serviceplans"
     - "servicebrokers"
     verbs: ["get", "list", "delete", "update"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    verbs: ["create", "delete"]
 
 ---
 kind: ClusterRoleBinding
@@ -108,7 +111,7 @@ metadata:
     "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
 spec:
   backoffLimit: 1
-  activeDeadlineSeconds: 100
+  activeDeadlineSeconds: 120
   template:
     metadata:
       labels:

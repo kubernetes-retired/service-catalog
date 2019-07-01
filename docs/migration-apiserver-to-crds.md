@@ -119,6 +119,14 @@ To test the mutation blocking feature, execute the following commands:
   ./service-catalog migration --action undeploy-blocker --service-catalog-namespace=default
   ```
 
+## Cleanup
+
+You can delete all the migration-related resources using this command:
+
+```bash
+kubectl delete pvc,clusterrole,clusterrolebinding,serviceaccount,job -n catalog -l migration-job=true
+```
+
 ## Troubleshooting
 
 In case your migration job failed, you can check its logs using the following command:
@@ -127,10 +135,21 @@ In case your migration job failed, you can check its logs using the following co
 kubectl logs -n catalog -l migration-job=true
 ```
 
-## Cleanup
+## Rollback
 
-You can delete all the migration-related resources using this command:
+In case you want to revert the upgrade, use the `helm rollback` command which will restore the Service Catalog API Server version.
 
-```bash
-kubectl delete pvc,clusterrole,clusterrolebinding,serviceaccount,job -n catalog -l migration-job=true
+Before you proceed, you must delete all the Service Catalog resources and CRDs. You must also delete the resources that are not necessary for the Service Catalog API Server version. Use the following commands:
 ```
+kubectl delete crd -l svcat=true
+kubectl delete secret -n catalog catalog-catalog-webhook-cert
+kubectl delete sa -n catalog service-catalog-webhook
+kubectl delete sa -n catalog clean-job-account
+```
+
+Then you can execute the rollback using this command:
+```
+helm rollback catalog 1 --cleanup-on-fail --no-hooks
+```
+
+After the rollback is succeeded, you still have the backup of your Service Catalog resources from the previous upgrade stored in the persistence volume.  

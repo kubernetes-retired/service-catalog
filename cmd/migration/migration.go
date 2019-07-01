@@ -53,7 +53,7 @@ func RunCommand(opt *Options) error {
 	}
 	scInterface := scClient.ServicecatalogV1beta1()
 
-	svc := migration.NewMigrationService(scInterface, opt.StoragePath, opt.ReleaseNamespace, opt.ApiserverName, k8sCli)
+	svc := migration.NewMigrationService(scInterface, opt.StoragePath, opt.ReleaseNamespace, opt.ApiserverName, opt.WebhookServiceName, opt.WebhookServicePort, k8sCli)
 	scalingSvc := migration.NewScalingService(opt.ReleaseNamespace, opt.ControllerManagerName, k8sCli.AppsV1())
 
 	switch opt.Action {
@@ -112,7 +112,13 @@ func RunCommand(opt *Options) error {
 		return nil
 	case restoreActionName:
 		klog.Infoln("Executing restore action")
-		err := scalingSvc.ScaleDown()
+
+		err := svc.AssertWebhookServerIsUp()
+		if err != nil {
+			return err
+		}
+
+		err = scalingSvc.ScaleDown()
 		if err != nil {
 			return err
 		}
