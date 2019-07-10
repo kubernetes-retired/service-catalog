@@ -213,12 +213,13 @@ svcat version --client
 
 ## Windows
 
-The snippet below adds a directory to your PATH for the current session only.
+The PowerShell snippet below adds a directory to your PATH for the current session only.
 You will need to find a permanent location for it and add it to your PATH.
 
 ```
 iwr 'https://download.svcat.sh/cli/latest/windows/amd64/svcat.exe' -UseBasicParsing -OutFile svcat.exe
 mkdir -f ~\bin
+Move-Item -Path svcat.exe  -Destination ~\bin
 $env:PATH += ";${pwd}\bin"
 svcat version --client
 ```
