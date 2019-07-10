@@ -98,6 +98,7 @@ var (
 	testContext         = map[string]interface{}{
 		"platform":           ContextProfilePlatformKubernetes,
 		"namespace":          testNamespace,
+		"instance_name":      testServiceInstanceName,
 		clusterIdentifierKey: testClusterID,
 	}
 )
