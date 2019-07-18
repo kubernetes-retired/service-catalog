@@ -2355,6 +2355,7 @@ func newTestController(t *testing.T, config fakeosb.FakeClientConfiguration) (
 		7*24*time.Hour,
 		DefaultClusterIDConfigMapName,
 		DefaultClusterIDConfigMapNamespace,
+		60*time.Second,
 	)
 
 	if err != nil {

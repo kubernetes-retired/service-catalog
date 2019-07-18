@@ -80,6 +80,7 @@ chart and their default values.
 | `controllerManager.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
 | `controllerManager.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
 | `controllerManager.resyncInterval` | How often the controller should resync informers; duration format (`20m`, `1h`, etc) | `5m` |
+| `controllerManager.osbApiRequestTimeout` | The maximum amount of timeout to any request to the broker; duration format (`60s`, `3m`, etc) | `60s` |
 | `controllerManager.brokerRelistInterval` | How often the controller should relist the catalogs of ready brokers; duration format (`20m`, `1h`, etc) | `24h` |
 | `controllerManager.brokerRelistIntervalActivated` | Whether or not the controller supports a --broker-relist-interval flag. If this is set to true, brokerRelistInterval will be used as the value for that flag. | `true` |
 | `controllerManager.profiling.disabled` | Disable profiling via web interface host:port/debug/pprof/ | `false` |
