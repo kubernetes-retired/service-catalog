@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"crypto/tls"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -28,17 +29,16 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	k8sClientSet "k8s.io/client-go/kubernetes"
 	admissionregistrationv1beta1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	appsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"sigs.k8s.io/yaml"
 	"net/http"
-	"crypto/tls"
+	"sigs.k8s.io/yaml"
 	"time"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
@@ -131,6 +131,7 @@ func (m *Service) adjustOwnerReference(om *metav1.ObjectMeta, uidMap map[string]
 	}
 }
 
+// AssertWebhookServerIsUp make sure webhook server response for request with code 200
 func (m *Service) AssertWebhookServerIsUp() error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -150,7 +151,7 @@ func (m *Service) AssertWebhookServerIsUp() error {
 			return false, nil
 		}
 		if response.StatusCode != http.StatusOK {
-			klog.Infof("Webhook server is not ready. Status cose: %s. Retry...", response.StatusCode)
+			klog.Infof("Webhook server is not ready. Status code: %d. Retry...", response.StatusCode)
 			return false, nil
 		}
 
