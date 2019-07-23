@@ -73,7 +73,6 @@ roleRef:
   name: pre-migration-job-account
 
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

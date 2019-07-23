@@ -50,7 +50,7 @@ function waitForMinikubeToBeUp() {
 function checkMinikubeStatus() {
     MINIKUBE_STATUS="$(minikube status --format {{.Host}})"
     KUBELET_STATUS="$(minikube status --format {{.Kubelet}})"
-    APISERVER_STATUS="$(minikube status --format {{.ApiServer}})"
+    APISERVER_STATUS="$(minikube status --format {{.APIServer}})"
 
     if [[ "$MINIKUBE_STATUS" == "Running" ]] &&
        [[ "$KUBELET_STATUS" == "Running" ]] &&

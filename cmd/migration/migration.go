@@ -137,6 +137,11 @@ func RunCommand(opt *Options) error {
 		if err != nil {
 			return err
 		}
+
+		err = svc.AssertPersistentVolumeClaimDeleted(opt.PersistentVolumeClaimName)
+		if err != nil {
+			return err
+		}
 	case deployBlockerActionName:
 		return svc.EnableBlocker(blockerBaseName)
 	case undeployBlockerActionName:
