@@ -80,10 +80,6 @@ spec:
         - --operation-polling-maximum-backoff-duration
         - {{ .Values.controllerManager.operationPollingMaximumBackoffDuration }}
         {{- end }}
-        {{ if .Values.controllerManager.osbApiRequestTimeout -}}
-        - --osb-api-request-timeout
-        - {{ .Values.controllerManager.osbApiRequestTimeout }}
-        {{- end }}
         - --feature-gates
         - OriginatingIdentity={{.Values.originatingIdentityEnabled}}
         - --feature-gates
