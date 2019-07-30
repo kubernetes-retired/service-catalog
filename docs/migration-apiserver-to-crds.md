@@ -124,7 +124,7 @@ To test the mutation blocking feature, execute the following commands:
 You can delete all the migration-related resources using this command:
 
 ```bash
-kubectl delete pvc,clusterrole,clusterrolebinding,serviceaccount,job -n catalog -l migration-job=true
+kubectl delete clusterrole,clusterrolebinding,serviceaccount,job -n catalog -l migration-job=true
 ```
 
 ## Troubleshooting
@@ -151,5 +151,3 @@ Then you can execute the rollback using this command:
 ```
 helm rollback catalog 1 --cleanup-on-fail --no-hooks
 ```
-
-After the rollback is succeeded, you still have the backup of your Service Catalog resources from the previous upgrade stored in the persistence volume.  
