@@ -97,30 +97,21 @@ the basic concepts of the OSB API.
 <img src="/docs/images/current.png" width="75%" height="75%">
 
 The above is the high level architecture of Service Catalog.
+Service Catalog has two basic building blocks: a Webhook Server and a controller.
 
-Service Catalog has two basic building blocks: an API server and a controller.
-This design is similar to the design of Kubernetes itself (in fact, 
-Service Catalog borrows a lot of code from Kubernetes to implement this
-design).
 
-### API Server
+### Webhook Server
 
-The API Server is an HTTPS
-[REST](https://en.wikipedia.org/wiki/Representational_state_transfer)ful 
-front-end for [etcd](https://coreos.com/etcd/) 
-(we can implement more storage backends, but we haven't done so)
+The Webhook Server uses [Admission Webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks) 
+to manage custom resources. Admission Webhook is a feature available in the Kubernetes API Server, 
+that allows you to implement arbitrary control decisions, such as validation or mutation.
 
-Users and the Service Catalog controller interact with the API server 
-(via the
-[Kubernetes API aggregator](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/)
-to perform [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) operations on 
-Service Catalog resources (the ones listed in the previous section). For example, when a user runs 
-`kubectl get clusterservicebroker`, they will be talking to the Service
-Catalog API server to get the list of `ClusterServiceBroker` resources.
-
-The current version of all Service Catalog API resources is `v1beta1`.
-You can see the structure of each resource in detail at
+For every resource managed by Service Catalog (the ones listed in the previous section), there is a separate handler defined. You can see the structure at 
+[`pkg/webhook/servicecatalog`](https://github.com/kyma-incubator/service-catalog/tree/crds/pkg/webhook/servicecatalog).
+The current version of all Service Catalog API resources is `v1beta1`. The resources are defined here:
 [`pkg/apis/servicecatalog/v1beta1/types.go`](https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go).
+
+If you want to learn more about Admission Webhooks, read [this](https://kubernetes.io/blog/2019/03/21/a-guide-to-kubernetes-admission-controllers/) document.
 
 ### Controller
 
@@ -129,8 +120,7 @@ API. It monitors the API resources (by watching the stream of events from the
 API server) and takes the appropriate actions to reconcile the current
 state with the user's desired end state.
 
-For example, if a user creates a `ClusterServiceBroker`, the Service Catalog
-API server will store the resource and emit an event. The Service Catalog 
+For example, if a user creates a `ClusterServiceBroker`, the Service Catalog 
 controller will pick up the event and request the catalog from the 
 broker listed in the resource.
 

@@ -124,10 +124,10 @@ layout:
     │   ├── catalog             # Helm chart for deploying the service catalog
     │   └── ups-broker          # Helm chart for deploying the user-provided service broker
     ├── cmd                     # Contains "main" Go packages for each service catalog component binary
-    │   ├── apiserver           # The service catalog API server service-catalog command
     │   ├── controller-manager  # The service catalog controller manager service-catalog command
     │   ├── service-catalog     # The service catalog binary, which is used to run commands
     │   └── svcat               # The command-line interface for interacting with kubernetes service-catalog resources
+    │   └── webhook             # The service catalog webhook server command
     ├── contrib                 # Contains examples, non-essential golang source, CI configurations, etc
     │   ├── build               # Dockerfiles for contrib images (example: ups-broker)
     │   ├── cmd                 # Entrypoints for contrib binaries
@@ -345,7 +345,8 @@ functionality or introduce instability.  See [FeatureGates](feature-gates.md)
 for more details.
 
 When adding a FeatureGate to Helm charts, define the variable
-`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/values.yaml).  In the [API Server](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/templates/controller-manager-deployment.yaml)
+`fooEnabled` with the `false` value in [values.yaml](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/values.yaml).  
+In the [Webhook Server](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/templates/webhook-deployment.yaml) and [Controller](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog/templates/controller-manager-deployment.yaml)
 templates, add the new FeatureGate:
 {% raw %}
 ```yaml
@@ -458,9 +459,7 @@ If someone wants to install a unreleased version, they must build it locally.
 
 Use the [`catalog` chart](../charts/catalog) to deploy the service
 catalog into your cluster.  The easiest way to get started is to deploy into a
-cluster you regularly use and are familiar with.  One of the choices you can
-make when deploying the catalog is whether to make the API server store its
-resources in an external etcd server, or in third party resources.
+cluster you regularly use and are familiar with.
 
 If you have recently merged changes that haven't yet made it into a
 release, you probably want to deploy the canary images. Always use the
@@ -479,19 +478,10 @@ helm install charts/catalog \
     --set image=quay.io/kubernetes-service-catalog/service-catalog:canary
 ```
 
-If you choose etcd storage, the helm chart will launch an etcd server for you
-in the same pod as the service-catalog API server. You will be responsible for
-the data in the etcd server container.
-
-If you choose third party resources storage, the helm chart will not launch an
-etcd server, but will instead instruct the API server to store all resources in
-the Kubernetes cluster as third party resources.
-
 ### Deploy local canary
 For your convenience, you can use the following script quickly rebuild, push and
 deploy the canary image. There are a few assumptions about your environment and
-configuration in the script (for example, that you have persistent storage setup
-for etcd so that you don't lose data in between pushes). If the assumptions do
+configuration in the script. If the assumptions do
 not match your needs, we suggest copying the contents of that script and using
 it as a starting off point for your own custom deployment script.
 

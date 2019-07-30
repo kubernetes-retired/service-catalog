@@ -8,10 +8,7 @@ resources. svcat is a domain-specific tool to make interacting with the Service 
 While many of its commands have analogs to `kubectl`, our goal is to streamline and optimize
 the operator experience.
 
-svcat communicates with the Service Catalog API through the [aggregated API][agg-api] endpoint on a
-Kubernetes cluster.
-
-[agg-api]: https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/
+svcat communicates with Kubernetes cluster by directly using REST API - just like kubectl.
 
 This document assumes that you've installed Service Catalog and the Service Catalog CLI
 onto your cluster. If you haven't, please see the [installation instructions](install.md#installing-the-service-catalog-cli).
