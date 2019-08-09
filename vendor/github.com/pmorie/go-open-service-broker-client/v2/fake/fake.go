@@ -249,6 +249,12 @@ func UnexpectedActionError() error {
 	return errors.New("Unexpected action")
 }
 
+// RequiredFieldsMissingError returns an error message indicating that
+// a required field was not set
+func RequiredFieldsMissingError() error {
+	return errors.New("A required field on the request was not set")
+}
+
 // CatalogReactionInterface defines the reaction to GetCatalog requests.
 type CatalogReactionInterface interface {
 	react() (*v2.CatalogResponse, error)
@@ -282,9 +288,12 @@ type ProvisionReaction struct {
 	Error    error
 }
 
-func (r *ProvisionReaction) react(_ *v2.ProvisionRequest) (*v2.ProvisionResponse, error) {
+func (r *ProvisionReaction) react(req *v2.ProvisionRequest) (*v2.ProvisionResponse, error) {
 	if r == nil {
 		return nil, UnexpectedActionError()
+	}
+	if req.ServiceID == "" || req.PlanID == "" || req.OrganizationGUID == "" || req.SpaceGUID == "" {
+		return nil, RequiredFieldsMissingError()
 	}
 	return r.Response, r.Error
 }
@@ -478,5 +487,15 @@ func AppGUIDRequiredError() error {
 		StatusCode:   http.StatusUnprocessableEntity,
 		ErrorMessage: strPtr(v2.AppGUIDRequiredErrorMessage),
 		Description:  strPtr(v2.AppGUIDRequiredErrorDescription),
+	}
+}
+
+// ConcurrencyError returns error for when concurrent requests to modify the
+// same resource is rejected.
+func ConcurrencyError() error {
+	return v2.HTTPStatusCodeError{
+		StatusCode:   http.StatusUnprocessableEntity,
+		ErrorMessage: strPtr(v2.ConcurrencyErrorMessage),
+		Description:  strPtr(v2.ConcurrencyErrorDescription),
 	}
 }
