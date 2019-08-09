@@ -96,7 +96,7 @@ func TestBlockNewCredentialsForDeletedInstance(t *testing.T) {
 	informerFactory.Start(wait.NeverStop)
 
 	err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&credential, nil, servicecatalog.Kind("ServiceBindings").WithVersion("version"),
-		"test-ns", "test-cred", servicecatalog.Resource("servicebindings").WithVersion("version"), "", admission.Create, false, nil), nil)
+		"test-ns", "test-cred", servicecatalog.Resource("servicebindings").WithVersion("version"), "", admission.Create, nil, false, nil), nil)
 	if err == nil {
 		t.Error("Unexpected error: admission controller failed blocking the request")
 	} else {
@@ -119,7 +119,7 @@ func TestAllowNewCredentialsForNonDeletedInstance(t *testing.T) {
 
 	credential := newServiceBinding()
 	err = handler.(admission.MutationInterface).Admit(admission.NewAttributesRecord(&credential, nil, servicecatalog.Kind("ServiceBindings").WithVersion("version"),
-		"test-ns", "test-cred", servicecatalog.Resource("servicebindings").WithVersion("version"), "", admission.Create, false, nil), nil)
+		"test-ns", "test-cred", servicecatalog.Resource("servicebindings").WithVersion("version"), "", admission.Create, nil, false, nil), nil)
 	if err != nil {
 		t.Errorf("Error, admission controller should not block this test")
 	}

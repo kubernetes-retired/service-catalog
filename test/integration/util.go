@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/component-base/featuregate"
 
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 )
@@ -53,9 +54,9 @@ func falsePtr() *bool {
 func enableNamespacedResources() (resetFeaturesFunc func(), err error) {
 	previousFeatureGate := feature.DefaultFeatureGate
 
-	newFeatureGate := feature.NewFeatureGate()
-	if err := newFeatureGate.Add(map[feature.Feature]feature.FeatureSpec{
-		scfeatures.NamespacedServiceBroker: {Default: true, PreRelease: feature.Alpha},
+	newFeatureGate := featuregate.NewFeatureGate()
+	if err := newFeatureGate.Add(map[featuregate.Feature]featuregate.FeatureSpec{
+		scfeatures.NamespacedServiceBroker: {Default: true, PreRelease: featuregate.Alpha},
 	}); err != nil {
 		return nil, err
 	}

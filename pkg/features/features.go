@@ -17,7 +17,8 @@ limitations under the License.
 package features
 
 import (
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	apiutilfeature "k8s.io/apiserver/pkg/util/feature"
+	utilfeature "k8s.io/component-base/featuregate"
 )
 
 const (
@@ -80,7 +81,7 @@ const (
 )
 
 func init() {
-	utilfeature.DefaultMutableFeatureGate.Add(defaultServiceCatalogFeatureGates)
+	apiutilfeature.DefaultMutableFeatureGate.Add(defaultServiceCatalogFeatureGates)
 }
 
 // defaultServiceCatalogFeatureGates consists of all known service catalog specific feature keys.

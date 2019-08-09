@@ -120,9 +120,9 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
-		&servicecatalog.ServiceClass{},
 		prefix,
 		serviceClassRESTStrategies,
+		EmptyObject,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,

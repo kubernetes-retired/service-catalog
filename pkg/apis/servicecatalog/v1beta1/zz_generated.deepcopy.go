@@ -261,7 +261,7 @@ func (in *ClusterServiceBrokerAuthInfo) DeepCopy() *ClusterServiceBrokerAuthInfo
 func (in *ClusterServiceBrokerList) DeepCopyInto(out *ClusterServiceBrokerList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ClusterServiceBroker, len(*in))
@@ -361,7 +361,7 @@ func (in *ClusterServiceClass) DeepCopyObject() runtime.Object {
 func (in *ClusterServiceClassList) DeepCopyInto(out *ClusterServiceClassList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ClusterServiceClass, len(*in))
@@ -456,7 +456,7 @@ func (in *ClusterServicePlan) DeepCopyObject() runtime.Object {
 func (in *ClusterServicePlanList) DeepCopyInto(out *ClusterServicePlanList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ClusterServicePlan, len(*in))
@@ -923,7 +923,7 @@ func (in *ServiceBindingCondition) DeepCopy() *ServiceBindingCondition {
 func (in *ServiceBindingList) DeepCopyInto(out *ServiceBindingList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ServiceBinding, len(*in))
@@ -1136,7 +1136,7 @@ func (in *ServiceBrokerCondition) DeepCopy() *ServiceBrokerCondition {
 func (in *ServiceBrokerList) DeepCopyInto(out *ServiceBrokerList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ServiceBroker, len(*in))
@@ -1236,7 +1236,7 @@ func (in *ServiceClass) DeepCopyObject() runtime.Object {
 func (in *ServiceClassList) DeepCopyInto(out *ServiceClassList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ServiceClass, len(*in))
@@ -1348,7 +1348,7 @@ func (in *ServiceInstanceCondition) DeepCopy() *ServiceInstanceCondition {
 func (in *ServiceInstanceList) DeepCopyInto(out *ServiceInstanceList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ServiceInstance, len(*in))
@@ -1541,7 +1541,7 @@ func (in *ServicePlan) DeepCopyObject() runtime.Object {
 func (in *ServicePlanList) DeepCopyInto(out *ServicePlanList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ServicePlan, len(*in))

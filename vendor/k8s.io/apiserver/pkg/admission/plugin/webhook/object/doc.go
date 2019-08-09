@@ -1,5 +1,5 @@
 /*
-Copyright 2016 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package generators
-
-import (
-	"k8s.io/gengo/types"
-	"k8s.io/klog"
-)
-
-// extractBoolTagOrDie gets the comment-tags for the key and asserts that, if
-// it exists, the value is boolean.  If the tag did not exist, it returns
-// false.
-func extractBoolTagOrDie(key string, lines []string) bool {
-	val, err := types.ExtractSingleBoolCommentTag("+", key, false, lines)
-	if err != nil {
-		klog.Fatal(err)
-	}
-	return val
-}
+// Package object defines the utilities that are used by the webhook plugin to
+// decide if a webhook should run, as long as either the old object or the new
+// object has labels matching the webhook config's objectSelector.
+package object // import "k8s.io/apiserver/pkg/admission/plugin/webhook/object"

@@ -94,7 +94,7 @@ TEST_BROKER_MUTABLE_IMAGE         = $(REGISTRY)test-broker-$(ARCH):$(MUTABLE_TAG
 HEALTHCHECK_IMAGE                 = $(REGISTRY)healthcheck-$(ARCH):$(VERSION)
 HEALTHCHECK_MUTABLE_IMAGE         = $(REGISTRY)healthcheck-$(ARCH):$(MUTABLE_TAG)
 ifdef UNIT_TESTS
-	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v
+	UNIT_TEST_FLAGS=-run $(UNIT_TESTS) -v --env GODEBUG tls13=1
 endif
 
 ifdef INT_TESTS

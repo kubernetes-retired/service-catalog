@@ -392,7 +392,7 @@ required = [
 
 [[override]]
   name = "github.com/google/gofuzz"
-  revision = "44d81051d367757e1c7c6a5a86423ece9afcf63c"
+  revision = "f140a6486e521aad38f5917de355cbf147cc0496"
 
 [[override]]
   name = "github.com/google/uuid"
@@ -859,27 +859,27 @@ required = [
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
 
 [[override]]
-  branch = "release-1.14"
+  branch = "release-1.15"
   name = "k8s.io/api"
 
 [[override]]
-  branch = "release-1.14"
+  branch = "release-1.15"
   name = "k8s.io/apiextensions-apiserver"
 
 [[override]]
-  branch = "release-1.14"
+  branch = "release-1.15"
   name = "k8s.io/apimachinery"
 
 [[override]]
-  branch = "release-1.14"
+  branch = "release-1.15"
   name = "k8s.io/apiserver"
 
 [[override]]
-  branch = "release-11.0"
+  branch = "release-12.0"
   name = "k8s.io/client-go"
 
 [[override]]
-  branch = "release-1.14"
+  branch = "release-1.15"
   name = "k8s.io/code-generator"
 
 [[override]]
