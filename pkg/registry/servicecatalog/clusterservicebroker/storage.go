@@ -109,9 +109,9 @@ func NewStorage(opts server.Options) (clusterServiceBrokers, clusterServiceBroke
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
-		&servicecatalog.ClusterServiceBroker{},
 		prefix,
 		clusterServiceBrokerRESTStrategies,
+		EmptyObject,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,

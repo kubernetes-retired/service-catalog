@@ -50,9 +50,9 @@ func NewStorage(opts server.Options) (rest.Storage, error) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
-		&settingsapi.PodPreset{},
 		prefix,
 		podPresetRESTStrategy,
+		EmptyObject,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,

@@ -72,9 +72,9 @@ func (o Options) KeyFunc(namespaced bool) func(context.Context, string) (string,
 
 // GetStorage returns the storage from the given parameters
 func (o Options) GetStorage(
-	objectType runtime.Object,
 	resourcePrefix string,
 	scopeStrategy rest.NamespaceScopedStrategy,
+	newFunc func() runtime.Object,
 	newListFunc func() runtime.Object,
 	getAttrsFunc storage.AttrFunc,
 	trigger storage.TriggerPublisherFunc,
@@ -82,9 +82,9 @@ func (o Options) GetStorage(
 	etcdRESTOpts := o.EtcdOptions.RESTOptions
 	storageInterface, dFunc := etcdRESTOpts.Decorator(
 		etcdRESTOpts.StorageConfig,
-		objectType,
 		resourcePrefix,
 		nil, /* keyFunc for decorator -- looks to be unused everywhere */
+		newFunc,
 		newListFunc,
 		getAttrsFunc,
 		trigger,
