@@ -354,15 +354,7 @@
   revision = "781450b3c4fcb4f5182bcc5133adb4b2e4a09d1d"
 
 [[projects]]
-  digest = "1:c01767916c59f084bb7c41a7d5877c0f3099b1595cfa066e84ec6ad6b084dd89"
-  name = "github.com/gorilla/context"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
-  version = "v1.1.1"
-
-[[projects]]
-  digest = "1:bf5cf1d53d703332e9bd8984c69784645b73a938317bf5ace9aadf20ac49379a"
+  digest = "1:3c8c26bb118e3f02230d4f5f30b972dbfe0c6b371acea8f190aa99ceaaae7028"
   name = "github.com/gorilla/mux"
   packages = ["."]
   pruneopts = "NUT"
@@ -675,6 +667,17 @@
   revision = "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
 
 [[projects]]
+  digest = "1:0d9b5a68e4883862d39f9f21bec9a2d173a937f530acf854808efcf4176235c9"
+  name = "github.com/pmorie/go-open-service-broker-client"
+  packages = [
+    "v2",
+    "v2/fake",
+    "v2/generator",
+  ]
+  pruneopts = "NUT"
+  revision = "6988c0983446576f2cefc90112028a66e6137233"
+
+[[projects]]
   digest = "1:84c59299d10402298277e3388120e91244b9f5fd1bdaf06c394ba3c6a9e85db2"
   name = "github.com/prometheus/client_golang"
   packages = [
@@ -945,7 +948,7 @@
   revision = "2382e3994d48b1d22acc2c86bcad0a2aff028e32"
 
 [[projects]]
-  digest = "1:b63b351b57e64ae8aec1af030dc5e74a2676fcda62102f006ae4411fac1b04c8"
+  digest = "1:a4824d8df1fd1f63c6b3690bf4801d6ff1722adcb3e13c0489196a7e248d868a"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -1073,8 +1076,8 @@
   revision = "1634385ce4626e4da21367d139c4ee5d72437e3b"
 
 [[projects]]
-  branch = "release-1.14"
-  digest = "1:78432a78895b9e4d2b206d246f486d35f9080914f8a0c8a33badf75a1415e1c6"
+  branch = "release-1.15"
+  digest = "1:e4251a1336dff016246f1d3f52d79047541fd6895145ea9fca9a41d69a234345"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
@@ -1086,7 +1089,7 @@
     "pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake",
   ]
   pruneopts = "NUT"
-  revision = "53c4693659ed354d76121458fb819202dd1635fa"
+  revision = "570696a46907dea400696e50a47ffbb9e20c6444"
 
 [[projects]]
   branch = "release-1.15"
@@ -1261,7 +1264,7 @@
 
 [[projects]]
   branch = "release-12.0"
-  digest = "1:6698dc749c4ed8cf8dc93dea962f29deca1069574afb93f4e97abb1bb61d481a"
+  digest = "1:1868bc3e6503f054a897861c8905fa7f58058d8f0554ef096321b7c1747307f9"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1562,22 +1565,12 @@
   revision = "d28510b1b7501d78be19ddc4609d5e3596128efa"
 
 [[projects]]
-  digest = "1:14e8a3b53e6d8cb5f44783056b71bb2ca1ac7e333939cc97f3e50b579c920845"
+  digest = "1:5011e453320ffdc30c5a06516f4de57df6e1c094b2923a1c7e699ea3f4364bc9"
   name = "k8s.io/utils"
   packages = [
     "buffer",
     "integer",
-    "trace",
-  ]
-  pruneopts = "NUT"
-  revision = "21c4ce38f2a793ec01e925ddc31216500183b773"
-
-[[projects]]
-  digest = "1:14e8a3b53e6d8cb5f44783056b71bb2ca1ac7e333939cc97f3e50b579c920845"
-  name = "k8s.io/utils"
-  packages = [
-    "buffer",
-    "integer",
+    "pointer",
     "trace",
   ]
   pruneopts = "NUT"
@@ -1737,7 +1730,6 @@
     "k8s.io/client-go/informers/core/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
-    "k8s.io/client-go/kubernetes/typed/coordination/v1",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/kubernetes/typed/coordination/v1",
     "k8s.io/client-go/kubernetes/typed/core/v1",
