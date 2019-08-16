@@ -173,10 +173,6 @@ $(BINDIR)/openapi-gen: $$(shell find vendor/k8s.io/kube-openapi/cmd/openapi-gen 
 $(BINDIR)/%-gen: $$(shell find vendor/k8s.io/code-generator/cmd/$$*-gen vendor/k8s.io/gengo) .init
 	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/$*-gen
 
-.PHONY: $(BINDIR)/e2e.test
-$(BINDIR)/e2e.test: .init
-	$(DOCKER_CMD) env GOOS=$(CLIENT_PLATFORM) GOARCH=$(ARCH) go test -c -o $@ $(SC_PKG)/test/e2e
-
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init generators $(TYPES_FILES)
 	# generate apiserver deps
@@ -294,13 +290,8 @@ test-integration: .init $(scBuildImageTarget) build build-integration
 	$(DOCKER_CMD) ./integration.test -test.v $(INT_TEST_FLAGS)
 	$(DOCKER_CMD) ./controller.test
 
-clean-e2e: .init $(scBuildImageTarget)
-	$(DOCKER_CMD) rm -f $(BINDIR)/e2e.test
-
-build-e2e: .generate_files $(BINDIR)/e2e.test
-
-test-e2e: build-e2e
-	$(BINDIR)/e2e.test
+test-e2e:
+	./contrib/hack/ci/run-e2e-tests.sh
 
 clean: clean-bin clean-build-image clean-generated clean-coverage
 

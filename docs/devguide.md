@@ -121,21 +121,21 @@ layout:
     ├── bin                     # Destination for binaries compiled for linux/amd64 (untracked)
     ├── build                   # Contains build-related scripts and subdirectories containing Dockerfiles
     ├── charts                  # Helm charts for deployment
-    │   └── catalog             # Helm chart for deploying the service catalog
+    │   ├── catalog             # Helm chart for deploying the service catalog
     │   └── ups-broker          # Helm chart for deploying the user-provided service broker
     ├── cmd                     # Contains "main" Go packages for each service catalog component binary
-    │   └── apiserver           # The service catalog API server service-catalog command
-    │   └── controller-manager  # The service catalog controller manager service-catalog command
-    │   └── service-catalog     # The service catalog binary, which is used to run commands
+    │   ├── apiserver           # The service catalog API server service-catalog command
+    │   ├── controller-manager  # The service catalog controller manager service-catalog command
+    │   ├── service-catalog     # The service catalog binary, which is used to run commands
     │   └── svcat               # The command-line interface for interacting with kubernetes service-catalog resources
     ├── contrib                 # Contains examples, non-essential golang source, CI configurations, etc
-    │   └── build               # Dockerfiles for contrib images (example: ups-broker)
-    │   └── cmd                 # Entrypoints for contrib binaries
-    │   └── examples            # Example API resources
-    │   └── hack                # Non-build related scripts
-    │   └── jenkins             # Jenkins configuration
+    │   ├── build               # Dockerfiles for contrib images (example: ups-broker)
+    │   ├── cmd                 # Entrypoints for contrib binaries
+    │   ├── examples            # Example API resources
+    │   ├── hack                # Non-build related scripts
+    │   │   ├── ci              # CI configuration
+    │   │   └── ...             # Rest helper bash scripts
     │   └── pkg                 # Contrib golang code
-    │   └── travis              # Travis configuration
     ├── docs                    # Documentation
     ├── pkg                     # Contains all non-"main" Go packages
     ├── plugin                  # Plugins for API server
@@ -220,32 +220,43 @@ script called `contrib/hack/kubectl` that will run it from within a
 Docker container. This avoids the need for you to download, or install it,
 youself. You may find it useful to add `contrib/hack` to your `PATH`.
 
-### e2e Tests
+### E2E Tests
 
-The e2e tests require an existing kubernetes cluster with
-service-catalog deployed into it. The test runner needs the
-configuration to talk to the cluster and the service-catalog
-server. Since service-catalog can run aggregated, this is done by giving
-the same kubeconfig.
-
-    $ KUBECONFIG=~/.kube/config SERVICECATALOGCONFIG=~/.kube/config make test-e2e
-
-Once built, the binary can also be run directly. Some example output is included below.
+The e2e tests are executed against Kubernetes cluster with service-catalog deployed 
+into it. The e2e testcases can be run via the `test-e2e` Makefile target:
 
 ```console
-$ e2e.test
-I0529 13:37:15.942348   21610 e2e.go:45] Starting e2e run "12ee92dc-6380-11e8-8a97-54e1ad543ebd" on Ginkgo node 1
+ $ make test-e2e
+```
+
+Sample test output:
+```console
+I0816 17:20:37.451423   75760 e2e.go:45] Starting e2e run "e39cfcd2-cbae-41fc-96ee-447095a492bd" on Ginkgo node 1
 Running Suite: Service Catalog e2e suite
 ========================================
-Random Seed: 1527626235 - Will randomize all specs
-Will run 3 of 3 specs
+Random Seed: 1565968837 - Will randomize all specs
+Will run 5 of 5 specs
 
 < ... Test Output ... >
 
 •
-Ran 3 of 3 Specs in 47.271 seconds
-SUCCESS! -- 3 Passed | 0 Failed | 0 Pending | 0 Skipped PASS
+Ran 5 of 5 Specs in 49.761 seconds
+SUCCESS! -- 5 Passed | 0 Failed | 0 Pending | 0 Skipped --- PASS: TestE2E (49.76s)
 ```
+
+> **NOTE:** Docker is required for running e2e tests locally.
+
+Under the hood, the script executes such flow:
+
+1. Install [Helm](https://github.com/helm/helm) and the [kind](https://github.com/kubernetes-sigs/kind) tool.
+2. Provision a Kubernetes cluster using the kind tool.
+3. Build Service Catalog images from sources. 
+4. Deploy Service Catalog into cluster. 
+5. Execute [e2e tests](../test/e2e).
+
+   If any test fails, then [cluster info](https://github.com/kubernetes/kubernetes/blob/release-1.14/pkg/kubectl/cmd/clusterinfo/clusterinfo_dump.go#L93-L96) from the namespace where the Service Catalog is installed is dumped.
+    
+6. Delete the Kubernetes cluster.
 
 ### Test Running Tips
 
@@ -377,19 +388,17 @@ you may need to [update the golden files](#golden-files).
 * Any associated documentation changes. You can preview documentation changes by
 clicking on the `deploy/netlify` build check on your pull request.
 
-Once the Pull Request has been created, it will automatically be built
-and the tests run. The unit and integration tests will run in travis,
-and Jenkins will run the e2e tests.
+After you create a PR, relevant CI tests need to complete successfully.
+If you are not a Kubernetes, contact the repository maintainers specified in the CODEOWNERS file to review 
+your PR and add the [ok-to-test](https://prow.k8s.io/command-help#ok_to_test) label to your PR to trigger all tests.
+
+If a test fails, check the reason by clicking the Details button next to the given job on your PR. 
+Make the required changes and the tests rerun. If you want to run a specific test, 
+add the /test {test-name} or /retest {test-name} comment to your PR. To rerun all failed tests, add the /retest comment.
 
 You can use the [Prow /cc command](https://prow.k8s.io/command-help#cc)
 to request reviews from the maintainers of the project. This works even
 if you do not have status in the service-catalog project.
-
-On travis, a build is made up of two jobs, one builds our chosen
-golang version, and the other builds with future release candidates
-(rc). It is okay for the rc build to fail. The rc build will not fail
-the overall build, and exists to give us a warning as to what changes
-we will have to make to support future versions of golang.
 
 ## Advanced Build Steps
 

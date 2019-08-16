@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016 The Kubernetes Authors.
+# Copyright 2019 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o nounset
-set -o errexit
-
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-
-. "${ROOT}/contrib/hack/utilities.sh" || { echo 'Cannot load Bash utilities'; exit 1; }
-
-# Cleanup services in Kubernetes to prevent network resource leaking
-function wipe_cluster() {
-  helm list -q | xargs helm delete
-  return 0
-}
+# Upgrade binary versions in a controlled fashion
+# along with the script contents (config, flags...)
+readonly STABLE_KIND_VERSION=v0.4.0
+readonly STABLE_HELM_VERSION=v2.14.3
