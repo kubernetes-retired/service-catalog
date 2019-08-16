@@ -60,7 +60,7 @@ func getValidationWebhookConfigurationObject(name string) *v1beta1.ValidatingWeb
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Webhooks: []v1beta1.Webhook{
+		Webhooks: []v1beta1.ValidatingWebhook{
 			{
 				Name:          "validating.reject-changes-to-service-catalog-crds.servicecatalog.k8s.io",
 				FailurePolicy: &failurePolicy,
