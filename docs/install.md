@@ -3,15 +3,9 @@ title: Install
 layout: docwithnav
 ---
 
-Kubernetes 1.9 or higher clusters run the
-[API Aggregator](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/),
-which is a specialized proxy server that sits in front of the core API Server.
-
-Service Catalog provides an API server that sits behind the API aggregator,
-so you'll be using `kubectl` as normal to interact with Service Catalog.
-
-To learn more about API aggregation, please see the
-[Kubernetes documentation](https://kubernetes.io/docs/concepts/api-extension/apiserver-aggregation/).
+Starting from version 0.3.x, Service Catalog uses [Admission Webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks)
+to manage custom resources. It uses [Additional Printer Columns](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/#additional-printer-columns)
+so you can use `kubectl` to interact with Service Catalog.
 
 The rest of this document details how to:
 
@@ -22,7 +16,7 @@ The rest of this document details how to:
 
 ## Kubernetes Version
 
-Service Catalog requires a Kubernetes cluster v1.9 or later. You'll also need a
+Service Catalog requires a Kubernetes cluster v1.12 or later. You'll also need a
 [Kubernetes configuration file](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
 installed on your host. You need this file so you can use `kubectl` and
 [`helm`](https://helm.sh) to communicate with the cluster. Many Kubernetes installation
@@ -33,7 +27,7 @@ check with your tool or provider for details.
 
 Most interaction with the service catalog system is achieved through the
 `kubectl` command line interface. As with the cluster version, Service Catalog
-requires `kubectl` version 1.9 or newer.
+requires `kubectl` version 1.12 or newer.
 
 First, check your version of `kubectl`:
 
@@ -41,7 +35,7 @@ First, check your version of `kubectl`:
 kubectl version
 ```
 
-Ensure that the server version and client versions are both `1.9` or above.
+Ensure that the server version and client versions are both `1.12` or above.
 
 If you need to upgrade your client, follow the
 [installation instructions](https://kubernetes.io/docs/tasks/kubectl/install/)
@@ -66,7 +60,7 @@ installation methods will automatically configure in-cluster DNS for you:
 
 ## Storage
 
-Apiserver requires etcd v3 to work. In future CRD support may be added.
+Service Catalog uses CRDs to store information.
 
 ## Helm
 
@@ -114,8 +108,9 @@ helm search service-catalog
 You should see the following output:
 
 ```console
-NAME           	VERSION	DESCRIPTION
-svc-cat/catalog	x,y.z  	service-catalog API server and controller-manag...
+NAME                         VERSION    DESCRIPTION
+svc-cat/catalog              0.3.X      service-catalog helm chart
+svc-cat/catalog-v0.2         0.2.X      service-catalog API server and controller-manager helm chart
 ```
 
 ## RBAC
@@ -171,20 +166,30 @@ helm install svc-cat/catalog \
     --name catalog --namespace catalog
 ```
 
+If you want to install older version of service catalog (for instance the  API-server based version from v0.2 branch) append branch name to the chart name:
+
+```console
+helm install svc-cat/catalog-v0.2 \
+    --name catalog --namespace catalog
+```
+
 # Installing the Service Catalog CLI
 
-Follow the appropriate instructions for your operating system to install svcat. The binary
-can be used by itself, or as a kubectl plugin.
+Follow the appropriate instructions for your operating system to install svcat. The binary can be used by itself, or as a kubectl plugin.
 
-The snippets below install the latest version of svcat. We also publish binaries for
-our canary (master) builds, and tags using the following prefixes:
+The snippets below install the latest version of svcat. We also publish binaries for our canary builds, and tags using the following prefixes:
+* Latest release:
+  * [master](https://github.com/kubernetes-sigs/service-catalog/tree/master) branch: https://download.svcat.sh/cli/latest
+  * [v0.2](https://github.com/kubernetes-sigs/service-catalog/tree/v0.2) branch: https://download.svcat.sh/cli/latest-v0.2
+* Canary builds:
+  * [master](https://github.com/kubernetes-sigs/service-catalog/tree/master) branch: https://download.svcat.sh/cli/canary
+  * [v0.2](https://github.com/kubernetes-sigs/service-catalog/tree/v0.2) branch: https://download.svcat.sh/cli/canary-v0.2
 
-* Latest release: https://download.svcat.sh/cli/latest
 * Tagged releases: https://download.svcat.sh/cli/VERSION
-  where `VERSION` is the release, for example `v0.1.20`.
-* Canary builds: https://download.svcat.sh/cli/canary
+  where `VERSION` is the release, for example `v0.3.0`, `v0.2.1`, etc.
+
 * Previous canary builds: https://download.svcat.sh/cli/VERSION-GITDESCRIBE
-  where `GITDESCRIBE` is the result of calling `git describe --tags`, for example `v0.1.20-1-g203c8ad`.
+  where `GITDESCRIBE` is the result of calling `git describe --tags`,  for example `v0.3.0-1-g84216bdf`, `v0.2.1-1-g203c8ad` etc.
 
 ## MacOS with Homebrew
 
