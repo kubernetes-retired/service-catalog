@@ -62,14 +62,6 @@ func (c *creator) execute() error {
 
 func (c *creator) registerClusterServiceBroker() error {
 	klog.Infof("Create ClusterServiceBroker %q", clusterServiceBrokerName)
-	if err := c.createClusterServiceBroker(); err != nil {
-		return errors.Wrap(err, "failed during creating ClusterServiceBroker")
-	}
-
-	return nil
-}
-
-func (c *creator) createClusterServiceBroker() error {
 	_, err := c.sc.ClusterServiceBrokers().Create(&v1beta1.ClusterServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterServiceBrokerName,
@@ -82,7 +74,11 @@ func (c *creator) createClusterServiceBroker() error {
 		},
 	})
 
-	return err
+	if err != nil {
+		return errors.Wrap(err, "failed during creating ClusterServiceBroker")
+	}
+
+	return nil
 }
 
 func (c *creator) createServiceInstance() error {

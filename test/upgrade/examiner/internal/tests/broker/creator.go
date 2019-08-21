@@ -62,14 +62,7 @@ func (c *creator) execute() error {
 
 func (c *creator) registerServiceBroker() error {
 	klog.Infof("Create ServiceBroker %q", serviceBrokerName)
-	if err := c.createServiceBroker(); err != nil {
-		return errors.Wrap(err, "failed during creating ServiceBroker")
-	}
 
-	return nil
-}
-
-func (c *creator) createServiceBroker() error {
 	_, err := c.sc.ServiceBrokers(c.namespace).Create(&v1beta1.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceBrokerName,
@@ -82,7 +75,11 @@ func (c *creator) createServiceBroker() error {
 		},
 	})
 
-	return err
+	if err != nil {
+		return errors.Wrap(err, "failed during creating ServiceBroker")
+	}
+
+	return nil
 }
 
 func (c *creator) createServiceInstance() error {

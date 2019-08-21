@@ -75,6 +75,18 @@ install::cluster::tiller() {
     helm init --service-account tiller --wait
 }
 
+# Installs Service Catalog from newest 0.2.x release on k8s cluster.
+# Required envs:
+#  - SC_CHART_NAME
+#  - SC_NAMESPACE
+install::cluster::service_catalog_v2() {
+    shout "- Installing Service Catalog in version 0.2.x"
+    helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
+    # TODO: After https://github.com/kyma-project/kyma/issues/5217, change `helm install svc-cat/catalog` to `helm install svc-cat/catalog-apiserver`
+    # install always the newest service catalog with apiserver
+    helm install svc-cat/catalog --name ${SC_CHART_NAME} --namespace ${SC_NAMESPACE} --wait
+}
+
 #
 # 'kind'(kubernetes-in-docker) functions
 #

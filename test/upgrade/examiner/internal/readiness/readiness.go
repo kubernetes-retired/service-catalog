@@ -73,7 +73,7 @@ func (r *readiness) assertServiceCatalogIsReady() error {
 	klog.Info("ServiceCatalog ApiServer is ready")
 
 	klog.Info("Make sure ServiceCatalog Controller is up")
-	if err := r.assertServiceCatalogApiServerIsUp(); err != nil {
+	if err := r.assertServiceCatalogControllerIsUp(); err != nil {
 		return errors.Wrap(err, "failed during waiting for ServiceCatalog Controller")
 	}
 	klog.Info("ServiceCatalog Controller is ready")

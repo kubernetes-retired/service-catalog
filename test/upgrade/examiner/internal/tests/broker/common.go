@@ -57,7 +57,7 @@ func (c *common) assertProperAmountOfServiceClasses() error {
 			return true, nil
 		}
 
-		klog.Errorf("There should be %d ServiceClassess, %d are", amountOfServiceClasses, amount)
+		klog.Errorf("There should be %d ServiceClassess, have %d", amountOfServiceClasses, amount)
 		return false, nil
 	})
 }
@@ -88,7 +88,7 @@ func (c *common) assertProperAmountOfServicePlans() error {
 			return true, nil
 		}
 
-		klog.Errorf("There should be %d ServicePlans, %d are", amountOfServicePlans, amount)
+		klog.Errorf("There should be %d ServicePlans, have %d", amountOfServicePlans, amount)
 		return false, nil
 	})
 }
