@@ -25,10 +25,8 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/test/upgrade/examiner/internal/runner"
 	"github.com/kubernetes-sigs/service-catalog/test/upgrade/examiner/internal/tests/broker"
 	"github.com/kubernetes-sigs/service-catalog/test/upgrade/examiner/internal/tests/clusterbroker"
-	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 	"k8s.io/apiserver/pkg/server"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 )
@@ -47,9 +45,7 @@ func registeredTests(cs *clientutil.ClientStorage) map[string]runner.UpgradeTest
 
 // Config collects all parameters from env variables
 type Config struct {
-	Local          bool         `envconfig:"default=true"`
-	KubeconfigPath string       `envconfig:"optional"`
-	KubeConfig     *rest.Config `envconfig:"-"`
+	KubeconfigPath string       `envconfig:"KUBECONFIG,optional"`
 	readiness.ServiceCatalogConfig
 }
 
@@ -60,13 +56,17 @@ type ConfigFlag struct {
 
 func main() {
 	// setup all configurations: envs, flags, stop channel
+	var cfg Config
 	flg := readFlags()
-	cfg, err := readConfig()
+	err := envconfig.InitWithPrefix(&cfg, "APP")
+	fatalOnError(err, "while reading configuration from environment variables")
+
+	k8sConfig, err := clientcmd.BuildConfigFromFlags("", cfg.KubeconfigPath)
 	fatalOnError(err, "while create config")
 	stop := server.SetupSignalHandler()
 
 	// create client storage - struct with all required clients
-	cs, err := clientutil.NewClientStorage(cfg.KubeConfig)
+	cs, err := clientutil.NewClientStorage(k8sConfig)
 	fatalOnError(err, "while create kubernetes client storage")
 
 	// get tests
@@ -117,25 +117,4 @@ func readFlags() ConfigFlag {
 	return ConfigFlag{
 		Action: action,
 	}
-}
-
-func readConfig() (Config, error) {
-	var cfg Config
-	err := envconfig.InitWithPrefix(&cfg, "APP")
-	fatalOnError(err, "while reading configuration from environment variables")
-
-	if cfg.Local && cfg.KubeconfigPath == "" {
-		return cfg, errors.New("KubeconfigPath is required for local mode")
-	}
-
-	if cfg.Local {
-		cfg.KubeConfig, err = clientcmd.BuildConfigFromFlags("", cfg.KubeconfigPath)
-	} else {
-		cfg.KubeConfig, err = rest.InClusterConfig()
-	}
-	if err != nil {
-		return cfg, errors.Wrap(err, "while get kubernetes client config")
-	}
-
-	return cfg, nil
 }

@@ -57,7 +57,7 @@ func (c *common) assertProperAmountOfClusterServiceClasses() error {
 			return true, nil
 		}
 
-		klog.Errorf("There should be %d ClusterServiceClassess, %d are", amountOfClusterServiceClasses, amount)
+		klog.Errorf("There should be %d ClusterServiceClassess, have %d", amountOfClusterServiceClasses, amount)
 		return false, nil
 	})
 }
@@ -88,7 +88,7 @@ func (c *common) assertProperAmountOfClusterServicePlans() error {
 			return true, nil
 		}
 
-		klog.Errorf("There should be %d ClusterServicePlans, %d are", amountOfClusterServicePlans, amount)
+		klog.Errorf("There should be %d ClusterServicePlans, have %d", amountOfClusterServicePlans, amount)
 		return false, nil
 	})
 }
