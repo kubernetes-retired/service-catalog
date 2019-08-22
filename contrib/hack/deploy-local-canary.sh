@@ -18,7 +18,7 @@ set -o errexit
 
 export REGISTRY=${REGISTRY:=$USER/}
 make service-catalog-image service-catalog-push
-helm upgrade --install catalog --namespace catalog charts/catalog \
+helm upgrade --install catalog --namespace catalog charts/catalog-v0.2 \
     --recreate-pods --force \
     --set image=${REGISTRY}service-catalog:canary \
     --set imagePullPolicy=Always \

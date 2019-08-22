@@ -30,10 +30,10 @@ docker login -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
 pushd ${REPO_ROOT_DIR}
 
 if [[ "${TRAVIS_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[a-z]*(-(r|R)(c|C)[0-9]+)*$ ]]; then
-    shout "Pushing images with tags '${TRAVIS_TAG}' and 'latest'."
-    TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push svcat-publish
-elif [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-    shout "Pushing images with default tags (git sha and 'canary')."
+    shout "Pushing images with tags '${TRAVIS_TAG}' and 'latest-v0.2'."
+    TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest-v0.2" make release-push svcat-publish
+elif [[ "${TRAVIS_BRANCH}" == "v0.2" ]]; then
+    shout "Pushing images with default tags (git sha and 'canary-v0.2')."
     make push svcat-publish
 else
     shout "Nothing to deploy"

@@ -84,7 +84,7 @@ BASE_PATH      = $(ROOT:/src/github.com/kubernetes-sigs/service-catalog/=)
 ORIG_GOPATH   ?= $(shell go env GOPATH)
 export GOPATH  = $(BASE_PATH):$(ROOT)/vendor
 
-MUTABLE_TAG                      ?= canary
+MUTABLE_TAG                      ?= canary-v0.2
 SERVICE_CATALOG_IMAGE             = $(REGISTRY)service-catalog-$(ARCH):$(VERSION)
 SERVICE_CATALOG_MUTABLE_IMAGE     = $(REGISTRY)service-catalog-$(ARCH):$(MUTABLE_TAG)
 USER_BROKER_IMAGE                 = $(REGISTRY)user-broker-$(ARCH):$(VERSION)
