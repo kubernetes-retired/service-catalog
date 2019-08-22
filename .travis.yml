@@ -43,7 +43,7 @@ jobs:
           # make sure code quality is good and proper
           # generate the output binaries for server and client
           # ensure the tests build
-          make verify build svcat build-integration build-e2e
+          make verify build svcat build-integration
         fi
       env: GO_VERSION=1.12
     # Doc Site svc-cat.io
@@ -58,12 +58,12 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/travis/deploy.sh
+        script: contrib/hack/ci/publish-release.sh
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
     - stage: push-chart
       script:
       - |
-        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/travis/gcloud-key-file.json.enc -out contrib/travis/gcloud-key-file.json -d
-        test/repo-sync.sh
+        openssl aes-256-cbc -K $encrypted_8471c4fb0720_key -iv $encrypted_8471c4fb0720_iv -in contrib/hack/ci/assets/gcloud-key-file.json.enc -out contrib/hack/ci/assets/gcloud-key-file.json -d
+        contrib/hack/ci/publish-helm-chart.sh
