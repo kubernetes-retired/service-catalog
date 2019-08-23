@@ -120,7 +120,7 @@ Catalog API server to get the list of `ClusterServiceBroker` resources.
 
 The current version of all Service Catalog API resources is `v1beta1`.
 You can see the structure of each resource in detail at
-[`pkg/apis/servicecatalog/v1beta1/types.go`](https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/apis/servicecatalog/v1beta1/types.go).
+[`pkg/apis/servicecatalog/v1beta1/types.go`](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/pkg/apis/servicecatalog/v1beta1/types.go).
 
 ### Controller
 
