@@ -114,8 +114,9 @@ helm search service-catalog
 You should see the following output:
 
 ```console
-NAME           	VERSION	DESCRIPTION
-svc-cat/catalog	x,y.z  	service-catalog API server and controller-manag...
+NAME                         VERSION    DESCRIPTION
+svc-cat-kyma/catalog         0.3.X      service-catalog
+svc-cat-kyma/catalog-v0.2    0.2.X      service-catalog API server ...
 ```
 
 ## RBAC
@@ -167,7 +168,7 @@ Now that your cluster and Helm are configured properly, installing
 Service Catalog is simple:
 
 ```console
-helm install svc-cat/catalog \
+helm install svc-cat/catalog-v0.2 \
     --name catalog --namespace catalog
 ```
 
@@ -177,26 +178,19 @@ Follow the appropriate instructions for your operating system to install svcat. 
 can be used by itself, or as a kubectl plugin.
 
 The snippets below install the latest version of svcat. We also publish binaries for
-our canary (master) builds, and tags using the following prefixes:
+our canary (v0.2) builds, and tags using the following prefixes:
 
-* Latest release: https://download.svcat.sh/cli/latest
+* Latest release: https://download.svcat.sh/cli/latest-v0.2
 * Tagged releases: https://download.svcat.sh/cli/VERSION
-  where `VERSION` is the release, for example `v0.1.20`.
-* Canary builds: https://download.svcat.sh/cli/canary
+  where `VERSION` is the release, for example `v0.2.3`.
+* Canary builds: https://download.svcat.sh/cli/canary-v0.2
 * Previous canary builds: https://download.svcat.sh/cli/VERSION-GITDESCRIBE
-  where `GITDESCRIBE` is the result of calling `git describe --tags`, for example `v0.1.20-1-g203c8ad`.
-
-## MacOS with Homebrew
-
-```
-brew update
-brew install kubernetes-service-catalog-client
-```
+  where `GITDESCRIBE` is the result of calling `git describe --tags`, for example `v0.2.3-1-g203c8ad`.
 
 ## MacOS
 
 ```
-curl -sLO https://download.svcat.sh/cli/latest/darwin/amd64/svcat
+curl -sLO https://download.svcat.sh/cli/latest-v0.2/darwin/amd64/svcat
 chmod +x ./svcat
 mv ./svcat /usr/local/bin/
 svcat version --client
@@ -205,7 +199,7 @@ svcat version --client
 ## Linux
 
 ```
-curl -sLO https://download.svcat.sh/cli/latest/linux/amd64/svcat
+curl -sLO https://download.svcat.sh/cli/latest-v0.2/linux/amd64/svcat
 chmod +x ./svcat
 mv ./svcat /usr/local/bin/
 svcat version --client
@@ -217,7 +211,7 @@ The PowerShell snippet below adds a directory to your PATH for the current sessi
 You will need to find a permanent location for it and add it to your PATH.
 
 ```
-iwr 'https://download.svcat.sh/cli/latest/windows/amd64/svcat.exe' -UseBasicParsing -OutFile svcat.exe
+iwr 'https://download.svcat.sh/cli/latest-v0.2/windows/amd64/svcat.exe' -UseBasicParsing -OutFile svcat.exe
 mkdir -f ~\bin
 Move-Item -Path svcat.exe  -Destination ~\bin
 $env:PATH += ";${pwd}\bin"
@@ -226,9 +220,9 @@ svcat version --client
 
 ## Manual
 1. Download the appropriate binary for your operating system:
-    * macOS: https://download.svcat.sh/cli/latest/darwin/amd64/svcat
-    * Windows: https://download.svcat.sh/cli/latest/windows/amd64/svcat.exe
-    * Linux: https://download.svcat.sh/cli/latest/linux/amd64/svcat
+    * macOS: https://download.svcat.sh/cli/latest-v0.2/darwin/amd64/svcat
+    * Windows: https://download.svcat.sh/cli/latest-v0.2/windows/amd64/svcat.exe
+    * Linux: https://download.svcat.sh/cli/latest-v0.2/linux/amd64/svcat
 1. Make the binary executable.
 1. Move the binary to a directory on your PATH.
 

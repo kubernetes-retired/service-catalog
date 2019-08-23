@@ -345,7 +345,7 @@ functionality or introduce instability.  See [FeatureGates](feature-gates.md)
 for more details.
 
 When adding a FeatureGate to Helm charts, define the variable
-`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog-v0.2/values.yaml).  In the [API Server](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog-v0.2/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-sigs/service-catalog/blob/master/charts/catalog-v0.2/templates/controller-manager-deployment.yaml)
+`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog-v0.2/values.yaml).  In the [API Server](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog-v0.2/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog-v0.2/templates/controller-manager-deployment.yaml)
 templates, add the new FeatureGate:
 {% raw %}
 ```yaml
@@ -355,7 +355,7 @@ templates, add the new FeatureGate:
 {% endraw %}
 
 When the feature has had enough testing and the community agrees to change the
-default to true, update [features.go](https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/features/features.go) and `values.yaml` changing the default for
+default to true, update [features.go](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/pkg/features/features.go) and `values.yaml` changing the default for
 feature foo to `true`. And lastly update the appropriate information in the
 [FeatureGates doc](feature-gates.md).
 
