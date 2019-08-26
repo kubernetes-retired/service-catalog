@@ -11,7 +11,7 @@ For more information,
 
 ## Prerequisites
 
-- Kubernetes 1.7+ with Beta APIs enabled
+- Kubernetes 1.12+
 - `charts/catalog` already exists in your local machine
 
 ## Installing the Chart
