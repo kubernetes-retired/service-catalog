@@ -8,8 +8,7 @@ If you haven't, please see the [installation instructions](./install.md). Option
 the Service Catalog CLI, svcat. Examples for both svcat and kubectl are provided
 so that you may follow this walkthrough using svcat or using only kubectl.
 
-All commands in this document assume that you're operating out of the root
-of this repository.
+> **NOTE:** Some commands in this document assume internet connectivity. 
 
 <a id="install" />
 
@@ -23,7 +22,7 @@ We plan on using the minibroker for demo purposes. The codebase for that broker 
 [here](https://github.com/kubernetes-sigs/minibroker).
 
 We're going to deploy the minibroker to our Kubernetes cluster before
-proceeding, and we'll do so with the minibroker helm chart. You can find details about the chart in the minibroker README
+proceeding, and we'll do so with the minibroker helm chart. You can find details about the chart in the minibroker
 [README](https://github.com/kubernetes-sigs/minibroker#install-minibroker).
 
 Otherwise, to install with sensible defaults, run the following command:
@@ -232,7 +231,7 @@ namespace "test-ns" created
 Then, create the `ServiceInstance`:
 
 ```console
-$ kubectl create -f contrib/examples/walkthrough/mini-instance.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/service-catalog/master/contrib/examples/walkthrough/mini-instance.yaml
 serviceinstance.servicecatalog.k8s.io/mini-instance created
 ```
 
@@ -320,7 +319,7 @@ Now that our `ServiceInstance` has been created, we can bind to it.
 Create a `ServiceBinding` resource:
 
 ```console
-$ kubectl create -f contrib/examples/walkthrough/mini-binding.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kubernetes-sigs/service-catalog/master/contrib/examples/walkthrough/mini-binding.yaml
 servicebinding.servicecatalog.k8s.io/mini-binding created
 ```
 
@@ -460,9 +459,7 @@ No resources found.
 
 # Step 9 - Final Cleanup
 
-## Cleaning up the User Provided Service Broker
-
-To clean up, delete the helm deployment:
+To clean up minibroker deployment, delete the helm release:
 
 ```console
 helm delete --purge minibroker
@@ -472,15 +469,6 @@ Then, delete all the namespaces we created:
 
 ```console
 kubectl delete ns test-ns minibroker
-```
-
-## Cleaning up the Service Catalog
-
-Delete the helm deployment and the namespace:
-
-```console
-helm delete --purge catalog
-kubectl delete ns svc-cat
 ```
 
 # Troubleshooting
