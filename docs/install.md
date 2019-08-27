@@ -115,8 +115,8 @@ You should see the following output:
 
 ```console
 NAME                         VERSION    DESCRIPTION
-svc-cat-kyma/catalog         0.3.X      service-catalog
-svc-cat-kyma/catalog-v0.2    0.2.X      service-catalog API server ...
+svc-cat/catalog         0.3.X      service-catalog
+svc-cat/catalog-v0.2    0.2.X      service-catalog API server ...
 ```
 
 ## RBAC
