@@ -628,6 +628,3 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 		})
 	}
 }
-
-
-

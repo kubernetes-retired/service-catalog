@@ -312,8 +312,6 @@ func (ct *controllerTest) numberOfOSBActionByType(actionType fakeosb.ActionType)
 	return counter
 }
 
-
-
 // SetFirstOSBPollLastOperationReactionsInProgress makes the broker
 // responses inProgress in first numberOfInProgressResponses calls
 func (ct *controllerTest) SetFirstOSBPollLastOperationReactionsInProgress(numberOfInProgressResponses int) {
@@ -571,7 +569,7 @@ func (ct *controllerTest) CreateBinding() error {
 			},
 			ExternalID: testServiceBindingGUID,
 			SecretName: testBindingName, // set by the webhook
-			UserInfo: fixtureUserInfo(),
+			UserInfo:   fixtureUserInfo(),
 		},
 	})
 	return err
@@ -1717,9 +1715,9 @@ func (ct *controllerTest) CreateBindingWithParams(params map[string]interface{},
 			InstanceRef: v1beta1.LocalObjectReference{
 				Name: testServiceInstanceName,
 			},
-			ExternalID: testServiceBindingGUID,
-			SecretName: testBindingName, // set by the webhook
-			Parameters: parameters,
+			ExternalID:     testServiceBindingGUID,
+			SecretName:     testBindingName, // set by the webhook
+			Parameters:     parameters,
 			ParametersFrom: paramsFrom,
 		},
 	})
@@ -1745,8 +1743,8 @@ func (ct *controllerTest) CreateBindingWithTransforms(transforms []v1beta1.Secre
 			InstanceRef: v1beta1.LocalObjectReference{
 				Name: testServiceInstanceName,
 			},
-			ExternalID: testServiceBindingGUID,
-			SecretName: testBindingName, // set by the webhook
+			ExternalID:       testServiceBindingGUID,
+			SecretName:       testBindingName, // set by the webhook
 			SecretTransforms: transforms,
 		},
 	})
