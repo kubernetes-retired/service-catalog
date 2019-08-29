@@ -770,6 +770,7 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 			// default value for defaultFuture is false
 			// see https://github.com/kubernetes/apiserver/blob/release-1.14/pkg/util/feature/feature_gate.go
 			defer require.NoError(t, ct.SetFeatureGateDashboardURL(false))
+
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.CreateServiceInstance())
 			require.NoError(t, ct.WaitForReadyInstance())

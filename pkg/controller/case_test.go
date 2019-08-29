@@ -312,6 +312,8 @@ func (ct *controllerTest) numberOfOSBActionByType(actionType fakeosb.ActionType)
 	return counter
 }
 
+
+
 // SetFirstOSBPollLastOperationReactionsInProgress makes the broker
 // responses inProgress in first numberOfInProgressResponses calls
 func (ct *controllerTest) SetFirstOSBPollLastOperationReactionsInProgress(numberOfInProgressResponses int) {
@@ -569,6 +571,7 @@ func (ct *controllerTest) CreateBinding() error {
 			},
 			ExternalID: testServiceBindingGUID,
 			SecretName: testBindingName, // set by the webhook
+			UserInfo: fixtureUserInfo(),
 		},
 	})
 	return err
@@ -950,6 +953,38 @@ func (ct *controllerTest) WaitForClusterServicePlan() error {
 		return fmt.Errorf("plan %v not found, existing plans: %v", testPlanExternalID, plans)
 	}
 	return err
+}
+
+// AssertOSBRequestsUsername asserts the OriginatingIdentity request field
+func (ct *controllerTest) AssertOSBRequestsUsername(t *testing.T) {
+	for _, action := range ct.fakeOSBClient.Actions() {
+		var oi *osb.OriginatingIdentity
+		switch request := action.Request.(type) {
+		case *osb.ProvisionRequest:
+			oi = request.OriginatingIdentity
+		case *osb.UpdateInstanceRequest:
+			oi = request.OriginatingIdentity
+		case *osb.DeprovisionRequest:
+			oi = request.OriginatingIdentity
+		case *osb.BindRequest:
+			oi = request.OriginatingIdentity
+		case *osb.UnbindRequest:
+			oi = request.OriginatingIdentity
+		case *osb.LastOperationRequest:
+			oi = request.OriginatingIdentity
+		default:
+			continue
+		}
+
+		require.NotNil(t, oi, "originating identity of the request %v must not be nil", action.Type)
+
+		oiValues := make(map[string]interface{})
+		require.NoError(t, json.Unmarshal([]byte(oi.Value), &oiValues))
+
+		if e, a := testUsername, oiValues["username"]; e != a {
+			t.Fatalf("unexpected username in originating identity: expected %q, got %q", e, a)
+		}
+	}
 }
 
 // v1Now returns pointer to the current time in v1.Time type
@@ -1620,6 +1655,102 @@ func (ct *controllerTest) AssertLastBindRequest(t *testing.T, expectedParams map
 			return
 		}
 	}
+}
+
+// TODO: move to case_test.go
+// CreateServiceInstance creates a ServiceInstance which is used in testing scenarios.
+func (ct *controllerTest) CreateServiceInstanceWithNonbindablePlan() error {
+	_, err := ct.scInterface.ServiceInstances(testNamespace).Create(&v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testServiceInstanceName,
+			// added by a Webhook, which is not tested here
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: testClassExternalID,
+				ClusterServicePlanExternalName:  testNonbindablePlanExternalID,
+			},
+			ExternalID: testExternalID,
+			// Plan and Class refs are added by a Webhook, which is not tested here
+			ClusterServicePlanRef: &v1beta1.ClusterObjectReference{
+				Name: testNonbindablePlanExternalID,
+			},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
+				Name: testClassExternalID,
+			},
+		},
+	})
+	return err
+}
+
+// TODO: move to case_test.go
+// SetOSBProvisionReactionWithHTTPError configures the broker Provision call response as HTTPStatusCodeError
+func (ct *controllerTest) SetOSBProvisionReactionWithHTTPError(code int) {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+	ct.fakeOSBClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+		Error: osb.HTTPStatusCodeError{
+			StatusCode: code,
+		},
+	}
+}
+
+// TODO: move to case_test.go
+func (ct *controllerTest) CreateBindingWithParams(params map[string]interface{}, paramsFrom []v1beta1.ParametersFromSource) error {
+	var parameters *runtime.RawExtension
+	if params != nil {
+		marshaledParams, err := json.Marshal(params)
+		if err != nil {
+			return err
+		}
+		parameters = &runtime.RawExtension{Raw: marshaledParams}
+	}
+	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  testNamespace,
+			Name:       testBindingName,
+			Generation: 1,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			InstanceRef: v1beta1.LocalObjectReference{
+				Name: testServiceInstanceName,
+			},
+			ExternalID: testServiceBindingGUID,
+			SecretName: testBindingName, // set by the webhook
+			Parameters: parameters,
+			ParametersFrom: paramsFrom,
+		},
+	})
+	return err
+}
+
+// AssertBindingData verifies the secret created by the binding - checks stored secret data.
+func (ct *controllerTest) AssertBindingData(t *testing.T, expectedData map[string][]byte) {
+	s, err := ct.k8sClient.CoreV1().Secrets(testNamespace).Get(testBindingName, metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, expectedData, s.Data)
+}
+
+func (ct *controllerTest) CreateBindingWithTransforms(transforms []v1beta1.SecretTransform) error {
+	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  testNamespace,
+			Name:       testBindingName,
+			Generation: 1,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			InstanceRef: v1beta1.LocalObjectReference{
+				Name: testServiceInstanceName,
+			},
+			ExternalID: testServiceBindingGUID,
+			SecretName: testBindingName, // set by the webhook
+			SecretTransforms: transforms,
+		},
+	})
+	return err
 }
 
 // fixtureHappyPathBrokerClientConfig returns fake configuration for OSB client used in testing scenario

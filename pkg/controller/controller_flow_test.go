@@ -59,6 +59,39 @@ func TestBasicFlowWithBasicAuth(t *testing.T) {
 	ct.AssertOSBBasicAuth(t, "user1", "newp2sswd")
 }
 
+// TestOriginatingIdentity tests whether the controller uses correct credentials when the secret changes
+func TestOriginatingIdentity(t *testing.T) {
+	// GIVEN
+	// Enable the OriginatingIdentity feature
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+
+	ct := newControllerTest(t)
+	defer ct.TearDown()
+	// create a secret with basic auth credentials stored
+	assert.NoError(t, ct.CreateSimpleClusterServiceBroker())
+	assert.NoError(t, ct.WaitForReadyBroker())
+
+	// WHEN
+	assert.NoError(t, ct.CreateServiceInstance())
+	// THEN
+	assert.NoError(t, ct.WaitForReadyInstance())
+
+	// Binding
+	assert.NoError(t, ct.CreateBinding())
+	assert.NoError(t, ct.WaitForReadyBinding())
+	// Unbinding
+	require.NoError(t, ct.Unbind())
+	assert.NoError(t, ct.WaitForUnbindStatus(v1beta1.ServiceBindingUnbindStatusSucceeded))
+	// Deprovisioning
+	assert.NoError(t, ct.DeleteBinding())
+	assert.NoError(t, ct.Deprovision())
+	assert.NoError(t, ct.WaitForDeprovisionStatus(v1beta1.ServiceInstanceDeprovisionStatusSucceeded))
+
+	// THEN
+	ct.AssertOSBRequestsUsername(t)
+}
+
 // TestBasicFlow tests
 //
 // - add Broker
