@@ -47,6 +47,8 @@ func TestProvisionInstanceWithRetries(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			ct := newControllerTest(t)
 			defer ct.TearDown()
 			// configure first provision response with HTTP error
@@ -71,6 +73,8 @@ func TestProvisionInstanceWithRetries(t *testing.T) {
 // TestRetryAsyncDeprovision tests whether asynchronous deprovisioning retries
 // by attempting a new deprovision after failing.
 func TestRetryAsyncDeprovision(t *testing.T) {
+	t.Parallel()
+
 	// GIVEN
 	ct := newControllerTest(t)
 	defer ct.TearDown()
@@ -168,6 +172,8 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 // TestCreateServiceInstanceFailsWithNonexistentPlan tests creating a ServiceInstance whose ServicePlan
 // does not exist
 func TestCreateServiceInstanceFailsWithNonexistentPlan(t *testing.T) {
+	t.Parallel()
+
 	// GIVEN
 	ct := newControllerTest(t)
 	defer ct.TearDown()
@@ -191,6 +197,8 @@ func TestCreateServiceInstanceFailsWithNonexistentPlan(t *testing.T) {
 // TestCreateServiceInstanceNonExistentClusterServiceBroker tests creating a
 // ServiceInstance whose broker does not exist.
 func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
+	t.Parallel()
+
 	// GIVEN
 	ct := newControllerTest(t)
 	defer ct.TearDown()
@@ -216,12 +224,15 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 // TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan tests that a ServiceInstance gets
 // a Failed condition when the service class or service plan it references does not exist.
 func TestCreateServiceInstanceNonExistentClusterServiceClassOrPlan(t *testing.T) {
-	// TODO: cannot rewrite tests because fakeClient does not support `FieldSelector` during filtering ServiceInstance list
+	// TODO: test should be added after merging the CRDs, for now cannot rewrite tests because fakeClient does not support `FieldSelector` during filtering ServiceInstance list
+	t.Skip("Test skipped because fakeClient does not support `FieldSelector` during filtering ServiceInstance list")
 }
 
 // TestCreateServiceInstanceWithInvalidParameters tests creating a ServiceInstance
 // with invalid parameters.
 func TestCreateServiceInstanceWithInvalidParameters(t *testing.T) {
+	t.Parallel()
+
 	// GIVEN
 	ct := newControllerTest(t)
 	defer ct.TearDown()
@@ -428,6 +439,8 @@ func TestCreateServiceInstanceWithParameters(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
+			t.Parallel()
+
 			// GIVEN
 			ct := newControllerTest(t)
 			defer ct.TearDown()
@@ -533,6 +546,8 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
+			t.Parallel()
+
 			// GIVEN
 			ct := newControllerTest(t)
 			defer ct.TearDown()
@@ -659,6 +674,8 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
+			t.Parallel()
+
 			// GIVEN
 			ct := newControllerTest(t)
 			defer ct.TearDown()
@@ -703,6 +720,8 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 // TestUpdateServiceInstanceChangePlansToNonexistentPlan tests changing plans
 // to a non-existent plan.
 func TestUpdateServiceInstanceChangePlansToNonexistentPlan(t *testing.T) {
+	t.Parallel()
+
 	// GIVEN
 	ct := newControllerTest(t)
 	defer ct.TearDown()
@@ -730,6 +749,7 @@ func TestUpdateServiceInstanceChangePlansToNonexistentPlan(t *testing.T) {
 
 // TestUpdateServiceInstanceNewDashboardResponse tests setting Dashboard URL when
 // and update Instance request returns a new DashboardURL.
+// CAUTION: the test cannot run parallel because it changes global flag which can include on working other tests
 func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 	for tn, state := range map[string]struct {
 		enableFeatureGate bool
@@ -747,6 +767,9 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 			defer ct.TearDown()
 
 			require.NoError(t, ct.SetFeatureGateDashboardURL(state.enableFeatureGate))
+			// default value for defaultFuture is false
+			// see https://github.com/kubernetes/apiserver/blob/release-1.14/pkg/util/feature/feature_gate.go
+			defer require.NoError(t, ct.SetFeatureGateDashboardURL(false))
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.CreateServiceInstance())
 			require.NoError(t, ct.WaitForReadyInstance())
@@ -887,6 +910,8 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
+			t.Parallel()
+
 			// GIVEN
 			ct := newControllerTest(t)
 			defer ct.TearDown()
