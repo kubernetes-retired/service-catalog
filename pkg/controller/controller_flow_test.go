@@ -60,6 +60,7 @@ func TestBasicFlowWithBasicAuth(t *testing.T) {
 }
 
 // TestOriginatingIdentity tests whether the controller uses correct credentials when the secret changes
+// CAUTION: the test cannot be executed in parallel because it changes global flag which can affect the behavior of other tests
 func TestOriginatingIdentity(t *testing.T) {
 	// GIVEN
 	// Enable the OriginatingIdentity feature

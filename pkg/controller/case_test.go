@@ -1655,7 +1655,6 @@ func (ct *controllerTest) AssertLastBindRequest(t *testing.T, expectedParams map
 	}
 }
 
-// TODO: move to case_test.go
 // CreateServiceInstance creates a ServiceInstance which is used in testing scenarios.
 func (ct *controllerTest) CreateServiceInstanceWithNonbindablePlan() error {
 	_, err := ct.scInterface.ServiceInstances(testNamespace).Create(&v1beta1.ServiceInstance{
@@ -1682,7 +1681,6 @@ func (ct *controllerTest) CreateServiceInstanceWithNonbindablePlan() error {
 	return err
 }
 
-// TODO: move to case_test.go
 // SetOSBProvisionReactionWithHTTPError configures the broker Provision call response as HTTPStatusCodeError
 func (ct *controllerTest) SetOSBProvisionReactionWithHTTPError(code int) {
 	ct.fakeOSBClient.Lock()
@@ -1694,7 +1692,6 @@ func (ct *controllerTest) SetOSBProvisionReactionWithHTTPError(code int) {
 	}
 }
 
-// TODO: move to case_test.go
 func (ct *controllerTest) CreateBindingWithParams(params map[string]interface{}, paramsFrom []v1beta1.ParametersFromSource) error {
 	var parameters *runtime.RawExtension
 	if params != nil {
