@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"sync"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	fakesc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	scinterface "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
@@ -40,11 +42,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	k8sinformers "k8s.io/client-go/informers"
 	fakek8s "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
-	"sync"
 )
 
 const (
@@ -87,6 +89,7 @@ func newControllerTest(t *testing.T) *controllerTest {
 	k8sClient.CoreV1().Namespaces().Create(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNamespace,
+			UID:  uuid.NewUUID(), // fake clientset doesn't  duplicate server-side behavior like uid assignment
 		},
 	})
 
