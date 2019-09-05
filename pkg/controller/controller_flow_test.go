@@ -22,12 +22,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 // TestBasicFlowWithBasicAuth tests whether the controller uses correct credentials when the secret changes
@@ -57,6 +56,40 @@ func TestBasicFlowWithBasicAuth(t *testing.T) {
 
 	// expected: new credentials must be used
 	ct.AssertOSBBasicAuth(t, "user1", "newp2sswd")
+}
+
+// TestOriginatingIdentity tests whether the controller uses correct credentials when the secret changes
+// CAUTION: the test cannot be executed in parallel because it changes global flag which can affect the behavior of other tests
+func TestOriginatingIdentity(t *testing.T) {
+	// GIVEN
+	// Enable the OriginatingIdentity feature
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=true", scfeatures.OriginatingIdentity))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%v=false", scfeatures.OriginatingIdentity))
+
+	ct := newControllerTest(t)
+	defer ct.TearDown()
+	// create a secret with basic auth credentials stored
+	assert.NoError(t, ct.CreateSimpleClusterServiceBroker())
+	assert.NoError(t, ct.WaitForReadyBroker())
+
+	// WHEN
+	assert.NoError(t, ct.CreateServiceInstance())
+	// THEN
+	assert.NoError(t, ct.WaitForReadyInstance())
+
+	// Binding
+	assert.NoError(t, ct.CreateBinding())
+	assert.NoError(t, ct.WaitForReadyBinding())
+	// Unbinding
+	require.NoError(t, ct.Unbind())
+	assert.NoError(t, ct.WaitForUnbindStatus(v1beta1.ServiceBindingUnbindStatusSucceeded))
+	// Deprovisioning
+	assert.NoError(t, ct.DeleteBinding())
+	assert.NoError(t, ct.Deprovision())
+	assert.NoError(t, ct.WaitForDeprovisionStatus(v1beta1.ServiceInstanceDeprovisionStatusSucceeded))
+
+	// THEN
+	ct.AssertOSBRequestsUsername(t)
 }
 
 // TestBasicFlow tests

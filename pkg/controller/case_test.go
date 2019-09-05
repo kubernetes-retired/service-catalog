@@ -22,6 +22,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -32,18 +34,18 @@ import (
 	scinterface "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	scinformers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
-	"github.com/pmorie/go-open-service-broker-client/v2"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	k8sinformers "k8s.io/client-go/informers"
 	fakek8s "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
@@ -54,15 +56,23 @@ const (
 	testClusterServiceBrokerName          = "test-clusterservicebroker"
 	testClusterServiceClassName           = "test-clusterserviceclass"
 	testClusterServicePlanName            = "test-clusterserviceplan"
+	testOtherClusterServicePlanName       = "test-otherclusterserviceplan"
 	testServiceInstanceName               = "service-instance"
 	testClassExternalID                   = "clusterserviceclass-12345"
 	testPlanExternalID                    = "34567"
+	testOtherPlanExternalID               = "76543"
 	testNonbindablePlanExternalID         = "nb34567"
 	testNonbindableClusterServicePlanName = "test-nonbindable-plan"
 	testExternalID                        = "9737b6ed-ca95-4439-8219-c53fcad118ab"
 	testBindingName                       = "test-binding"
 	testServiceBindingGUID                = "bguid"
 	authSecretName                        = "basic-secret-name"
+	testUsername                          = "some-user"
+	secretNameWithParameters              = "secret-name"
+	secretKeyWithParameters               = "secret-key"
+	otherSecretNameWithParameters         = "other-secret-name"
+	otherSecretKeyWithParameters          = "other-secret-key"
+	testDashboardURL                      = "http://test-dashboard.example.com"
 
 	pollingInterval = 50 * time.Millisecond
 	pollingTimeout  = 8 * time.Second
@@ -76,7 +86,7 @@ type controllerTest struct {
 	k8sClient        *fakek8s.Clientset
 	fakeOSBClient    *fakeosb.FakeClient
 	catalogReactions []fakeosb.CatalogReaction
-	osbClientCfg     *v2.ClientConfiguration
+	osbClientCfg     *osb.ClientConfiguration
 	stopCh           chan struct{}
 
 	serviceBindingHandler        *serviceBindingHandler
@@ -226,6 +236,12 @@ func (ct *controllerTest) EnableAsyncInstanceUpdate() {
 	ct.fakeOSBClient.UpdateInstanceReaction.(*fakeosb.UpdateInstanceReaction).Response.Async = true
 }
 
+// AsyncForInstanceUpdate configures all fake OSB client update
+// responses with async flag
+func (ct *controllerTest) AsyncForInstanceUpdate() {
+	ct.fakeOSBClient.UpdateInstanceReaction.(*fakeosb.UpdateInstanceReaction).Response.Async = true
+}
+
 // EnableAsyncInstanceDeprovisioning configures all fake OSB client deprovision
 // responses with async flag
 func (ct *controllerTest) EnableAsyncInstanceDeprovisioning() {
@@ -255,7 +271,7 @@ func (ct *controllerTest) DisableAsyncBind() {
 // AssertOSBBasicAuth verifies the last call to broker whether the correct basic auth credentials was used
 func (ct *controllerTest) AssertOSBBasicAuth(t *testing.T, username, password string) {
 	require.NotNil(t, ct.osbClientCfg, "OSB Client was not created, wait for broker is ready")
-	assert.Equal(t, ct.osbClientCfg.AuthConfig.BasicAuthConfig, &v2.BasicAuthConfig{
+	assert.Equal(t, ct.osbClientCfg.AuthConfig.BasicAuthConfig, &osb.BasicAuthConfig{
 		Username: username,
 		Password: password,
 	})
@@ -274,6 +290,11 @@ func (ct *controllerTest) NumberOfOSBBindingCalls() int {
 // NumberOfOSBProvisionCalls return the total number of OSB provision calls
 func (ct *controllerTest) NumberOfOSBProvisionCalls() int {
 	return ct.numberOfOSBActionByType(fakeosb.ProvisionInstance)
+}
+
+// NumberOfOSBUpdateCalls return the total number of OSB update calls
+func (ct *controllerTest) NumberOfOSBUpdateCalls() int {
+	return ct.numberOfOSBActionByType(fakeosb.UpdateInstance)
 }
 
 // NumberOfOSBDeprovisionCalls returns the total number of OSB deprovision calls
@@ -413,8 +434,8 @@ func (ct *controllerTest) SetOSBBindReactionWithHTTPError(code int) {
 }
 
 // spyOSBClientFunc wraps the ClientFunc with a helper which saves last used OSG Client Config
-func (ct *controllerTest) spyOSBClientFunc(target v2.CreateFunc) v2.CreateFunc {
-	return func(osbCfg *v2.ClientConfiguration) (v2.Client, error) {
+func (ct *controllerTest) spyOSBClientFunc(target osb.CreateFunc) osb.CreateFunc {
+	return func(osbCfg *osb.ClientConfiguration) (osb.Client, error) {
 		ct.osbClientCfg = osbCfg
 		return target(osbCfg)
 	}
@@ -498,6 +519,7 @@ func (ct *controllerTest) CreateServiceInstance() error {
 			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
 				Name: testClassExternalID,
 			},
+			UserInfo: fixtureUserInfo(),
 		},
 	})
 	return err
@@ -525,7 +547,7 @@ func (ct *controllerTest) UpdateServiceInstanceParameters() error {
 
 // Deprovision sets deletion timestamp which is done by K8s in a cluster while ServiceInstance deletion.
 func (ct *controllerTest) Deprovision() error {
-	si, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, v1.GetOptions{})
+	si, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -549,6 +571,7 @@ func (ct *controllerTest) CreateBinding() error {
 			},
 			ExternalID: testServiceBindingGUID,
 			SecretName: testBindingName, // set by the webhook
+			UserInfo:   fixtureUserInfo(),
 		},
 	})
 	return err
@@ -556,7 +579,7 @@ func (ct *controllerTest) CreateBinding() error {
 
 // Unbind sets deletion timestamp which is done by K8s in a cluster. It triggers unbinding process.
 func (ct *controllerTest) Unbind() error {
-	sb, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, v1.GetOptions{})
+	sb, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -567,7 +590,7 @@ func (ct *controllerTest) Unbind() error {
 
 // DeleteBinding removes the ServiceBinding resource.
 func (ct *controllerTest) DeleteBinding() error {
-	return ct.scInterface.ServiceBindings(testNamespace).Delete(testBindingName, &v1.DeleteOptions{})
+	return ct.scInterface.ServiceBindings(testNamespace).Delete(testBindingName, &metav1.DeleteOptions{})
 }
 
 // CreateSecretWithBasicAuth creates a secret with credentials
@@ -698,7 +721,7 @@ func (ct *controllerTest) WaitForBindingFailed() error {
 func (ct *controllerTest) WaitForUnbindStatus(status v1beta1.ServiceBindingUnbindStatus) error {
 	var lastBinding *v1beta1.ServiceBinding
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		binding, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, v1.GetOptions{})
+		binding, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting Binding: %v", err)
 		}
@@ -720,7 +743,7 @@ func (ct *controllerTest) WaitForUnbindStatus(status v1beta1.ServiceBindingUnbin
 func (ct *controllerTest) WaitForDeprovisionStatus(status v1beta1.ServiceInstanceDeprovisionStatus) error {
 	var lastInstance *v1beta1.ServiceInstance
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		si, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, v1.GetOptions{})
+		si, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting Binding: %v", err)
 		}
@@ -743,7 +766,7 @@ func (ct *controllerTest) WaitForDeprovisionStatus(status v1beta1.ServiceInstanc
 func (ct *controllerTest) waitForBindingStatusCondition(condition v1beta1.ServiceBindingCondition) error {
 	var lastBinding *v1beta1.ServiceBinding
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		binding, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, v1.GetOptions{})
+		binding, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting Binding: %v", err)
 		}
@@ -768,7 +791,7 @@ func (ct *controllerTest) waitForBindingStatusCondition(condition v1beta1.Servic
 func (ct *controllerTest) WaitForServiceInstanceRemoved() error {
 	var lastInstance *v1beta1.ServiceInstance
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, v1.GetOptions{})
+		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -802,7 +825,7 @@ func (ct *controllerTest) WaitForInstanceUpdating() error {
 func (ct *controllerTest) waitForInstanceCondition(condition v1beta1.ServiceInstanceCondition) error {
 	var lastInstance *v1beta1.ServiceInstance
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, v1.GetOptions{})
+		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting Instance: %v", err)
 		}
@@ -827,7 +850,7 @@ func (ct *controllerTest) waitForInstanceCondition(condition v1beta1.ServiceInst
 func (ct *controllerTest) WaitForAsyncProvisioningInProgress() error {
 	var lastInstance *v1beta1.ServiceInstance
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, v1.GetOptions{})
+		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting ServiceInstance: %v", err)
 		}
@@ -854,7 +877,7 @@ func (ct *controllerTest) WaitForReadyBroker() error {
 
 	var lastBroker *v1beta1.ClusterServiceBroker
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		broker, err := ct.scInterface.ClusterServiceBrokers().Get(testClusterServiceBrokerName, v1.GetOptions{})
+		broker, err := ct.scInterface.ClusterServiceBrokers().Get(testClusterServiceBrokerName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting Broker: %v", err)
 		}
@@ -879,7 +902,7 @@ func (ct *controllerTest) WaitForReadyBroker() error {
 // WaitForClusterServiceClass waits until the ClusterServiceClass will be present
 func (ct *controllerTest) WaitForClusterServiceClass() error {
 	return wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		_, err := ct.scInterface.ClusterServiceClasses().Get(testClassExternalID, v1.GetOptions{})
+		_, err := ct.scInterface.ClusterServiceClasses().Get(testClassExternalID, metav1.GetOptions{})
 		if err == nil {
 			return true, nil
 		}
@@ -891,7 +914,7 @@ func (ct *controllerTest) WaitForClusterServiceClass() error {
 // WaitForClusterServiceClassToNotExists waits until the ClusterServiceClass will be removed
 func (ct *controllerTest) WaitForClusterServiceClassToNotExists() error {
 	return wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		_, err := ct.scInterface.ClusterServiceClasses().Get(testClassExternalID, v1.GetOptions{})
+		_, err := ct.scInterface.ClusterServiceClasses().Get(testClassExternalID, metav1.GetOptions{})
 		if err != nil && apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -903,7 +926,7 @@ func (ct *controllerTest) WaitForClusterServiceClassToNotExists() error {
 // WaitForClusterServicePlanToNotExists waits until the ClusterServicePlan will be removed
 func (ct *controllerTest) WaitForClusterServicePlanToNotExists() error {
 	return wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		_, err := ct.scInterface.ClusterServicePlans().Get(testPlanExternalID, v1.GetOptions{})
+		_, err := ct.scInterface.ClusterServicePlans().Get(testPlanExternalID, metav1.GetOptions{})
 		if err != nil && apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -915,7 +938,7 @@ func (ct *controllerTest) WaitForClusterServicePlanToNotExists() error {
 // WaitForClusterServicePlan waits until the ClusterServicePlan will be present
 func (ct *controllerTest) WaitForClusterServicePlan() error {
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
-		_, err := ct.scInterface.ClusterServicePlans().Get(testPlanExternalID, v1.GetOptions{})
+		_, err := ct.scInterface.ClusterServicePlans().Get(testPlanExternalID, metav1.GetOptions{})
 		if err == nil {
 			return true, nil
 		}
@@ -923,7 +946,7 @@ func (ct *controllerTest) WaitForClusterServicePlan() error {
 		return false, err
 	})
 	if err == wait.ErrWaitTimeout {
-		plans, e := ct.scInterface.ClusterServicePlans().List(v1.ListOptions{})
+		plans, e := ct.scInterface.ClusterServicePlans().List(metav1.ListOptions{})
 		if e != nil {
 			return err
 		}
@@ -932,10 +955,819 @@ func (ct *controllerTest) WaitForClusterServicePlan() error {
 	return err
 }
 
-// v1Now returns pointer to the current time in v1.Time type
+// AssertOSBRequestsUsername asserts the OriginatingIdentity request field
+func (ct *controllerTest) AssertOSBRequestsUsername(t *testing.T) {
+	for _, action := range ct.fakeOSBClient.Actions() {
+		var oi *osb.OriginatingIdentity
+		switch request := action.Request.(type) {
+		case *osb.ProvisionRequest:
+			oi = request.OriginatingIdentity
+		case *osb.UpdateInstanceRequest:
+			oi = request.OriginatingIdentity
+		case *osb.DeprovisionRequest:
+			oi = request.OriginatingIdentity
+		case *osb.BindRequest:
+			oi = request.OriginatingIdentity
+		case *osb.UnbindRequest:
+			oi = request.OriginatingIdentity
+		case *osb.LastOperationRequest:
+			oi = request.OriginatingIdentity
+		default:
+			continue
+		}
+
+		require.NotNil(t, oi, "originating identity of the request %v must not be nil", action.Type)
+
+		oiValues := make(map[string]interface{})
+		require.NoError(t, json.Unmarshal([]byte(oi.Value), &oiValues))
+
+		if e, a := testUsername, oiValues["username"]; e != a {
+			t.Fatalf("unexpected username in originating identity: expected %q, got %q", e, a)
+		}
+	}
+}
+
+// v1Now returns pointer to the current time in metav1.Time type
 func (ct *controllerTest) v1Now() *metav1.Time {
-	n := v1.NewTime(time.Now())
+	n := metav1.NewTime(time.Now())
 	return &n
+}
+
+// TimeoutError simulates timeout error in provision ServiceInstance test
+type TimeoutError string
+
+// Timeout method require for TimeoutError type to meet the url/timeout interface
+func (e TimeoutError) Timeout() bool {
+	return true
+}
+
+// Error returns the TimeoutError as a string
+func (e TimeoutError) Error() string {
+	return string(e)
+}
+
+// SetupEmptyPlanListForOSBClient sets up fake OSB client response to return plans which not exist in any ServiceInstance
+func (ct *controllerTest) SetupEmptyPlanListForOSBClient() {
+	ct.fakeOSBClient.CatalogReaction.(*fakeosb.CatalogReaction).Response = &osb.CatalogResponse{
+		Services: []osb.Service{
+			{
+				Name:        testClusterServiceClassName,
+				ID:          testClassExternalID,
+				Description: "a test service",
+				Bindable:    true,
+				Plans: []osb.Plan{
+					{
+						Name:        "randomPlan",
+						Free:        truePtr(),
+						ID:          "randomID",
+						Description: "This is plan which should not exist in any of instance",
+					},
+				},
+			},
+		},
+	}
+}
+
+// WaitForInstanceCondition waits until ServiceInstance `status.conditions` field value is equal to condition in parameters
+// returns error if the time limit has been reached
+func (ct *controllerTest) WaitForInstanceCondition(condition v1beta1.ServiceInstanceCondition) error {
+	var lastInstance *v1beta1.ServiceInstance
+	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
+		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+		if err != nil {
+			return false, fmt.Errorf("error getting Instance: %v", err)
+		}
+
+		for _, cond := range instance.Status.Conditions {
+			if condition.Type == cond.Type && condition.Status == cond.Status && condition.Reason == cond.Reason {
+				return true, nil
+			}
+		}
+		lastInstance = instance
+		return false, nil
+	})
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf(
+			"instance with proper conditions not found, the existing conditions: %+v", lastInstance.Status.Conditions)
+	}
+	return err
+}
+
+// WaitForServiceInstanceProcessedGeneration waits until ServiceInstance parameter `Status.ObservedGeneration` is
+// equal or higher than ServiceInstance `generation` value, ServiceInstance is in Ready/True status and
+// ServiceInstance is not in Orphan Mitigation progress
+func (ct *controllerTest) WaitForServiceInstanceProcessedGeneration(generation int64) error {
+	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
+		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+		if err != nil {
+			return false, fmt.Errorf("error getting Instance: %v", err)
+		}
+
+		if instance.Status.ObservedGeneration >= generation &&
+			isServiceInstanceConditionTrue(instance) &&
+			!instance.Status.OrphanMitigationInProgress {
+			return true, nil
+		}
+
+		return false, nil
+	})
+
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf(
+			"instance with proper ProcessedGeneration status not found")
+	}
+	return err
+}
+
+func isServiceInstanceConditionTrue(instance *v1beta1.ServiceInstance) bool {
+	for _, cond := range instance.Status.Conditions {
+		if cond.Type == v1beta1.ServiceInstanceConditionReady || cond.Type == v1beta1.ServiceInstanceConditionFailed {
+			return cond.Status == v1beta1.ConditionTrue
+		}
+	}
+
+	return false
+}
+
+// AssertServiceInstanceHasNoCondition makes sure ServiceInstance is in not specific condition
+func (ct *controllerTest) AssertServiceInstanceHasNoCondition(t *testing.T, cond v1beta1.ServiceInstanceCondition) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting Instance: %v", err)
+	}
+
+	for _, condition := range instance.Status.Conditions {
+		if t1, t2 := condition.Type, cond.Type; t1 == t2 {
+			if s1, s2 := condition.Status, cond.Status; s1 == s2 {
+				t.Fatalf(
+					"unexpected condition status: expected %v, got %v or \n "+
+						"unexpected condition type: expected %v, got %v", s2, s1, t2, t1)
+			}
+		}
+	}
+}
+
+// AssertServiceInstanceOrphanMitigationStatus makes sure ServiceInstance is/or is not in Orphan Mitigation progress
+func (ct *controllerTest) AssertServiceInstanceOrphanMitigationStatus(t *testing.T, state bool) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting Instance: %v", err)
+	}
+
+	if om := instance.Status.OrphanMitigationInProgress; om != state {
+		t.Fatalf("unexpected OrphanMitigationInProgress status: expected %v, got %v", state, om)
+	}
+}
+
+// CreateClusterServiceClass creates ClusterServiceClass with default parameters
+func (ct *controllerTest) CreateClusterServiceClass() error {
+	serviceClass := &v1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testClassExternalID,
+		},
+		Spec: v1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: testClusterServiceBrokerName,
+			CommonServiceClassSpec: v1beta1.CommonServiceClassSpec{
+				ExternalID:   testClassExternalID,
+				ExternalName: testClusterServiceClassName,
+				Description:  "a test service",
+				Bindable:     true,
+			},
+		},
+	}
+	if _, err := ct.scInterface.ClusterServiceClasses().Create(serviceClass); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateClusterServicePlan creates CreateClusterServicePlan with default parameters
+func (ct *controllerTest) CreateClusterServicePlan() error {
+	servicePlan := &v1beta1.ClusterServicePlan{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testPlanExternalID,
+		},
+		Spec: v1beta1.ClusterServicePlanSpec{
+			ClusterServiceBrokerName: testClusterServicePlanName,
+		},
+	}
+	if _, err := ct.scInterface.ClusterServicePlans().Create(servicePlan); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateServiceInstanceExternalPlanName updates ServiceInstance plan by plan ID
+func (ct *controllerTest) UpdateServiceInstanceExternalPlanName(planID string) (int64, error) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		return 0, fmt.Errorf("error getting Instance: %v", err)
+	}
+
+	instance.Spec.ClusterServicePlanExternalName = planID
+	instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
+		Name: planID,
+	}
+
+	instance.Generation = instance.Generation + 1
+	updatedInstance, err := ct.scInterface.ServiceInstances(testNamespace).Update(instance)
+
+	if err != nil {
+		return 0, fmt.Errorf("error updating Instance: %v", err)
+	}
+
+	return updatedInstance.Generation, nil
+}
+
+// UpdateServiceInstanceInternalPlanName updates ServiceInstance plan by plan name
+// CAUTION: because Plan refs are added by a Webhook tests require adds planRef before update ServiceInstance
+func (ct *controllerTest) UpdateServiceInstanceInternalPlanName(planName string) (int64, error) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		return 0, fmt.Errorf("error getting Instance: %v", err)
+	}
+
+	instance.Spec.ClusterServicePlanName = planName
+	instance.Spec.ClusterServicePlanRef = &v1beta1.ClusterObjectReference{
+		Name: testOtherPlanExternalID,
+	}
+
+	instance.Generation = instance.Generation + 1
+	updatedInstance, err := ct.scInterface.ServiceInstances(testNamespace).Update(instance)
+
+	if err != nil {
+		return 0, fmt.Errorf("error updating Instance: %v", err)
+	}
+
+	return updatedInstance.Generation, nil
+}
+
+// CreateServiceInstanceWithCustomParameters creates ServiceInstance with parameters from map or
+// by adding reference to Secret. If parameters are empty method creates ServiceInstance without parameters
+func (ct *controllerTest) CreateServiceInstanceWithCustomParameters(withParam, paramFromSecret bool) error {
+	var params map[string]interface{}
+	var paramsFrom []v1beta1.ParametersFromSource
+
+	if withParam {
+		params = map[string]interface{}{
+			"param-key": "param-value",
+		}
+	}
+
+	if paramFromSecret {
+		paramsFrom = []v1beta1.ParametersFromSource{
+			{
+				SecretKeyRef: &v1beta1.SecretKeyReference{
+					Name: secretNameWithParameters,
+					Key:  secretKeyWithParameters,
+				},
+			},
+		}
+	}
+
+	var err error
+	if withParam || paramFromSecret {
+		_, err = ct.CreateServiceInstanceWithParameters(params, paramsFrom)
+	} else {
+		err = ct.CreateServiceInstance()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateServiceInstanceWithParameters creates ServiceInstance with parameters from map and by adding
+// Secret reference
+func (ct *controllerTest) CreateServiceInstanceWithParameters(
+	params map[string]interface{},
+	paramsFrom []v1beta1.ParametersFromSource) (*v1beta1.ServiceInstance, error) {
+	rawParams, err := convertParametersIntoRawExtension(params)
+	if err != nil {
+		return nil, err
+	}
+
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
+			},
+			ClusterServicePlanRef: &v1beta1.ClusterObjectReference{
+				Name: testPlanExternalID,
+			},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
+				Name: testClassExternalID,
+			},
+			ExternalID:     testExternalID,
+			Parameters:     rawParams,
+			ParametersFrom: paramsFrom,
+		},
+	}
+
+	_, err = ct.scInterface.ServiceInstances(testNamespace).Create(instance)
+	if err != nil {
+		return nil, err
+	}
+
+	return instance, err
+}
+
+// UpdateCustomServiceInstanceParameters updates ServiceInstance with specific parameters. Method updates
+// directly parameters, parameters by adding Secret reference, removes parameters or removes reference to Secret
+func (ct *controllerTest) UpdateCustomServiceInstanceParameters(
+	update, updateFromSecret, delete, deleteFromSecret bool) (int64, error) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	if update {
+		instanceParam, err := convertParametersIntoRawExtension(map[string]interface{}{"param-key": "new-param-value"})
+		if err != nil {
+			return 0, err
+		}
+		instance.Spec.Parameters = instanceParam
+	}
+
+	if delete {
+		instance.Spec.Parameters = nil
+	}
+
+	if updateFromSecret {
+		instance.Spec.ParametersFrom = []v1beta1.ParametersFromSource{
+			{
+				SecretKeyRef: &v1beta1.SecretKeyReference{
+					Name: otherSecretNameWithParameters,
+					Key:  otherSecretKeyWithParameters,
+				},
+			},
+		}
+	}
+
+	if deleteFromSecret {
+		instance.Spec.ParametersFrom = nil
+	}
+
+	instance.Generation = instance.Generation + 1
+	updatedInstance, err := ct.scInterface.ServiceInstances(testNamespace).Update(instance)
+	if err != nil {
+		return 0, err
+	}
+
+	return updatedInstance.Generation, nil
+}
+
+func convertParametersIntoRawExtension(parameters map[string]interface{}) (*runtime.RawExtension, error) {
+	marshalledParams, err := json.Marshal(parameters)
+	if err != nil {
+		return nil, err
+	}
+	return &runtime.RawExtension{Raw: marshalledParams}, nil
+}
+
+// CreateServiceInstanceWithInvalidParameters creates instance and updates parameters with incorrect parameters
+func (ct *controllerTest) CreateServiceInstanceWithInvalidParameters() error {
+	params := map[string]interface{}{
+		"Name": "test-param",
+		"Args": map[string]interface{}{
+			"first":  "first-arg",
+			"second": "second-arg",
+		},
+	}
+	rawParams, err := convertParametersIntoRawExtension(params)
+	if err != nil {
+		return err
+	}
+	rawParams.Raw[0] = 0x21
+
+	instance := &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       testServiceInstanceName,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: testClusterServiceClassName,
+				ClusterServicePlanExternalName:  testClusterServicePlanName,
+			},
+			ClusterServicePlanRef: &v1beta1.ClusterObjectReference{
+				Name: testPlanExternalID,
+			},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
+				Name: testClassExternalID,
+			},
+			ExternalID:     testExternalID,
+			Parameters:     rawParams,
+			ParametersFrom: nil,
+		},
+	}
+
+	_, err = ct.scInterface.ServiceInstances(testNamespace).Create(instance)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AssertObservedGenerationIsCorrect makes sure ServiceInstance status `ObservedGeneration` parameter is not
+// equal to ServiceInstance `Generation` parameter
+func (ct *controllerTest) AssertObservedGenerationIsCorrect(t *testing.T) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if g, og := instance.Generation, instance.Status.ObservedGeneration; g != og {
+		t.Fatalf("latest generation not observed: generation: %v, observed: %v", g, og)
+	}
+}
+
+// WaitForReadyUpdateInstance waits for ServiceInstance when Generation parameter will be equal to
+// ObservedGeneration status parameter
+func (ct *controllerTest) WaitForReadyUpdateInstance() error {
+	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
+		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+		if err != nil {
+			return false, fmt.Errorf("error getting Instance: %v", err)
+		}
+
+		if g, og := instance.Generation, instance.Status.ObservedGeneration; g != og {
+			return true, nil
+		}
+
+		return false, nil
+	})
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf("ServiceInstance ObservedGeneration status parameter is out of date")
+	}
+	return err
+}
+
+// SetErrorReactionForProvisioningToOSBClient sets up DynamicProvisionReaction for fake osb client with specific
+// error status code
+func (ct *controllerTest) SetErrorReactionForProvisioningToOSBClient(statusCode int) {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	ct.fakeOSBClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+		func(_ *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+			return nil, osb.HTTPStatusCodeError{
+				StatusCode:   statusCode,
+				ErrorMessage: strPtr("error message"),
+				Description:  strPtr("response description"),
+			}
+		})
+}
+
+// SetCustomErrorReactionForProvisioningToOSBClient sets up DynamicProvisionReaction for fake osb client
+// with specific response
+func (ct *controllerTest) SetCustomErrorReactionForProvisioningToOSBClient(response error) {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	ct.fakeOSBClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+		func(_ *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+			return nil, response
+		})
+}
+
+// SetErrorReactionForDeprovisioningToOSBClient sets up DynamicDeprovisionReaction for fake osb client with specific
+// error status code. Method allows blocking deprovision response
+func (ct *controllerTest) SetErrorReactionForDeprovisioningToOSBClient(statusCode int, block <-chan bool) {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	blockDeprovision := true
+	ct.fakeOSBClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
+		func(_ *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+			for blockDeprovision {
+				blockDeprovision = <-block
+			}
+			return nil, osb.HTTPStatusCodeError{
+				StatusCode:   statusCode,
+				ErrorMessage: strPtr("temporary deprovision error"),
+			}
+		})
+}
+
+// SetSuccessfullyReactionForProvisioningToOSBClient sets up DynamicProvisionReaction for fake osb client
+// with success response
+func (ct *controllerTest) SetSuccessfullyReactionForProvisioningToOSBClient() {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	ct.fakeOSBClient.ProvisionReaction = fakeosb.DynamicProvisionReaction(
+		func(_ *osb.ProvisionRequest) (*osb.ProvisionResponse, error) {
+			return &osb.ProvisionResponse{}, nil
+		})
+}
+
+// SetSuccessfullyReactionForDeprovisioningToOSBClient sets up DynamicDeprovisionReaction for fake osb client
+// with success response
+func (ct *controllerTest) SetSuccessfullyReactionForDeprovisioningToOSBClient() {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	ct.fakeOSBClient.DeprovisionReaction = fakeosb.DynamicDeprovisionReaction(
+		func(_ *osb.DeprovisionRequest) (*osb.DeprovisionResponse, error) {
+			return &osb.DeprovisionResponse{}, nil
+		})
+}
+
+// AssertLastOSBUpdatePlanID makes sure osb client action with type "UpdateInstance"
+// contains specific plan ID in request body parameters
+func (ct *controllerTest) AssertLastOSBUpdatePlanID(t *testing.T) {
+	for _, planID := range ct.fetchAllPlansFromUpdateActions() {
+		if planID == testOtherPlanExternalID {
+			return
+		}
+	}
+
+	t.Fatalf("expected ServicePlan %q not exist", testOtherPlanExternalID)
+}
+
+func (ct *controllerTest) fetchAllPlansFromUpdateActions() []string {
+	var plans []string
+	actions := ct.fakeOSBClient.Actions()
+	for _, action := range actions {
+		if action.Type == fakeosb.UpdateInstance {
+			request := action.Request.(*osb.UpdateInstanceRequest)
+			if request.PlanID == nil {
+				continue
+			}
+
+			plans = append(plans, *request.PlanID)
+		}
+	}
+
+	return plans
+}
+
+// AssertBrokerActionWithParametersExist makes sure osb client action with type "UpdateInstance"
+// contains specific parameters in request body parameters
+func (ct *controllerTest) AssertBrokerUpdateActionWithParametersExist(t *testing.T, parameters map[string]interface{}) {
+	actions := ct.fakeOSBClient.Actions()
+	for _, action := range actions {
+		if action.Type != fakeosb.UpdateInstance {
+			continue
+		}
+
+		request := action.Request.(*osb.UpdateInstanceRequest)
+		if !reflect.DeepEqual(request.Parameters, parameters) {
+			t.Fatalf("unexpected parameters: expected %v, got %v", parameters, request.Parameters)
+		}
+	}
+}
+
+// CreateSecretsForServiceInstanceWithSecretParams creates Secrets with specific parameters
+func (ct *controllerTest) CreateSecretsForServiceInstanceWithSecretParams() error {
+	_, err := ct.k8sClient.CoreV1().Secrets(testNamespace).Create(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      secretNameWithParameters,
+		},
+		Data: map[string][]byte{
+			secretKeyWithParameters: []byte(`{"secret-param-key":"secret-param-value"}`),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = ct.k8sClient.CoreV1().Secrets(testNamespace).Create(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      otherSecretNameWithParameters,
+		},
+		Data: map[string][]byte{
+			otherSecretKeyWithParameters: []byte(`{"other-secret-param-key":"other-secret-param-value"}`),
+		},
+	})
+
+	return err
+}
+
+// SetSimpleErrorUpdateInstanceReaction sets up DynamicUpdateInstanceReaction for fake osb client
+// which returns simple error response during three first call and success response after them
+func (ct *controllerTest) SetSimpleErrorUpdateInstanceReaction() {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	numberOfPolls := 0
+	numberOfInProgressResponses := 2
+
+	ct.fakeOSBClient.UpdateInstanceReaction = fakeosb.DynamicUpdateInstanceReaction(
+		func(_ *osb.UpdateInstanceRequest) (*osb.UpdateInstanceResponse, error) {
+			numberOfPolls++
+			if numberOfPolls > numberOfInProgressResponses {
+				return &osb.UpdateInstanceResponse{}, nil
+			}
+			return nil, errors.New("fake update error")
+		})
+}
+
+// SetErrorUpdateInstanceReaction sets up DynamicUpdateInstanceReaction for fake osb client
+// which returns specific error response during three first call and success response after them
+func (ct *controllerTest) SetErrorUpdateInstanceReaction() {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+
+	numberOfPolls := 0
+	numberOfInProgressResponses := 2
+
+	ct.fakeOSBClient.UpdateInstanceReaction = fakeosb.DynamicUpdateInstanceReaction(
+		func(_ *osb.UpdateInstanceRequest) (*osb.UpdateInstanceResponse, error) {
+			numberOfPolls++
+			if numberOfPolls > numberOfInProgressResponses {
+				return &osb.UpdateInstanceResponse{}, nil
+			}
+			return nil, osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusConflict,
+				ErrorMessage: strPtr("OutOfQuota"),
+				Description:  strPtr("You're out of quota!"),
+			}
+		})
+}
+
+// SetUpdateServiceInstanceResponseWithDashboardURL sets up UpdateInstanceReaction for fake osb client
+// with specific url under the parameter `DashboardURL`
+func (ct *controllerTest) SetUpdateServiceInstanceResponseWithDashboardURL() {
+	dashURL := testDashboardURL
+	ct.fakeOSBClient.UpdateInstanceReaction = &fakeosb.UpdateInstanceReaction{
+		Response: &osb.UpdateInstanceResponse{
+			DashboardURL: &dashURL,
+		},
+	}
+}
+
+// AssertServiceInstanceDashboardURL makes sure ServiceInstance `Status.DashboardURL` parameter is equal to test URL
+func (ct *controllerTest) AssertServiceInstanceDashboardURL(t *testing.T) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting Instance: %v", err)
+	}
+
+	dashURL := testDashboardURL
+	return
+	if *instance.Status.DashboardURL != dashURL {
+		t.Fatalf("unexpected DashboardURL: %v expected %v", instance.Status.DashboardURL, dashURL)
+	}
+}
+
+// AssertServiceInstanceEmptyDashboardURL makes sure ServiceInstance `Status.DashboardURL` is empty
+func (ct *controllerTest) AssertServiceInstanceEmptyDashboardURL(t *testing.T) {
+	instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(testServiceInstanceName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("error getting Instance: %v", err)
+	}
+	if instance.Status.DashboardURL != nil {
+		t.Fatalf("Dashboard URL should be nil")
+	}
+}
+
+// SetupFeatureGateDashboardURL sets FeatureGate behavior
+func (ct *controllerTest) SetFeatureGateDashboardURL(enable bool) error {
+	var format string
+	if enable {
+		format = "%v=true"
+	} else {
+		format = "%v=false"
+	}
+
+	parameter := fmt.Sprintf(format, scfeatures.UpdateDashboardURL)
+	if err := utilfeature.DefaultMutableFeatureGate.Set(parameter); err != nil {
+		return fmt.Errorf("Failed to enable updatable dashboard url feature: %v", err)
+	}
+
+	return nil
+}
+
+// CreateSecret creates a secret with given name and stored data
+func (ct *controllerTest) CreateSecret(name string, data map[string][]byte) error {
+	_, err := ct.k8sClient.CoreV1().Secrets(testNamespace).Create(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      name,
+		},
+		Data: data,
+	})
+	return err
+}
+
+// AssertLastBindRequest makes sure parameters are equal to parameters from last binding request
+func (ct *controllerTest) AssertLastBindRequest(t *testing.T, expectedParams map[string]interface{}) {
+	actions := ct.fakeOSBClient.Actions()
+	for i := len(actions) - 1; i >= 0; i-- {
+		action := actions[i]
+		if action.Type == fakeosb.Bind {
+			bindReq := action.Request.(*osb.BindRequest)
+			assert.Equal(t, expectedParams, bindReq.Parameters)
+			return
+		}
+	}
+}
+
+// CreateServiceInstance creates a ServiceInstance which is used in testing scenarios.
+func (ct *controllerTest) CreateServiceInstanceWithNonbindablePlan() error {
+	_, err := ct.scInterface.ServiceInstances(testNamespace).Create(&v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testServiceInstanceName,
+			// added by a Webhook, which is not tested here
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: testClassExternalID,
+				ClusterServicePlanExternalName:  testNonbindablePlanExternalID,
+			},
+			ExternalID: testExternalID,
+			// Plan and Class refs are added by a Webhook, which is not tested here
+			ClusterServicePlanRef: &v1beta1.ClusterObjectReference{
+				Name: testNonbindablePlanExternalID,
+			},
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{
+				Name: testClassExternalID,
+			},
+		},
+	})
+	return err
+}
+
+// SetOSBProvisionReactionWithHTTPError configures the broker Provision call response as HTTPStatusCodeError
+func (ct *controllerTest) SetOSBProvisionReactionWithHTTPError(code int) {
+	ct.fakeOSBClient.Lock()
+	defer ct.fakeOSBClient.Unlock()
+	ct.fakeOSBClient.ProvisionReaction = &fakeosb.ProvisionReaction{
+		Error: osb.HTTPStatusCodeError{
+			StatusCode: code,
+		},
+	}
+}
+
+func (ct *controllerTest) CreateBindingWithParams(params map[string]interface{}, paramsFrom []v1beta1.ParametersFromSource) error {
+	var parameters *runtime.RawExtension
+	if params != nil {
+		marshaledParams, err := json.Marshal(params)
+		if err != nil {
+			return err
+		}
+		parameters = &runtime.RawExtension{Raw: marshaledParams}
+	}
+	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  testNamespace,
+			Name:       testBindingName,
+			Generation: 1,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			InstanceRef: v1beta1.LocalObjectReference{
+				Name: testServiceInstanceName,
+			},
+			ExternalID:     testServiceBindingGUID,
+			SecretName:     testBindingName, // set by the webhook
+			Parameters:     parameters,
+			ParametersFrom: paramsFrom,
+		},
+	})
+	return err
+}
+
+// AssertBindingData verifies the secret created by the binding - checks stored secret data.
+func (ct *controllerTest) AssertBindingData(t *testing.T, expectedData map[string][]byte) {
+	s, err := ct.k8sClient.CoreV1().Secrets(testNamespace).Get(testBindingName, metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, expectedData, s.Data)
+}
+
+func (ct *controllerTest) CreateBindingWithTransforms(transforms []v1beta1.SecretTransform) error {
+	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  testNamespace,
+			Name:       testBindingName,
+			Generation: 1,
+			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+		},
+		Spec: v1beta1.ServiceBindingSpec{
+			InstanceRef: v1beta1.LocalObjectReference{
+				Name: testServiceInstanceName,
+			},
+			ExternalID:       testServiceBindingGUID,
+			SecretName:       testBindingName, // set by the webhook
+			SecretTransforms: transforms,
+		},
+	})
+	return err
 }
 
 // fixtureHappyPathBrokerClientConfig returns fake configuration for OSB client used in testing scenario
@@ -984,10 +1816,11 @@ func fixtureCatalogResponse() *osb.CatalogResponse {
 	return &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:        testClusterServiceClassName,
-				ID:          testClassExternalID,
-				Description: "a test service",
-				Bindable:    true,
+				Name:          testClusterServiceClassName,
+				ID:            testClassExternalID,
+				Description:   "a test service",
+				Bindable:      true,
+				PlanUpdatable: truePtr(),
 				Plans: []osb.Plan{
 					{
 						Name:        testClusterServicePlanName,
@@ -1001,6 +1834,12 @@ func fixtureCatalogResponse() *osb.CatalogResponse {
 						ID:          testNonbindablePlanExternalID,
 						Description: "an non-bindable test plan",
 						Bindable:    falsePtr(),
+					},
+					{
+						Name:        testOtherClusterServicePlanName,
+						Free:        truePtr(),
+						ID:          testOtherPlanExternalID,
+						Description: "an other test plan",
 					},
 				},
 			},
@@ -1017,6 +1856,12 @@ func fixtureBindCredentials() map[string]interface{} {
 	}
 }
 
+func fixtureUserInfo() *v1beta1.UserInfo {
+	return &v1beta1.UserInfo{
+		Username: testUsername,
+	}
+}
+
 func truePtr() *bool {
 	b := true
 	return &b
@@ -1025,4 +1870,8 @@ func truePtr() *bool {
 func falsePtr() *bool {
 	b := false
 	return &b
+}
+
+func strPtr(s string) *string {
+	return &s
 }
