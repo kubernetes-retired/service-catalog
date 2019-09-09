@@ -29,10 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
 // the Message strings have a terminating period and space so they can
