@@ -17,9 +17,10 @@ limitations under the License.
 package controller_test
 
 import (
-	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"testing"
+
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
+	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
 )
 
 func TestBrokerClientManager_CreateBrokerClient(t *testing.T) {

@@ -23,13 +23,13 @@ import (
 
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
-	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
+	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
 
 	"time"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/test/util"
-	"github.com/pmorie/go-open-service-broker-client/v2/generator"
+	"github.com/kubernetes-sigs/go-open-service-broker-client/v2/generator"
 )
 
 func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {

@@ -39,9 +39,9 @@ import (
 	// avoid error `servicecatalog/v1beta1 is not enabled`
 	_ "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
 
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	fakeosb "github.com/pmorie/go-open-service-broker-client/v2/fake"
-	generator "github.com/pmorie/go-open-service-broker-client/v2/generator"
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
+	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
+	generator "github.com/kubernetes-sigs/go-open-service-broker-client/v2/generator"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"

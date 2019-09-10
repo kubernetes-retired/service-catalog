@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/api/errors"
