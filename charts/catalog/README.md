@@ -11,7 +11,7 @@ For more information,
 
 ## Prerequisites
 
-- Kubernetes 1.12+
+- Kubernetes 1.13+
 - `charts/catalog` already exists in your local machine
 
 ## Installing the Chart
