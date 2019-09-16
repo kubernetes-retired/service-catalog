@@ -53,8 +53,10 @@ mkdir -p ${SVC_CATALOG_REPO_DIR}
 pushd ${SVC_CATALOG_REPO_DIR}
 
   gsutil cp gs://${SVC_CATALOG_BUCKET}/index.yaml .
-  helm dep build ../charts/catalog-v0.2
-  helm package ../charts/catalog-v0.2
+  for dir in `ls ../charts`;do
+    helm dep build ../charts/${dir}
+    helm package ../charts/${dir}
+  done
   helm repo index --url ${SVC_CATALOG_REPO_URL} --merge ./index.yaml .
   gsutil -m rsync ./ gs://${SVC_CATALOG_BUCKET}/
 

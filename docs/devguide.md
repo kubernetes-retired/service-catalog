@@ -345,7 +345,7 @@ functionality or introduce instability.  See [FeatureGates](feature-gates.md)
 for more details.
 
 When adding a FeatureGate to Helm charts, define the variable
-`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog-v0.2/values.yaml).  In the [API Server](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog-v0.2/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog-v0.2/templates/controller-manager-deployment.yaml)
+`fooEnabled` with a value of `false` in [values.yaml](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog/values.yaml).  In the [API Server](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog/templates/apiserver-deployment.yaml) and [Controller](https://github.com/kubernetes-sigs/service-catalog/blob/v0.2/charts/catalog/templates/controller-manager-deployment.yaml)
 templates, add the new FeatureGate:
 {% raw %}
 ```yaml
@@ -456,7 +456,7 @@ If someone wants to install a unreleased version, they must build it locally.
 
 ## Deploying to Kubernetes
 
-Use the [`catalog` chart](../charts/catalog-v0.2) to deploy the service
+Use the [`catalog` chart](../charts/catalog) to deploy the service
 catalog into your cluster.  The easiest way to get started is to deploy into a
 cluster you regularly use and are familiar with.  One of the choices you can
 make when deploying the catalog is whether to make the API server store its
@@ -474,7 +474,7 @@ installed with the other standard installation options.
 From the root of this repository:
 
 ```
-helm install charts/catalog-v0.2 \
+helm install charts/catalog \
     --name catalog --namespace catalog \
     --set image=quay.io/kubernetes-service-catalog/service-catalog:canary
 ```

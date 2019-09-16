@@ -115,8 +115,7 @@ You should see the following output:
 
 ```console
 NAME                         VERSION    DESCRIPTION
-svc-cat/catalog         0.3.X      service-catalog
-svc-cat/catalog-v0.2    0.2.X      service-catalog API server ...
+svc-cat/catalog              0.3.X      service-catalog API server and controller-manager helm chart
 ```
 
 ## RBAC
@@ -168,7 +167,7 @@ Now that your cluster and Helm are configured properly, installing
 Service Catalog is simple:
 
 ```console
-helm install svc-cat/catalog-v0.2 \
+helm install svc-cat/catalog --version 0.2.x \
     --name catalog --namespace catalog
 ```
 

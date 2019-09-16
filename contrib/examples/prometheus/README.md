@@ -42,7 +42,7 @@ Prometheus.  [This YAML](prometheus.yml) creates a Prometheus instance
 preconfigured to gather Kubernetes platform and node metrics.  If you deploy the
 Service Catalog Controller Manager via Helm with the optional
 `enablePrometheusScrape` parameter set to true (either edit the parameter in
-[charts/catalog-v0.2/values.yaml](../../../charts/catalog-v0.2/values.yaml) or specify
+[charts/catalog/values.yaml](../../../charts/catalog/values.yaml) or specify
 "--set enablePrometheusScrape=true" when installing Catalog with helm), this configuration will direct Prometheus
 to automatically scrape custom metrics exposed from Service Catalog as well.
 Most any Prometheus configuration for Kubernetes (ie [Prometheus
