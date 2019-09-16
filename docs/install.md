@@ -109,8 +109,7 @@ You should see the following output:
 
 ```console
 NAME                         VERSION    DESCRIPTION
-svc-cat/catalog              0.3.X      service-catalog helm chart
-svc-cat/catalog-v0.2         0.2.X      service-catalog API server and controller-manager helm chart
+svc-cat/catalog              0.3.X      service-catalog API server and controller-manager helm chart
 ```
 
 ## RBAC
@@ -166,10 +165,10 @@ helm install svc-cat/catalog \
     --name catalog --namespace catalog
 ```
 
-If you want to install older version of service catalog (for instance the  API-server based version from v0.2 branch) append branch name to the chart name:
+If you want to install older version of service catalog (for instance the  API-server based version from v0.2 branch) append version parameter to the chart name:
 
 ```console
-helm install svc-cat/catalog-v0.2 \
+helm install svc-cat/catalog --version 0.2.2 \
     --name catalog --namespace catalog
 ```
 
