@@ -32,7 +32,7 @@ import (
 	"k8s.io/apiserver/pkg/storage/names"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"k8s.io/klog"

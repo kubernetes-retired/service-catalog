@@ -191,6 +191,7 @@ func TestClusterServiceClassRemovedFromCatalogAfterFiltering(t *testing.T) {
 
 	// WHEN
 	assert.NoError(t, ct.AddServiceClassRestrictionsToBroker())
+	assert.NoError(t, ct.SetClusterServiceClassLabels())
 
 	// THEN
 	assert.NoError(t, ct.WaitForClusterServiceClassToNotExists())

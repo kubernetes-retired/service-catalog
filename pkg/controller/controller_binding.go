@@ -20,21 +20,22 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-
-	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/klog"
+	"reflect"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/jsonpath"
+	"k8s.io/klog"
 )
 
 const (
@@ -176,6 +177,15 @@ func (c *controller) reconcileServiceBinding(binding *v1beta1.ServiceBinding) er
 // service bindings.
 func (c *controller) reconcileServiceBindingAdd(binding *v1beta1.ServiceBinding) error {
 	pcb := pretty.NewBindingContextBuilder(binding)
+
+	if !c.isServiceBindingStatusInitialized(binding) {
+		klog.V(4).Info(pcb.Message("Initialize Status entry"))
+		if err := c.initializeServiceBindingStatus(binding); err != nil {
+			klog.Errorf(pcb.Messagef("Error initializing status: %v", err))
+			return err
+		}
+		return nil
+	}
 
 	if isServiceBindingFailed(binding) {
 		klog.V(4).Info(pcb.Message("not processing event; status showed that it has failed"))
@@ -662,6 +672,7 @@ func setServiceBindingCondition(toUpdate *v1beta1.ServiceBinding,
 	reason, message string) {
 
 	setServiceBindingConditionInternal(toUpdate, conditionType, status, reason, message, metav1.Now())
+	toUpdate.Status.LastConditionState = getServiceBindingLastConditionState(toUpdate.Status)
 }
 
 // setServiceBindingConditionInternal is
@@ -761,6 +772,34 @@ func (c *controller) updateServiceBindingCondition(
 		))
 	}
 	return err
+}
+
+func (c *controller) isServiceBindingStatusInitialized(binding *v1beta1.ServiceBinding) bool {
+	emptyStatus := v1beta1.ServiceBindingStatus{}
+	if reflect.DeepEqual(binding.Status, emptyStatus) {
+		return false
+	}
+
+	return true
+}
+
+// initializeServiceBindingStatus initialize the ServiceBindingStatus.
+// In normal scenario it should be done when client is creating the ServiceBinding,
+// but right now we cannot modify the Status (sub-resource) in webhook on CREATE action.
+// As a temporary solution we are doing that in the reconcile function.
+func (c *controller) initializeServiceBindingStatus(binding *v1beta1.ServiceBinding) error {
+	updated := binding.DeepCopy()
+	updated.Status = v1beta1.ServiceBindingStatus{
+		Conditions:   []v1beta1.ServiceBindingCondition{},
+		UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
+	}
+
+	_, err := c.serviceCatalogClient.ServiceBindings(updated.Namespace).UpdateStatus(updated)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // recordStartOfServiceBindingOperation updates the binding to indicate
@@ -1479,15 +1518,23 @@ func (c *controller) handleServiceBindingReconciliationError(binding *v1beta1.Se
 // updating of a ServiceBinding that has successfully finished graceful
 // deletion.
 func (c *controller) processServiceBindingGracefulDeletionSuccess(binding *v1beta1.ServiceBinding) error {
-	finalizers := sets.NewString(binding.Finalizers...)
-	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
-	binding.Finalizers = finalizers.List()
-
-	if _, err := c.updateServiceBindingStatus(binding); err != nil {
-		return err
-	}
-
 	pcb := pretty.NewBindingContextBuilder(binding)
+
+	updatedBinding, err := c.updateServiceBindingStatus(binding)
+	if err != nil {
+		return fmt.Errorf("while updating status: %v", err)
+	}
+	klog.Info(pcb.Message("Status updated"))
+
+	toUpdate := updatedBinding.DeepCopy()
+	finalizers := sets.NewString(toUpdate.Finalizers...)
+	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
+	toUpdate.Finalizers = finalizers.List()
+
+	_, err = c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(toUpdate)
+	if err != nil {
+		return fmt.Errorf("while removing finalizer entry: %v", err)
+	}
 	klog.Info(pcb.Message("Cleared finalizer"))
 
 	return nil
@@ -1587,4 +1634,15 @@ func (c *controller) handleServiceBindingPollingError(binding *v1beta1.ServiceBi
 	pcb := pretty.NewBindingContextBuilder(binding)
 	klog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceBinding(binding)
+}
+
+func getServiceBindingLastConditionState(status v1beta1.ServiceBindingStatus) string {
+	if len(status.Conditions) > 0 {
+		condition := status.Conditions[len(status.Conditions)-1]
+		if condition.Status == v1beta1.ConditionTrue {
+			return string(condition.Type)
+		}
+		return condition.Reason
+	}
+	return ""
 }

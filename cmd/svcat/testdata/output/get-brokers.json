@@ -28,7 +28,8 @@
             }
          ],
          "reconciledGeneration": 2,
-         "lastCatalogRetrievalTime": "2018-01-12T02:10:27Z"
+         "lastCatalogRetrievalTime": "2018-01-12T02:10:27Z",
+         "lastConditionState": "Ready"
       }
    },
    {
@@ -60,7 +61,8 @@
             }
          ],
          "reconciledGeneration": 2,
-         "lastCatalogRetrievalTime": "2018-01-12T02:10:27Z"
+         "lastCatalogRetrievalTime": "2018-01-12T02:10:27Z",
+         "lastConditionState": "Ready"
       }
    }
 ]

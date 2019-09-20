@@ -33,10 +33,13 @@ items:
       clusterServicePlanExternalName: default
       parameterChecksum: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
       parameters: {}
+    lastConditionState: Ready
     observedGeneration: 0
     orphanMitigationInProgress: false
     provisionStatus: ""
     reconciledGeneration: 1
+    userSpecifiedClassName: ""
+    userSpecifiedPlanName: ""
 metadata:
   resourceVersion: "109"
   selfLink: /apis/servicecatalog.k8s.io/v1beta1/serviceinstances

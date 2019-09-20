@@ -309,6 +309,10 @@ type CommonServiceBrokerStatus struct {
 	// LastCatalogRetrievalTime is the time the Catalog was last fetched from
 	// the Service Broker
 	LastCatalogRetrievalTime *metav1.Time `json:"lastCatalogRetrievalTime,omitempty"`
+
+	// LastConditionState aggregates state from the Conditions array
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	LastConditionState string `json:"lastConditionState"`
 }
 
 // ClusterServiceBrokerStatus represents the current status of a
@@ -987,6 +991,18 @@ type ServiceInstanceStatus struct {
 	// DefaultProvisionParameters are the default parameters applied to this
 	// instance.
 	DefaultProvisionParameters *runtime.RawExtension `json:"defaultProvisionParameters,omitempty"`
+
+	// LastConditionState aggregates state from the Conditions array
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	LastConditionState string `json:"lastConditionState"`
+
+	// UserSpecifiedPlanName aggregates cluster or namespace PlanName
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	UserSpecifiedPlanName string `json:"userSpecifiedPlanName"`
+
+	// UserSpecifiedClassName aggregates cluster or namespace ClassName
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	UserSpecifiedClassName string `json:"userSpecifiedClassName"`
 }
 
 // ServiceInstanceCondition contains condition information about an Instance.
@@ -1248,6 +1264,10 @@ type ServiceBindingStatus struct {
 
 	// UnbindStatus describes what has been done to unbind the ServiceBinding.
 	UnbindStatus ServiceBindingUnbindStatus `json:"unbindStatus"`
+
+	// LastConditionState aggregates state from the Conditions array
+	// It is used for printing in a kubectl output via additionalPrinterColumns
+	LastConditionState string `json:"lastConditionState"`
 }
 
 // ServiceBindingCondition condition information for a ServiceBinding.
@@ -1385,11 +1405,25 @@ const (
 	// SpecExternalID is the external id of the object.
 	FilterSpecExternalID = "spec.externalID"
 	// SpecServiceBrokerName is used for ServiceClasses, the parent service broker name.
+
 	FilterSpecServiceBrokerName = "spec.serviceBrokerName"
-	// SpecClusterServiceClassName is only used for plans, the parent service class name.
-	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	// SpecClusterServiceBrokerName is used for ClusterServiceClasses, the parent service broker name.
+	FilterSpecClusterServiceBrokerName = "spec.clusterServiceBrokerName"
+
 	// SpecServiceClassName is only used for plans, the parent service class name.
 	FilterSpecServiceClassName = "spec.serviceClass.name"
+	// SpecClusterServiceClassName is only used for plans, the parent service class name.
+	FilterSpecClusterServiceClassName = "spec.clusterServiceClass.name"
+	// SpecClusterServiceClassRefName is only used for plans, the parent service class name.
+	FilterSpecServiceClassRefName = "spec.serviceClassRef.name"
+	// SpecClusterServiceClassRefName is only used for plans, the parent service class name.
+	FilterSpecClusterServiceClassRefName = "spec.clusterServiceClassRef.name"
+
+	// SpecServicePlanRefName is only used for instances.
+	FilterSpecServicePlanRefName = "spec.servicePlanRef.name"
+	// SpecClusterServiceClassRefName is only used for instances.
+	FilterSpecClusterServicePlanRefName = "spec.clusterServicePlanRef.name"
+
 	// FilterSpecFree is only used for plans, determines if the plan is free.
 	FilterSpecFree = "spec.free"
 )
@@ -1477,4 +1511,22 @@ type AddKeysFromTransform struct {
 type RemoveKeyTransform struct {
 	// The key to remove from the Secret
 	Key string `json:"key"`
+}
+
+func init() {
+	// SchemaBuilder is used to map go structs to GroupVersionKinds.
+	// Solution suggested by the Kubebuilder book: https://book.kubebuilder.io/basics/simple_resource.html - "Scaffolded Boilerplate" section
+	SchemeBuilderRuntime.Register(
+		&ServiceBinding{},
+		&ServiceInstance{},
+		&ClusterServiceClass{},
+		&ClusterServiceClassList{},
+		&ServiceBroker{},
+		&ClusterServiceBroker{},
+		&ServiceClass{},
+		&ServiceClassList{},
+		&ServicePlan{},
+		&ServicePlanList{},
+		&ClusterServicePlan{},
+		&ClusterServicePlanList{})
 }

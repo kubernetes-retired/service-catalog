@@ -40,38 +40,18 @@ chart and their default values.
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | apiserver image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.2.2` |
+| `image` | Service catalog image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.2.2` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
-| `apiserver.replicas` | `replicas` for the service catalog apiserver pod count | `1` |
-| `apiserver.updateStrategy` | `updateStrategy` for the service catalog apiserver deployments | `RollingUpdate` |
-| `apiserver.minReadySeconds` | how many seconds an apiServer pod needs to be ready before killing the next, during update | `1` |
-| `apiserver.annotations` | Annotations for apiserver pods | `{}` |
-| `apiserver.nodeSelector` | A nodeSelector value to apply to the apiserver pods. If not specified, no nodeSelector will be applied | |
-| `apiserver.aggregator.priority` | Priority of the APIService. | `100` |
-| `apiserver.aggregator.groupPriorityMinimum` | The minimum priority the group should have. | `10000` |
-| `apiserver.aggregator.versionPriority` | The ordering of this API inside of the group | `20` |
-| `apiserver.tls.requestHeaderCA` | Base64-encoded CA used to validate request-header authentication, when receiving delegated authentication from an aggregator. If not set, the service catalog API server will inherit this CA from the `extension-apiserver-authentication` ConfigMap if available. | `nil` |
-| `apiserver.service.type` | Type of service; valid values are `LoadBalancer` , `NodePort` and `ClusterIP` | `NodePort` |
-| `apiserver.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30443` |
-| `apiserver.service.clusterIP` | If service type is ClusterIP, specify clusterIP as `None` for `headless services` OR specify your own specific IP OR leave blank to let Kubernetes assign a cluster IP |  |
-| `apiserver.storage.type` | The storage backend to use; the only valid value is `etcd`, left for other storages support in future, e.g. `crd` | `etcd` |
-| `apiserver.storage.etcd.useEmbedded` | If storage type is `etcd`: Whether to embed an etcd container in the apiserver pod; THIS IS INADEQUATE FOR PRODUCTION USE! | `true` |
-| `apiserver.storage.etcd.servers` | If storage type is `etcd`: etcd URL(s); override this if NOT using embedded etcd. Only etcd v3 is supported. | `http://localhost:2379` |
-| `apiserver.storage.etcd.image` | etcd image to use | `quay.io/coreos/etcd:latest` |
-| `apiserver.storage.etcd.imagePullPolicy` | `imagePullPolicy` for etcd | `Always` |
-| `apiserver.storage.etcd.persistence.enabled` | Enable persistence using PVC | `false` |
-| `apiserver.storage.etcd.persistence.storageClass` | PVC Storage Class | `nil` (uses alpha storage class annotation) |
-| `apiserver.storage.etcd.persistence.accessMode` | PVC Access Mode | `ReadWriteOnce` |
-| `apiserver.storage.etcd.persistence.size` | PVC Storage Request | `4Gi` |
-| `apiserver.storage.etcd.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 30Mi}, limits: {cpu: 100m, memory: 40Mi}}` |
-| `apiserver.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
-| `apiserver.auth.enabled` | Enable authentication and authorization | `true` |
-| `apiserver.audit.activated` | If true, enables the use of audit features via this chart. | `false` |
-| `apiserver.audit.logPath` | If specified, audit log goes to specified path. | `"/tmp/service-catalog-apiserver-audit.log"` |
-| `apiserver.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
-| `apiserver.serviceAccount` | Service account. | `service-catalog-apiserver` |
-| `apiserver.serveOpenAPISpec` | If true, makes the API server serve the OpenAPI schema | `false` |
-| `apiserver.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
+| `webhook.updateStrategy` | `updateStrategy` for the service catalog webhook deployment | `RollingUpdate` |
+| `webhook.minReadySeconds` | how many seconds an webhook server pod needs to be ready before killing the next, during update | `1` |
+| `webhook.annotations` | Annotations for webhook pods | `{}` |
+| `webhook.nodeSelector` | A nodeSelector value to apply to the webhook pods. If not specified, no nodeSelector will be applied | |
+| `webhook.service.type` | Type of service; valid values are `LoadBalancer` , `NodePort` and `ClusterIP` | `NodePort` |
+| `webhook.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30443` |
+| `webhook.service.clusterIP` | If service type is ClusterIP, specify clusterIP as `None` for `headless services` OR specify your own specific IP OR leave blank to let Kubernetes assign a cluster IP |  |
+| `webhook.verbosity` | Log level; valid values are in the range 0 - 10 | `10` |
+| `webhook.healthcheck.enabled` | Enable readiness and liveliness probes | `true` |
+| `webhook.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
 | `controllerManager.replicas` | `replicas` for the service catalog controllerManager pod count | `1` |
 | `controllerManager.updateStrategy` | `updateStrategy` for the service catalog controllerManager deployments | `RollingUpdate` |
 | `controllerManager.minReadySeconds` | how many seconds a controllerManager pod needs to be ready before killing the next, during update | `1` |
@@ -87,13 +67,11 @@ chart and their default values.
 | `controllerManager.profiling.contentionProfiling` | Enables lock contention profiling, if profiling is enabled | `false` |
 | `controllerManager.leaderElection.activated` | Whether the controller has leader election enabled | `false` |
 | `controllerManager.serviceAccount` | Service account | `service-catalog-controller-manager` |
-| `controllerManager.apiserverSkipVerify` | Controls whether the API server's TLS verification should be skipped | `true` |
 | `controllerManager.enablePrometheusScrape` | Whether the controller will expose metrics on /metrics | `false` |
+| `controllerManager.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
 | `controllerManager.service.type` | Type of service; valid values are `LoadBalancer` , `NodePort` and `ClusterIP` | `ClusterIP` |
 | `controllerManager.service.nodePort.securePort` | If service type is `NodePort`, specifies a port in allowable range (e.g. 30000 - 32767 on minikube); The TLS-enabled endpoint will be exposed here | `30444` |
 | `controllerManager.service.clusterIP` | If service type is ClusterIP, specify clusterIP as `None` for `headless services` OR specify your own specific IP OR leave blank to let Kubernetes assign a cluster IP |  |
-| `controllerManager.resources` | Resources allocation (Requests and Limits) | `{requests: {cpu: 100m, memory: 20Mi}, limits: {cpu: 100m, memory: 30Mi}}` |
-| `useAggregator` | whether or not to set up the controller-manager to go through the main Kubernetes API server's API aggregator | `true` |
 | `rbacEnable` | If true, create & use RBAC resources | `true` |
 | `originatingIdentityEnabled` | Whether the OriginatingIdentity feature should be enabled | `true` |
 | `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |

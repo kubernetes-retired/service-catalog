@@ -25,13 +25,14 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimachineryv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apiserver/pkg/admission"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset"
 	servicecataloginternalversion "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset/typed/servicecatalog/internalversion"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scadmission "github.com/kubernetes-sigs/service-catalog/pkg/apiserver/admission"
 )
 
@@ -260,15 +261,17 @@ func (d *defaultServicePlan) getServiceClassByK8SName(a admission.Attributes, sc
 }
 
 func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ClusterServiceClass, error) {
-	filterField := ref.GetClusterServiceClassFilterFieldName()
+	filterLabel := ref.GetClusterServiceClassFilterLabelName()
 	filterValue := ref.GetSpecifiedClusterServiceClass()
 
-	klog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", filterField, filterValue)
-	fieldSet := fields.Set{
-		filterField: filterValue,
+	klog.V(4).Infof("Fetching ClusterServiceClass filtered by %q = %q", filterLabel, filterValue)
+	labelSelector := labels.SelectorFromSet(labels.Set{
+		filterLabel: filterValue,
+	}).String()
+
+	listOpts := apimachineryv1.ListOptions{
+		LabelSelector: labelSelector,
 	}
-	fieldSelector := fields.SelectorFromSet(fieldSet).String()
-	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	serviceClasses, err := d.cscClient.List(listOpts)
 	if err != nil {
 		klog.V(4).Infof("Listing ClusterServiceClasses failed: %q", err)
@@ -278,21 +281,23 @@ func (d *defaultServicePlan) getClusterServiceClassByField(a admission.Attribute
 		klog.V(4).Infof("Found single ClusterServiceClass as %+v", serviceClasses.Items[0])
 		return &serviceClasses.Items[0], nil
 	}
-	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with %q = %q, found %v", filterField, filterValue, len(serviceClasses.Items))
+	msg := fmt.Sprintf("Could not find a single ClusterServiceClass with %q = %q, found %v", filterLabel, filterValue, len(serviceClasses.Items))
 	klog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
 }
 
 func (d *defaultServicePlan) getServiceClassByField(a admission.Attributes, ref *servicecatalog.PlanReference) (*servicecatalog.ServiceClass, error) {
-	filterField := ref.GetServiceClassFilterFieldName()
+	filterLabel := ref.GetServiceClassFilterLabelName()
 	filterValue := ref.GetSpecifiedServiceClass()
 
-	klog.V(4).Infof("Fetching ServiceClass filtered by %q = %q", filterField, filterValue)
-	fieldSet := fields.Set{
-		filterField: filterValue,
+	klog.V(4).Infof("Fetching ServiceClass filtered by %q = %q", filterLabel, filterValue)
+	labelSelector := labels.SelectorFromSet(labels.Set{
+		filterLabel: filterValue,
+	}).String()
+
+	listOpts := apimachineryv1.ListOptions{
+		LabelSelector: labelSelector,
 	}
-	fieldSelector := fields.SelectorFromSet(fieldSet).String()
-	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	serviceClasses, err := d.scClient.List(listOpts)
 	if err != nil {
 		klog.V(4).Infof("Listing ServiceClasses failed: %q", err)
@@ -302,7 +307,7 @@ func (d *defaultServicePlan) getServiceClassByField(a admission.Attributes, ref 
 		klog.V(4).Infof("Found single ServiceClass as %+v", serviceClasses.Items[0])
 		return &serviceClasses.Items[0], nil
 	}
-	msg := fmt.Sprintf("Could not find a single ServiceClass with %q = %q, found %v", filterField, filterValue, len(serviceClasses.Items))
+	msg := fmt.Sprintf("Could not find a single ServiceClass with %q = %q, found %v", filterLabel, filterValue, len(serviceClasses.Items))
 	klog.V(4).Info(msg)
 	return nil, admission.NewNotFound(a)
 }
@@ -311,11 +316,13 @@ func (d *defaultServicePlan) getServiceClassByField(a admission.Attributes, ref 
 // ServicePlans for the specified service class name
 func (d *defaultServicePlan) getClusterServicePlansByClusterServiceClassName(scName string) ([]servicecatalog.ClusterServicePlan, error) {
 	klog.V(4).Infof("Fetching ClusterServicePlans by class name %q", scName)
-	fieldSet := fields.Set{
-		"spec.clusterServiceClassRef.name": scName,
+	labelSelector := labels.SelectorFromSet(labels.Set{
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: scName,
+	}).String()
+
+	listOpts := apimachineryv1.ListOptions{
+		LabelSelector: labelSelector,
 	}
-	fieldSelector := fields.SelectorFromSet(fieldSet).String()
-	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	servicePlans, err := d.cspClient.List(listOpts)
 	if err != nil {
 		klog.Infof("Listing ClusterServicePlans failed: %q", err)
@@ -330,11 +337,13 @@ func (d *defaultServicePlan) getClusterServicePlansByClusterServiceClassName(scN
 // ServicePlans for the specified service class name
 func (d *defaultServicePlan) getServicePlansByServiceClassName(scName string) ([]servicecatalog.ServicePlan, error) {
 	klog.V(4).Infof("Fetching ServicePlans by class name %q", scName)
-	fieldSet := fields.Set{
-		"spec.serviceClassRef.name": scName,
+	labelSelector := labels.SelectorFromSet(labels.Set{
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: scName,
+	}).String()
+
+	listOpts := apimachineryv1.ListOptions{
+		LabelSelector: labelSelector,
 	}
-	fieldSelector := fields.SelectorFromSet(fieldSet).String()
-	listOpts := apimachineryv1.ListOptions{FieldSelector: fieldSelector}
 	servicePlans, err := d.spClient.List(listOpts)
 	if err != nil {
 		klog.Infof("Listing ServicePlans failed: %q", err)

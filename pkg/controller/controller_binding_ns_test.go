@@ -380,10 +380,13 @@ func TestReconcileServiceBindingDeleteNamespacedRefs(t *testing.T) {
 			}
 
 			actions := fakeCatalogClient.Actions()
-			// The action should be updating the ready condition
-			assertNumberOfActions(t, actions, 1)
+			// The actions should be:
+			// 0. Updating the ready condition
+			// 1. Removing finalizer
+			assertNumberOfActions(t, actions, 2)
 
-			updatedServiceBinding := assertUpdateStatus(t, actions[0], binding)
+			assertUpdateStatus(t, actions[0], binding)
+			updatedServiceBinding := assertUpdate(t, actions[1], binding)
 			assertServiceBindingOperationSuccess(t, updatedServiceBinding, v1beta1.ServiceBindingOperationUnbind, binding)
 			assertServiceBindingOrphanMitigationSet(t, updatedServiceBinding, false)
 
@@ -439,17 +442,17 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 	}
 
 	cases := []struct {
-		name                      string
-		binding                   *v1beta1.ServiceBinding
-		pollReaction              *fakeosb.PollBindingLastOperationReaction
-		getBindingReaction        *fakeosb.GetBindingReaction
-		environmentSetupFunc      func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface)
-		validateBrokerActionsFunc func(t *testing.T, actions []fakeosb.Action)
-		validateKubeActionsFunc   func(t *testing.T, actions []clientgotesting.Action)
-		validateConditionsFunc    func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding)
-		shouldError               bool
-		shouldFinishPolling       bool
-		expectedEvents            []string
+		name                       string
+		binding                    *v1beta1.ServiceBinding
+		pollReaction               *fakeosb.PollBindingLastOperationReaction
+		getBindingReaction         *fakeosb.GetBindingReaction
+		environmentSetupFunc       func(t *testing.T, fakeKubeClient *clientgofake.Clientset, sharedInformers v1beta1informers.Interface)
+		validateBrokerActionsFunc  func(t *testing.T, actions []fakeosb.Action)
+		validateKubeActionsFunc    func(t *testing.T, actions []clientgotesting.Action)
+		assertPerfomerdActionsFunc func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding)
+		shouldError                bool
+		shouldFinishPolling        bool
+		expectedEvents             []string
 	}{
 		// Bind
 		{
@@ -458,10 +461,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 			pollReaction: &fakeosb.PollBindingLastOperationReaction{
 				Error: fmt.Errorf("random error"),
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
 		},
 		{
 			// Special test for 410, as it is treated differently in other operations
@@ -470,10 +473,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 			pollReaction: &fakeosb.PollBindingLastOperationReaction{
 				Error: goneError,
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: " + goneError.Error()},
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: " + goneError.Error()},
 		},
 		{
 			name:    "bind - in progress",
@@ -485,7 +488,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncInProgress(t, updatedBinding, v1beta1.ServiceBindingOperationBind, asyncBindingReason, testOperation, originalBinding)
 			},
 			shouldFinishPolling: false,
@@ -501,7 +507,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingRequestFailingError(
 					t,
 					updatedBinding,
@@ -526,10 +535,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 					Description: strPtr(lastOperationDescription),
 				},
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{}, // does not record event
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{}, // does not record event
 		},
 		{
 			name:    "bind - in progress - retry duration exceeded",
@@ -541,7 +550,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncBindRetryDurationExceeded(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -561,7 +573,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncBindRetryDurationExceeded(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -584,7 +599,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				Error: fmt.Errorf("some error"),
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAndGetBindingActions,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncBindErrorAfterStateSucceeded(t, updatedBinding, errorFetchingBindingFailedReason, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -627,7 +645,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				assertNumberOfActions(t, actions, 1)
 				assertActionEquals(t, actions[0], "get", "secrets")
 			},
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncBindErrorAfterStateSucceeded(t, updatedBinding, errorInjectingBindResultReason, originalBinding)
 			},
 			shouldFinishPolling: true, // should not be requeued in polling queue; will drop back to default rate limiting
@@ -669,7 +690,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				assertActionEquals(t, actions[0], "get", "secrets")
 				assertActionEquals(t, actions[1], "create", "secrets")
 			},
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationBind, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -686,7 +710,11 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 2)
+				assertUpdateStatus(t, actions[0], originalBinding)
+				updatedBinding := assertUpdate(t, actions[1], originalBinding)
+
 				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationUnbind, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -701,7 +729,11 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 2)
+				assertUpdateStatus(t, actions[0], originalBinding)
+				updatedBinding := assertUpdate(t, actions[1], originalBinding)
+
 				assertServiceBindingOperationSuccess(t, updatedBinding, v1beta1.ServiceBindingOperationUnbind, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -717,7 +749,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncInProgress(t, updatedBinding, v1beta1.ServiceBindingOperationUnbind, asyncUnbindingReason, testOperation, originalBinding)
 			},
 			shouldFinishPolling: false,
@@ -729,10 +764,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 			pollReaction: &fakeosb.PollBindingLastOperationReaction{
 				Error: fmt.Errorf("random error"),
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
 		},
 		{
 			name:    "unbind - failed (retries)",
@@ -744,7 +779,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingRequestRetriableError(
 					t,
 					updatedBinding,
@@ -766,10 +804,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 					Description: strPtr(lastOperationDescription),
 				},
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{}, // does not record event
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{}, // does not record event
 		},
 		{
 			name:    "unbind - in progress - retry duration exceeded",
@@ -781,7 +819,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncUnbindRetryDurationExceeded(
 					t,
 					updatedBinding,
@@ -807,7 +848,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncUnbindRetryDurationExceeded(
 					t,
 					updatedBinding,
@@ -833,7 +877,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingRequestFailingError(
 					t,
 					updatedBinding,
@@ -860,7 +907,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingOrphanMitigationSuccess(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -875,7 +925,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingOrphanMitigationSuccess(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -891,7 +944,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncInProgress(t, updatedBinding, v1beta1.ServiceBindingOperationBind, asyncUnbindingReason, testOperation, originalBinding)
 			},
 			shouldFinishPolling: false,
@@ -903,10 +959,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 			pollReaction: &fakeosb.PollBindingLastOperationReaction{
 				Error: fmt.Errorf("random error"),
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{corev1.EventTypeWarning + " " + errorPollingLastOperationReason + " " + "Error polling last operation: random error"},
 		},
 		{
 			name:    "orphan mitigation - failed (retries)",
@@ -918,7 +974,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingRequestRetriableOrphanMitigation(t, updatedBinding, errorUnbindCallReason, originalBinding)
 			},
 			shouldError:         true,
@@ -934,10 +993,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 					Description: strPtr(lastOperationDescription),
 				},
 			},
-			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc:    nil, // does not update resources
-			shouldFinishPolling:       false,
-			expectedEvents:            []string{}, // does not record event
+			validateBrokerActionsFunc:  validatePollBindingLastOperationAction,
+			assertPerfomerdActionsFunc: nil, // does not update resources
+			shouldFinishPolling:        false,
+			expectedEvents:             []string{}, // does not record event
 		},
 		{
 			name:    "orphan mitigation - in progress - retry duration exceeded",
@@ -949,7 +1008,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -968,7 +1030,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -987,7 +1052,10 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 				},
 			},
 			validateBrokerActionsFunc: validatePollBindingLastOperationAction,
-			validateConditionsFunc: func(t *testing.T, updatedBinding *v1beta1.ServiceBinding, originalBinding *v1beta1.ServiceBinding) {
+			assertPerfomerdActionsFunc: func(t *testing.T, actions []clientgotesting.Action, originalBinding *v1beta1.ServiceBinding) {
+				assertNumberOfActions(t, actions, 1)
+				updatedBinding := assertUpdateStatus(t, actions[0], originalBinding)
+
 				assertServiceBindingAsyncOrphanMitigationRetryDurationExceeded(t, updatedBinding, originalBinding)
 			},
 			shouldFinishPolling: true,
@@ -1050,10 +1118,8 @@ func TestPollServiceBindingNamespacedRefs(t *testing.T) {
 
 			// Catalog actions
 			actions := fakeCatalogClient.Actions()
-			if tc.validateConditionsFunc != nil {
-				assertNumberOfActions(t, actions, 1)
-				updatedBinding := assertUpdateStatus(t, actions[0], tc.binding).(*v1beta1.ServiceBinding)
-				tc.validateConditionsFunc(t, updatedBinding, tc.binding)
+			if tc.assertPerfomerdActionsFunc != nil {
+				tc.assertPerfomerdActionsFunc(t, actions, tc.binding)
 			} else {
 				assertNumberOfActions(t, actions, 0)
 			}

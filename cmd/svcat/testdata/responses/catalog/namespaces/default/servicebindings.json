@@ -37,6 +37,7 @@
             "message": "Injected bind result"
           }
         ],
+        "lastConditionState": "Ready",
         "asyncOpInProgress": false,
         "reconciledGeneration": 1,
         "externalProperties": {

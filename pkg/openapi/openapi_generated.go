@@ -792,8 +792,15 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServiceBrokerStatus(ref commo
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"lastConditionState": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"conditions", "reconciledGeneration"},
+				Required: []string{"conditions", "reconciledGeneration", "lastConditionState"},
 			},
 		},
 		Dependencies: []string{
@@ -1347,8 +1354,15 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServiceBrokerStatus(ref common
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"lastConditionState": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"conditions", "reconciledGeneration"},
+				Required: []string{"conditions", "reconciledGeneration", "lastConditionState"},
 			},
 		},
 		Dependencies: []string{
@@ -2200,8 +2214,15 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingStatus(ref common.Refe
 							Format:      "",
 						},
 					},
+					"lastConditionState": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration", "orphanMitigationInProgress", "unbindStatus"},
+				Required: []string{"conditions", "asyncOpInProgress", "reconciledGeneration", "orphanMitigationInProgress", "unbindStatus", "lastConditionState"},
 			},
 		},
 		Dependencies: []string{
@@ -2492,8 +2513,15 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBrokerStatus(ref common.Refer
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"lastConditionState": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"conditions", "reconciledGeneration"},
+				Required: []string{"conditions", "reconciledGeneration", "lastConditionState"},
 			},
 		},
 		Dependencies: []string{
@@ -3202,8 +3230,29 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceStatus(ref common.Ref
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
+					"lastConditionState": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"userSpecifiedPlanName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UserSpecifiedPlanName aggregates cluster or namespace PlanName It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"userSpecifiedClassName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UserSpecifiedClassName aggregates cluster or namespace ClassName It is used for printing in a kubectl output via additionalPrinterColumns",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus"},
+				Required: []string{"conditions", "asyncOpInProgress", "orphanMitigationInProgress", "reconciledGeneration", "observedGeneration", "provisionStatus", "deprovisionStatus", "lastConditionState", "userSpecifiedPlanName", "userSpecifiedClassName"},
 			},
 		},
 		Dependencies: []string{

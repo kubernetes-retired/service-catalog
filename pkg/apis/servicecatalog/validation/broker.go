@@ -23,8 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/filter"
 )
 
@@ -218,8 +217,8 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		} else {
 			for _, restriction := range spec.CatalogRestrictions.ServiceClass {
 				p := filter.ExtractProperty(restriction)
-				if !isClusterServiceBroker && !v1beta1.IsValidServiceClassProperty(p) ||
-					isClusterServiceBroker && !v1beta1.IsValidClusterServiceClassProperty(p) {
+				if !isClusterServiceBroker && !sc.IsValidServiceClassProperty(p) ||
+					isClusterServiceBroker && !sc.IsValidClusterServiceClassProperty(p) {
 					commonErrs = append(commonErrs,
 						field.Invalid(fldPath.Child("catalogRestrictions", "serviceClass"),
 							spec.CatalogRestrictions.ServiceClass, fmt.Sprintf("Invalid property: %s", p)))
@@ -237,8 +236,8 @@ func validateCommonServiceBrokerSpec(spec *sc.CommonServiceBrokerSpec, fldPath *
 		} else {
 			for _, restriction := range spec.CatalogRestrictions.ServicePlan {
 				p := filter.ExtractProperty(restriction)
-				if !isClusterServiceBroker && !v1beta1.IsValidServicePlanProperty(p) ||
-					isClusterServiceBroker && !v1beta1.IsValidClusterServicePlanProperty(p) {
+				if !isClusterServiceBroker && !sc.IsValidServicePlanProperty(p) ||
+					isClusterServiceBroker && !sc.IsValidClusterServicePlanProperty(p) {
 					commonErrs = append(commonErrs,
 						field.Invalid(fldPath.Child("catalogRestrictions", "servicePlan"),
 							spec.CatalogRestrictions.ServicePlan, fmt.Sprintf("Invalid property: %s", p)))

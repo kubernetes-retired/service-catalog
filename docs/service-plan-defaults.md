@@ -18,7 +18,7 @@ The precedence order for parameters is: class defaults &lt; plan defaults &lt; i
 
 Service Plan Defaults is an alpha-feature of Service 
 Catalog that is off by default. To enable this feature, you will need 
-to pass an argument to the API Server when you install Service Catalog:
+to pass an argument to the Webhook Server when you install Service Catalog:
  `--feature-gates ServicePlanDefaults=true`.
 
 If you are using Helm, you can use the `servicePlanDefaultsEnabled` setting

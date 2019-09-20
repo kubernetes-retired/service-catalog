@@ -42,6 +42,7 @@
             "message": "The instance was provisioned successfully"
           }
         ],
+        "lastConditionState": "Ready",
         "asyncOpInProgress": false,
         "orphanMitigationInProgress": false,
         "reconciledGeneration": 1,

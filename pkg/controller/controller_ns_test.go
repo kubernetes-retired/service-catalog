@@ -26,11 +26,13 @@ import (
 )
 
 const (
-	testServiceClassGUID  = "scguid"
-	testServicePlanGUID   = "spguid"
-	testServiceBrokerName = "test-servicebroker"
-	testServiceClassName  = "test-serviceclass"
-	testServicePlanName   = "test-serviceplan"
+	testServiceClassGUID           = "scguid"
+	testServicePlanGUID            = "spguid"
+	testServiceBrokerName          = "test-servicebroker"
+	testServiceClassName           = "test-serviceclass"
+	testServicePlanName            = "test-serviceplan"
+	testNonbindableServicePlanName = "test-unbindable-serviceplan"
+	testNonbindableServicePlanGUID = "unbindable-serviceplan"
 )
 
 func getTestCommonServiceBrokerSpec() v1beta1.CommonServiceBrokerSpec {
@@ -79,6 +81,10 @@ func assertServiceBrokerReadyFalse(t *testing.T, obj runtime.Object) {
 	assertServiceBrokerCondition(t, obj, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionFalse)
 }
 
+func assertServiceBrokerReadyTrue(t *testing.T, obj runtime.Object) {
+	assertServiceBrokerCondition(t, obj, v1beta1.ServiceBrokerConditionReady, v1beta1.ConditionTrue)
+}
+
 func assertServiceBrokerCondition(t *testing.T, obj runtime.Object, conditionType v1beta1.ServiceBrokerConditionType, status v1beta1.ConditionStatus) {
 	broker, ok := obj.(*v1beta1.ServiceBroker)
 	if !ok {
@@ -106,6 +112,11 @@ func getTestServiceClass() *v1beta1.ServiceClass {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testServiceClassGUID,
 			Namespace: testNamespace,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: testServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        testServiceClassName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   testServiceBrokerName,
+			},
 		},
 		Spec: v1beta1.ServiceClassSpec{
 			ServiceBrokerName:      testServiceBrokerName,
@@ -127,6 +138,12 @@ func getTestServicePlan() *v1beta1.ServicePlan {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testServicePlanGUID,
 			Namespace: testNamespace,
+			Labels: map[string]string{
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:  testServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        testServicePlanName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   testServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: testServiceClassGUID,
+			},
 		},
 		Spec: v1beta1.ServicePlanSpec{
 			ServiceBrokerName:     testServiceBrokerName,

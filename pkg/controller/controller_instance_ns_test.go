@@ -63,7 +63,7 @@ func TestReconcileServiceInstanceNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	instance = assertServiceInstanceProvisionInProgressAndUserSpecifiedFieldsClientActions(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 
 	assertNumberOfBrokerActions(t, fakeBrokerClient.Actions(), 0)
@@ -150,7 +150,7 @@ func TestReconcileServiceInstanceAsynchronousNamespacedRefs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	instance = assertServiceInstanceProvisionInProgressIsTheOnlyCatalogClientAction(t, fakeCatalogClient, instance)
+	instance = assertServiceInstanceProvisionInProgressAndUserSpecifiedFieldsClientActions(t, fakeCatalogClient, instance)
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
@@ -426,6 +426,10 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 		return true, instance, nil
 	})
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	if err := reconcileServiceInstance(t, testController, instance); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -452,9 +456,10 @@ func TestReconcileServiceInstanceDeleteWithNamespacedRefs(t *testing.T) {
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -665,6 +670,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 	sharedInformers.ServiceClasses().Informer().GetStore().Add(getTestServiceClass())
 	sharedInformers.ServicePlans().Informer().GetStore().Add(getTestServicePlan())
 
+	// simulate real update and return updated object,
+	// without that fake client will return empty ServiceInstances struct
+	fakeCatalogClient.AddReactor(updateObjectReactor("serviceinstances"))
+
 	instance := getTestServiceInstanceAsyncDeprovisioningWithNamespacedRefs(testOperation)
 	instanceKey := testNamespace + "/" + testServiceInstanceName
 
@@ -697,9 +706,10 @@ func TestPollServiceInstanceSuccessDeprovisioningWithOperationNoFinalizerNamespa
 	assertNumberOfActions(t, kubeActions, 0)
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 1)
+	assertNumberOfActions(t, actions, 2)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
+	assertUpdateStatus(t, actions[0], instance)
+	updatedServiceInstance := assertUpdate(t, actions[1], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationDeprovision, testServicePlanName, testServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -822,18 +832,24 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 	assertNumberOfActions(t, actions, 3)
 
 	listRestrictions := clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.OneTermEqualSelector("spec.externalName", instance.Spec.ServiceClassExternalName),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ServiceClassExternalName,
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[0], &v1beta1.ServiceClass{}, listRestrictions)
 
 	listRestrictions = clientgotesting.ListRestrictions{
-		Labels: labels.Everything(),
-		Fields: fields.ParseSelectorOrDie("spec.externalName=test-serviceplan,spec.serviceBrokerName=test-servicebroker,spec.serviceClassRef.name=scguid"),
+		Labels: labels.SelectorFromSet(labels.Set{
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        "test-serviceplan",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   "test-servicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: "scguid",
+		}),
+		Fields: fields.Everything(),
 	}
 	assertList(t, actions[1], &v1beta1.ServicePlan{}, listRestrictions)
 
-	updatedServiceInstance := assertUpdateReference(t, actions[2], instance)
+	updatedServiceInstance := assertUpdate(t, actions[2], instance)
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
 	if !ok {
 		t.Fatalf("couldn't convert to *v1beta1.ServiceInstance")

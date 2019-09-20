@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 const (
@@ -893,6 +893,7 @@ func TestValidateServiceInstance(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			errs := internalValidateServiceInstance(tc.instance, tc.create)
+			errs = append(errs, validateServiceInstanceStatus(&tc.instance.Status, field.NewPath("status"), tc.create)...)
 			if len(errs) != 0 && tc.valid {
 				t.Errorf("unexpected error: %v", errs)
 			} else if len(errs) == 0 && !tc.valid {
