@@ -26,8 +26,10 @@ import (
 
 	"github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // TestProvisionInstanceWithRetries tests creating a ServiceInstance
@@ -129,6 +131,33 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 			assert.NotZero(t, ct.NumberOfOSBDeprovisionCalls())
 		})
 	}
+}
+
+// TestServiceInstanceDeleteWithExistingServiceBindings tests the cascading service binding deletion.
+// When the instance is deleted all existing bindings for that instance must be deleted.
+func TestServiceInstanceDeleteWithExistingServiceBindings(t *testing.T) {
+	// GIVEN
+	utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%s=true", features.CascadingDeletion))
+	defer utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%s=false", features.CascadingDeletion))
+	ct := newControllerTest(t)
+	defer ct.TearDown()
+
+	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
+	require.NoError(t, ct.WaitForReadyBroker())
+	ct.AssertClusterServiceClassAndPlan(t)
+	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.WaitForReadyInstance())
+	assert.NoError(t, ct.CreateBinding())
+	assert.NoError(t, ct.WaitForReadyBinding())
+
+	// WHEN
+	require.NoError(t, ct.Deprovision())
+
+	//THEN
+	assert.NoError(t, ct.WaitForServiceBindingToNotExists())
+	ct.WaitForClusterServiceClassToNotExists()
+	assert.NoError(t, ct.WaitForDeprovisionStatus(v1beta1.ServiceInstanceDeprovisionStatusSucceeded))
+	assert.NotZero(t, ct.NumberOfOSBDeprovisionCalls())
 }
 
 // TestServiceInstanceDeleteWithAsyncUpdateInProgress tests that you can delete
