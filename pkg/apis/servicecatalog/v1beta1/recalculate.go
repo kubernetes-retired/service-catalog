@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package v1beta1
 import "fmt"
 
 // RecalculatePrinterColumnStatusFields sets column status fields using status conditions
-func (in *ServiceBroker) RecalculatePrinterColumnStatusFields() {
-	in.Status.LastConditionState = serviceBrokerLastConditionState(&in.Status.CommonServiceBrokerStatus)
+func (b *ServiceBroker) RecalculatePrinterColumnStatusFields() {
+	b.Status.LastConditionState = serviceBrokerLastConditionState(&b.Status.CommonServiceBrokerStatus)
 }
 
 // RecalculatePrinterColumnStatusFields sets column status fields using status conditions
