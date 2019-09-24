@@ -51,8 +51,7 @@ func (in *ServiceBinding) RecalculatePrinterColumnStatusFields() {
 
 // IsUserSpecifiedClassOrPlan returns true if user specified class or plan is not empty
 func (in *ServiceInstance) IsUserSpecifiedClassOrPlan() bool {
-	return in.Status.UserSpecifiedPlanName != "" ||
-		in.Status.UserSpecifiedClassName != ""
+	return in.Status.UserSpecifiedPlanName != "" && in.Status.UserSpecifiedClassName != ""
 }
 
 func getServiceInstanceLastConditionState(status *ServiceInstanceStatus) string {
