@@ -2954,19 +2954,6 @@ func setServiceInstanceLastOperation(instance *v1beta1.ServiceInstance, operatio
 	}
 }
 
-func (c *controller) resolveServiceInstanceUserSpecifiedClassAndPlan(instance *v1beta1.ServiceInstance) bool {
-	if instance.Status.UserSpecifiedPlanName != "" ||
-		instance.Status.UserSpecifiedClassName != "" {
-		return false
-	}
-
-	class, plan := getServiceInstanceCommonClassAndPlan(*instance)
-	instance.Status.UserSpecifiedClassName = class
-	instance.Status.UserSpecifiedPlanName = plan
-
-	return true
-}
-
 func getServiceInstanceCommonClassAndPlan(instance v1beta1.ServiceInstance) (string, string) {
 	var class, plan string
 	if instance.Spec.ClusterServiceClassSpecified() && instance.Spec.ClusterServicePlanSpecified() {

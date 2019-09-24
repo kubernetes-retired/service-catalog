@@ -72,8 +72,10 @@ func TestReconcileServiceInstanceNotInitializedStatus(t *testing.T) {
 	}
 
 	expectedStatus := v1beta1.ServiceInstanceStatus{
-		Conditions:        []v1beta1.ServiceInstanceCondition{},
-		DeprovisionStatus: v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
+		UserSpecifiedPlanName:  "test",
+		UserSpecifiedClassName: "ClusterServiceClass/test",
+		Conditions:             []v1beta1.ServiceInstanceCondition{},
+		DeprovisionStatus:      v1beta1.ServiceInstanceDeprovisionStatusNotRequired,
 	}
 
 	err := reconcileServiceInstance(t, testController, instance)
@@ -3625,7 +3627,7 @@ func TestReconcileServiceInstanceWithStatusUpdateError(t *testing.T) {
 
 	instance := getTestServiceInstanceWithClusterRefs()
 	instance.Status.UserSpecifiedClassName = fmt.Sprintf("ClusterServiceClass/%s", instance.Spec.GetSpecifiedClusterServiceClass())
-	instance.Status.UserSpecifiedClassName = instance.Spec.GetSpecifiedClusterServicePlan()
+	instance.Status.UserSpecifiedPlanName = instance.Spec.GetSpecifiedClusterServicePlan()
 
 	fakeCatalogClient.AddReactor("update", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		return true, nil, errors.New("update error")
@@ -4820,9 +4822,9 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, expectedParameters, expectedParametersChecksum, instance)
 
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
@@ -4922,9 +4924,9 @@ func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceOperationSuccess(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
@@ -5152,9 +5154,9 @@ func TestReconcileServiceInstanceUpdateDashboardURLResponse(t *testing.T) {
 		})
 
 		actions := fakeCatalogClient.Actions()
-		assertNumberOfActions(t, actions, 2)
+		assertNumberOfActions(t, actions, 1)
 
-		updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+		updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 
 		if tc.enableUpdateDashboardURL {
 			if tc.newDashboardURL != "" {
@@ -5264,9 +5266,9 @@ func TestReconcileServiceInstanceUpdatePlan(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceOperationSuccessWithParameters(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testClusterServicePlanName, testClusterServicePlanGUID, oldParameters, oldParametersChecksum, instance)
 
 	updateObject, ok := updatedServiceInstance.(*v1beta1.ServiceInstance)
@@ -5345,9 +5347,9 @@ func TestReconcileServiceInstanceWithUpdateCallFailure(t *testing.T) {
 	}
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceRequestRetriableError(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorErrorCallingUpdateInstanceReason, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	events := getRecordedEvents(testController)
@@ -5445,9 +5447,9 @@ func TestReconcileServiceInstanceWithUpdateFailure(t *testing.T) {
 			}
 
 			actions := fakeCatalogClient.Actions()
-			assertNumberOfActions(t, actions, 2)
+			assertNumberOfActions(t, actions, 1)
 
-			updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+			updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 			assertServiceInstanceUpdateRequestFailingErrorNoOrphanMitigation(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, errorUpdateInstanceCallFailedReason, tc.expectedFailureReason, instance)
 
 			events := getRecordedEvents(testController)
@@ -5726,9 +5728,9 @@ func TestReconcileServiceInstanceUpdateAsynchronous(t *testing.T) {
 	})
 
 	actions := fakeCatalogClient.Actions()
-	assertNumberOfActions(t, actions, 2)
+	assertNumberOfActions(t, actions, 1)
 
-	updatedServiceInstance := assertUpdateStatus(t, actions[1], instance)
+	updatedServiceInstance := assertUpdateStatus(t, actions[0], instance)
 	assertServiceInstanceAsyncStartInProgress(t, updatedServiceInstance, v1beta1.ServiceInstanceOperationUpdate, testOperation, testClusterServicePlanName, testClusterServicePlanGUID, instance)
 
 	// verify no kube resources created.
