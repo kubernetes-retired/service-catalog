@@ -30,9 +30,11 @@ set -E         # needs to be set if we want the ERR trap
 readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 readonly REPO_ROOT_DIR=${CURRENT_DIR}/../../../
 readonly TMP_DIR=$(mktemp -d)
-source "${CURRENT_DIR}/lib/utilities.sh" || { echo 'Cannot load CI utilities.'; exit 1; }
-source "${CURRENT_DIR}/deps_ver.sh" || { echo 'Cannot load dependencies versions.'; exit 1; }
 
+source "${CURRENT_DIR}/lib/utilities.sh" || { echo 'Cannot load CI utilities.'; exit 1; }
+source "${CURRENT_DIR}/lib/deps_ver.sh" || { echo 'Cannot load dependencies versions.'; exit 1; }
+
+SKIP_DEPS_INSTALLATION=${SKIP_DEPS_INSTALLATION:-}
 
 SC_CHART_NAME="catalog"
 export SC_NAMESPACE="catalog"
@@ -91,8 +93,15 @@ examiner::execute_test() {
 main() {
     shout "Starting migration test"
 
-    export INSTALL_DIR=${TMP_DIR} KIND_VERSION=${STABLE_KIND_VERSION} HELM_VERSION=${STABLE_HELM_VERSION}
-    install::local::kind_and_helm
+    if [[ "${SKIP_DEPS_INSTALLATION}" == "" ]]; then
+        export INSTALL_DIR=${TMP_DIR} KIND_VERSION=${STABLE_KIND_VERSION} HELM_VERSION=${STABLE_HELM_VERSION}
+        install::local::kind
+        install::local::helm
+    else
+        echo "Skipping kind and helm installation cause SKIP_DEPS_INSTALLATION is set to true."
+    fi
+
+    export KUBERNETES_VERSION=${STABLE_KUBERNETES_VERSION}
     kind::create_cluster
 
     install::cluster::tiller

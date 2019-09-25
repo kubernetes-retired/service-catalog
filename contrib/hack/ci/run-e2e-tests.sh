@@ -105,6 +105,7 @@ main() {
         echo "Skipping kind and helm installation cause SKIP_DEPS_INSTALLATION is set to true."
     fi
 
+    export KUBERNETES_VERSION=${STABLE_KUBERNETES_VERSION}
     kind::create_cluster
 
     install::cluster::tiller

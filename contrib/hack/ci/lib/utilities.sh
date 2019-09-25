@@ -28,7 +28,8 @@ shout() {
 "
 }
 
-# Installs kind and helm dependencies locally.
+
+# Installs kind dependency locally.
 # Required envs:
 #  - KIND_VERSION
 #  - INSTALL_DIR
@@ -40,11 +41,67 @@ install::local::kind() {
 
     pushd "${INSTALL_DIR}"
 
-    shout "- Install kind ${KIND_VERSION} locally to a tempdir GOPATH..."
-    env "GOPATH=${INSTALL_DIR}" GO111MODULE="on" go get "sigs.k8s.io/kind@${KIND_VERSION}"
+    os=$(host::os)
+    arch=$(host::arch)
+
+    shout "- Install kind ${KIND_VERSION} locally to a tempdir..."
+
+    curl -sSLo kind "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-${os}-${arch}"
+    chmod +x kind
+    mv kind "${INSTALL_DIR}/bin"
 
     popd
 }
+
+host::os() {
+  local host_os
+  case "$(uname -s)" in
+    Darwin)
+      host_os=darwin
+      ;;
+    Linux)
+      host_os=linux
+      ;;
+    *)
+      kube::log::error "Unsupported host OS.  Must be Linux or Mac OS X."
+      exit 1
+      ;;
+  esac
+  echo "${host_os}"
+}
+
+host::arch() {
+  local host_arch
+  case "$(uname -m)" in
+    x86_64*)
+      host_arch=amd64
+      ;;
+    i?86_64*)
+      host_arch=amd64
+      ;;
+    amd64*)
+      host_arch=amd64
+      ;;
+    aarch64*)
+      host_arch=arm64
+      ;;
+    arm64*)
+      host_arch=arm64
+      ;;
+    arm*)
+      host_arch=arm
+      ;;
+    ppc64le*)
+      host_arch=ppc64le
+      ;;
+    *)
+      kube::log::error "Unsupported host arch. Must be x86_64, arm, arm64, or ppc64le."
+      exit 1
+      ;;
+  esac
+  echo "${host_arch}"
+}
+
 
 # Installs kind and helm dependencies locally.
 # Required envs:
@@ -82,9 +139,8 @@ install::cluster::tiller() {
 install::cluster::service_catalog_v2() {
     shout "- Installing Service Catalog in version 0.2.x"
     helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
-    # TODO: After https://github.com/kyma-project/kyma/issues/5217, change `helm install svc-cat/catalog` to `helm install svc-cat/catalog-apiserver`
     # install always the newest service catalog with apiserver
-    helm install svc-cat/catalog --name ${SC_CHART_NAME} --namespace ${SC_NAMESPACE} --wait
+    helm install svc-cat/catalog-v0.2 --name ${SC_CHART_NAME} --namespace ${SC_NAMESPACE} --wait
 }
 
 #
@@ -94,7 +150,7 @@ readonly KIND_CLUSTER_NAME="kind-ci"
 
 kind::create_cluster() {
     shout "- Create k8s cluster..."
-    kind create cluster --name=${KIND_CLUSTER_NAME} --wait=5m
+    kind create cluster --name=${KIND_CLUSTER_NAME} --image=kindest/node:${KUBERNETES_VERSION} --wait=5m
     export KUBECONFIG="$(kind get kubeconfig-path --name=${KIND_CLUSTER_NAME})"
 }
 
