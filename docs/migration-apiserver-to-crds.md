@@ -3,11 +3,11 @@ title: Migration from API server to CRDs
 layout: docwithnav
 ---
 
-Service Catalog upgrade from version 0.2.x (and earlier) to 0.3.x needs a data migration. 
+Upgrading Service Catalog from versions 0.2.x (and earlier) to 0.3.x requires a database migration. 
 This document describes how the migration works and what actions must be performed. 
 
 >**NOTE:**
-Before starting the migration, make sure that you performed a full backup of your cluster.
+Before starting the migration, make sure that you have performed a full backup of your cluster.
 You should also test the procedure on a testing environment first.
 
 ![Service Catalog upgrade](images/sc-migration-to-crds.svg)
@@ -24,7 +24,7 @@ The Service Catalog Helm release can be upgraded using the `helm upgrade` comman
 ![Service Catalog upgrade steps](images/sc-migration-to-crds-steps.svg)
 
 The upgrade to CRDs consists of the following steps:
-1. Make API Server read-only. Before any backup, we should block any resource changes to be sure the backup makes a snapshot. We need to avoid any changes when the migration tool is backuping resources.
+1. Make API Server read-only. Before any backup, we should block any resource changes to be sure the backup makes a snapshot. We need to avoid any changes when the migration tool is backing up resources.
 2. Check if Apiserver deployment with a given name exist. **If deployment was not found we skip the migration**.
 3. Scale down the Controller Manager to avoid resources processing, such as Secret deletion.
 4. Backup Service Catalog custom resources to files in a Persistent Volume.
@@ -45,7 +45,7 @@ These fields are set during an update operation.
 
 ## Upgrade Service Catalog manually
 
-### Backup and deleting resources
+### Backup and delete resources
 
 Execute the `backup` action to scale down the Controller Manager, remove owner references in Secrets and store all resources in a specified folder, then delete all Service Catalog resources.
 
@@ -80,7 +80,7 @@ If you run the migration tool on OSX and want to get a native binary, add the `P
 PLATFORM=darwin make build
 ```
 
-Resulting executable file can be found in the `bin` subdirectory.
+The resulting executable file can be found in the `bin` subdirectory.
 
 ### Execution
 
