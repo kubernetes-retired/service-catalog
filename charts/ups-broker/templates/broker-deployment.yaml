@@ -20,6 +20,8 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
     spec:
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
       containers:
       - name: ups-broker
         image: {{ .Values.image }}

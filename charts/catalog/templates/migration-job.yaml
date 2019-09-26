@@ -112,6 +112,8 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: migration-job-account
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
       volumes:
       - name: storage
         persistentVolumeClaim:

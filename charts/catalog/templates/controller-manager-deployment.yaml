@@ -33,6 +33,8 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       serviceAccountName: "{{ .Values.controllerManager.serviceAccount }}"
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
       containers:
       - name: controller-manager
         image: {{ .Values.image }}
