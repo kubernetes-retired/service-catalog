@@ -29,7 +29,7 @@ docker login -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
 
 pushd ${REPO_ROOT_DIR}
 
-if [[ "${TRAVIS_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[a-z]*(-(r|R)(c|C)[0-9]+)*$ ]]; then
+if [[ "${TRAVIS_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[a-z]*((-beta.[0-9]+)|(-(r|R)(c|C)[0-9]+))?$ ]]; then
     shout "Pushing images with tags '${TRAVIS_TAG}' and 'latest'."
     TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push svcat-publish
 elif [[ "${TRAVIS_BRANCH}" == "master" ]]; then
