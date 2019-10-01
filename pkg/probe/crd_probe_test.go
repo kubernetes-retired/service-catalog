@@ -25,21 +25,19 @@ import (
 	"testing"
 )
 
-func TestReadinessCRD_Check(t *testing.T) {
+func TestCRDProbe_Check(t *testing.T) {
 	// Given
 	fakeCliext := apiextfake.NewSimpleClientset(newTestCRD()...)
-	probe, err := NewReadinessCRDProbe(fakeCliext)
-	assert.NoError(t, err)
+	probe := NewCRDProbe(fakeCliext, 0)
 
 	// Then
 	assert.NoError(t, probe.Check(nil))
 }
 
-func TestReadinessCRD_IsReady(t *testing.T) {
+func TestCRDProbe_IsReady(t *testing.T) {
 	// Given
 	fakeCliext := apiextfake.NewSimpleClientset(newTestCRD()...)
-	probe, err := NewReadinessCRDProbe(fakeCliext)
-	assert.NoError(t, err)
+	probe := NewCRDProbe(fakeCliext, 0)
 
 	// Then
 	ready, err := probe.IsReady()
@@ -47,11 +45,21 @@ func TestReadinessCRD_IsReady(t *testing.T) {
 	assert.True(t, ready)
 }
 
-func TestReadinessCRD_CheckFailed(t *testing.T) {
+func TestCRDProbe_IsReadyWithDelay(t *testing.T) {
 	// Given
 	fakeCliext := apiextfake.NewSimpleClientset(newTestCRDNotReady()...)
-	probe, err := NewReadinessCRDProbe(fakeCliext)
-	assert.NoError(t, err)
+	probe := NewCRDProbe(fakeCliext, 2)
+
+	// Then
+	assert.NoError(t, probe.Check(nil))
+	assert.NoError(t, probe.Check(nil))
+	assert.EqualError(t, probe.Check(nil), "CRDs are not ready")
+}
+
+func TestCRDProbe_CheckFailed(t *testing.T) {
+	// Given
+	fakeCliext := apiextfake.NewSimpleClientset(newTestCRDNotReady()...)
+	probe := NewCRDProbe(fakeCliext, 0)
 
 	// Then
 	assert.EqualError(t, probe.Check(nil), "CRDs are not ready")
@@ -66,7 +74,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceBroker,
+				Name:   ServiceBroker,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -79,7 +88,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ClusterServiceBroker,
+				Name:   ClusterServiceBroker,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -92,7 +102,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceClass,
+				Name:   ServiceClass,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -105,7 +116,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ClusterServiceClass,
+				Name:   ClusterServiceClass,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -118,7 +130,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServicePlan,
+				Name:   ServicePlan,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -131,7 +144,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ClusterServicePlan,
+				Name:   ClusterServicePlan,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -144,7 +158,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceInstance,
+				Name:   ServiceInstance,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -157,7 +172,8 @@ func newTestCRD() []runtime.Object {
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceBinding,
+				Name:   ServiceBinding,
+				Labels: map[string]string{"svcat": "true"},
 			},
 			Status: extv1beta1.CustomResourceDefinitionStatus{
 				Conditions: []extv1beta1.CustomResourceDefinitionCondition{
@@ -175,42 +191,50 @@ func newTestCRDNotReady() []runtime.Object {
 	return []runtime.Object{
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceBroker,
+				Name:   ServiceBroker,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ClusterServiceBroker,
+				Name:   ClusterServiceBroker,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceClass,
+				Name:   ServiceClass,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ClusterServiceClass,
+				Name:   ClusterServiceClass,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServicePlan,
+				Name:   ServicePlan,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ClusterServicePlan,
+				Name:   ClusterServicePlan,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceInstance,
+				Name:   ServiceInstance,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 		&extv1beta1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ServiceBinding,
+				Name:   ServiceBinding,
+				Labels: map[string]string{"svcat": "true"},
 			},
 		},
 	}

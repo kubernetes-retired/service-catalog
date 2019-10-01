@@ -132,15 +132,11 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 	healthzSvr := manager.RunnableFunc(func(stopCh <-chan struct{}) error {
 		mux := http.NewServeMux()
 
-		readinessProbe, err := probe.NewReadinessCRDProbe(apiextensionsClient)
-		if err != nil {
-			return fmt.Errorf("while register readiness probe: %s", err)
-		}
 		// readiness registered at /healthz/ready indicates if traffic should be routed to this container
-		healthz.InstallPathHandler(mux, "/healthz/ready", readinessProbe)
+		healthz.InstallPathHandler(mux, "/healthz/ready", probe.NewCRDProbe(apiextensionsClient, probe.DelayCRDProbe))
 
 		// liveness registered at /healthz indicates if the container is responding
-		healthz.InstallHandler(mux, healthz.PingHealthz)
+		healthz.InstallHandler(mux, healthz.PingHealthz, probe.NewCRDProbe(apiextensionsClient, probe.DelayCRDProbe))
 
 		server := &http.Server{
 			Addr:    fmt.Sprintf(":%d", opts.HealthzServerBindPort),

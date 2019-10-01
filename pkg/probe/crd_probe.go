@@ -18,11 +18,13 @@ package probe
 
 import (
 	"fmt"
+	"math/rand"
+	"net/http"
+
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
-	"net/http"
 )
 
 const (
@@ -45,6 +47,11 @@ const (
 	ServiceInstance = "serviceinstances.servicecatalog.k8s.io"
 	// ServiceBinding define the name of the ServiceBinding CRD
 	ServiceBinding = "servicebindings.servicecatalog.k8s.io"
+
+	// DelayCRDProbe - readiness/liveness probe is run each period time defined in `periodSeconds` parameter in chart
+	// if the value is to short then `delay` can postpone checking CRDs which is resource-intensive
+	// period seconds for CRDProbe will be `periodSeconds` * delay
+	DelayCRDProbe = 60
 )
 
 var customResourceDefinitionNames = []string{
@@ -58,23 +65,31 @@ var customResourceDefinitionNames = []string{
 	ServiceBinding,
 }
 
-// ReadinessCRD provides functionality that ensures that all ServiceCatalog CRDs are ready
-type ReadinessCRD struct {
-	client apiextensionsclientset.Interface
+// CRDProbe provides functionality that ensures that all ServiceCatalog CRDs are ready
+type CRDProbe struct {
+	client  apiextensionsclientset.Interface
+	delay   int
+	counter int
 }
 
-// NewReadinessCRDProbe returns pointer to ReadinessCRD
-func NewReadinessCRDProbe(apiextensionsClient apiextensionsclientset.Interface) (*ReadinessCRD, error) {
-	return &ReadinessCRD{client: apiextensionsClient}, nil
+// NewCRDProbe returns pointer to CRDProbe
+func NewCRDProbe(apiextensionsClient apiextensionsclientset.Interface, delay int) *CRDProbe {
+	return &CRDProbe{client: apiextensionsClient, counter: 0, delay: delay}
 }
 
-// Name returns name of readiness probe
-func (r ReadinessCRD) Name() string {
-	return "ready-CRDs"
+// Name returns name of CRD probe
+func (r CRDProbe) Name() string {
+	return fmt.Sprintf("ready-CRDs-%d", rand.Intn(1000))
 }
 
 // Check if all CRDs with specific label are ready
-func (r *ReadinessCRD) Check(_ *http.Request) error {
+func (r *CRDProbe) Check(_ *http.Request) error {
+	if r.counter < r.delay {
+		r.counter++
+		klog.V(4).Infof("CRDProbe %s skiped. Ckeck for %d iteration(s)", r.Name(), r.delay-r.counter)
+		return nil
+	}
+	r.counter = 0
 	result, err := r.check()
 	if result && err == nil {
 		return nil
@@ -84,12 +99,12 @@ func (r *ReadinessCRD) Check(_ *http.Request) error {
 }
 
 // IsReady returns true if all required CRDs are ready
-func (r *ReadinessCRD) IsReady() (bool, error) {
+func (r *CRDProbe) IsReady() (bool, error) {
 	return r.check()
 }
 
-func (r *ReadinessCRD) check() (bool, error) {
-	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{})
+func (r *CRDProbe) check() (bool, error) {
+	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{LabelSelector: "svcat=true"})
 	if err != nil {
 		return false, fmt.Errorf("failed to list CustomResourceDefinition: %s", err)
 	}

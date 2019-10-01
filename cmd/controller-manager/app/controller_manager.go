@@ -157,20 +157,16 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	if err != nil {
 		return fmt.Errorf("failed to create apiextension clientset: %v", err)
 	}
-	readinessProbe, err := probe.NewReadinessCRDProbe(apiextensionsClient)
-	if err != nil {
-		return fmt.Errorf("failed to register readiness probe: %v", err)
-	}
 
 	klog.V(4).Info("Starting http server and mux")
 	// Start http server and handlers
 	go func() {
 		mux := http.NewServeMux()
 		// liveness registered at /healthz indicates if the container is responding
-		healthz.InstallHandler(mux, healthz.PingHealthz)
+		healthz.InstallHandler(mux, healthz.PingHealthz, probe.NewCRDProbe(apiextensionsClient, probe.DelayCRDProbe))
 
 		// readiness registered at /healthz/ready indicates if traffic should be routed to this container
-		healthz.InstallPathHandler(mux, "/healthz/ready", readinessProbe)
+		healthz.InstallPathHandler(mux, "/healthz/ready", probe.NewCRDProbe(apiextensionsClient, probe.DelayCRDProbe))
 
 		configz.InstallHandler(mux)
 		metrics.RegisterMetricsAndInstallHandler(mux)

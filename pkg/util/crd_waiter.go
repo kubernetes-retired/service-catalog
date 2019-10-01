@@ -35,10 +35,7 @@ func WaitForServiceCatalogCRDs(restConfig *restclient.Config) error {
 		return fmt.Errorf("failed to create apiextension clientset: %v", err)
 	}
 
-	readinessProbe, err := probe.NewReadinessCRDProbe(apiextensionsClient)
-	if err != nil {
-		return fmt.Errorf("failed to register readiness probe: %v", err)
-	}
+	readinessProbe := probe.NewCRDProbe(apiextensionsClient, 0)
 
 	// Attempt to get resources every 10 seconds and quit after 3 minutes if unsuccessful.
 	err = wait.PollImmediate(10*time.Second, 3*time.Minute, readinessProbe.IsReady)
