@@ -133,10 +133,10 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		mux := http.NewServeMux()
 
 		// readiness registered at /healthz/ready indicates if traffic should be routed to this container
-		healthz.InstallPathHandler(mux, "/healthz/ready", probe.NewCRDProbe(apiextensionsClient, probe.DelayCRDProbe))
+		healthz.InstallPathHandler(mux, "/healthz/ready", probe.NewCRDProbe(apiextensionsClient, probe.CRDProbeIterationGap))
 
 		// liveness registered at /healthz indicates if the container is responding
-		healthz.InstallHandler(mux, healthz.PingHealthz, probe.NewCRDProbe(apiextensionsClient, probe.DelayCRDProbe))
+		healthz.InstallHandler(mux, healthz.PingHealthz, probe.NewCRDProbe(apiextensionsClient, probe.CRDProbeIterationGap))
 
 		server := &http.Server{
 			Addr:    fmt.Sprintf(":%d", opts.HealthzServerBindPort),

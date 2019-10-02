@@ -24,6 +24,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
 )
 
@@ -48,10 +49,10 @@ const (
 	// ServiceBinding define the name of the ServiceBinding CRD
 	ServiceBinding = "servicebindings.servicecatalog.k8s.io"
 
-	// DelayCRDProbe - readiness/liveness probe is run each period time defined in `periodSeconds` parameter in chart
-	// if the value is to short then `delay` can postpone checking CRDs which is resource-intensive
-	// period seconds for CRDProbe will be `periodSeconds` * delay
-	DelayCRDProbe = 60
+	// CRDProbeIterationGap - the number of iterations after which the CRD probe action is performed
+	// All probes are run after the time period defined in the `periodSeconds` parameter in the chart
+	// Time needed for the CRD Probe to execute is `periodSeconds` * CRDProbeIterationGap
+	CRDProbeIterationGap = 60
 )
 
 var customResourceDefinitionNames = []string{
@@ -86,7 +87,7 @@ func (r CRDProbe) Name() string {
 func (r *CRDProbe) Check(_ *http.Request) error {
 	if r.counter < r.delay {
 		r.counter++
-		klog.V(4).Infof("CRDProbe %s skiped. Ckeck for %d iteration(s)", r.Name(), r.delay-r.counter)
+		klog.V(4).Infof("%s CRDProbe skipped. Will be executed in %d iteration", r.Name(), r.delay-r.counter)
 		return nil
 	}
 	r.counter = 0
@@ -104,7 +105,7 @@ func (r *CRDProbe) IsReady() (bool, error) {
 }
 
 func (r *CRDProbe) check() (bool, error) {
-	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{LabelSelector: "svcat=true"})
+	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"svcat": "true"}).String()})
 	if err != nil {
 		return false, fmt.Errorf("failed to list CustomResourceDefinition: %s", err)
 	}
