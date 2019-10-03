@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	scTypes "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	csbmutation "github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/clusterservicebroker/mutation"
 	cscmutation "github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/clusterserviceclass/mutation"
 	cspmutation "github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/clusterserviceplan/mutation"
@@ -66,14 +67,25 @@ func RunServer(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 }
 
 func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
-	cfg := config.GetConfigOrDie()
-	mgr, err := manager.New(cfg, manager.Options{})
+	cfg, err := config.GetConfig()
 	if err != nil {
-		return errors.Wrap(err, "while set up overall controller manager for webhook server")
+		return errors.Wrap(err, "while getting Kubernetes client config")
 	}
+
 	apiextensionsClient, err := apiextensionsclientset.NewForConfig(cfg)
 	if err != nil {
 		return errors.Wrap(err, "while create apiextension clientset")
+	}
+
+	// It may take some time before Catalog CRDs registration shows up in main API Server.
+	// We can start Service Catalog clients/informers only when CRDs are available.
+	if err := util.WaitForServiceCatalogCRDs(cfg); err != nil {
+		return fmt.Errorf("while waiting for ready Service Catalog CRDs: %v", err)
+	}
+
+	mgr, err := manager.New(cfg, manager.Options{})
+	if err != nil {
+		return errors.Wrap(err, "while set up overall controller manager for webhook server")
 	}
 
 	err = scTypes.AddToScheme(mgr.GetScheme())

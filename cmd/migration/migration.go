@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/cleaner"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/migration"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	k8sClientSet "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -43,6 +44,16 @@ func RunCommand(opt *Options) error {
 	if err != nil {
 		return fmt.Errorf("failed to get Kubernetes client config: %s", err)
 	}
+
+	// In case of restore action we are using CRDs.
+	// It may take some time before Catalog CRDs registration shows up in main API Server.
+	// We can start Service Catalog clients/informers only when CRDs are available.
+	if opt.Action == restoreActionName {
+		if err := util.WaitForServiceCatalogCRDs(restConfig); err != nil {
+			return fmt.Errorf("while waiting for ready Service Catalog CRDs: %v", err)
+		}
+	}
+
 	scClient, err := sc.NewForConfig(restConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create Service Catalog client: %s", err)
