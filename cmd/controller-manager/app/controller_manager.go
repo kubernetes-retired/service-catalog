@@ -25,8 +25,8 @@ import (
 	"os"
 	goruntime "runtime"
 	"strconv"
-	"time"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"k8s.io/client-go/kubernetes"
 	v1coordination "k8s.io/client-go/kubernetes/typed/coordination/v1"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -43,7 +43,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -234,7 +233,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 		// 	k8sClientBuilder = rootClientBuilder
 		// }
 
-		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, readinessProbe, ctx.Done())
+		err := StartControllers(controllerManagerOptions, k8sKubeconfig, serviceCatalogClientBuilder, recorder, ctx.Done())
 		klog.Fatalf("error running controllers: %v", err)
 		panic("unreachable")
 	}
@@ -294,20 +293,12 @@ func StartControllers(s *options.ControllerManagerServer,
 	coreKubeconfig *rest.Config,
 	serviceCatalogClientBuilder controller.ClientBuilder,
 	recorder record.EventRecorder,
-	rProbe *probe.ReadinessCRD,
 	stop <-chan struct{}) error {
 
-	// When Catalog Controller and Catalog API Server are started at the
-	// same time with API Aggregation enabled, it may take some time before
-	// Catalog registration shows up in API Server.  Attempt to get resources
-	// every 10 seconds and quit after 3 minutes if unsuccessful.
-	err := wait.PollImmediate(10*time.Second, 3*time.Minute, rProbe.IsReady)
-
-	if err != nil {
-		if err == wait.ErrWaitTimeout {
-			return fmt.Errorf("unable to start service-catalog controller: CRDs are not available")
-		}
-		return err
+	// It may take some time before Catalog CRDs registration shows up in main API Server.
+	// We can start Service Catalog clients/informers only when CRDs are available.
+	if err := util.WaitForServiceCatalogCRDs(coreKubeconfig); err != nil {
+		return fmt.Errorf("unable to start service-catalog controller: %v", err)
 	}
 
 	// Launch service-catalog controller

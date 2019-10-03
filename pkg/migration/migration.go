@@ -194,32 +194,46 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 	csbNameToUIDMap := map[string]types.UID{}
 	klog.Infof("Applying %d cluster service brokers", len(res.clusterServiceBrokers))
 	for _, sb := range res.clusterServiceBrokers {
-		sb.RecalculatePrinterColumnStatusFields()
-		sb.ResourceVersion = ""
-		created, err := m.scInterface.ClusterServiceBrokers().Create(&sb)
-		if err != nil {
-			return err
-		}
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			sb.RecalculatePrinterColumnStatusFields()
+			sb.ResourceVersion = ""
+			created, err := m.scInterface.ClusterServiceBrokers().Create(&sb)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
 
-		created.Status = sb.Status
-		_, err = m.scInterface.ClusterServiceBrokers().UpdateStatus(created)
+			created.Status = sb.Status
+			_, err = m.scInterface.ClusterServiceBrokers().UpdateStatus(created)
+			if err != nil {
+				return err
+			}
+			csbNameToUIDMap[sb.Name] = created.UID
+
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		csbNameToUIDMap[sb.Name] = created.UID
 	}
 
 	klog.Infof("Applying %d service classes", len(res.serviceClasses))
 	for _, sc := range res.serviceClasses {
-		sc.ResourceVersion = ""
-		sc.UID = ""
-		created, err := m.scInterface.ServiceClasses(sc.Namespace).Create(&sc)
-		if err != nil {
-			return err
-		}
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			sc.ResourceVersion = ""
+			sc.UID = ""
+			created, err := m.scInterface.ServiceClasses(sc.Namespace).Create(&sc)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
 
-		created.Status = sc.Status
-		_, err = m.scInterface.ServiceClasses(sc.Namespace).UpdateStatus(created)
+			created.Status = sc.Status
+			_, err = m.scInterface.ServiceClasses(sc.Namespace).UpdateStatus(created)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
 		if err != nil {
 			return err
 		}
@@ -227,17 +241,24 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	klog.Infof("Applying %d cluster service classes", len(res.clusterServiceClasses))
 	for _, csc := range res.clusterServiceClasses {
-		csc.ResourceVersion = ""
-		csc.UID = ""
-		csc.SelfLink = ""
-		m.adjustOwnerReference(&csc.ObjectMeta, csbNameToUIDMap)
-		created, err := m.scInterface.ClusterServiceClasses().Create(&csc)
-		if err != nil {
-			return err
-		}
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			csc.ResourceVersion = ""
+			csc.UID = ""
+			csc.SelfLink = ""
+			m.adjustOwnerReference(&csc.ObjectMeta, csbNameToUIDMap)
+			created, err := m.scInterface.ClusterServiceClasses().Create(&csc)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
 
-		created.Status = csc.Status
-		_, err = m.scInterface.ClusterServiceClasses().UpdateStatus(created)
+			created.Status = csc.Status
+			_, err = m.scInterface.ClusterServiceClasses().UpdateStatus(created)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
 		if err != nil {
 			return err
 		}
@@ -245,15 +266,21 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	klog.Infof("Applying %d service plans", len(res.servicePlans))
 	for _, sp := range res.servicePlans {
-		sp.ResourceVersion = ""
-		sp.UID = ""
-		created, err := m.scInterface.ServicePlans(sp.Namespace).Create(&sp)
-		if err != nil {
-			return err
-		}
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			sp.ResourceVersion = ""
+			sp.UID = ""
+			created, err := m.scInterface.ServicePlans(sp.Namespace).Create(&sp)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
 
-		created.Status = sp.Status
-		_, err = m.scInterface.ServicePlans(sp.Namespace).UpdateStatus(created)
+			created.Status = sp.Status
+			_, err = m.scInterface.ServicePlans(sp.Namespace).UpdateStatus(created)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
@@ -261,16 +288,22 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	klog.Infof("Applying %d cluster service plans", len(res.clusterServicePlans))
 	for _, csp := range res.clusterServicePlans {
-		csp.ResourceVersion = ""
-		csp.UID = ""
-		m.adjustOwnerReference(&csp.ObjectMeta, csbNameToUIDMap)
-		created, err := m.scInterface.ClusterServicePlans().Create(&csp)
-		if err != nil {
-			return err
-		}
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			csp.ResourceVersion = ""
+			csp.UID = ""
+			m.adjustOwnerReference(&csp.ObjectMeta, csbNameToUIDMap)
+			created, err := m.scInterface.ClusterServicePlans().Create(&csp)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
 
-		created.Status = csp.Status
-		_, err = m.scInterface.ClusterServicePlans().UpdateStatus(created)
+			created.Status = csp.Status
+			_, err = m.scInterface.ClusterServicePlans().UpdateStatus(created)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
@@ -278,35 +311,41 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	klog.Infof("Applying %d service instances", len(res.serviceInstances))
 	for _, si := range res.serviceInstances {
-		si.RecalculatePrinterColumnStatusFields()
-		si.ResourceVersion = ""
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			si.RecalculatePrinterColumnStatusFields()
+			si.ResourceVersion = ""
 
-		instance := si.DeepCopy()
+			instance := si.DeepCopy()
 
-		// ServiceInstance must not have class/plan refs when it is created
-		// These fields must be filled using an update
-		si.Spec.ClusterServiceClassRef = nil
-		si.Spec.ClusterServicePlanRef = nil
-		si.Spec.ServiceClassRef = nil
-		si.Spec.ServicePlanRef = nil
-		created, err := m.scInterface.ServiceInstances(si.Namespace).Create(&si)
-		if err != nil {
-			return err
-		}
+			// ServiceInstance must not have class/plan refs when it is created
+			// These fields must be filled using an update
+			si.Spec.ClusterServiceClassRef = nil
+			si.Spec.ClusterServicePlanRef = nil
+			si.Spec.ServiceClassRef = nil
+			si.Spec.ServicePlanRef = nil
+			created, err := m.scInterface.ServiceInstances(si.Namespace).Create(&si)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
 
-		created.Spec.ClusterServiceClassRef = instance.Spec.ClusterServiceClassRef
-		created.Spec.ClusterServicePlanRef = instance.Spec.ClusterServicePlanRef
-		created.Spec.ServiceClassRef = instance.Spec.ServiceClassRef
-		created.Spec.ServicePlanRef = instance.Spec.ServicePlanRef
+			created.Spec.ClusterServiceClassRef = instance.Spec.ClusterServiceClassRef
+			created.Spec.ClusterServicePlanRef = instance.Spec.ClusterServicePlanRef
+			created.Spec.ServiceClassRef = instance.Spec.ServiceClassRef
+			created.Spec.ServicePlanRef = instance.Spec.ServicePlanRef
 
-		updated, err := m.scInterface.ServiceInstances(si.Namespace).Update(created)
-		if err != nil {
-			return err
-		}
+			updated, err := m.scInterface.ServiceInstances(si.Namespace).Update(created)
+			if err != nil {
+				return err
+			}
 
-		updated.Status = si.Status
-		updated.Status.ObservedGeneration = updated.Generation
-		updated, err = m.scInterface.ServiceInstances(si.Namespace).UpdateStatus(updated)
+			updated.Status = si.Status
+			updated.Status.ObservedGeneration = updated.Generation
+			updated, err = m.scInterface.ServiceInstances(si.Namespace).UpdateStatus(updated)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
@@ -314,20 +353,29 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	klog.Infof("Applying %d service bindings", len(res.serviceInstances))
 	for _, sb := range res.serviceBindings {
-		sb.RecalculatePrinterColumnStatusFields()
-		sb.ResourceVersion = ""
-		created, err := m.scInterface.ServiceBindings(sb.Namespace).Create(&sb)
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			sb.RecalculatePrinterColumnStatusFields()
+			sb.ResourceVersion = ""
+			created, err := m.scInterface.ServiceBindings(sb.Namespace).Create(&sb)
+			if err != nil && !apiErrors.IsAlreadyExists(err) {
+				return err
+			}
+
+			created.Status = sb.Status
+			_, err = m.scInterface.ServiceBindings(sb.Namespace).UpdateStatus(created)
+			if err != nil {
+				return err
+			}
+
+			err = m.AddOwnerReferenceToSecret(created)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-
-		created.Status = sb.Status
-		_, err = m.scInterface.ServiceBindings(sb.Namespace).UpdateStatus(created)
-		if err != nil {
-			return err
-		}
-
-		m.AddOwnerReferenceToSecret(created)
 	}
 
 	return nil
@@ -663,4 +711,24 @@ func (m *Service) RemoveOwnerReferenceFromSecrets() error {
 	}
 	klog.Infoln("...done")
 	return nil
+}
+
+// RetryOnError allows the caller to retry fn in case the error returned by fn is retriable
+// according to the provided function. backoff defines the maximum retries and the wait
+// interval between two retries.
+func RetryOnError(backoff wait.Backoff, fn func() error) error {
+	var lastErr error
+	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
+		err := fn()
+		switch {
+		case err == nil:
+			return true, nil
+		default:
+			return false, err
+		}
+	})
+	if err == wait.ErrWaitTimeout {
+		err = lastErr
+	}
+	return err
 }
