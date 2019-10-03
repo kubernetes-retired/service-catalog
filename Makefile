@@ -279,10 +279,10 @@ test-update-goldenfiles: .init
 	$(DOCKER_CMD) go test ./cmd/svcat/... -update
 
 build-integration: .generate_files
-	$(DOCKER_CMD) go test --tags="integration" -race github.com/kubernetes-sigs/service-catalog/pkg/controller/... -c
+	$(DOCKER_CMD) go test --tags="integration" -race github.com/kubernetes-sigs/service-catalog/pkg/controller/... -c -v
 
 test-integration: .init $(scBuildImageTarget) build build-integration
-	$(DOCKER_CMD) ./controller.test
+	$(DOCKER_CMD) ./controller.test -test.v
 
 test-e2e:
 	./contrib/hack/ci/run-e2e-tests.sh
