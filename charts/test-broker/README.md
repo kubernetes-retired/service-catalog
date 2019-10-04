@@ -54,7 +54,7 @@ Service Broker
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `image` | Image to use | `quay.io/kubernetes-service-catalog/test-broker:v0.3.0-beta.0` |
+| `image` | Image to use | `quay.io/kubernetes-service-catalog/test-broker:v0.3.0-beta.1` |
 | `imagePullSecrets`|  The pre-existing secrets to use to pull images from a private registry | `[]` |
 | `imagePullPolicy` | `imagePullPolicy` for the test-broker | `Always` |
 
