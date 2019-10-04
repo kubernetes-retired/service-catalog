@@ -33,12 +33,22 @@ source "${CURRENT_DIR}/lib/deps_ver.sh" || { echo 'Cannot load dependencies vers
 
 SKIP_DEPS_INSTALLATION=${SKIP_DEPS_INSTALLATION:-}
 
+DUMP_CLUSTER_INFO="${DUMP_CLUSTER_INFO:-false}"
+
 SC_CHART_NAME="catalog"
 SC_NAMESPACE="catalog"
 
 cleanup() {
+    if [[ "${DUMP_CLUSTER_INFO}" == true ]]; then
+        shout '- Creating artifacts...'
+
+        export DUMP_NAMESPACE=${SC_NAMESPACE}
+        dump_logs || true
+    fi
+
     kind::delete_cluster || true
-    rm -rf "${TMP_DIR}" > /dev/null 2>&1 || true
+
+    rm -rf "${TMP_DIR}" || true
 }
 
 trap cleanup EXIT
@@ -80,20 +90,6 @@ test::execute() {
     popd
 }
 
-exit_and_dump_logs_for_failed_test() {
-    # The $ARTIFACTS environment variable is set by prow.
-    # It's a directory where job artifacts can be dumped for automatic upload to GCS upon job completion.
-    # source: https://github.com/kubernetes/test-infra/blob/2ccde6c957e5de7603faa43399167b18a41b496b/prow/pod-utilities.md#what-the-test-container-can-expect
-    LOGS_DIR=${ARTIFACTS:-${TMP_DIR}}/logs
-    mkdir -p ${LOGS_DIR}
-
-    echo "Executing test failed, dumping logs from namespace ${SC_NAMESPACE} into ${LOGS_DIR}"
-    env DUMP_NAMESPACE= OUTPUT_DIR= dump_k8s_resources
-
-    kubectl cluster-info dump --namespace=${SC_NAMESPACE} --output-directory=${LOGS_DIR}
-    exit 1
-}
-
 main() {
     shout "Starting E2E test."
 
@@ -108,13 +104,18 @@ main() {
     export KUBERNETES_VERSION=${STABLE_KUBERNETES_VERSION}
     kind::create_cluster
 
+    # Cluster is already created, and all below operation are performed against that cluster,
+    # so we should dump cluster info for debugging purpose in case of any error
+    DUMP_CLUSTER_INFO=true
+
     install::cluster::tiller
     install::cluster::service_catalog_latest
 
     test::prepare_data
-    test::execute \
-        || exit_and_dump_logs_for_failed_test
+    test::execute
 
+    # Test completed successfully. We do not have to dump cluster info
+    DUMP_CLUSTER_INFO=false
     shout "E2E test completed successfully."
 }
 

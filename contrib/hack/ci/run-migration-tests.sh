@@ -45,13 +45,18 @@ TB_CHART_NAME="test-broker"
 export TB_NAME="${TB_CHART_NAME}-test-broker"
 export TB_NAMESPACE="test-broker"
 
+DUMP_CLUSTER_INFO="${DUMP_CLUSTER_INFO:-false}"
+
 cleanup() {
+    if [[ "${DUMP_CLUSTER_INFO}" == true ]]; then
+        shout '- Creating artifacts...'
+
+        export DUMP_NAMESPACE=${SC_NAMESPACE}
+        dump_logs || true
+    fi
+
     kind::delete_cluster || true
 
-    # Files under `pkg` have read only permissions set by go get on purpose: https://github.com/golang/go/issues/27455#event-1862172897
-    # One solution to this issue is to execute `go clean --modcache` but this command has bugs which will be resolve in Go 1.13
-    # As a workaround we are changing the permission:
-    chmod -R a+w ${TMP_DIR}/pkg || true
     rm -rf "${TMP_DIR}" || true
 }
 
@@ -104,6 +109,10 @@ main() {
     export KUBERNETES_VERSION=${STABLE_KUBERNETES_VERSION}
     kind::create_cluster
 
+    # Cluster is already created, and all below operation are performed against that cluster,
+    # so we should dump cluster info for debugging purpose in case of any error
+    DUMP_CLUSTER_INFO=true
+
     install::cluster::tiller
     install::cluster::service_catalog_v2
 
@@ -113,6 +122,8 @@ main() {
 
     examiner::execute_test
 
+    # Test completed successfully. We do not have to dump cluster info
+    DUMP_CLUSTER_INFO=false
     shout "Migration test completed successfully."
 }
 

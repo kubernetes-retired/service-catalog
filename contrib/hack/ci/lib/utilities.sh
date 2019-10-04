@@ -28,6 +28,16 @@ shout() {
 "
 }
 
+dump_logs() {
+    # The $ARTIFACTS environment variable is set by prow.
+    # It's a directory where job artifacts can be dumped for automatic upload to GCS upon job completion.
+    # source: https://github.com/kubernetes/test-infra/blob/2ccde6c957e5de7603faa43399167b18a41b496b/prow/pod-utilities.md#what-the-test-container-can-expect
+    LOGS_DIR=${ARTIFACTS:-${TMP_DIR}}/logs
+    mkdir -p ${LOGS_DIR}
+
+    echo "Dumping logs from namespace ${DUMP_NAMESPACE} into ${LOGS_DIR}"
+    kubectl cluster-info dump --namespace=${DUMP_NAMESPACE} --output-directory=${LOGS_DIR}
+}
 
 # Installs kind dependency locally.
 # Required envs:
