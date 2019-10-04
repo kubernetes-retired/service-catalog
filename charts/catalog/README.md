@@ -42,6 +42,7 @@ chart and their default values.
 |-----------|-------------|---------|
 | `image` | Service catalog image to use | `quay.io/kubernetes-service-catalog/service-catalog:v0.3.0-beta.0` |
 | `imagePullPolicy` | `imagePullPolicy` for the service catalog | `Always` |
+| `imagePullSecrets`|  The pre-existing secrets to use to pull images from a private registry | `[]` | 
 | `webhook.updateStrategy` | `updateStrategy` for the service catalog webhook deployment | `RollingUpdate` |
 | `webhook.minReadySeconds` | how many seconds an webhook server pod needs to be ready before killing the next, during update | `1` |
 | `webhook.annotations` | Annotations for webhook pods | `{}` |

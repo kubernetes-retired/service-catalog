@@ -90,6 +90,8 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: clean-job-account
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
       containers:
         - name: service-catalog
           image: {{ .Values.image }}

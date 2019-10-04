@@ -35,6 +35,7 @@ Service Broker
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `image` | Image to use | `quay.io/kubernetes-service-catalog/user-broker:v0.3.0-beta.0` |
+| `imagePullSecrets`|  The pre-existing secrets to use to pull images from a private registry | `[]` |
 | `imagePullPolicy` | `imagePullPolicy` for the ups-broker | `Always` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
