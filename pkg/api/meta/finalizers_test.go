@@ -19,29 +19,13 @@ package meta
 import (
 	"testing"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	testFinalizer = "testfinalizer"
 )
-
-func TestGetFinalizers(t *testing.T) {
-	obj := &sc.ServiceInstance{
-		ObjectMeta: metav1.ObjectMeta{Finalizers: []string{testFinalizer}},
-	}
-	finalizers, err := GetFinalizers(obj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(finalizers) != 1 {
-		t.Fatalf("expected 1 finalizer, got %d", len(finalizers))
-	}
-	if finalizers[0] != testFinalizer {
-		t.Fatalf("expected finalizer %s, got %s", testFinalizer, finalizers[0])
-	}
-}
 
 func TestAddFinalizer(t *testing.T) {
 	obj := &sc.ServiceInstance{

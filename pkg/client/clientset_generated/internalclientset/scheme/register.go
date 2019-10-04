@@ -19,7 +19,6 @@ limitations under the License.
 package scheme
 
 import (
-	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/install"
 	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/install"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +37,5 @@ func init() {
 
 // Install registers the API group and adds types to a scheme
 func Install(scheme *runtime.Scheme) {
-	servicecatalog.Install(scheme)
 	settings.Install(scheme)
 }

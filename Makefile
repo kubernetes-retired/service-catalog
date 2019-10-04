@@ -27,7 +27,7 @@ BINDIR        ?= bin
 BUILD_DIR     ?= build
 COVERAGE      ?= $(CURDIR)/coverage.html
 SC_PKG         = github.com/kubernetes-sigs/service-catalog
-TOP_SRC_DIRS   = cmd contrib pkg plugin
+TOP_SRC_DIRS   = cmd contrib pkg
 SRC_DIRS       = $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*.go \
                    -exec dirname {} \\; | sort | uniq")
 TEST_DIRS     ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
@@ -58,7 +58,10 @@ endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION    ?= 1.13
+GOFLAGS		   =-mod=vendor
+
 export GO111MODULE=on
+
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
 
@@ -165,13 +168,13 @@ generators: $(GENERATORS)
 .SECONDEXPANSION:
 
 $(BINDIR)/openapi-gen: $$(shell find vendor/k8s.io/kube-openapi/cmd/openapi-gen vendor/k8s.io/gengo) .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
+	$(DOCKER_CMD) go build $(GOFLAGS) -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
 
 # We specify broad dependencies for these generator binaries: each one depends
 # on everything under its source tree as well as gengo's.  This uses GNU Make's
 # secondary expansion feature to pass $* to `find`.
 $(BINDIR)/%-gen: $$(shell find vendor/k8s.io/code-generator/cmd/$$*-gen vendor/k8s.io/gengo) .init
-	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/$*-gen
+	$(DOCKER_CMD) go build $(GOFLAGS) -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/$*-gen
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init generators $(TYPES_FILES)

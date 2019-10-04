@@ -22,15 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// GetFinalizers gets the list of finalizers on obj
-func GetFinalizers(obj runtime.Object) ([]string, error) {
-	accessor, err := meta.Accessor(obj)
-	if err != nil {
-		return nil, err
-	}
-	return accessor.GetFinalizers(), nil
-}
-
 // AddFinalizer adds value to the list of finalizers on obj
 func AddFinalizer(obj runtime.Object, value string) error {
 	accessor, err := meta.Accessor(obj)

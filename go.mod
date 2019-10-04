@@ -8,15 +8,11 @@ go 1.13
 
 require (
 	github.com/Azure/go-autorest v11.1.2+incompatible
-	github.com/coreos/etcd v3.3.13+incompatible
-	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea
-	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.0.1-0.20160705203006-01aeca54ebda+incompatible // indirect
-	github.com/emicklei/go-restful v1.1.4-0.20170410110728-ff4f55a20633
+	github.com/emicklei/go-restful v1.1.4-0.20170410110728-ff4f55a20633 // indirect
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/spec v0.19.3
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d // indirect
-	github.com/golang/protobuf v1.2.0
 	github.com/google/gofuzz v1.0.0
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/mux v1.7.3

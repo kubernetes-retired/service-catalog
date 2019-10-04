@@ -28,7 +28,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/kubernetes-sigs/service-catalog/cmd/apiserver/app/server"
+	"github.com/kubernetes-sigs/service-catalog/cmd/webhook/server"
 	"github.com/kubernetes-sigs/service-catalog/test/util"
 )
 
@@ -324,7 +324,7 @@ func TestCobraSubCommandMessage(t *testing.T) {
 }
 
 func testRunServer(n string) *Server {
-	s := server.NewServiceCatalogServerOptions()
+	s := server.NewWebhookServerOptions()
 	return &Server{
 		PrimaryName:     "testserver",
 		AlternativeName: "service-catalog-testserver",

@@ -25,31 +25,13 @@ REPO_ROOT=$(realpath $(dirname "${BASH_SOURCE}")/..)
 BINDIR=${REPO_ROOT}/bin
 SC_PKG='github.com/kubernetes-sigs/service-catalog'
 
-# Generate defaults
-${BINDIR}/defaulter-gen "$@" \
-	 --v 1 --logtostderr \
-	 --go-header-file "contrib/hack/boilerplate.go.txt" \
-	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog" \
-	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1" \
-	 --extra-peer-dirs "${SC_PKG}/pkg/apis/servicecatalog" \
-	 --extra-peer-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1" \
-	 --output-file-base "zz_generated.defaults"
 # Generate deep copies
 ${BINDIR}/deepcopy-gen "$@" \
 	 --v 1 --logtostderr \
 	 --go-header-file "contrib/hack/boilerplate.go.txt" \
-	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog" \
 	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1" \
 	 --bounding-dirs "github.com/kubernetes-sigs/service-catalog" \
 	 --output-file-base zz_generated.deepcopy
-# Generate conversions
-${BINDIR}/conversion-gen "$@" \
-	 --v 1 --logtostderr \
-	 --extra-peer-dirs k8s.io/api/core/v1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
-	 --go-header-file "contrib/hack/boilerplate.go.txt" \
-	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog" \
-	 --input-dirs "${SC_PKG}/pkg/apis/servicecatalog/v1beta1" \
-	 --output-file-base zz_generated.conversion
 
 #
 # Generate auto-generated code (defaults, deepcopy and conversion) for Settings group
