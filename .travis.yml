@@ -58,7 +58,52 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-release.sh
+        script: contrib/hack/ci/publish-svc-cat-release.sh --arch amd64
+        on:
+          repo: kubernetes-sigs/service-catalog
+          all_branches: true
+    - stage: deploy
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: contrib/hack/ci/publish-svc-cat-release.sh --arch arm
+        on:
+          repo: kubernetes-sigs/service-catalog
+          all_branches: true
+    - stage: deploy
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: contrib/hack/ci/publish-svc-cat-release.sh --arch arm64
+        on:
+          repo: kubernetes-sigs/service-catalog
+          all_branches: true
+    - stage: deploy
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: contrib/hack/ci/publish-svc-cat-release.sh --arch ppc64le
+        on:
+          repo: kubernetes-sigs/service-catalog
+          all_branches: true
+    - stage: deploy
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: contrib/hack/ci/publish-svc-cat-release.sh --arch s390x
+        on:
+          repo: kubernetes-sigs/service-catalog
+          all_branches: true
+    - stage: deploy
+      script: skip
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: contrib/hack/ci/publish-svcat-cli-release.sh
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
