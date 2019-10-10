@@ -45,7 +45,7 @@ func registeredTests(cs *clientutil.ClientStorage) map[string]runner.UpgradeTest
 
 // Config collects all parameters from env variables
 type Config struct {
-	KubeconfigPath string       `envconfig:"KUBECONFIG,optional"`
+	KubeconfigPath string `envconfig:"KUBECONFIG,optional"`
 	readiness.ServiceCatalogConfig
 }
 

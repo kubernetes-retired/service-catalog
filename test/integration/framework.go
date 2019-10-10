@@ -74,8 +74,7 @@ func withConfigGetFreshApiserverAndClient(
 	certDir, _ := ioutil.TempDir("", "service-catalog-integration")
 	secureServingOptions := genericserveroptions.NewSecureServingOptions()
 
-	var etcdOptions *server.EtcdOptions
-	etcdOptions = server.NewEtcdOptions()
+	var etcdOptions = server.NewEtcdOptions()
 	etcdOptions.StorageConfig.Transport.ServerList = serverConfig.etcdServerList
 	etcdOptions.EtcdOptions.StorageConfig.Prefix = fmt.Sprintf("%s-%08X", server.DefaultEtcdPathPrefix, rand.Int31())
 	options := &server.ServiceCatalogServerOptions{

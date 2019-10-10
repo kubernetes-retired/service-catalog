@@ -776,11 +776,7 @@ func (c *controller) updateServiceBindingCondition(
 
 func (c *controller) isServiceBindingStatusInitialized(binding *v1beta1.ServiceBinding) bool {
 	emptyStatus := v1beta1.ServiceBindingStatus{}
-	if reflect.DeepEqual(binding.Status, emptyStatus) {
-		return false
-	}
-
-	return true
+	return !reflect.DeepEqual(binding.Status, emptyStatus)
 }
 
 // initializeServiceBindingStatus initialize the ServiceBindingStatus.
