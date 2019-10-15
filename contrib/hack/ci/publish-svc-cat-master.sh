@@ -17,7 +17,7 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-
+echo "DEPLOY_TYPE ${DEPLOY_TYPE}"
 readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 readonly REPO_ROOT_DIR=${CURRENT_DIR}/../../../
 
@@ -28,15 +28,7 @@ export REGISTRY=${REGISTRY:-quay.io/kubernetes-service-catalog/}
 docker login -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
 
 pushd ${REPO_ROOT_DIR}
-
-if [[ "${TRAVIS_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[a-z]*((-beta.[0-9]+)|(-(r|R)(c|C)[0-9]+))?$ ]]; then
-    shout "Pushing svcat CLI images with tags '${TRAVIS_TAG}' and 'latest'."
-    TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make svcat-publish
-elif [[ "${TRAVIS_BRANCH}" == "master" ]]; then
-    shout "Pushing svcat CLI images with default tags (git sha and 'canary')."
-    make svcat-publish
-else
-    shout "Skipping svcat CLI deploy"
-fi
+shout "Pushing Service Catalog amd64 images with default tags (git sha and 'canary')."
+make push
 
 popd

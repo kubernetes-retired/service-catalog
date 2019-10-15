@@ -28,11 +28,13 @@ before_install:
           [[ -z "$(git diff --name-only $TRAVIS_COMMIT_RANGE | grep -vE $DOCS_REGEX)" ]]
           DOCS_ONLY=$?
       fi
+    
 jobs:
   fast_finish: true
   include:
     # CI Build
     - stage: test
+      name: verify
       script:
       - |
         if (( $DOCS_ONLY == 0 )); then
@@ -48,64 +50,90 @@ jobs:
       env: GO_VERSION=1.12
     # Doc Site svc-cat.io
     - stage: test
+      name: docs
       script:
       - |
         make docs
       env: DOCS=true
-    # Deploy
+    # Deploy service-catalog on release
     - stage: deploy
+      name: SC release - amd64
       script: skip
       deploy:
         skip_cleanup: true
         provider: script
         script: contrib/hack/ci/publish-svc-cat-release.sh --arch amd64
         on:
-          repo: kubernetes-sigs/service-catalog
+          repo: awalach-org/service-catalog
           all_branches: true
+          condition: $DEPLOY_TYPE == release
     - stage: deploy
+      name: SC release - arm
       script: skip
       deploy:
         skip_cleanup: true
         provider: script
         script: contrib/hack/ci/publish-svc-cat-release.sh --arch arm
         on:
-          repo: kubernetes-sigs/service-catalog
+          repo: awalach-org/service-catalog
           all_branches: true
+          condition: $DEPLOY_TYPE == release
     - stage: deploy
+      name: SC release - arm64
       script: skip
       deploy:
         skip_cleanup: true
         provider: script
         script: contrib/hack/ci/publish-svc-cat-release.sh --arch arm64
         on:
-          repo: kubernetes-sigs/service-catalog
+          repo: awalach-org/service-catalog
           all_branches: true
+          condition: $DEPLOY_TYPE == release
     - stage: deploy
+      name: SC release - ppc64le
       script: skip
       deploy:
         skip_cleanup: true
         provider: script
         script: contrib/hack/ci/publish-svc-cat-release.sh --arch ppc64le
         on:
-          repo: kubernetes-sigs/service-catalog
+          repo: awalach-org/service-catalog
           all_branches: true
+          condition: $DEPLOY_TYPE == release
     - stage: deploy
+      name: SC release - s390x
       script: skip
       deploy:
         skip_cleanup: true
         provider: script
         script: contrib/hack/ci/publish-svc-cat-release.sh --arch s390x
         on:
-          repo: kubernetes-sigs/service-catalog
+          repo: awalach-org/service-catalog
           all_branches: true
+          condition: $DEPLOY_TYPE == release
+    # Deploy service-catalog after merge to master
     - stage: deploy
+      name: SC master - amd64
+      script: skip
+      if: $DEPLOY_TYPE == master
+      deploy:
+        skip_cleanup: true
+        provider: script
+        script: contrib/hack/ci/publish-svc-cat-master.sh
+        on:
+          repo: awalach-org/service-catalog
+          all_branches: true
+          condition: $DEPLOY_TYPE == master
+  # Deploy svcat on release
+    - stage: deploy
+      name: SVCAT
       script: skip
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svcat-cli-release.sh
+        script: contrib/hack/ci/publish-svcat-cli.sh
         on:
-          repo: kubernetes-sigs/service-catalog
+          repo: awalach-org/service-catalog
           all_branches: true
     - stage: push-chart
       script:

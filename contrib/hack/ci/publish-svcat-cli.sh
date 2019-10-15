@@ -29,42 +29,16 @@ export REGISTRY=${REGISTRY:-quay.io/kubernetes-service-catalog/}
 
 docker login -u "${QUAY_USERNAME}" -p "${QUAY_PASSWORD}" quay.io
 
-usage() {
-  echo "${0} [-a arch] [-h]"
-  echo ""
-  echo " -a, --arch <arch-name>: Architecture name that should be released, i.e. amd64"
-  echo " -h, --help: Print help"
-}
-
-RELEASE_ARCH=""
-if [[ "$#" -ne 0 ]]; then
-  POSITIONAL=()
-  while [[ $# -gt 0 ]]
-    do
-    key="$1"
-    case ${key} in
-      -b|--arch)
-        RELEASE_ARCH="-${2}"
-        shift # past argument
-        shift # past value
-        ;;
-      -h|--help)
-        usage
-        exit
-        ;;
-      *)    # unknown option
-        POSITIONAL+=("$1") # save it in an array for later
-        shift # past argument
-        ;;
-    esac
-  done
-  set -- ${POSITIONAL[@]+"${POSITIONAL[@]}"}
-fi
-
-
 pushd ${REPO_ROOT_DIR}
-echo ${RELEASE_ARCH}
-shout "Pushing Service Catalog ${RELEASE_ARCH} images with tags '${TRAVIS_TAG}' and 'latest'."
-TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push${RELEASE_ARCH}
+
+if [[ "${DEPLOY_TYPE}" == "release" ]]; then
+    shout "Pushing svcat CLI images with tags '${TRAVIS_TAG}' and 'latest'."
+    TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make svcat-publish
+elif [[ "${DEPLOY_TYPE}" == "master" ]]; then
+    shout "Pushing svcat CLI images with default tags (git sha and 'canary')."
+    make svcat-publish
+else
+    shout "Skipping svcat CLI deploy"
+fi
 
 popd
