@@ -68,7 +68,7 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svc-cat-release.sh --arch amd64
+        script: contrib/hack/ci/publish-svc-cat.sh --arch amd64
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
@@ -79,7 +79,7 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svc-cat-release.sh --arch arm
+        script: contrib/hack/ci/publish-svc-cat.sh --arch arm
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
@@ -90,7 +90,7 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svc-cat-release.sh --arch arm64
+        script: contrib/hack/ci/publish-svc-cat.sh --arch arm64
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
@@ -101,7 +101,7 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svc-cat-release.sh --arch ppc64le
+        script: contrib/hack/ci/publish-svc-cat.sh --arch ppc64le
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
@@ -112,7 +112,7 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svc-cat-release.sh --arch s390x
+        script: contrib/hack/ci/publish-svc-cat.sh --arch s390x
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true
@@ -124,7 +124,7 @@ jobs:
       deploy:
         skip_cleanup: true
         provider: script
-        script: contrib/hack/ci/publish-svc-cat-master.sh
+        script: contrib/hack/ci/publish-svc-cat.sh
         on:
           repo: kubernetes-sigs/service-catalog
           all_branches: true

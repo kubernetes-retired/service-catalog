@@ -61,10 +61,16 @@ if [[ "$#" -ne 0 ]]; then
   set -- ${POSITIONAL[@]+"${POSITIONAL[@]}"}
 fi
 
-
 pushd ${REPO_ROOT_DIR}
 echo ${RELEASE_ARCH}
-shout "Pushing Service Catalog ${RELEASE_ARCH} images with tags '${TRAVIS_TAG}' and 'latest'."
-TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push${RELEASE_ARCH}
+if [[ "${DEPLOY_TYPE}" == "release" ]]; then
+    shout "Pushing Service Catalog ${RELEASE_ARCH} images with tags '${TRAVIS_TAG}' and 'latest'."
+    TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push${RELEASE_ARCH}
+elif [[ "${DEPLOY_TYPE}" == "master" ]]; then
+    shout "Pushing Service Catalog ${RELEASE_ARCH} images with default tags (git sha and 'canary')."
+    make push
+else
+    shout "Skip Service Catalog ${RELEASE_ARCH} deploy"
+fi
 
 popd
