@@ -732,7 +732,7 @@ func ExponentialBackoff(backoff *wait.Backoff, condition wait.ConditionFunc) err
 }
 
 func (m *Service) createServiceBroker(cr sc.ServiceBroker) (*sc.ServiceBroker, error) {
-	klog.Infof("Processing service broker: %s", cr.Name)
+	klog.Infof("Processing Service Broker: %s", cr.Name)
 	created, err := m.scInterface.ServiceBrokers(cr.Namespace).Create(&cr)
 
 	switch {
@@ -808,7 +808,7 @@ func (m *Service) createClusterServiceBroker(cr sc.ClusterServiceBroker) (*sc.Cl
 }
 
 func (m *Service) createServiceClass(cr sc.ServiceClass) (*sc.ServiceClass, error) {
-	klog.Infof("Processing service class: %s", cr.Name)
+	klog.Infof("Processing Service Class: %s", cr.Name)
 	created, err := m.scInterface.ServiceClasses(cr.Namespace).Create(&cr)
 
 	switch {
@@ -874,7 +874,7 @@ func (m *Service) createClusterServiceClass(cr sc.ClusterServiceClass) (*sc.Clus
 }
 
 func (m *Service) createServicePlan(cr sc.ServicePlan) (*sc.ServicePlan, error) {
-	klog.Infof("Processing service plan: %s", cr.Name)
+	klog.Infof("Processing Service Plan: %s", cr.Name)
 	created, err := m.scInterface.ServicePlans(cr.Namespace).Create(&cr)
 
 	switch {
@@ -940,7 +940,7 @@ func (m *Service) createClusterServicePlan(cr sc.ClusterServicePlan) (*sc.Cluste
 }
 
 func (m *Service) createServiceInstance(cr sc.ServiceInstance) (*sc.ServiceInstance, error) {
-	klog.Infof("Processing service instance: %s", cr.Name)
+	klog.Infof("Processing Service Instance: %s", cr.Name)
 	created, err := m.scInterface.ServiceInstances(cr.Namespace).Create(&cr)
 
 	switch {
@@ -972,7 +972,7 @@ func (m *Service) createServiceInstance(cr sc.ServiceInstance) (*sc.ServiceInsta
 }
 
 func (m *Service) createServiceBinding(cr sc.ServiceBinding) (*sc.ServiceBinding, error) {
-	klog.Infof("Processing service binding: %s", cr.Name)
+	klog.Infof("Processing Service Binding: %s", cr.Name)
 	created, err := m.scInterface.ServiceBindings(cr.Namespace).Create(&cr)
 
 	switch {
