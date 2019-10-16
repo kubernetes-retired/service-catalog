@@ -17,12 +17,14 @@ limitations under the License.
 package migration
 
 import (
-	"fmt"
-	"github.com/hashicorp/go-multierror"
-	"io/ioutil"
-	"strings"
-
 	"crypto/tls"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/hashicorp/go-multierror"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -37,9 +39,7 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"net/http"
 	"sigs.k8s.io/yaml"
-	"time"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
@@ -479,49 +479,49 @@ func (m *Service) Cleanup(resources *ServiceCatalogResources) error {
 	for _, obj := range resources.serviceBindings {
 		err := m.scInterface.ServiceBindings(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceBinding - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.serviceInstances {
 		err := m.scInterface.ServiceInstances(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceInstance - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.serviceClasses {
 		err := m.scInterface.ServiceClasses(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceClass - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.clusterServiceClasses {
 		err := m.scInterface.ClusterServiceClasses().Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ClusterServiceClass - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.servicePlans {
 		err := m.scInterface.ServicePlans(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServicePlan - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.clusterServicePlans {
 		err := m.scInterface.ClusterServicePlans().Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ClusterServicePlan - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.serviceBrokers {
 		err := m.scInterface.ServiceBrokers(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceBroker - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.clusterServiceBrokers {
 		err := m.scInterface.ClusterServiceBrokers().Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ClusterServiceBroker - %s", obj.Name)
 		}
 	}
 	klog.Infoln("...done")
@@ -546,89 +546,90 @@ func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 	klog.Infoln("Saving resources")
 	serviceBrokers, err := m.scInterface.ServiceBrokers(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServiceBrokers")
 	}
 	for _, sb := range serviceBrokers.Items {
 		err := m.backupResource(&sb, serviceBrokerFilePrefix, sb.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceBroker - %s", sb.UID)
 		}
 	}
 
 	clusterServiceBrokers, err := m.scInterface.ClusterServiceBrokers().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ClusterServiceBrokers")
 	}
 	for _, csb := range clusterServiceBrokers.Items {
 		err := m.backupResource(&csb, clusterServiceBrokerFilePrefix, csb.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ClusterServiceBroker - %s", csb.UID)
 		}
 	}
 
 	serviceClasses, err := m.scInterface.ServiceClasses(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing Service Classes")
 	}
 	for _, sc := range serviceClasses.Items {
 		err := m.backupResource(&sc, serviceClassFilePrefix, sc.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceClass - %s", sc.UID)
 		}
 	}
 
 	clusterServiceClasses, err := m.scInterface.ClusterServiceClasses().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ClusterServiceClasses")
 	}
 	for _, csc := range clusterServiceClasses.Items {
 		err := m.backupResource(&csc, clusterServiceClassFilePrefix, csc.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ClusterServiceClass - %s", csc.UID)
 		}
 	}
 
 	servicePlans, err := m.scInterface.ServicePlans(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServicePlans")
 	}
 	for _, sp := range servicePlans.Items {
 		err := m.backupResource(&sp, servicePlanFilePrefix, sp.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServicePlan - %s", sp.UID)
 		}
 	}
 
 	clusterServicePlans, err := m.scInterface.ClusterServicePlans().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ClusterServicePlans")
 	}
 	for _, csp := range clusterServicePlans.Items {
 		err := m.backupResource(&csp, clusterServicePlanFilePrefix, csp.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ClusterServicePlan - %s", csp.UID)
 		}
 	}
 
 	serviceInstances, err := m.scInterface.ServiceInstances(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServiceInstances")
 	}
 	for _, si := range serviceInstances.Items {
 		err := m.backupResource(&si, serviceInstanceFilePrefix, si.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceInstance - %s", si.UID)
 		}
 	}
 
 	serviceBindings, err := m.scInterface.ServiceBindings(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServiceBindings")
+
 	}
 	for _, sb := range serviceBindings.Items {
 		err := m.backupResource(&sb, serviceBindingFilePrefix, sb.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceBinding - %s", sb.UID)
 		}
 	}
 
@@ -695,7 +696,7 @@ func (m *Service) RemoveOwnerReferenceFromSecrets() error {
 // interval between two retries.
 func RetryOnError(backoff wait.Backoff, fn func() error) error {
 	var result error
-	err := ExponentialBackoff(&backoff, func() (bool, error) {
+	err := ExponentialBackoff(backoff, func() (bool, error) {
 		err := fn()
 		switch {
 		case err == nil:
@@ -712,7 +713,7 @@ func RetryOnError(backoff wait.Backoff, fn func() error) error {
 }
 
 // ExponentialBackoff was copied from wait.ExponentialBackoff. Added log messages
-func ExponentialBackoff(backoff *wait.Backoff, condition wait.ConditionFunc) error {
+func ExponentialBackoff(backoff wait.Backoff, condition wait.ConditionFunc) error {
 	i := 0
 	for backoff.Steps > 0 {
 		i++
