@@ -83,7 +83,7 @@ spec:
         {{- end }}
       {{ if .Values.webhook.nodeSelector }}
       nodeSelector:
-          {{ .Values.webhook.nodeSelector }}
+{{ toYaml .Values.controllerManager.nodeSelector | indent(8) }}
       {{ end }}
       volumes:
       - name: service-catalog-webhook-cert
