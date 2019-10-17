@@ -17,11 +17,14 @@ limitations under the License.
 package migration
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
+	"time"
 
-	"crypto/tls"
+	"github.com/hashicorp/go-multierror"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -36,9 +39,7 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
-	"net/http"
 	"sigs.k8s.io/yaml"
-	"time"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
@@ -103,8 +104,14 @@ const (
 	clusterServicePlanFilePrefix  = "clusterserviceplan"
 )
 
-// bindingControllerKind contains the schema.GroupVersionKind for this controller type.
-var bindingControllerKind = sc.SchemeGroupVersion.WithKind("ServiceBinding")
+var (
+	// bindingControllerKind contains the schema.GroupVersionKind for this controller type.
+	bindingControllerKind = sc.SchemeGroupVersion.WithKind("ServiceBinding")
+
+	finalizersPath = []byte(`[{"op": "remove", "path": "/metadata/finalizers"}]`)
+
+	propagationpolicy = metav1.DeletePropagationOrphan
+)
 
 func (r *ServiceCatalogResources) writeMetadata(b *strings.Builder, m metav1.ObjectMeta) {
 	b.WriteString("\n\t")
@@ -176,16 +183,18 @@ func (m *Service) IsMigrationRequired() (bool, error) {
 // Restore restores Service Catalog resources and adds necessary owner reference to all secrets pointed by service bindings.
 func (m *Service) Restore(res *ServiceCatalogResources) error {
 	klog.Infof("Applying %d service brokers", len(res.serviceBrokers))
-	for _, sb := range res.serviceBrokers {
-		sb.RecalculatePrinterColumnStatusFields()
-		sb.ResourceVersion = ""
-		created, err := m.scInterface.ServiceBrokers(sb.Namespace).Create(&sb)
-		if err != nil {
-			return err
-		}
 
-		created.Status = sb.Status
-		_, err = m.scInterface.ServiceBrokers(sb.Namespace).UpdateStatus(created)
+	for _, sb := range res.serviceBrokers {
+		err := RetryOnError(retry.DefaultRetry, func() error {
+			sb.RecalculatePrinterColumnStatusFields()
+			sb.ResourceVersion = ""
+			_, err := m.createServiceBroker(sb)
+			if err != nil {
+				return errors.Wrapf(err, "while restoring %s", sb.Name)
+			}
+			return nil
+		})
+
 		if err != nil {
 			return err
 		}
@@ -193,21 +202,15 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	csbNameToUIDMap := map[string]types.UID{}
 	klog.Infof("Applying %d cluster service brokers", len(res.clusterServiceBrokers))
-	for _, sb := range res.clusterServiceBrokers {
+	for _, csb := range res.clusterServiceBrokers {
 		err := RetryOnError(retry.DefaultRetry, func() error {
-			sb.RecalculatePrinterColumnStatusFields()
-			sb.ResourceVersion = ""
-			created, err := m.scInterface.ClusterServiceBrokers().Create(&sb)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
-
-			created.Status = sb.Status
-			_, err = m.scInterface.ClusterServiceBrokers().UpdateStatus(created)
+			csb.RecalculatePrinterColumnStatusFields()
+			csb.ResourceVersion = ""
+			created, err := m.createClusterServiceBroker(csb)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "while restoring %s", csb.Name)
 			}
-			csbNameToUIDMap[sb.Name] = created.UID
+			csbNameToUIDMap[csb.Name] = created.UID
 
 			return nil
 		})
@@ -221,17 +224,10 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 		err := RetryOnError(retry.DefaultRetry, func() error {
 			sc.ResourceVersion = ""
 			sc.UID = ""
-			created, err := m.scInterface.ServiceClasses(sc.Namespace).Create(&sc)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
-
-			created.Status = sc.Status
-			_, err = m.scInterface.ServiceClasses(sc.Namespace).UpdateStatus(created)
+			_, err := m.createServiceClass(sc)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "while restoring %s", sc.Name)
 			}
-
 			return nil
 		})
 		if err != nil {
@@ -246,17 +242,10 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 			csc.UID = ""
 			csc.SelfLink = ""
 			m.adjustOwnerReference(&csc.ObjectMeta, csbNameToUIDMap)
-			created, err := m.scInterface.ClusterServiceClasses().Create(&csc)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
-
-			created.Status = csc.Status
-			_, err = m.scInterface.ClusterServiceClasses().UpdateStatus(created)
+			_, err := m.createClusterServiceClass(csc)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "while restoring %s", csc.Name)
 			}
-
 			return nil
 		})
 		if err != nil {
@@ -269,15 +258,9 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 		err := RetryOnError(retry.DefaultRetry, func() error {
 			sp.ResourceVersion = ""
 			sp.UID = ""
-			created, err := m.scInterface.ServicePlans(sp.Namespace).Create(&sp)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
-
-			created.Status = sp.Status
-			_, err = m.scInterface.ServicePlans(sp.Namespace).UpdateStatus(created)
+			_, err := m.createServicePlan(sp)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "while restoring %s", sp.Name)
 			}
 			return nil
 		})
@@ -292,15 +275,9 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 			csp.ResourceVersion = ""
 			csp.UID = ""
 			m.adjustOwnerReference(&csp.ObjectMeta, csbNameToUIDMap)
-			created, err := m.scInterface.ClusterServicePlans().Create(&csp)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
-
-			created.Status = csp.Status
-			_, err = m.scInterface.ClusterServicePlans().UpdateStatus(created)
+			_, err := m.createClusterServicePlan(csp)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "while restoring %s", csp.Name)
 			}
 			return nil
 		})
@@ -323,9 +300,9 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 			si.Spec.ClusterServicePlanRef = nil
 			si.Spec.ServiceClassRef = nil
 			si.Spec.ServicePlanRef = nil
-			created, err := m.scInterface.ServiceInstances(si.Namespace).Create(&si)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
+			created, err := m.createServiceInstance(si)
+			if err != nil {
+				return errors.Wrapf(err, "while restoring %s", si.Name)
 			}
 
 			created.Spec.ClusterServiceClassRef = instance.Spec.ClusterServiceClassRef
@@ -351,25 +328,25 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 		}
 	}
 
-	klog.Infof("Applying %d service bindings", len(res.serviceInstances))
+	klog.Infof("Applying %d service bindings", len(res.serviceBindings))
+	err := m.RemoveOwnerReferenceFromSecrets()
+	if err != nil {
+		return errors.Wrapf(err, "when removing owner references from secrets")
+	}
+
 	for _, sb := range res.serviceBindings {
 		err := RetryOnError(retry.DefaultRetry, func() error {
 			sb.RecalculatePrinterColumnStatusFields()
 			sb.ResourceVersion = ""
-			created, err := m.scInterface.ServiceBindings(sb.Namespace).Create(&sb)
-			if err != nil && !apiErrors.IsAlreadyExists(err) {
-				return err
-			}
 
-			created.Status = sb.Status
-			_, err = m.scInterface.ServiceBindings(sb.Namespace).UpdateStatus(created)
+			created, err := m.createServiceBinding(sb)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "while restoring %s", sb.Name)
 			}
 
 			err = m.AddOwnerReferenceToSecret(created)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "when adding owner reference to secret")
 			}
 			return nil
 		})
@@ -502,49 +479,49 @@ func (m *Service) Cleanup(resources *ServiceCatalogResources) error {
 	for _, obj := range resources.serviceBindings {
 		err := m.scInterface.ServiceBindings(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceBinding - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.serviceInstances {
 		err := m.scInterface.ServiceInstances(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceInstance - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.serviceClasses {
 		err := m.scInterface.ServiceClasses(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceClass - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.clusterServiceClasses {
 		err := m.scInterface.ClusterServiceClasses().Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ClusterServiceClass - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.servicePlans {
 		err := m.scInterface.ServicePlans(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServicePlan - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.clusterServicePlans {
 		err := m.scInterface.ClusterServicePlans().Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ClusterServicePlan - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.serviceBrokers {
 		err := m.scInterface.ServiceBrokers(obj.Namespace).Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ServiceBroker - %s", obj.Name)
 		}
 	}
 	for _, obj := range resources.clusterServiceBrokers {
 		err := m.scInterface.ClusterServiceBrokers().Delete(obj.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "while deleting ClusterServiceBroker - %s", obj.Name)
 		}
 	}
 	klog.Infoln("...done")
@@ -569,89 +546,90 @@ func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 	klog.Infoln("Saving resources")
 	serviceBrokers, err := m.scInterface.ServiceBrokers(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServiceBrokers")
 	}
 	for _, sb := range serviceBrokers.Items {
 		err := m.backupResource(&sb, serviceBrokerFilePrefix, sb.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceBroker - %s", sb.UID)
 		}
 	}
 
 	clusterServiceBrokers, err := m.scInterface.ClusterServiceBrokers().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ClusterServiceBrokers")
 	}
 	for _, csb := range clusterServiceBrokers.Items {
 		err := m.backupResource(&csb, clusterServiceBrokerFilePrefix, csb.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ClusterServiceBroker - %s", csb.UID)
 		}
 	}
 
 	serviceClasses, err := m.scInterface.ServiceClasses(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing Service Classes")
 	}
 	for _, sc := range serviceClasses.Items {
 		err := m.backupResource(&sc, serviceClassFilePrefix, sc.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceClass - %s", sc.UID)
 		}
 	}
 
 	clusterServiceClasses, err := m.scInterface.ClusterServiceClasses().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ClusterServiceClasses")
 	}
 	for _, csc := range clusterServiceClasses.Items {
 		err := m.backupResource(&csc, clusterServiceClassFilePrefix, csc.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ClusterServiceClass - %s", csc.UID)
 		}
 	}
 
 	servicePlans, err := m.scInterface.ServicePlans(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServicePlans")
 	}
 	for _, sp := range servicePlans.Items {
 		err := m.backupResource(&sp, servicePlanFilePrefix, sp.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServicePlan - %s", sp.UID)
 		}
 	}
 
 	clusterServicePlans, err := m.scInterface.ClusterServicePlans().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ClusterServicePlans")
 	}
 	for _, csp := range clusterServicePlans.Items {
 		err := m.backupResource(&csp, clusterServicePlanFilePrefix, csp.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ClusterServicePlan - %s", csp.UID)
 		}
 	}
 
 	serviceInstances, err := m.scInterface.ServiceInstances(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServiceInstances")
 	}
 	for _, si := range serviceInstances.Items {
 		err := m.backupResource(&si, serviceInstanceFilePrefix, si.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceInstance - %s", si.UID)
 		}
 	}
 
 	serviceBindings, err := m.scInterface.ServiceBindings(v1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "while listing ServiceBindings")
+
 	}
 	for _, sb := range serviceBindings.Items {
 		err := m.backupResource(&sb, serviceBindingFilePrefix, sb.UID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while backing up ServiceBinding - %s", sb.UID)
 		}
 	}
 
@@ -713,22 +691,321 @@ func (m *Service) RemoveOwnerReferenceFromSecrets() error {
 	return nil
 }
 
-// RetryOnError allows the caller to retry fn in case the error returned by fn is retriable
+// RetryOnError allows the caller to retry fn in case the error
 // according to the provided function. backoff defines the maximum retries and the wait
 // interval between two retries.
 func RetryOnError(backoff wait.Backoff, fn func() error) error {
-	var lastErr error
-	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
+	var result error
+	err := ExponentialBackoff(backoff, func() (bool, error) {
 		err := fn()
 		switch {
 		case err == nil:
 			return true, nil
 		default:
-			return false, err
+			result = multierror.Append(result, err)
+			return false, nil
 		}
 	})
 	if err == wait.ErrWaitTimeout {
-		err = lastErr
+		err = result
 	}
 	return err
+}
+
+// ExponentialBackoff was copied from wait.ExponentialBackoff. Added log messages
+func ExponentialBackoff(backoff wait.Backoff, condition wait.ConditionFunc) error {
+	i := 0
+	for backoff.Steps > 0 {
+		i++
+		if i > 1 {
+			klog.Infof("Retry %d", i)
+		}
+
+		if ok, err := condition(); err != nil || ok {
+			return err
+		}
+		if backoff.Steps == 1 {
+			break
+		}
+		time.Sleep(backoff.Step())
+	}
+	return wait.ErrWaitTimeout
+}
+
+func (m *Service) createServiceBroker(cr sc.ServiceBroker) (*sc.ServiceBroker, error) {
+	klog.Infof("Processing Service Broker: %s", cr.Name)
+	created, err := m.scInterface.ServiceBrokers(cr.Namespace).Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		_, err = m.scInterface.ServiceBrokers(cr.Namespace).Patch(cr.Name, types.JSONPatchType, finalizersPath, "")
+		if err != nil {
+			return nil, errors.Wrapf(err, "while removing finalizers from resource '%s'", cr.Name)
+		}
+
+		err = m.scInterface.ServiceBrokers(cr.Namespace).Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ServiceBrokers(cr.Namespace).Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating service broker '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ServiceBrokers(cr.Namespace).UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of resource '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createClusterServiceBroker(cr sc.ClusterServiceBroker) (*sc.ClusterServiceBroker, error) {
+	klog.Infof("Processing Cluster Service Broker: %s", cr.Name)
+	created, err := m.scInterface.ClusterServiceBrokers().Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		_, err = m.scInterface.ClusterServiceBrokers().Patch(cr.Name, types.JSONPatchType, finalizersPath, "")
+		if err != nil {
+			return nil, errors.Wrapf(err, "while removing finalizers from resource '%s'", cr.Name)
+		}
+
+		err = m.scInterface.ClusterServiceBrokers().Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ClusterServiceBrokers().Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating resource '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ClusterServiceBrokers().UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of cluster service broker '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createServiceClass(cr sc.ServiceClass) (*sc.ServiceClass, error) {
+	klog.Infof("Processing Service Class: %s", cr.Name)
+	created, err := m.scInterface.ServiceClasses(cr.Namespace).Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		err = m.scInterface.ServiceClasses(cr.Namespace).Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ServiceClasses(cr.Namespace).Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating service broker '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ServiceClasses(cr.Namespace).UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of resource '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createClusterServiceClass(cr sc.ClusterServiceClass) (*sc.ClusterServiceClass, error) {
+	klog.Infof("Processing Cluster Service Class: %s", cr.Name)
+	created, err := m.scInterface.ClusterServiceClasses().Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		err = m.scInterface.ClusterServiceClasses().Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ClusterServiceClasses().Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating resource '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ClusterServiceClasses().UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of cluster service broker '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createServicePlan(cr sc.ServicePlan) (*sc.ServicePlan, error) {
+	klog.Infof("Processing Service Plan: %s", cr.Name)
+	created, err := m.scInterface.ServicePlans(cr.Namespace).Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		err = m.scInterface.ServicePlans(cr.Namespace).Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ServicePlans(cr.Namespace).Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating service broker '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ServicePlans(cr.Namespace).UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of resource '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createClusterServicePlan(cr sc.ClusterServicePlan) (*sc.ClusterServicePlan, error) {
+	klog.Infof("Processing Cluster Service Plan: %s", cr.Name)
+	created, err := m.scInterface.ClusterServicePlans().Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		err = m.scInterface.ClusterServicePlans().Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ClusterServicePlans().Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating resource '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ClusterServicePlans().UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of cluster service broker '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createServiceInstance(cr sc.ServiceInstance) (*sc.ServiceInstance, error) {
+	klog.Infof("Processing Service Instance: %s", cr.Name)
+	created, err := m.scInterface.ServiceInstances(cr.Namespace).Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		_, err = m.scInterface.ServiceInstances(cr.Namespace).Patch(cr.Name, types.JSONPatchType, finalizersPath, "")
+		if err != nil {
+			return nil, errors.Wrapf(err, "while removing finalizers from resource '%s'", cr.Name)
+		}
+
+		err = m.scInterface.ServiceInstances(cr.Namespace).Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ServiceInstances(cr.Namespace).Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating service broker '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	return created, nil
+}
+
+func (m *Service) createServiceBinding(cr sc.ServiceBinding) (*sc.ServiceBinding, error) {
+	klog.Infof("Processing Service Binding: %s", cr.Name)
+	created, err := m.scInterface.ServiceBindings(cr.Namespace).Create(&cr)
+
+	switch {
+	case err == nil:
+	case apiErrors.IsAlreadyExists(err):
+		klog.Infof("Resource already exists, deleting and recreating")
+
+		_, err = m.scInterface.ServiceBindings(cr.Namespace).Patch(cr.Name, types.JSONPatchType, finalizersPath, "")
+		if err != nil {
+			return nil, errors.Wrapf(err, "while removing finalizers from resource '%s'", cr.Name)
+		}
+
+		err = m.scInterface.ServiceBindings(cr.Namespace).Delete(cr.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: new(int64),
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "while deleting resource '%s'", cr.Name)
+		}
+
+		created, err = m.scInterface.ServiceBindings(cr.Namespace).Create(&cr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while re-creating service broker '%s'", cr.Name)
+		}
+	default:
+		return nil, errors.Wrapf(err, "while creating resource '%s'", cr.Name)
+	}
+
+	created.Status = cr.Status
+	_, err = m.scInterface.ServiceBindings(cr.Namespace).UpdateStatus(created)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while updating status of resource '%s'", cr.Name)
+	}
+
+	return created, nil
 }
