@@ -18,6 +18,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+echo "DEPLOY_TYPE ${DEPLOY_TYPE}"
+
 readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 readonly REPO_ROOT_DIR=${CURRENT_DIR}/../../../
 
@@ -59,13 +61,12 @@ if [[ "$#" -ne 0 ]]; then
   set -- ${POSITIONAL[@]+"${POSITIONAL[@]}"}
 fi
 
-
 pushd ${REPO_ROOT_DIR}
 echo ${RELEASE_ARCH}
-if [[ "${TRAVIS_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[a-z]*((-beta.[0-9]+)|(-(r|R)(c|C)[0-9]+))?$ ]]; then
+if [[ "${DEPLOY_TYPE}" == "release" ]]; then
     shout "Pushing Service Catalog ${RELEASE_ARCH} images with tags '${TRAVIS_TAG}' and 'latest'."
     TAG_VERSION="${TRAVIS_TAG}" VERSION="${TRAVIS_TAG}" MUTABLE_TAG="latest" make release-push${RELEASE_ARCH}
-elif [[ "${TRAVIS_BRANCH}" == "master" ]]; then
+elif [[ "${DEPLOY_TYPE}" == "master" ]]; then
     shout "Pushing Service Catalog ${RELEASE_ARCH} images with default tags (git sha and 'canary')."
     make push
 else
