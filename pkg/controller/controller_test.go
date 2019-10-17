@@ -1293,8 +1293,7 @@ func getTestServiceBindingAsyncBinding(operation string) *v1beta1.ServiceBinding
 // async mode whose retry duration has been exceeded
 func getTestServiceBindingAsyncBindingRetryDurationExceeded(operation string) *v1beta1.ServiceBinding {
 	binding := getTestServiceBindingAsyncBinding(operation)
-	var startTime metav1.Time
-	startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	var startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	binding.Status.OperationStartTime = &startTime
 	return binding
 }
@@ -1332,8 +1331,7 @@ func getTestServiceBindingAsyncUnbinding(operation string) *v1beta1.ServiceBindi
 // async mode whose retry duration has been exceeded
 func getTestServiceBindingAsyncUnbindingRetryDurationExceeded(operation string) *v1beta1.ServiceBinding {
 	binding := getTestServiceBindingAsyncUnbinding(operation)
-	var startTime metav1.Time
-	startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	var startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	binding.Status.OperationStartTime = &startTime
 	return binding
 }
@@ -1372,8 +1370,7 @@ func getTestServiceBindingAsyncOrphanMitigation(operation string) *v1beta1.Servi
 // exceeded
 func getTestServiceBindingAsyncOrphanMitigationRetryDurationExceeded(operation string) *v1beta1.ServiceBinding {
 	binding := getTestServiceBindingAsyncOrphanMitigation(operation)
-	var startTime metav1.Time
-	startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
+	var startTime = metav1.NewTime(time.Now().Add(-7 * 24 * time.Hour))
 	binding.Status.OperationStartTime = &startTime
 	return binding
 }

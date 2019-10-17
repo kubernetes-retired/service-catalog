@@ -100,8 +100,7 @@ func TestCatalogReturnsCompliantJSON(t *testing.T) {
 		t.Error("Expected 'services' property of the returned catalog to be not nil, got nil")
 	}
 
-	var service map[string]interface{}
-	service = services[0].(map[string]interface{})
+	var service = services[0].(map[string]interface{})
 
 	if name, ok := service["name"]; !ok {
 		t.Error("Returned service doesn't have a 'name' property.")

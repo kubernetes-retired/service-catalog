@@ -70,8 +70,7 @@ func TestCleaner_RemoveCRDs(t *testing.T) {
 }
 
 func newTestDeployment() *v1beta1.Deployment {
-	var rep int32
-	rep = 1
+	var rep int32 = 1
 	return &v1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmName,

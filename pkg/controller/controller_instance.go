@@ -1995,11 +1995,7 @@ func (c *controller) updateServiceInstanceCondition(
 
 func (c *controller) isServiceInstanceStatusInitialized(instance *v1beta1.ServiceInstance) bool {
 	emptyStatus := v1beta1.ServiceInstanceStatus{}
-	if reflect.DeepEqual(instance.Status, emptyStatus) {
-		return false
-	}
-
-	return true
+	return !reflect.DeepEqual(instance.Status, emptyStatus)
 }
 
 // initializeServiceInstanceStatus initialize the ServiceInstanceStatus.
