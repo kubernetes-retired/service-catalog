@@ -121,5 +121,5 @@ spec:
         {{- end }}
       {{ if .Values.controllerManager.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.controllerManager.nodeSelector | indent(8) }}
+{{ toYaml .Values.controllerManager.nodeSelector | indent 8 }}
       {{ end }}
