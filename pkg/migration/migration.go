@@ -288,11 +288,10 @@ func (m *Service) Restore(res *ServiceCatalogResources) error {
 
 	klog.Infof("Applying %d service instances", len(res.serviceInstances))
 	for _, si := range res.serviceInstances {
+		instance := si.DeepCopy()
 		err := RetryOnError(retry.DefaultRetry, func() error {
 			si.RecalculatePrinterColumnStatusFields()
 			si.ResourceVersion = ""
-
-			instance := si.DeepCopy()
 
 			// ServiceInstance must not have class/plan refs when it is created
 			// These fields must be filled using an update
