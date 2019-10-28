@@ -67,7 +67,7 @@ func (r *readiness) TestEnvironmentIsReady() error {
 
 func (r *readiness) assertServiceCatalogIsReady() error {
 	klog.Info("Make sure ServiceCatalog ApiServer is up")
-	if err := r.assertServiceCatalogApiServerIsUp(); err != nil {
+	if err := r.assertServiceCatalogAPIServerIsUp(); err != nil {
 		return errors.Wrap(err, "failed during waiting for ServiceCatalog ApiServer")
 	}
 	klog.Info("ServiceCatalog ApiServer is ready")
@@ -81,7 +81,7 @@ func (r *readiness) assertServiceCatalogIsReady() error {
 	return nil
 }
 
-func (r *readiness) assertServiceCatalogApiServerIsUp() error {
+func (r *readiness) assertServiceCatalogAPIServerIsUp() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
 		deployment, err := r.client.AppsV1beta1().Deployments(r.cfg.ServiceCatalogNamespace).Get(r.cfg.ServiceCatalogApiServerName, v1.GetOptions{})
 		if err != nil {
