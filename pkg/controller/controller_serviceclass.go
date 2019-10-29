@@ -19,6 +19,7 @@ package controller
 import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,7 +99,7 @@ func (c *controller) reconcileServiceClass(serviceClass *v1beta1.ServiceClass) e
 
 func (c *controller) findServiceInstancesOnServiceClass(serviceClass *v1beta1.ServiceClass) (*v1beta1.ServiceInstanceList, error) {
 	labelSelector := labels.SelectorFromSet(labels.Set{
-		v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: serviceClass.Name,
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: util.GenerateSHA(serviceClass.Name),
 	}).String()
 
 	listOpts := metav1.ListOptions{

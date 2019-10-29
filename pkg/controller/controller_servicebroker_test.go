@@ -25,6 +25,7 @@ import (
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/test/fake"
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
@@ -170,7 +171,7 @@ func TestReconcileServiceBrokerDelete(t *testing.T) {
 
 			listRestrictions := clientgotesting.ListRestrictions{
 				Labels: labels.SelectorFromSet(labels.Set{
-					v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: broker.Name,
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: util.GenerateSHA(broker.Name),
 				}),
 				Fields: fields.Everything(),
 			}
@@ -435,7 +436,7 @@ func TestReconcileServiceBrokerExistingServiceClassAndServicePlan(t *testing.T) 
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: testServiceBrokerName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: util.GenerateSHA(testServiceBrokerName),
 		}),
 		Fields: fields.Everything(),
 	}

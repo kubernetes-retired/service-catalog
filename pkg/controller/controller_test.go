@@ -31,6 +31,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecataloginformers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions"
 	v1beta1informers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 
 	servicecatalogclientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -559,9 +560,9 @@ func getTestClusterServiceClass() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testClusterServiceClassGUID,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testClusterServiceClassName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(testClusterServiceClassGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA(testClusterServiceClassName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA(testClusterServiceBrokerName),
 			},
 		},
 		Spec: v1beta1.ClusterServiceClassSpec{
@@ -634,7 +635,7 @@ func getTestRemovedClusterServiceClass() *v1beta1.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testRemovedClusterServiceClassGUID,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: testClusterServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA(testClusterServiceBrokerName),
 			},
 		},
 		Spec: v1beta1.ClusterServiceClassSpec{
@@ -692,10 +693,10 @@ func getTestClusterServicePlan() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testClusterServicePlanGUID,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName:  testClusterServicePlanGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testClusterServicePlanName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName:  util.GenerateSHA(testClusterServicePlanGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA(testClusterServicePlanName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA(testClusterServiceBrokerName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(testClusterServiceClassGUID),
 			},
 		},
 		Spec: v1beta1.ClusterServicePlanSpec{
@@ -746,9 +747,9 @@ func getTestRemovedClusterServicePlan() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testRemovedClusterServicePlanGUID,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               testRemovedClusterServicePlanGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA(testRemovedClusterServicePlanGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(testClusterServiceClassGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA(testClusterServiceBrokerName),
 			},
 		},
 		Spec: v1beta1.ClusterServicePlanSpec{
@@ -773,9 +774,9 @@ func getTestClusterServicePlanNonbindable() *v1beta1.ClusterServicePlan {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNonbindableClusterServicePlanGUID,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: testNonbindableClusterServicePlanGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:              testClusterServicePlanName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:  testClusterServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: util.GenerateSHA(testNonbindableClusterServicePlanGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:              util.GenerateSHA(testClusterServicePlanName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:  util.GenerateSHA(testClusterServiceBrokerName),
 			},
 		},
 		Spec: v1beta1.ClusterServicePlanSpec{
@@ -911,10 +912,10 @@ func getTestServiceInstance() *v1beta1.ServiceInstance {
 			Namespace:  testNamespace,
 			Generation: 1,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName:        testServiceClassGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:         testServicePlanGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName:  testClusterServicePlanGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName:        util.GenerateSHA(testServiceClassGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:         util.GenerateSHA(testServicePlanGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(testClusterServiceClassGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName:  util.GenerateSHA(testClusterServicePlanGUID),
 			},
 		},
 		Spec: v1beta1.ServiceInstanceSpec{

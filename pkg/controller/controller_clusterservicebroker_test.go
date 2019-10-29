@@ -26,6 +26,7 @@ import (
 	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -281,7 +282,7 @@ func TestReconcileClusterServiceBrokerExistingServiceClassAndServicePlan(t *test
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -341,7 +342,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -411,7 +412,7 @@ func TestReconcileClusterServiceBrokerRemovedAndRestoredClusterServiceClass(t *t
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -470,7 +471,7 @@ func TestReconcileClusterServiceBrokerRemovedClusterServicePlan(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -516,7 +517,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServiceClassDifferentBroker
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -570,7 +571,7 @@ func TestReconcileClusterServiceBrokerExistingClusterServicePlanDifferentClass(t
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -699,7 +700,7 @@ func TestReconcileClusterServiceBrokerDelete(t *testing.T) {
 
 			listRestrictions := clientgotesting.ListRestrictions{
 				Labels: labels.SelectorFromSet(labels.Set{
-					v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 				}),
 				Fields: fields.Everything(),
 			}
@@ -813,7 +814,7 @@ func TestReconcileClusterServiceBrokerZeroServices(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -973,7 +974,7 @@ func TestReconcileClusterServiceBrokerWithReconcileError(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -1039,7 +1040,7 @@ func TestReconcileClusterServiceBrokerSuccessOnFinalRetry(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -1139,7 +1140,7 @@ func TestReconcileClusterServiceBrokerWithStatusUpdateError(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: "test-clusterservicebroker",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA("test-clusterservicebroker"),
 		}),
 		Fields: fields.Everything(),
 	}

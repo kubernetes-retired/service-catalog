@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/test/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -60,7 +61,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.SelectorFromSet(labels.Set{
-						v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: "spguid",
+						v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: util.GenerateSHA("spguid"),
 					}),
 					Fields: fields.Everything(),
 				}
@@ -77,7 +78,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.SelectorFromSet(labels.Set{
-						v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: "spguid",
+						v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: util.GenerateSHA("spguid"),
 					}),
 					Fields: fields.Everything(),
 				}
@@ -101,7 +102,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 			catalogActionsCheckFunc: func(t *testing.T, actions []clientgotesting.Action) {
 				listRestrictions := clientgotesting.ListRestrictions{
 					Labels: labels.SelectorFromSet(labels.Set{
-						v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: "spguid",
+						v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: util.GenerateSHA("spguid"),
 					}),
 					Fields: fields.Everything(),
 				}

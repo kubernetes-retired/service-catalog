@@ -18,6 +18,7 @@ package controller
 
 import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
 
@@ -100,7 +101,7 @@ func (c *controller) reconcileServicePlan(servicePlan *v1beta1.ServicePlan) erro
 
 func (c *controller) findServiceInstancesOnServicePlan(servicePlan *v1beta1.ServicePlan) (*v1beta1.ServiceInstanceList, error) {
 	labelSelector := labels.SelectorFromSet(labels.Set{
-		v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: servicePlan.Name,
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName: util.GenerateSHA(servicePlan.Name),
 	}).String()
 
 	listOpts := metav1.ListOptions{

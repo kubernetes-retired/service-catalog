@@ -32,6 +32,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 // the Message strings have a terminating period and space so they can
@@ -702,7 +703,7 @@ func (c *controller) updateServiceBrokerFinalizers(
 func (c *controller) getCurrentServiceClassesAndPlansForNamespacedBroker(broker *v1beta1.ServiceBroker) ([]v1beta1.ServiceClass, []v1beta1.ServicePlan, error) {
 	pcb := pretty.NewServiceBrokerContextBuilder(broker)
 	labelSelector := labels.SelectorFromSet(labels.Set{
-		v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: broker.Name,
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName: util.GenerateSHA(broker.Name),
 	}).String()
 
 	listOpts := metav1.ListOptions{

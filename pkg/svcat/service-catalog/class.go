@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -107,7 +108,7 @@ func (sdk *SDK) RetrieveClassByName(name string, opts ScopeOptions) (Class, erro
 
 	lopts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: name,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(name),
 		}).String(),
 	}
 

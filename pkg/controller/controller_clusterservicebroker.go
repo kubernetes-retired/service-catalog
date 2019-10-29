@@ -34,6 +34,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 // the Message strings have a terminating period and space so they can
@@ -722,7 +723,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.C
 	pcb := pretty.NewClusterServiceBrokerContextBuilder(broker)
 
 	labelSelector := labels.SelectorFromSet(labels.Set{
-		v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: broker.Name,
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName: util.GenerateSHA(broker.Name),
 	}).String()
 
 	listOpts := metav1.ListOptions{
@@ -744,7 +745,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.C
 
 		return nil, nil, err
 	}
-	klog.Info(pcb.Messagef("Found %d ServiceClasses", len(existingServiceClasses.Items)))
+	klog.Info(pcb.Messagef("Found %d ClusterServiceClasses", len(existingServiceClasses.Items)))
 
 	existingServicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
 	if err != nil {
@@ -761,7 +762,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.C
 
 		return nil, nil, err
 	}
-	klog.Info(pcb.Messagef("Found %d ServicePlans", len(existingServicePlans.Items)))
+	klog.Info(pcb.Messagef("Found %d ClusterServicePlans", len(existingServicePlans.Items)))
 
 	return existingServiceClasses.Items, existingServicePlans.Items, nil
 }

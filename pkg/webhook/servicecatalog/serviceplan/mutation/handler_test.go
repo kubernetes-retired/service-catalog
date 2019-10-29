@@ -22,6 +22,7 @@ import (
 
 	"github.com/appscode/jsonpatch"
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/serviceplan/mutation"
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil/tester"
 	"github.com/stretchr/testify/assert"
@@ -60,10 +61,10 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 					Operation: "add",
 					Path:      "/metadata/labels",
 					Value: map[string]interface{}{
-						sc.GroupName + "/" + sc.FilterSpecExternalID:          "id",
-						sc.GroupName + "/" + sc.FilterSpecExternalName:        "name",
-						sc.GroupName + "/" + sc.FilterSpecServiceBrokerName:   "broker",
-						sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: "refbroker",
+						sc.GroupName + "/" + sc.FilterSpecExternalID:          util.GenerateSHA("id"),
+						sc.GroupName + "/" + sc.FilterSpecExternalName:        util.GenerateSHA("name"),
+						sc.GroupName + "/" + sc.FilterSpecServiceBrokerName:   util.GenerateSHA("broker"),
+						sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: util.GenerateSHA("refbroker"),
 					},
 				},
 			},
@@ -123,10 +124,10 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
   				  "creationTimestamp": null,
   				  "name": "test-plan",
                   "labels": {
-                    "servicecatalog.k8s.io/spec.externalName":"external-name",
-					"servicecatalog.k8s.io/spec.serviceBrokerName":"test-broker",
-                    "servicecatalog.k8s.io/spec.externalID": "external-id",
-                    "servicecatalog.k8s.io/spec.serviceClassRef.name":"external-class"
+                    "servicecatalog.k8s.io/spec.externalName":"` + util.GenerateSHA("external-name") + `",
+					"servicecatalog.k8s.io/spec.serviceBrokerName":"` + util.GenerateSHA("test-broker") + `",
+                    "servicecatalog.k8s.io/spec.externalID":"` + util.GenerateSHA("external-id") + `",
+                    "servicecatalog.k8s.io/spec.serviceClassRef.name":"` + util.GenerateSHA("external-class") + `"
                   }
   				},
   				"spec": {
@@ -146,10 +147,10 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
   				  "creationTimestamp": null,
   				  "name": "test-plan",
 				  "labels": {
-                    "servicecatalog.k8s.io/spec.externalName":"external-name",
-					"servicecatalog.k8s.io/spec.serviceBrokerName":"test-broker",
-                    "servicecatalog.k8s.io/spec.externalID": "external-id",
-                    "servicecatalog.k8s.io/spec.serviceClassRef.name":"external-class"
+                    "servicecatalog.k8s.io/spec.externalName":"` + util.GenerateSHA("external-name") + `",
+					"servicecatalog.k8s.io/spec.serviceBrokerName":"` + util.GenerateSHA("test-broker") + `",
+                    "servicecatalog.k8s.io/spec.externalID":"` + util.GenerateSHA("external-id") + `",
+                    "servicecatalog.k8s.io/spec.serviceClassRef.name":"` + util.GenerateSHA("external-class") + `"
                   }
   				},
   				"spec": {

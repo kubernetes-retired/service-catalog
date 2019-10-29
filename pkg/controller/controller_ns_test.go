@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -113,9 +114,9 @@ func getTestServiceClass() *v1beta1.ServiceClass {
 			Name:      testServiceClassGUID,
 			Namespace: testNamespace,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: testServiceClassGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        testServiceClassName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   testServiceBrokerName,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: util.GenerateSHA(testServiceClassGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        util.GenerateSHA(testServiceClassName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   util.GenerateSHA(testServiceBrokerName),
 			},
 		},
 		Spec: v1beta1.ServiceClassSpec{
@@ -139,10 +140,10 @@ func getTestServicePlan() *v1beta1.ServicePlan {
 			Name:      testServicePlanGUID,
 			Namespace: testNamespace,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:  testServicePlanGUID,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        testServicePlanName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   testServiceBrokerName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: testServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServicePlanRefName:  util.GenerateSHA(testServicePlanGUID),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        util.GenerateSHA(testServicePlanName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   util.GenerateSHA(testServiceBrokerName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: util.GenerateSHA(testServiceClassGUID),
 			},
 		},
 		Spec: v1beta1.ServicePlanSpec{
