@@ -23,6 +23,8 @@ import (
 )
 
 // GenerateSHA generates the sha224 value from the given string
+// the function is used to provide a string length less than 63 characters, this string is used in label of resource
+// sha algorithm cannot be changed in the future because of backward compatibles
 func GenerateSHA(input string) string {
 	h := sha256.New224()
 	_, err := h.Write([]byte(input))
