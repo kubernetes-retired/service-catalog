@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	webhookutil "github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 
 	admissionTypes "k8s.io/api/admission/v1beta1"
@@ -98,7 +99,7 @@ func (h *CreateUpdateHandler) SyncLabels(obj *sc.ClusterServiceClass) {
 		obj.Labels = make(map[string]string)
 	}
 
-	obj.Labels[sc.GroupName+"/"+sc.FilterSpecExternalID] = obj.Spec.ExternalID
-	obj.Labels[sc.GroupName+"/"+sc.FilterSpecExternalName] = obj.Spec.ExternalName
-	obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServiceBrokerName] = obj.Spec.ClusterServiceBrokerName
+	obj.Labels[sc.GroupName+"/"+sc.FilterSpecExternalID] = util.GenerateSHA(obj.Spec.ExternalID)
+	obj.Labels[sc.GroupName+"/"+sc.FilterSpecExternalName] = util.GenerateSHA(obj.Spec.ExternalName)
+	obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServiceBrokerName] = util.GenerateSHA(obj.Spec.ClusterServiceBrokerName)
 }

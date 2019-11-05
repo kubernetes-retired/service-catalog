@@ -24,6 +24,7 @@ import (
 	"k8s.io/klog"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 // Service class handlers and control-loop
@@ -93,7 +94,7 @@ func (c *controller) reconcileClusterServiceClass(serviceClass *v1beta1.ClusterS
 
 func (c *controller) findServiceInstancesOnClusterServiceClass(serviceClass *v1beta1.ClusterServiceClass) (*v1beta1.ServiceInstanceList, error) {
 	labelSelector := labels.SelectorFromSet(labels.Set{
-		v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: serviceClass.Name,
+		v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(serviceClass.Name),
 	}).String()
 
 	listOpts := metav1.ListOptions{

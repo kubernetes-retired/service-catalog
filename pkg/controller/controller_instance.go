@@ -28,6 +28,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -1388,7 +1389,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 		filterValue := instance.Spec.GetSpecifiedClusterServiceClass()
 		klog.V(4).Info(pcb.Messagef("looking up a ClusterServiceClass from %s: %q", filterLabel, filterValue))
 		labelSelector := labels.SelectorFromSet(labels.Set{
-			filterLabel: filterValue,
+			filterLabel: util.GenerateSHA(filterValue),
 		}).String()
 
 		listOpts := metav1.ListOptions{
@@ -1462,7 +1463,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 		klog.V(4).Info(pcb.Messagef("looking up a ServiceClass from %s: %q", filterLabel, filterValue))
 
 		labelSelector := labels.SelectorFromSet(labels.Set{
-			filterLabel: filterValue,
+			filterLabel: util.GenerateSHA(filterValue),
 		}).String()
 
 		listOpts := metav1.ListOptions{
@@ -1522,9 +1523,9 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		}
 	} else {
 		labelSelector := labels.SelectorFromSet(labels.Set{
-			instance.Spec.GetClusterServicePlanFilterLabelName():                   instance.Spec.GetSpecifiedClusterServicePlan(),
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: instance.Spec.ClusterServiceClassRef.Name,
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   brokerName,
+			instance.Spec.GetClusterServicePlanFilterLabelName():                   util.GenerateSHA(instance.Spec.GetSpecifiedClusterServicePlan()),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(instance.Spec.ClusterServiceClassRef.Name),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA(brokerName),
 		}).String()
 
 		listOpts := metav1.ListOptions{
@@ -1582,9 +1583,9 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 		}
 	} else {
 		labelSelector := labels.SelectorFromSet(labels.Set{
-			instance.Spec.GetServicePlanFilterLabelName():                   instance.Spec.GetSpecifiedServicePlan(),
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: instance.Spec.ServiceClassRef.Name,
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   brokerName,
+			instance.Spec.GetServicePlanFilterLabelName():                   util.GenerateSHA(instance.Spec.GetSpecifiedServicePlan()),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: util.GenerateSHA(instance.Spec.ServiceClassRef.Name),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   util.GenerateSHA(brokerName),
 		}).String()
 
 		listOpts := metav1.ListOptions{

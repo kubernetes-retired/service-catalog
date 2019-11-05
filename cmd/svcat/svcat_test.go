@@ -40,6 +40,7 @@ import (
 	svcatfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -91,7 +92,7 @@ func TestGetSvcatWithNamespacedBrokerFeatureDisabled(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "my-cluster-class",
 						Labels: map[string]string{
-							v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: "my-cluster-class",
+							v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("my-cluster-class"),
 						},
 					},
 					Spec: v1beta1.ClusterServiceClassSpec{
@@ -104,7 +105,7 @@ func TestGetSvcatWithNamespacedBrokerFeatureDisabled(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "my-cluster-plan",
 						Labels: map[string]string{
-							v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: "my-cluster-plan",
+							v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("my-cluster-plan"),
 						},
 					},
 					Spec: v1beta1.ClusterServicePlanSpec{

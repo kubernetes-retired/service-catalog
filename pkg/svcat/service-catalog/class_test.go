@@ -22,6 +22,7 @@ import (
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,26 +48,26 @@ var _ = Describe("Class", func() {
 		csc = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar", ResourceVersion: "1",
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: "foobar",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("foobar"),
 			},
 		}}
 		csc2 = &v1beta1.ClusterServiceClass{
 			ObjectMeta: metav1.ObjectMeta{Name: "barbaz", ResourceVersion: "1",
 				Labels: map[string]string{
-					v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: "barbaz",
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("barbaz"),
 				},
 			}}
 
 		sc = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{
 			Name: "foobar", Namespace: "default", ResourceVersion: "1",
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: "foobar",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("foobar"),
 			},
 		}}
 		sc2 = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{
 			Name: "barbaz", Namespace: "ns2", ResourceVersion: "1",
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: "barbaz",
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("barbaz"),
 			},
 		}}
 		svcCatClient = fake.NewSimpleClientset(csc, csc2, sc, sc2)
@@ -138,12 +139,12 @@ var _ = Describe("Class", func() {
 			requirements, selectable := actions[0].(testing.ListActionImpl).GetListRestrictions().Labels.Requirements()
 			Expect(selectable).Should(BeTrue())
 			Expect(requirements).ShouldNot(BeEmpty())
-			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.externalName=foobar"))
+			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.externalName=" + util.GenerateSHA("foobar")))
 
 			requirements, selectable = actions[1].(testing.ListActionImpl).GetListRestrictions().Labels.Requirements()
 			Expect(selectable).Should(BeTrue())
 			Expect(requirements).ShouldNot(BeEmpty())
-			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.externalName=foobar"))
+			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.externalName=" + util.GenerateSHA("foobar")))
 		})
 		It("Bubbles up errors", func() {
 			className := "notreal_class"
@@ -161,7 +162,7 @@ var _ = Describe("Class", func() {
 			requirements, selectable := actions[0].(testing.ListActionImpl).GetListRestrictions().Labels.Requirements()
 			Expect(selectable).Should(BeTrue())
 			Expect(requirements).ShouldNot(BeEmpty())
-			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.externalName=notreal_class"))
+			Expect(requirements[0].String()).To(Equal("servicecatalog.k8s.io/spec.externalName=" + util.GenerateSHA("notreal_class")))
 		})
 	})
 	Describe("RetrieveClassByID", func() {

@@ -31,6 +31,7 @@ import (
 	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,7 +135,7 @@ func TestReconcileServiceInstanceNonExistentClusterServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(instance.Spec.ClusterServiceClassExternalName),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -326,9 +327,9 @@ func TestReconcileServiceInstanceNonExistentClusterServicePlan(t *testing.T) {
 	assertNumberOfActions(t, actions, 2)
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "nothere",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA("nothere"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA("test-clusterservicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA("cscguid"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -809,7 +810,7 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(instance.Spec.ClusterServiceClassExternalName),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -817,9 +818,9 @@ func TestReconcileServiceInstanceResolvesReferences(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA("test-clusterserviceplan"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA("test-clusterservicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA("cscguid"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -1019,9 +1020,9 @@ func TestReconcileServiceInstanceResolvesReferencesClusterServiceClassRefAlready
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA("test-clusterserviceplan"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA("test-clusterservicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA("cscguid"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -4696,7 +4697,7 @@ func TestResolveReferencesNoClusterServiceClass(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(instance.Spec.ClusterServiceClassExternalName),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -4991,7 +4992,7 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(instance.Spec.ClusterServiceClassExternalName),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -4999,9 +5000,9 @@ func TestResolveReferencesNoClusterServicePlan(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA("test-clusterserviceplan"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA("test-clusterservicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA("cscguid"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -5500,7 +5501,7 @@ func TestResolveReferencesWorks(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ClusterServiceClassExternalName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(instance.Spec.ClusterServiceClassExternalName),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -5508,9 +5509,9 @@ func TestResolveReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "test-clusterserviceplan",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA("test-clusterserviceplan"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA("test-clusterservicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA("cscguid"),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -5553,9 +5554,9 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: newPlanID,
 			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               newPlanName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   testClusterServiceBrokerName,
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: testClusterServiceClassGUID,
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA(newPlanName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA(testClusterServiceBrokerName),
+				v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA(testClusterServiceClassGUID),
 			},
 		},
 		Spec: v1beta1.ClusterServicePlanSpec{
@@ -5592,9 +5593,9 @@ func TestResolveReferencesForPlanChange(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               "new-plan-name",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   "test-clusterservicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: "cscguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:               util.GenerateSHA("new-plan-name"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceBrokerName:   util.GenerateSHA("test-clusterservicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServiceClassRefName: util.GenerateSHA("cscguid"),
 		}),
 		Fields: fields.Everything(),
 	}

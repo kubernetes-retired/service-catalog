@@ -28,6 +28,7 @@ import (
 	"net/http"
 
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
@@ -208,7 +209,7 @@ func (d *DefaultServicePlan) getClusterServiceClassByField(ctx context.Context, 
 
 	serviceClassesList := &sc.ClusterServiceClassList{}
 	err := d.client.List(ctx, serviceClassesList, client.MatchingLabels(map[string]string{
-		filterLabel: filterValue,
+		filterLabel: util.GenerateSHA(filterValue),
 	}))
 	if err != nil {
 		log.V(4).Infof("Listing ClusterServiceClasses failed: %q", err)
@@ -233,7 +234,7 @@ func (d *DefaultServicePlan) getServiceClassByField(ctx context.Context, instanc
 
 	serviceClassesList := &sc.ServiceClassList{}
 	err := d.client.List(ctx, serviceClassesList, client.MatchingLabels(map[string]string{
-		filterLabel: filterValue,
+		filterLabel: util.GenerateSHA(filterValue),
 	}))
 	if err != nil {
 		log.V(4).Infof("Listing ServiceClasses failed: %q", err)
@@ -255,7 +256,7 @@ func (d *DefaultServicePlan) getClusterServicePlansByClusterServiceClassName(ctx
 
 	servicePlansList := &sc.ClusterServicePlanList{}
 	err := d.client.List(ctx, servicePlansList, client.MatchingLabels(map[string]string{
-		sc.GroupName + "/" + sc.FilterSpecClusterServiceClassRefName: scName,
+		sc.GroupName + "/" + sc.FilterSpecClusterServiceClassRefName: util.GenerateSHA(scName),
 	}))
 	if err != nil {
 		log.Infof("Listing ClusterServicePlans failed: %q", err)
@@ -274,7 +275,7 @@ func (d *DefaultServicePlan) getServicePlansByServiceClassName(ctx context.Conte
 
 	servicePlansList := &sc.ServicePlanList{}
 	err := d.client.List(ctx, servicePlansList, client.MatchingLabels(map[string]string{
-		sc.GroupName + "/spec.serviceClassRef.name": scName,
+		sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: util.GenerateSHA(scName),
 	}))
 	if err != nil {
 		log.Infof("Listing ServicePlans failed: %q", err)

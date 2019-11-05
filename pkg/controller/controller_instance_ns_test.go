@@ -24,6 +24,7 @@ import (
 	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
@@ -833,7 +834,7 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 
 	listRestrictions := clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: instance.Spec.ServiceClassExternalName,
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA(instance.Spec.ServiceClassExternalName),
 		}),
 		Fields: fields.Everything(),
 	}
@@ -841,9 +842,9 @@ func TestResolveNamespacedReferencesWorks(t *testing.T) {
 
 	listRestrictions = clientgotesting.ListRestrictions{
 		Labels: labels.SelectorFromSet(labels.Set{
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        "test-serviceplan",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   "test-servicebroker",
-			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: "scguid",
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName:        util.GenerateSHA("test-serviceplan"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceBrokerName:   util.GenerateSHA("test-servicebroker"),
+			v1beta1.GroupName + "/" + v1beta1.FilterSpecServiceClassRefName: util.GenerateSHA("scguid"),
 		}),
 		Fields: fields.Everything(),
 	}

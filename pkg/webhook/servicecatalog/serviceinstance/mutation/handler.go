@@ -23,6 +23,7 @@ import (
 
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	admissionTypes "k8s.io/api/admission/v1beta1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -77,6 +78,7 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 		h.mutateOnUpdate(ctx, req, oldObj, mutated)
+		h.syncLabels(mutated)
 	default:
 		traced.Infof("ServiceInstance mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
@@ -144,6 +146,21 @@ func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, req admission.
 		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
 			setServiceInstanceUserInfo(req, newServiceInstance)
 		}
+	}
+}
+
+func (h *CreateUpdateHandler) syncLabels(obj *sc.ServiceInstance) {
+	if obj.Labels == nil {
+		obj.Labels = make(map[string]string)
+	}
+
+	if obj.Spec.ClusterServiceClassRef != nil {
+		obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServiceClassRefName] = util.GenerateSHA(obj.Spec.ClusterServiceClassRef.Name)
+		obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServicePlanRefName] = util.GenerateSHA(obj.Spec.ClusterServicePlanRef.Name)
+	}
+	if obj.Spec.ServiceClassRef != nil {
+		obj.Labels[sc.GroupName+"/"+sc.FilterSpecServiceClassRefName] = util.GenerateSHA(obj.Spec.ServiceClassRef.Name)
+		obj.Labels[sc.GroupName+"/"+sc.FilterSpecServicePlanRefName] = util.GenerateSHA(obj.Spec.ServicePlanRef.Name)
 	}
 }
 

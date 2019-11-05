@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -265,8 +266,8 @@ func newClusterServiceClass(id string, name string) *sc.ClusterServiceClass {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: id,
 			Labels: map[string]string{
-				sc.GroupName + "/" + sc.FilterSpecExternalID:   id,
-				sc.GroupName + "/" + sc.FilterSpecExternalName: name,
+				sc.GroupName + "/" + sc.FilterSpecExternalID:   util.GenerateSHA(id),
+				sc.GroupName + "/" + sc.FilterSpecExternalName: util.GenerateSHA(name),
 			},
 		},
 		Spec: sc.ClusterServiceClassSpec{
@@ -286,8 +287,8 @@ func newServiceClass(id string, name string, namespace string) *sc.ServiceClass 
 			Name:      id,
 			Namespace: namespace,
 			Labels: map[string]string{
-				sc.GroupName + "/" + sc.FilterSpecExternalID:   id,
-				sc.GroupName + "/" + sc.FilterSpecExternalName: name,
+				sc.GroupName + "/" + sc.FilterSpecExternalID:   util.GenerateSHA(id),
+				sc.GroupName + "/" + sc.FilterSpecExternalName: util.GenerateSHA(name),
 			},
 		},
 		Spec: sc.ServiceClassSpec{
@@ -306,9 +307,9 @@ func newClusterServicePlans(classname string, count uint, useDifferentClasses bo
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "bar-id",
 			Labels: map[string]string{
-				sc.GroupName + "/" + sc.FilterSpecExternalID:                 "12345",
-				sc.GroupName + "/" + sc.FilterSpecExternalName:               "bar",
-				sc.GroupName + "/" + sc.FilterSpecClusterServiceClassRefName: classname,
+				sc.GroupName + "/" + sc.FilterSpecExternalID:                 util.GenerateSHA("12345"),
+				sc.GroupName + "/" + sc.FilterSpecExternalName:               util.GenerateSHA("bar"),
+				sc.GroupName + "/" + sc.FilterSpecClusterServiceClassRefName: util.GenerateSHA(classname),
 			},
 		},
 		Spec: sc.ClusterServicePlanSpec{
@@ -328,9 +329,9 @@ func newClusterServicePlans(classname string, count uint, useDifferentClasses bo
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "baz-id",
 			Labels: map[string]string{
-				sc.GroupName + "/" + sc.FilterSpecExternalID:                 "23456",
-				sc.GroupName + "/" + sc.FilterSpecExternalName:               "baz",
-				sc.GroupName + "/" + sc.FilterSpecClusterServiceClassRefName: classname,
+				sc.GroupName + "/" + sc.FilterSpecExternalID:                 util.GenerateSHA("23456"),
+				sc.GroupName + "/" + sc.FilterSpecExternalName:               util.GenerateSHA("baz"),
+				sc.GroupName + "/" + sc.FilterSpecClusterServiceClassRefName: util.GenerateSHA(classname),
 			},
 		},
 		Spec: sc.ClusterServicePlanSpec{
@@ -363,9 +364,9 @@ func newServicePlans(classname string, namespace string, count uint, useDifferen
 			Name:      "bar-id",
 			Namespace: namespace,
 			Labels: map[string]string{
-				sc.GroupName + "/" + sc.FilterSpecExternalID:          "12345",
-				sc.GroupName + "/" + sc.FilterSpecExternalName:        "bar",
-				sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: classname,
+				sc.GroupName + "/" + sc.FilterSpecExternalID:          util.GenerateSHA("12345"),
+				sc.GroupName + "/" + sc.FilterSpecExternalName:        util.GenerateSHA("bar"),
+				sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: util.GenerateSHA(classname),
 			},
 		},
 		Spec: sc.ServicePlanSpec{
@@ -386,9 +387,9 @@ func newServicePlans(classname string, namespace string, count uint, useDifferen
 			Name:      "baz-id",
 			Namespace: namespace,
 			Labels: map[string]string{
-				sc.GroupName + "/" + sc.FilterSpecExternalID:          "23456",
-				sc.GroupName + "/" + sc.FilterSpecExternalName:        "bar",
-				sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: classname,
+				sc.GroupName + "/" + sc.FilterSpecExternalID:          util.GenerateSHA("23456"),
+				sc.GroupName + "/" + sc.FilterSpecExternalName:        util.GenerateSHA("bar"),
+				sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: util.GenerateSHA(classname),
 			},
 		},
 		Spec: sc.ServicePlanSpec{
