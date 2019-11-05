@@ -121,7 +121,7 @@ To test the mutation blocking feature, execute the following commands:
 
 >**CAUTION:** You can safely remove the migration job PVC, which contains data about your Service Catalog resources only when the migration end up successfully.
 
-In order to make an successful migration, the Service Catalog resources can't be in the unfinished/deleted state. Otherwise our upgrade job can fail.
+In order to make an successful migration, the Service Catalog resources can't be in the unfinished or deleted state. Otherwise our upgrade job can fail.
 
 To check if your cluster is ready to migration, use the sanity check [script](https://github.com/kubernetes-sigs/service-catalog/blob/master/contrib/hack/migration-check.sh).
 
@@ -158,4 +158,4 @@ Then you can execute the rollback using this command:
 helm rollback catalog 1 --cleanup-on-fail --no-hooks
 ```
 
-The migration job PVC with the data about your Service Catalog resources still exists after the rollback. You can run migration again to restore them.
+The migration job PVC with the data about your Service Catalog resources still exists after the rollback. You can run the upgrade again to restore them.

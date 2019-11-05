@@ -1,4 +1,19 @@
 #!/usr/bin/env bash
+# Copyright 2017 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -o errexit
 
 EXIT_CODE=0
 
@@ -8,7 +23,7 @@ function checkIfClassExist(){
 
     for class in ${classesNames}
     do
-        if [[ "${class}" -eq "${externalName}" ]]; then
+        if [[ "${class}" = "${externalName}" ]]; then
             return 0
         fi
     done
@@ -25,14 +40,15 @@ function checkIfClassExistForInstance(){
         type=$(echo "${className}" | cut -d'/' -f1)
         externalName=$(echo "${className}" | cut -d'/' -f2)
 
-        if [[ "${type}" -eq "ClusterServiceClass" ]]; then
+        set +o errexit
+        if [[ "${type}" = "ClusterServiceClass" ]]; then
             checkIfClassExist "${externalName}" "${clusterServiceClassesNames}"
             if [[ $? -eq 1 ]]; then
                 echo "${className} not exist in the cluster for the ServiceInstance anymore"
                 EXIT_CODE=1
             fi
         fi
-        if [[ "${type}" -eq "ServiceClass" ]]; then
+        if [[ "${type}" = "ServiceClass" ]]; then
             checkIfClassExist "${externalName}" "${serviceClassesNames}"
             if [[ $? -eq 1 ]]; then
                 echo "${className} not exist in the cluster for the ServiceInstance anymore"
@@ -40,7 +56,7 @@ function checkIfClassExistForInstance(){
             fi
         fi
     done
-
+    set -o errexit
 }
 
 #
@@ -146,7 +162,7 @@ fi
 if [[ ${EXIT_CODE} -eq 0 ]]; then
     echo "Your Service Catalog resources are ready to migrate!"
 else
-    echo "Please prepare your Service Catalog resources for migration"
+    echo "Please prepare your Service Catalog resources before migration. Check docs/migration-apiserver-to-crds.md#implementation-details"
 fi
 
 exit ${EXIT_CODE}
