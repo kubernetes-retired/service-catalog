@@ -82,6 +82,14 @@ PLATFORM=darwin make build
 
 The resulting executable file can be found in the `bin` subdirectory.
 
+### Preparation
+
+>**CAUTION:** You can safely remove the migration job PVC that contains data about your Service Catalog resources only when the migration ends up successfully.
+
+In order to perform a successful migration, the Service Catalog resources can't be in the unfinished or deleted state. Otherwise, the upgrade job can fail.
+
+To check if your cluster is ready for migration, use the sanity check [script](https://github.com/kubernetes-sigs/service-catalog/blob/master/contrib/hack/migration-check.sh).
+
 ### Execution
 
 You can run the `service-catalog` binary with the `migration` parameter which triggers the migration process. For example, run:
@@ -118,12 +126,6 @@ To test the mutation blocking feature, execute the following commands:
   ```bash
   ./service-catalog migration --action undeploy-blocker --service-catalog-namespace=default
   ```
-
->**CAUTION:** You can safely remove the migration job PVC that contains data about your Service Catalog resources only when the migration ends up successfully.
-
-In order to perform a successful migration, the Service Catalog resources can't be in the unfinished or deleted state. Otherwise, the upgrade job can fail.
-
-To check if your cluster is ready for migration, use the sanity check [script](https://github.com/kubernetes-sigs/service-catalog/blob/master/contrib/hack/migration-check.sh).
 
 ## Cleanup
 
