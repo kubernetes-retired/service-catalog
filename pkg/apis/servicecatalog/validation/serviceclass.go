@@ -142,7 +142,7 @@ func validateServiceClassSpec(spec *sc.ServiceClassSpec, fldPath *field.Path, cr
 	commonErrs := validateCommonServiceClassSpec(&spec.CommonServiceClassSpec, fldPath, create)
 
 	if len(commonErrs) != 0 {
-		allErrs = append(commonErrs)
+		allErrs = append(allErrs, commonErrs...)
 	}
 
 	return allErrs
