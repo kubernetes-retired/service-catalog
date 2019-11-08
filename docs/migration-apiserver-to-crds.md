@@ -84,7 +84,7 @@ The resulting executable file can be found in the `bin` subdirectory.
 
 ### Preparation
 
->**CAUTION:** You can safely remove the migration job PVC that contains data about your Service Catalog resources only when the migration ends up successfully.
+>**CAUTION:** You can safely remove the migration job PVC that contains data about your Service Catalog resources **ONLY** when the migration ends up successfully.
 
 In order to perform a successful migration, the Service Catalog resources can't be in the unfinished or deleted state. Otherwise, the upgrade job can fail.
 
