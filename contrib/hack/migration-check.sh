@@ -44,73 +44,90 @@ function checkIfClassExistForInstance(){
         if [[ "${type}" = "ClusterServiceClass" ]]; then
             checkIfClassExist "${externalName}" "${clusterServiceClassesNames}"
             if [[ $? -eq 1 ]]; then
-                echo "${className} not exist in the cluster for the ServiceInstance anymore"
-                EXIT_CODE=1
+                echo "${className} not exist in the cluster for the ServiceInstances:"
+                kubectl get serviceinstances -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,STATUS:.status.provisionStatus,CLASS\ NAME:.status.userSpecifiedClassName | grep "${className}"
+                setExitCode
             fi
         fi
         if [[ "${type}" = "ServiceClass" ]]; then
             checkIfClassExist "${externalName}" "${serviceClassesNames}"
             if [[ $? -eq 1 ]]; then
-                echo "${className} not exist in the cluster for the ServiceInstance anymore"
-                EXIT_CODE=1
+                echo "${className} not exist in the cluster for the ServiceInstances:"
+                kubectl get serviceinstances -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,STATUS:.status.provisionStatus,CLASS\ NAME:.status.userSpecifiedClassName | grep "${className}"
+                setExitCode
             fi
         fi
     done
     set -o errexit
 }
 
+function setExitCode() {
+    echo
+    EXIT_CODE=1
+}
+# checks if there are some instances with not existing classes
+checkIfClassExistForInstance
+
 #
 # Check if any class/plans were removed from broker's catalog
 #
 CSC=$(kubectl get clusterserviceclasses -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${CSC} ]]; then
-    echo "There are being deleted ClusterServiceClasses"
-    EXIT_CODE=1
+    echo "There are being deleted ClusterServiceClasses:"
+    kubectl get clusterserviceclasses -o custom-columns=NAME:.metadata.name,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 for status in $(kubectl get clusterserviceclasses -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are removed from broker's catalog ClusterServiceClasses"
-    EXIT_CODE=1
+    echo "There are removed from broker's catalog ClusterServiceClasses:"
+    kubectl get clusterserviceclasses -o custom-columns=NAME:.metadata.name,REMOVED:.status.removedFromBrokerCatalog
+    setExitCode
 fi
 done
 
 SC=$(kubectl get serviceclasses --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SC} ]]; then
-    echo "There are being deleted ServiceClasses"
-    EXIT_CODE=1
+    echo "There are being deleted ServiceClasses:"
+    kubectl get serviceclasses -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 for status in $(kubectl get serviceclasses --all-namespaces -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are removed from broker's catalog ServiceClasses"
-    EXIT_CODE=1
+    echo "There are ServiceClasses removed from broker's catalog:"
+    kubectl get serviceclasses -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,REMOVED:.status.removedFromBrokerCatalog
+    setExitCode
 fi
 done
 
 CSP=$(kubectl get clusterserviceplans -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${CSP} ]]; then
-    echo "There are being deleted ClusterServicePlans"
-    EXIT_CODE=1
+    echo "There are being deleted ClusterServicePlans:"
+    kubectl get clusterserviceplans -o custom-columns=NAME:.metadata.name,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 for status in $(kubectl get clusterserviceplans -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are ClusterServicePlans removed from broker's catalog"
-    EXIT_CODE=1
+    echo "There are ClusterServicePlans removed from broker's catalog:"
+    kubectl get clusterserviceplans -o custom-columns=NAME:.metadata.name,REMOVED:.status.removedFromBrokerCatalog
+    setExitCode
 fi
 done
 
 SP=$(kubectl get serviceplans --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SP} ]]; then
-    echo "There are being deleted ServicePlans"
-    EXIT_CODE=1
+    echo "There are being deleted ServicePlans:"
+    kubectl get serviceplans -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 for status in $(kubectl get serviceplans --all-namespaces -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are ServicePlans removed from broker's catalog"
-    EXIT_CODE=1
+    echo "There are ServicePlans removed from broker's catalog:"
+    kubectl get serviceplans -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,REMOVED:.status.removedFromBrokerCatalog
+    setExitCode
 fi
 done
 
@@ -119,29 +136,31 @@ done
 #
 SI=$(kubectl get serviceinstances --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n "${SI}" ]]; then
-    echo "There are being deleted ServiceInstances"
-    EXIT_CODE=1
+    echo "There are being deleted ServiceInstances:"
+    kubectl get serviceinstances -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 for status in $(kubectl get serviceinstances --all-namespaces -ojsonpath="{.items[*].status.asyncOpInProgress}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are ServiceInstance in progress"
-    EXIT_CODE=1
+    echo "There are ServiceInstance in progress:"
+    kubectl get serviceinstances -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,IN\ PROGRESS:.status.asyncOpInProgress
+    setExitCode
 fi
 done
-# checks if there are some instances with not existing classes
-checkIfClassExistForInstance
 
 SBI=$(kubectl get servicebindings --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SBI} ]]; then
-    echo "There are being deleted ServiceBindings"
-    EXIT_CODE=1
+    echo "There are being deleted ServiceBindings:"
+    kubectl get servicebindings -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 for status in $(kubectl get servicebindings --all-namespaces -ojsonpath="{.items[*].status.asyncOpInProgress}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are ServiceBinding in progress"
-    EXIT_CODE=1
+    echo "There are ServiceBinding in progress:"
+    kubectl get servicebindings -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,IN\ PROGRESS:.status.asyncOpInProgress
+    setExitCode
 fi
 done
 
@@ -150,13 +169,15 @@ done
 #
 SB=$(kubectl get servicebrokers --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SB} ]]; then
-    echo "There are being deleted ServiceBrokers"
-    EXIT_CODE=1
+    echo "There are being deleted ServiceBrokers:"
+    kubectl get servicebrokers -o custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 CSB=$(kubectl get clusterservicebrokers -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${CSB} ]]; then
-    echo "There are being deleted ClusterServiceBrokers"
-    EXIT_CODE=1
+    echo "There are being deleted ClusterServiceBrokers:"
+    kubectl get clusterservicebrokers -o custom-columns=NAME:.metadata.name,DELETION\ TIME:.metadata.deletionTimestamp
+    setExitCode
 fi
 
 if [[ ${EXIT_CODE} -eq 0 ]]; then
