@@ -161,3 +161,11 @@ helm rollback catalog 1 --cleanup-on-fail --no-hooks
 ```
 
 The migration job PVC with the data about your Service Catalog resources still exists after the rollback. You can perform the migration again to restore your resources.
+
+To restore your Service Catalog resources, copy their data from the PVC onto your local machine using `kubectl cp` command. Then, run the migration job again with the command:
+
+```bash
+./service-catalog migration --action restore --storage-path={PATH_TO_YOUR_RESOURCES} --service-catalog-namespace=catalog --controller-manager-deployment=catalog-catalog-controller-manager
+```
+
+>**TIP:** Use a sanity check script to ensure that upgrade will succeeded and your resources will be restored

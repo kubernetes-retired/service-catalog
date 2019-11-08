@@ -64,52 +64,52 @@ function checkIfClassExistForInstance(){
 #
 CSC=$(kubectl get clusterserviceclasses -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${CSC} ]]; then
-    echo "There are ClusterServiceClasses with deletionTimestamp set"
+    echo "There are being deleted ClusterServiceClasses"
     EXIT_CODE=1
 fi
 for status in $(kubectl get clusterserviceclasses -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are removedFromBrokerCatalog ClusterServiceClasses"
+    echo "There are removed from broker's catalog ClusterServiceClasses"
     EXIT_CODE=1
 fi
 done
 
 SC=$(kubectl get serviceclasses --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SC} ]]; then
-    echo "There are ServiceClasses with deletionTimestamp set"
+    echo "There are being deleted ServiceClasses"
     EXIT_CODE=1
 fi
 for status in $(kubectl get serviceclasses --all-namespaces -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are removedFromBrokerCatalog ServiceClasses"
+    echo "There are removed from broker's catalog ServiceClasses"
     EXIT_CODE=1
 fi
 done
 
 CSP=$(kubectl get clusterserviceplans -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${CSP} ]]; then
-    echo "There are ClusterServicePlans with deletionTimestamp set"
+    echo "There are being deleted ClusterServicePlans"
     EXIT_CODE=1
 fi
 for status in $(kubectl get clusterserviceplans -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are removedFromBrokerCatalog ClusterServicePlans"
+    echo "There are ClusterServicePlans removed from broker's catalog"
     EXIT_CODE=1
 fi
 done
 
 SP=$(kubectl get serviceplans --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SP} ]]; then
-    echo "There are ServicePlans with deletionTimestamp set"
+    echo "There are being deleted ServicePlans"
     EXIT_CODE=1
 fi
 for status in $(kubectl get serviceplans --all-namespaces -ojsonpath="{.items[*].status.removedFromBrokerCatalog}")
 do
 if [[ -n "${status}" ]] && ${status}; then
-    echo "There are removedFromBrokerCatalog ServicePlans"
+    echo "There are ServicePlans removed from broker's catalog"
     EXIT_CODE=1
 fi
 done
@@ -119,7 +119,7 @@ done
 #
 SI=$(kubectl get serviceinstances --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n "${SI}" ]]; then
-    echo "There are ServiceInstances with deletionTimestamp set"
+    echo "There are being deleted ServiceInstances"
     EXIT_CODE=1
 fi
 for status in $(kubectl get serviceinstances --all-namespaces -ojsonpath="{.items[*].status.asyncOpInProgress}")
@@ -134,7 +134,7 @@ checkIfClassExistForInstance
 
 SBI=$(kubectl get servicebindings --all-namespaces -ojsonpath="{.items[*].metadata.deletionTimestamp}")
 if [[ -n ${SBI} ]]; then
-    echo "There are ServiceBindings with deletionTimestamp set"
+    echo "There are being deleted ServiceBindings"
     EXIT_CODE=1
 fi
 for status in $(kubectl get servicebindings --all-namespaces -ojsonpath="{.items[*].status.asyncOpInProgress}")
@@ -162,7 +162,7 @@ fi
 if [[ ${EXIT_CODE} -eq 0 ]]; then
     echo "Your Service Catalog resources are ready to migrate!"
 else
-    echo "Please prepare your Service Catalog resources before migration. Check docs/migration-apiserver-to-crds.md#implementation-details"
+    echo "Please prepare your Service Catalog resources before migration. Check docs/migration-apiserver-to-crds.md#preparation"
 fi
 
 exit ${EXIT_CODE}
