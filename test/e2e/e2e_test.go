@@ -26,6 +26,7 @@ import (
 )
 
 func init() {
+	testing.Init()
 	framework.RegisterParseFlags()
 
 	if "" == framework.TestContext.KubeConfig {

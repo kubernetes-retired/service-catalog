@@ -53,7 +53,7 @@ jobs:
           # ensure the tests build
           make verify build svcat build-integration
         fi
-      env: GO_VERSION=1.12
+      env: GO_VERSION=1.13
     # Doc Site svc-cat.io
     - stage: test
       name: docs
