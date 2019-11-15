@@ -30,8 +30,9 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -86,6 +87,8 @@ const (
 	asyncUpdatingInstanceMessage            string = "The instance is being updated asynchronously"
 	asyncDeprovisioningReason               string = "Deprovisioning"
 	asyncDeprovisioningMessage              string = "The instance is being deprovisioned asynchronously"
+	serviceBindingsDeletionReason           string = "ServiceBindingsDeletion"
+	serviceBindingsDeletionMessage          string = "The instance's service bindings is beaing deleted"
 	provisioningInFlightReason              string = "ProvisionRequestInFlight"
 	provisioningInFlightMessage             string = "Provision request for ServiceInstance in-flight to Broker"
 	instanceUpdatingInFlightReason          string = "UpdateInstanceRequestInFlight"
@@ -290,7 +293,7 @@ func (c *controller) reconcileServiceInstanceKey(key string) error {
 	}
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, namespace, name, "")
 	instance, err := c.instanceLister.ServiceInstances(namespace).Get(name)
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		klog.Info(pcb.Messagef("Not doing work for %v because it has been deleted", key))
 		return nil
 	}
@@ -904,6 +907,15 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 
 	// We don't want to delete the instance if there are any bindings associated.
 	if err := c.checkServiceInstanceHasExistingBindings(instance); err != nil {
+		// if the CascadingDeletion feature flag is set, delete existing bindings instead of update the status with an error
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.CascadingDeletion) {
+			err := c.deleteExistingBindings(instance)
+			if err != nil {
+				klog.V(4).Info(pcb.Messagef("unable to delete existing bindings: %s", err.Error()))
+				return c.processDeprovisionError(instance, fmt.Sprintf("Delete existing ServiceBinding failed: %v", err.Error()))
+			}
+			return c.processServiceBindingsDeletion(instance)
+		}
 		return c.handleServiceInstanceReconciliationError(instance, err)
 	}
 
@@ -977,15 +989,7 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 			msg = fmt.Sprintf("Deprovision call failed; received error response from broker: %v", httpErr)
 		}
 
-		readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCallFailedReason, msg)
-
-		if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
-			msg := "Stopping reconciliation retries because too much time has elapsed"
-			failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
-			return c.processDeprovisionFailure(instance, readyCond, failedCond)
-		}
-
-		return c.processServiceInstanceOperationError(instance, readyCond)
+		return c.processDeprovisionError(instance, msg)
 	}
 
 	if response.Async {
@@ -993,6 +997,18 @@ func (c *controller) reconcileServiceInstanceDelete(instance *v1beta1.ServiceIns
 	}
 
 	return c.processDeprovisionSuccess(instance)
+}
+
+func (c *controller) processDeprovisionError(instance *v1beta1.ServiceInstance, msg string) error {
+	readyCond := newServiceInstanceReadyCondition(v1beta1.ConditionUnknown, errorDeprovisionCallFailedReason, msg)
+
+	if c.reconciliationRetryDurationExceeded(instance.Status.OperationStartTime) {
+		msg := "Stopping reconciliation retries because too much time has elapsed"
+		failedCond := newServiceInstanceFailedCondition(v1beta1.ConditionTrue, errorReconciliationRetryTimeoutReason, msg)
+		return c.processDeprovisionFailure(instance, readyCond, failedCond)
+	}
+
+	return c.processServiceInstanceOperationError(instance, readyCond)
 }
 
 func (c *controller) pollServiceInstance(instance *v1beta1.ServiceInstance) error {
@@ -1888,7 +1904,7 @@ func (c *controller) updateServiceInstanceWithRetries(
 		klog.V(4).Info(pcb.Message("Updating instance"))
 		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).Update(instanceToUpdate)
 		if err != nil {
-			if !errors.IsConflict(err) {
+			if !apierrors.IsConflict(err) {
 				return false, err
 			}
 			klog.V(4).Info(pcb.Message("Couldn't update instance because the resource was stale"))
@@ -1944,7 +1960,7 @@ func (c *controller) updateServiceInstanceStatusWithRetries(
 		klog.V(4).Info(pcb.Message("Updating status"))
 		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(instanceToUpdate)
 		if err != nil {
-			if !errors.IsConflict(err) {
+			if !apierrors.IsConflict(err) {
 				return false, err
 			}
 			klog.V(4).Info(pcb.Message("Couldn't update status because the resource was stale"))
@@ -2194,26 +2210,55 @@ func clearServiceInstanceCurrentOperation(toUpdate *v1beta1.ServiceInstance) {
 // checkServiceInstanceHasExistingBindings returns true if there are any existing
 // bindings associated with the given ServiceInstance.
 func (c *controller) checkServiceInstanceHasExistingBindings(instance *v1beta1.ServiceInstance) error {
-	bindingLister := c.bindingLister.ServiceBindings(instance.Namespace)
-
-	selector := labels.NewSelector()
-	bindingList, err := bindingLister.List(selector)
+	existingBindings, err := c.listExistingBindings(instance)
 	if err != nil {
 		return err
 	}
+	if len(existingBindings) > 0 {
+		return &operationError{
+			reason:  errorDeprovisionBlockedByCredentialsReason,
+			message: "All associated ServiceBindings must be removed before this ServiceInstance can be deleted",
+		}
+	}
 
+	return nil
+}
+
+func (c *controller) listExistingBindings(instance *v1beta1.ServiceInstance) ([]*v1beta1.ServiceBinding, error) {
+	bindingLister := c.bindingLister.ServiceBindings(instance.Namespace)
+
+	bindingList, err := bindingLister.List(labels.NewSelector())
+	if err != nil {
+		return []*v1beta1.ServiceBinding{}, err
+	}
+	var found []*v1beta1.ServiceBinding
 	for _, binding := range bindingList {
 		// Note that as we are potentially looking at a stale binding resource
 		// and cannot rely on UnbindStatus == ServiceBindingUnbindStatusNotRequired
 		// to filter out binding requests that have yet to be sent to the broker.
 		if instance.Name == binding.Spec.InstanceRef.Name {
-			return &operationError{
-				reason:  errorDeprovisionBlockedByCredentialsReason,
-				message: "All associated ServiceBindings must be removed before this ServiceInstance can be deleted",
-			}
+			found = append(found, binding)
 		}
 	}
 
+	return found, nil
+}
+
+func (c *controller) deleteExistingBindings(instance *v1beta1.ServiceInstance) error {
+	klog.V(4).Infof("Delete existing bindings for the instance %s", instance.Name)
+	bindings, err := c.listExistingBindings(instance)
+	if err != nil {
+		return errors.Wrapf(err, "while listing existing service bindings")
+	}
+	for _, binding := range bindings {
+		err := c.serviceCatalogClient.ServiceBindings(instance.Namespace).Delete(binding.Name, &metav1.DeleteOptions{})
+		switch {
+		case apierrors.IsNotFound(err):
+			continue
+		case err != nil:
+			return errors.Wrap(err, "while deleting existing service binding")
+		}
+	}
 	return nil
 }
 
@@ -2868,6 +2913,17 @@ func (c *controller) processDeprovisionSuccess(instance *v1beta1.ServiceInstance
 
 	c.recorder.Event(instance, corev1.EventTypeNormal, reason, msg)
 	return nil
+}
+
+func (c *controller) processServiceBindingsDeletion(instance *v1beta1.ServiceInstance) error {
+	setServiceInstanceCondition(instance, v1beta1.ServiceInstanceConditionReady, v1beta1.ConditionFalse, serviceBindingsDeletionReason, serviceBindingsDeletionMessage)
+
+	if _, err := c.updateServiceInstanceStatus(instance); err != nil {
+		return err
+	}
+
+	c.recorder.Event(instance, corev1.EventTypeNormal, serviceBindingsDeletionReason, serviceBindingsDeletionMessage)
+	return c.beginPollingServiceInstance(instance)
 }
 
 // processDeprovisionFailure handles the logging and updating of a

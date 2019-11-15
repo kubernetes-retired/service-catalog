@@ -78,6 +78,11 @@ const (
 	// owner: @carolynvs
 	// alpha: v0.1.32
 	ServicePlanDefaults utilfeature.Feature = "ServicePlanDefaults"
+
+	// CascadingDeletion enables deletion of the existing ServiceBindings when deleting a ServiceInstance
+	// owner: @piotrmiskiewicz
+	// alpha: v0.3.0
+	CascadingDeletion utilfeature.Feature = "CascadingDeletion"
 )
 
 func init() {
@@ -96,4 +101,5 @@ var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.Feat
 	UpdateDashboardURL:         {Default: false, PreRelease: utilfeature.Alpha},
 	OriginatingIdentityLocking: {Default: true, PreRelease: utilfeature.Alpha},
 	ServicePlanDefaults:        {Default: false, PreRelease: utilfeature.Alpha},
+	CascadingDeletion:          {Default: false, PreRelease: utilfeature.Alpha},
 }

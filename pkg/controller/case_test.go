@@ -680,6 +680,18 @@ func (ct *controllerTest) SetCatalogReactionError() {
 	}
 }
 
+// WaitForServiceBindingToNotExists waits until the ServiceBinding will be removed
+func (ct *controllerTest) WaitForServiceBindingToNotExists() error {
+	return wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
+		_, err := ct.scInterface.ServiceBindings(testNamespace).Get(testBindingName, metav1.GetOptions{})
+		if err != nil && apierrors.IsNotFound(err) {
+			return true, nil
+		}
+
+		return false, err
+	})
+}
+
 // WaitForReadyBinding waits until the ServiceBinding is in Ready state
 func (ct *controllerTest) WaitForReadyBinding() error {
 	return ct.waitForBindingStatusCondition(v1beta1.ServiceBindingCondition{

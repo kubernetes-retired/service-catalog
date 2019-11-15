@@ -32,6 +32,7 @@ different Service Catalog.
 | `ResponseSchema` | `false` | Alpha | v0.1.12 | |
 | `ServicePlanDefaults` | `false` | Alpha | v0.1.32 | |
 | `UpdateDashboardURL` | `false` | Alpha | v0.1.13 | |
+| `CascadingDeletion` | ` false` | Alpha | v0.3.0 | |
 
 
 ## Using a Feature
@@ -99,4 +100,6 @@ and bindings
 
 - `UpdateDashboardURL`:  Enables the update of DashboardURL in response to
 update service instance requests to brokers.
+
+- `CascadingDeletion`: Enables deletion of the existing ServiceBindings when deleting a ServiceInstance.
 
