@@ -87,7 +87,7 @@ func (c *Cleaner) RemoveCRDs(releaseNamespace, controllerManagerName string, web
 
 func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 	klog.V(4).Infof("Fetching deployment %s/%s", namespace, controllerName)
-	deployment, err := c.client.AppsV1beta1().Deployments(namespace).Get(controllerName, v1.GetOptions{})
+	deployment, err := c.client.AppsV1().Deployments(namespace).Get(controllerName, v1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("cannot get deployment %s/%s: %s", namespace, controllerName, err)
 	}
@@ -96,14 +96,14 @@ func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 	replicas := int32(0)
 	deploymentCopy := deployment.DeepCopy()
 	deploymentCopy.Spec.Replicas = &replicas
-	_, err = c.client.AppsV1beta1().Deployments(deploymentCopy.Namespace).Update(deploymentCopy)
+	_, err = c.client.AppsV1().Deployments(deploymentCopy.Namespace).Update(deploymentCopy)
 	if err != nil {
 		return fmt.Errorf("failed to update deployment %s/%s: %v", namespace, controllerName, err)
 	}
 
 	err = wait.Poll(3*time.Second, 120*time.Second, func() (done bool, err error) {
 		klog.V(4).Info("Waiting for deployment scales down...")
-		deployment, err := c.client.AppsV1beta1().Deployments(namespace).Get(controllerName, v1.GetOptions{})
+		deployment, err := c.client.AppsV1().Deployments(namespace).Get(controllerName, v1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

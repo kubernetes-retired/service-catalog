@@ -21,7 +21,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	"github.com/stretchr/testify/assert"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	"k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +55,7 @@ func TestCleaner_RemoveCRDs(t *testing.T) {
 	assert.Len(t, list.Items, 1)
 	assert.Equal(t, "NotServiceCatalogCRD", list.Items[0].Name)
 
-	deployment, err := fakeClik8s.AppsV1beta1().Deployments(cmNamespace).Get(cmName, v1.GetOptions{})
+	deployment, err := fakeClik8s.AppsV1().Deployments(cmNamespace).Get(cmName, v1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, int32(0), deployment.Status.Replicas)
 
@@ -69,14 +69,14 @@ func TestCleaner_RemoveCRDs(t *testing.T) {
 	assert.Len(t, vwcList.Items, 1)
 }
 
-func newTestDeployment() *v1beta1.Deployment {
+func newTestDeployment() *appsv1.Deployment {
 	var rep int32 = 1
-	return &v1beta1.Deployment{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmName,
 			Namespace: cmNamespace,
 		},
-		Spec: v1beta1.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: &rep,
 		},
 	}
