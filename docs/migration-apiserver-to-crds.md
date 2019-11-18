@@ -90,6 +90,15 @@ In order to perform a successful migration, the Service Catalog resources can't 
 
 To check if your cluster is ready for migration, use the sanity check [script](https://github.com/kubernetes-sigs/service-catalog/blob/master/contrib/hack/migration-check.sh).
 
+The script checks if the Service Catalog resources are prepared for migration. If some of them are not ready, the script prints a proper error message.
+
+There are a few possible messages you can see:
+- `There are being deleted {type}` - prints the resources list of a given type with deletionTimestamp set.
+- `There are {type} in progress` - prints the resources list of a given type with `asyncOpInProgress` set to `true`.
+- `ServiceClass not exist in the cluster for the ServiceInstances:` - prints the Service Instances list which Service Class was deleted.
+
+The above errors can be fixed manually, read more about it in [this](https://github.com/kubernetes-sigs/service-catalog/blob/master/docs/tasks/stuck_instance.md) document. 
+
 ### Execution
 
 You can run the `service-catalog` binary with the `migration` parameter which triggers the migration process. For example, run:
