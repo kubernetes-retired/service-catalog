@@ -82,6 +82,23 @@ PLATFORM=darwin make build
 
 The resulting executable file can be found in the `bin` subdirectory.
 
+### Preparation
+
+>**CAUTION:** You can safely remove the migration job PVC that contains data about your Service Catalog resources **ONLY** when the migration ends up successfully.
+
+In order to perform a successful migration, the Service Catalog resources can't be in the unfinished or deleted state. Otherwise, the upgrade job can fail.
+
+To check if your cluster is ready for migration, use the sanity check [script](https://github.com/kubernetes-sigs/service-catalog/blob/master/contrib/hack/migration-check.sh).
+
+The script checks if the Service Catalog resources are prepared for migration. If some of them are not ready, the script prints a proper error message.
+
+There are a few possible messages you can see:
+- `There are being deleted {type}` - prints the resources list of a given type with deletionTimestamp set.
+- `There are {type} in progress` - prints the resources list of a given type with `asyncOpInProgress` set to `true`.
+- `ServiceClass not exist for the ServiceInstances:` - prints the Service Instances list which Service Class was deleted.
+
+The above errors can be fixed manually, read more about it in [this](https://github.com/kubernetes-sigs/service-catalog/blob/master/docs/tasks/stuck_instance.md) document. 
+
 ### Execution
 
 You can run the `service-catalog` binary with the `migration` parameter which triggers the migration process. For example, run:
@@ -151,3 +168,13 @@ Then you can execute the rollback using this command:
 ```
 helm rollback catalog 1 --cleanup-on-fail --no-hooks
 ```
+
+The migration job PVC with the data about your Service Catalog resources still exists after the rollback. You can perform the migration again to restore your resources.
+
+To restore your Service Catalog resources, copy their data from the PVC onto your local machine using `kubectl cp` command. Then, run the migration job again with the command:
+
+```bash
+./service-catalog migration --action restore --storage-path={PATH_TO_YOUR_RESOURCES} --service-catalog-namespace=catalog --controller-manager-deployment=catalog-catalog-controller-manager
+```
+
+>**TIP:** Use a sanity check script to ensure that upgrade will succeeded and your resources will be restored
