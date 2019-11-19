@@ -95,7 +95,7 @@ The script checks if the Service Catalog resources are prepared for migration. I
 There are a few possible messages you can see:
 - `There are being deleted {type}` - prints the resources list of a given type with deletionTimestamp set.
 - `There are {type} in progress` - prints the resources list of a given type with `asyncOpInProgress` set to `true`.
-- `ServiceClass not exist in the cluster for the ServiceInstances:` - prints the Service Instances list which Service Class was deleted.
+- `ServiceClass not exist for the ServiceInstances:` - prints the Service Instances list which Service Class was deleted.
 
 The above errors can be fixed manually, read more about it in [this](https://github.com/kubernetes-sigs/service-catalog/blob/master/docs/tasks/stuck_instance.md) document. 
 
