@@ -156,7 +156,9 @@ func (h *CreateUpdateHandler) syncLabels(obj *sc.ServiceInstance) {
 
 	if obj.Spec.ClusterServiceClassRef != nil {
 		obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServiceClassRefName] = util.GenerateSHA(obj.Spec.ClusterServiceClassRef.Name)
-		obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServicePlanRefName] = util.GenerateSHA(obj.Spec.ClusterServicePlanRef.Name)
+		if obj.Spec.ClusterServicePlanRef != nil {
+			obj.Labels[sc.GroupName+"/"+sc.FilterSpecClusterServicePlanRefName] = util.GenerateSHA(obj.Spec.ClusterServicePlanRef.Name)
+		}
 	}
 	if obj.Spec.ServiceClassRef != nil {
 		obj.Labels[sc.GroupName+"/"+sc.FilterSpecServiceClassRefName] = util.GenerateSHA(obj.Spec.ServiceClassRef.Name)
