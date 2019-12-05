@@ -162,15 +162,26 @@ Now that your cluster and Helm are configured properly, installing
 Service Catalog is simple:
 
 ```console
+# Helm2
 helm install svc-cat/catalog \
     --name catalog --namespace catalog
+
+# Helm3
+helm install svc-cat/catalog \
+    catalog --namespace catalog
+
 ```
 
 If you want to install older version of service catalog (for instance the  API-server based version from v0.2 branch) append branch name to the chart name:
 
 ```console
+# Helm2
 helm install svc-cat/catalog-v0.2 \
     --name catalog --namespace catalog
+
+# Helm3
+helm install svc-cat/catalog-v0.2 \
+    catalog --namespace catalog
 ```
 
 # Installing the Service Catalog CLI
