@@ -31,7 +31,12 @@ Otherwise, to install with sensible defaults, run the following command:
 
 ```console
 helm repo add minibroker https://minibroker.blob.core.windows.net/charts
+
+# Helm2 
 helm install --name minibroker --namespace minibroker minibroker/minibroker
+
+# Helm3
+helm install minibroker --namespace minibroker minibroker/minibroker
 ```
 
 # Step 2 - Viewing ClusterServiceClasses and ClusterServicePlans
