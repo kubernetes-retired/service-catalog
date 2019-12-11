@@ -2704,6 +2704,7 @@ func (c *controller) processProvisionSuccess(instance *v1beta1.ServiceInstance, 
 	}
 
 	c.removeInstanceFromRetryMap(instance)
+	c.triggerServiceBindingReconciliation(instance)
 	c.recorder.Eventf(instance, corev1.EventTypeNormal, successProvisionReason, successProvisionMessage)
 	return nil
 }
@@ -2988,6 +2989,27 @@ func (c *controller) handleServiceInstancePollingError(instance *v1beta1.Service
 	pcb := pretty.NewInstanceContextBuilder(instance)
 	klog.V(4).Info(pcb.Messagef("Error during polling: %v", err))
 	return c.continuePollingServiceInstance(instance)
+}
+
+// triggerServiceBindingReconciliation adds an annotation to each ServiceBindings, with false status conditions
+// which belong to succeeded ServiceInstance for reconciling them again
+func (c *controller) triggerServiceBindingReconciliation(instance *v1beta1.ServiceInstance) {
+	bindings, err := c.listExistingBindings(instance)
+	if err != nil {
+		klog.Errorf("Couldn't get list of existing ServiceBindings for instance: %q. Bindings will be triggered after set delay. error: %v", instance.Name, err)
+		return
+	}
+
+	for _, binding := range bindings {
+		if c.isServiceBindingSucceeded(binding) {
+			continue
+		}
+		toUpdate := binding.DeepCopy()
+		toUpdate.ObjectMeta.Annotations["reconciliationTriggered"] = metav1.Now().String()
+		if _, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(toUpdate); err != nil {
+			klog.Errorf("Couldn't update ServiceBinding %q status for instance %q. Bindings will be triggered after set delay. error: %v", binding.Name, binding.Spec.InstanceRef.Name, err)
+		}
+	}
 }
 
 // setServiceInstanceDashboardURL sets the dashboard URL on the given instance.
