@@ -102,7 +102,11 @@ helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
 Then, ensure that the repository was successfully added:
 
 ```console
+# Helm2
 helm search service-catalog
+
+# Helm3
+helm search repo service-catalog
 ```
 
 You should see the following output:
