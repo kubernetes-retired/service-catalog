@@ -101,14 +101,18 @@ helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
 
 Then, ensure that the repository was successfully added:
 
+{{< tabs name="Helm3" >}}
+{{% tab name="Helm3" %}}
 ```console
-# Helm2
-helm search service-catalog
-
-# Helm3
 helm search repo service-catalog
 ```
-
+{{% /tab %}}
+{{% tab name="Helm2" %}}
+```console
+helm search service-catalog
+```
+{{% /tab %}}
+{{< /tabs >}}
 You should see the following output:
 
 ```console
