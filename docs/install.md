@@ -101,13 +101,13 @@ helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
 
 Then, ensure that the repository was successfully added:
 
-{{< tabs name="Helm3" >}}
-{{% tab name="Helm3" %}}
+{{< tabs name="helm-versions" >}}
+{{% tab name="Helm version 3" %}}
 ```console
 helm search repo service-catalog
 ```
 {{% /tab %}}
-{{% tab name="Helm2" %}}
+{{% tab name="Helm version 2" %}}
 ```console
 helm search service-catalog
 ```
@@ -168,13 +168,13 @@ check with your provider's documentation for details.
 
 Now that your cluster and Helm are configured properly, installing
 Service Catalog is simple:
-{{< tabs name="Helm3" >}}
-{{% tab name="Helm3" %}}
+{{< tabs name="helm versions" >}}
+{{% tab name="Helm version 3" %}}
 ```console
 helm install catalog svc-cat/catalog --namespace catalog
 ```
 {{% /tab %}}
-{{% tab name="Helm2" %}}
+{{% tab name="helm version 2" %}}
 ```console
 helm install svc-cat/catalog --name catalog --namespace catalog
 ```
