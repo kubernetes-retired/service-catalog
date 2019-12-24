@@ -8,7 +8,7 @@ of this writing, these are standards that all of our code may not meet. We shoul
 improve our codebase and documentation to meet them.
 
 While we do not currently aim to adhere completely to the 
-[Kubernetes coding conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/coding-conventions.md),
+[Kubernetes coding conventions](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md),
 we aspire to adhere as closely as possible.
 
 ## Code Quality And Documentation Standards
