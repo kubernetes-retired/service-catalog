@@ -9,7 +9,7 @@ To write a glossary snippet, start with a copy of the template, [`/_data/glossar
 * (Optional) `full-link`
   * The link to any specific long-form documentation, starting with `https://` if not within the website repo, and `/docs/...` if within the repo.
 * (Required) `tags`
-  * Must be one of the tags listed in the [tags directory in the website repository](https://github.com/kubernetes/website/tree/master/_data/canonical-tags).
+  * Must be one of the tags listed in the [tags directory in the website repository](https://github.com/kubernetes/website/tree/master/data/canonical-tags).
 * (Required) `short description`
   * Make sure to replace the instructional text in the template with your content.
 * (Optional) `aka`
