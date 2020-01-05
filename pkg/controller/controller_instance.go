@@ -2991,8 +2991,8 @@ func (c *controller) handleServiceInstancePollingError(instance *v1beta1.Service
 	return c.continuePollingServiceInstance(instance)
 }
 
-// triggerServiceBindingReconciliation adds an annotation to each ServiceBindings, with false status conditions
-// which belong to succeeded ServiceInstance for reconciling them again
+// triggerServiceBindingReconciliation adds an annotation to every ServiceBinding
+// whose ServiceInstance finishes with success.
 func (c *controller) triggerServiceBindingReconciliation(instance *v1beta1.ServiceInstance) {
 	bindings, err := c.listExistingBindings(instance)
 	if err != nil {
@@ -3004,6 +3004,7 @@ func (c *controller) triggerServiceBindingReconciliation(instance *v1beta1.Servi
 		if c.isServiceBindingSucceeded(binding) {
 			continue
 		}
+		klog.V(4).Infof("ServiceBinding %s/%s triggered to reconciliation", binding.Namespace, binding.Name)
 		toUpdate := binding.DeepCopy()
 		toUpdate.ObjectMeta.Annotations["reconciliationTriggered"] = metav1.Now().String()
 		if _, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(toUpdate); err != nil {
