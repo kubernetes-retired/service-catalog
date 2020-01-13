@@ -140,6 +140,16 @@ func isServiceBindingFailed(binding *v1beta1.ServiceBinding) bool {
 	return false
 }
 
+// isServiceBindingSucceeded checks if binding has ready/true conditions
+func (c *controller) isServiceBindingSucceeded(binding *v1beta1.ServiceBinding) bool {
+	for _, condition := range binding.Status.Conditions {
+		if condition.Type == v1beta1.ServiceBindingConditionReady && condition.Status == v1beta1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
 // getReconciliationActionForServiceBinding gets the action the reconciler
 // should be taking on the given binding.
 func getReconciliationActionForServiceBinding(binding *v1beta1.ServiceBinding) ReconciliationAction {

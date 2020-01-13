@@ -565,6 +565,7 @@ func (ct *controllerTest) CreateBinding() error {
 			Name:       testBindingName,
 			Generation: 1,
 			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Annotations: map[string]string{},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			InstanceRef: v1beta1.LocalObjectReference{
@@ -1755,6 +1756,7 @@ func (ct *controllerTest) CreateBindingWithParams(params map[string]interface{},
 			Name:       testBindingName,
 			Generation: 1,
 			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Annotations: map[string]string{},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			InstanceRef: v1beta1.LocalObjectReference{
@@ -1783,6 +1785,7 @@ func (ct *controllerTest) CreateBindingWithTransforms(transforms []v1beta1.Secre
 			Name:       testBindingName,
 			Generation: 1,
 			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Annotations: map[string]string{},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			InstanceRef: v1beta1.LocalObjectReference{
