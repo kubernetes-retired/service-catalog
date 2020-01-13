@@ -561,10 +561,11 @@ func (ct *controllerTest) Deprovision() error {
 func (ct *controllerTest) CreateBinding() error {
 	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  testNamespace,
-			Name:       testBindingName,
-			Generation: 1,
-			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Namespace:   testNamespace,
+			Name:        testBindingName,
+			Generation:  1,
+			Finalizers:  []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Annotations: map[string]string{},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			InstanceRef: v1beta1.LocalObjectReference{
@@ -1751,10 +1752,11 @@ func (ct *controllerTest) CreateBindingWithParams(params map[string]interface{},
 	}
 	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  testNamespace,
-			Name:       testBindingName,
-			Generation: 1,
-			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Namespace:   testNamespace,
+			Name:        testBindingName,
+			Generation:  1,
+			Finalizers:  []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Annotations: map[string]string{},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			InstanceRef: v1beta1.LocalObjectReference{
@@ -1779,10 +1781,11 @@ func (ct *controllerTest) AssertBindingData(t *testing.T, expectedData map[strin
 func (ct *controllerTest) CreateBindingWithTransforms(transforms []v1beta1.SecretTransform) error {
 	_, err := ct.scInterface.ServiceBindings(testNamespace).Create(&v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  testNamespace,
-			Name:       testBindingName,
-			Generation: 1,
-			Finalizers: []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Namespace:   testNamespace,
+			Name:        testBindingName,
+			Generation:  1,
+			Finalizers:  []string{v1beta1.FinalizerServiceCatalog}, // set by the Webhook
+			Annotations: map[string]string{},
 		},
 		Spec: v1beta1.ServiceBindingSpec{
 			InstanceRef: v1beta1.LocalObjectReference{
