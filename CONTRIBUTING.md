@@ -6,7 +6,7 @@ should keep this document in sync with reality.
 
 # Claiming an Issue
 
-We use the [standard k8's labels](https://github.com/kubernetes/community/blob/master/contributors/devel/help-wanted.md)
+We use the [standard k8's labels](https://github.com/kubernetes/community/blob/master/contributors/guide/help-wanted.md)
 [good first issue][good-first-issue] and [help wanted][help-wanted]
 to indicate issues that are ideal for new contributors.
 
