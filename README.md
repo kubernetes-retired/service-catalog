@@ -60,7 +60,7 @@ build and test the code.
 We have a mailing list available
 [here](https://groups.google.com/forum/#!forum/kubernetes-sig-service-catalog).
 
-We have weekly meetings - see
+We have biweekly meetings - see
 [our SIG Readme](https://github.com/kubernetes/community/blob/master/sig-service-catalog/README.md#meetings)
 for details. For meeting agendas
 and notes, see [Kubernetes SIG Service Catalog Agenda](https://docs.google.com/document/d/17xlpkoEbPR5M6P5VDzNx17q6-IPFxKyebEekCGYiIKM/edit).
