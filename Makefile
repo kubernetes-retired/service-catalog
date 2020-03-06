@@ -269,7 +269,7 @@ check-go:
 test-unit-native: check-go
 	go test $(addprefix ${SC_PKG}/,${TEST_DIRS})
 
-test-unit: .init build
+test-unit: .init .generate_files
 	@echo Running tests:
 	$(DOCKER_CMD) go test -race $(UNIT_TEST_FLAGS) \
 	  $(addprefix $(SC_PKG)/,$(TEST_DIRS)) $(UNIT_TEST_LOG_FLAGS)
