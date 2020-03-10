@@ -41,7 +41,7 @@ document.
 
 At a minimum you will need:
 
-* [Docker](https://www.docker.com) 17.05+ installed locally
+* [Docker](https://www.docker.com) 17.05+ installed locally (configured with 4+ GB RAM)
 * GNU Make
 * [git](https://git-scm.com)
 
