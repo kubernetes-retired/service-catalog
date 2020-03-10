@@ -101,10 +101,18 @@ helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
 
 Then, ensure that the repository was successfully added:
 
+{{< tabs name="helm-versions" >}}
+{{% tab name="Helm version 3" %}}
+```console
+helm search repo service-catalog
+```
+{{% /tab %}}
+{{% tab name="Helm version 2" %}}
 ```console
 helm search service-catalog
 ```
-
+{{% /tab %}}
+{{< /tabs >}}
 You should see the following output:
 
 ```console
@@ -160,29 +168,33 @@ check with your provider's documentation for details.
 
 Now that your cluster and Helm are configured properly, installing
 Service Catalog is simple:
-
+{{< tabs name="helm versions" >}}
+{{% tab name="Helm version 3" %}}
 ```console
-# Helm2
-helm install svc-cat/catalog \
-    --name catalog --namespace catalog
-
-# Helm3
-helm install svc-cat/catalog \
-    catalog --namespace catalog
-
+helm install catalog svc-cat/catalog --namespace catalog
 ```
-
+{{% /tab %}}
+{{% tab name="helm version 2" %}}
+```console
+helm install svc-cat/catalog --name catalog --namespace catalog
+```
+{{% /tab %}}
+{{< /tabs >}}
 If you want to install older version of service catalog (for instance the  API-server based version from v0.2 branch) append branch name to the chart name:
 
+{{< tabs name="Helm3" >}}
+{{% tab name="Helm3" %}}
 ```console
-# Helm2
-helm install svc-cat/catalog-v0.2 \
-    --name catalog --namespace catalog
-
-# Helm3
-helm install svc-cat/catalog-v0.2 \
-    catalog --namespace catalog
+helm install catalog svc-cat/catalog-v0.2 --namespace catalog
 ```
+
+{{% /tab %}}
+{{% tab name="Helm2" %}}
+```console
+helm install svc-cat/catalog-v0.2 --name catalog --namespace catalog
+```
+{{% /tab %}}
+{{< /tabs >}}
 
 # Installing the Service Catalog CLI
 
