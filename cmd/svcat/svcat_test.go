@@ -39,7 +39,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	svcatfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -206,6 +206,7 @@ func TestCommandOutput(t *testing.T) {
 		{name: "list all classes", cmd: "get classes", golden: "output/get-classes.txt"},
 		{name: "list all classes (json)", cmd: "get classes -o json", golden: "output/get-classes.json"},
 		{name: "list all classes (yaml)", cmd: "get classes -o yaml", golden: "output/get-classes.yaml"},
+		{name: "list all classes filtered by existing broker", cmd: "get classes --all-namespaces --broker ups-broker", golden: "output/get-classes-all-namespaces-by-broker.txt"},
 		{name: "get class by name", cmd: "get class user-provided-service", golden: "output/get-class.txt"},
 		{name: "get class not found（cluster scope）", cmd: "get class foo --scope cluster", golden: "output/get-class-not-found-cluster.txt", continueOnError: true},
 		{name: "get class not found（default namespace）", cmd: "get class foo --scope namespace", golden: "output/get-class-not-found-default-namespace.txt", continueOnError: true},

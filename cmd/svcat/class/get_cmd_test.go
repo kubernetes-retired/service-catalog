@@ -22,7 +22,7 @@ import (
 
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
@@ -30,7 +30,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Get Class Command", func() {
@@ -44,6 +44,7 @@ var _ = Describe("Get Class Command", func() {
 			Expect(cmd.Example).To(ContainSubstring("svcat get classes"))
 			Expect(cmd.Example).To(ContainSubstring("svcat get classes --scope cluster"))
 			Expect(cmd.Example).To(ContainSubstring("svcat get classes --scope namespace --namespace dev"))
+			Expect(cmd.Example).To(ContainSubstring("svcat get classes --broker mysql-broker"))
 			Expect(cmd.Example).To(ContainSubstring("svcat get class mysql"))
 			Expect(cmd.Example).To(ContainSubstring("svcat get class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5"))
 			Expect(len(cmd.Aliases)).To(Equal(2))
@@ -64,6 +65,7 @@ var _ = Describe("Get Class Command", func() {
 		})
 		It("optionally parses the class name argument", func() {
 			cmd := &GetCmd{}
+			cmd.BrokerFiltered = &command.BrokerFiltered{}
 			err := cmd.Validate([]string{"foobarclass"})
 			Expect(err).To(BeNil())
 			Expect(cmd.Name).To(Equal("foobarclass"))
@@ -122,6 +124,44 @@ var _ = Describe("Get Class Command", func() {
 			}
 		})
 		Context("getting all classes", func() {
+			It("Calls the pkg/svcat libs RetrieveClasses with broker filter", func() {
+				outputBuffer := &bytes.Buffer{}
+
+				fakeApp, _ := svcat.NewApp(nil, nil, namespace)
+				fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+				fakeSDK.RetrieveClassesReturns([]servicecatalog.Class{classToReturn, namespacedClassToReturn}, nil)
+				fakeApp.SvcatClient = fakeSDK
+				cxt := svcattest.NewContext(outputBuffer, fakeApp)
+				cmd := GetCmd{
+					Formatted:      command.NewFormatted(),
+					Namespaced:     command.NewNamespaced(cxt),
+					Scoped:         command.NewScoped(),
+					BrokerFiltered: command.NewBrokerFiltered(),
+				}
+				cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
+				cmd.Scope = servicecatalog.AllScope
+				cmd.BrokerFiltered = &command.BrokerFiltered{
+					BrokerFilter: brokerName,
+				}
+				err := cmd.Run()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
+				returnedScopeOpts, returnedBrokerFilter := fakeSDK.RetrieveClassesArgsForCall(0)
+				scopeOpts := servicecatalog.ScopeOptions{
+					Scope:     servicecatalog.AllScope,
+					Namespace: namespace,
+				}
+				Expect(returnedScopeOpts).To(Equal(scopeOpts))
+				Expect(returnedBrokerFilter).To(Equal(brokerName))
+
+				output := outputBuffer.String()
+				Expect(output).To(ContainSubstring(className))
+				Expect(output).To(ContainSubstring(classToReturn.Spec.Description))
+				Expect(output).To(ContainSubstring(namespacedClassName))
+				Expect(output).To(ContainSubstring(namespace))
+				Expect(output).To(ContainSubstring(namespacedClassToReturn.Spec.Description))
+			})
 			It("Calls the pkg/svcat libs RetrieveClasses with all scope and current namespace", func() {
 				outputBuffer := &bytes.Buffer{}
 
@@ -131,9 +171,10 @@ var _ = Describe("Get Class Command", func() {
 				fakeApp.SvcatClient = fakeSDK
 				cxt := svcattest.NewContext(outputBuffer, fakeApp)
 				cmd := GetCmd{
-					Formatted:  command.NewFormatted(),
-					Namespaced: command.NewNamespaced(cxt),
-					Scoped:     command.NewScoped(),
+					Formatted:      command.NewFormatted(),
+					Namespaced:     command.NewNamespaced(cxt),
+					Scoped:         command.NewScoped(),
+					BrokerFiltered: command.NewBrokerFiltered(),
 				}
 				cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
 				cmd.Scope = servicecatalog.AllScope
@@ -141,12 +182,13 @@ var _ = Describe("Get Class Command", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-				returnedScopeOpts := fakeSDK.RetrieveClassesArgsForCall(0)
+				returnedScopeOpts, returnedBrokerFilter := fakeSDK.RetrieveClassesArgsForCall(0)
 				scopeOpts := servicecatalog.ScopeOptions{
 					Scope:     servicecatalog.AllScope,
 					Namespace: namespace,
 				}
 				Expect(returnedScopeOpts).To(Equal(scopeOpts))
+				Expect(returnedBrokerFilter).To(Equal(""))
 
 				output := outputBuffer.String()
 				Expect(output).To(ContainSubstring(className))
@@ -164,9 +206,10 @@ var _ = Describe("Get Class Command", func() {
 				fakeApp.SvcatClient = fakeSDK
 				cxt := svcattest.NewContext(outputBuffer, fakeApp)
 				cmd := GetCmd{
-					Formatted:  command.NewFormatted(),
-					Namespaced: command.NewNamespaced(cxt),
-					Scoped:     command.NewScoped(),
+					Formatted:      command.NewFormatted(),
+					Namespaced:     command.NewNamespaced(cxt),
+					Scoped:         command.NewScoped(),
+					BrokerFiltered: command.NewBrokerFiltered(),
 				}
 				cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
 				cmd.Scope = servicecatalog.NamespaceScope
@@ -175,12 +218,13 @@ var _ = Describe("Get Class Command", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-				returnedScopeOpts := fakeSDK.RetrieveClassesArgsForCall(0)
+				returnedScopeOpts, returnedBrokerFilter := fakeSDK.RetrieveClassesArgsForCall(0)
 				scopeOpts := servicecatalog.ScopeOptions{
 					Scope:     servicecatalog.NamespaceScope,
 					Namespace: namespace,
 				}
 				Expect(returnedScopeOpts).To(Equal(scopeOpts))
+				Expect(returnedBrokerFilter).To(Equal(""))
 
 				output := outputBuffer.String()
 				Expect(output).NotTo(ContainSubstring(className))
@@ -198,9 +242,10 @@ var _ = Describe("Get Class Command", func() {
 				fakeApp.SvcatClient = fakeSDK
 				cxt := svcattest.NewContext(outputBuffer, fakeApp)
 				cmd := GetCmd{
-					Formatted:  command.NewFormatted(),
-					Namespaced: command.NewNamespaced(cxt),
-					Scoped:     command.NewScoped(),
+					Formatted:      command.NewFormatted(),
+					Namespaced:     command.NewNamespaced(cxt),
+					Scoped:         command.NewScoped(),
+					BrokerFiltered: command.NewBrokerFiltered(),
 				}
 				cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
 				cmd.Scope = servicecatalog.ClusterScope
@@ -208,12 +253,13 @@ var _ = Describe("Get Class Command", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-				returnedScopeOpts := fakeSDK.RetrieveClassesArgsForCall(0)
+				returnedScopeOpts, returnedBrokerFilter := fakeSDK.RetrieveClassesArgsForCall(0)
 				scopeOpts := servicecatalog.ScopeOptions{
 					Scope:     servicecatalog.ClusterScope,
 					Namespace: namespace,
 				}
 				Expect(returnedScopeOpts).To(Equal(scopeOpts))
+				Expect(returnedBrokerFilter).To(Equal(""))
 
 				output := outputBuffer.String()
 				Expect(output).To(ContainSubstring(className))

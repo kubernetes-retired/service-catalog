@@ -22,7 +22,7 @@ import (
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -138,7 +138,7 @@ func (c *GetCmd) getAll() error {
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
 	}
-	classes, err := c.App.RetrieveClasses(classOpts)
+	classes, err := c.App.RetrieveClasses(classOpts, command.BrokerAll)
 	if err != nil {
 		return fmt.Errorf("unable to list classes (%s)", err)
 	}

@@ -19,7 +19,7 @@ package browsing
 import (
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -66,7 +66,7 @@ func (c *MarketplaceCmd) Run() error {
 		Namespace: c.Namespace,
 		Scope:     servicecatalog.AllScope,
 	}
-	classes, err := c.App.RetrieveClasses(opts)
+	classes, err := c.App.RetrieveClasses(opts, command.BrokerAll)
 	if err != nil {
 		return err
 	}

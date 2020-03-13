@@ -45,31 +45,50 @@ var _ = Describe("Class", func() {
 	)
 
 	BeforeEach(func() {
-		csc = &v1beta1.ClusterServiceClass{ObjectMeta: metav1.ObjectMeta{
-			Name: "foobar", ResourceVersion: "1",
-			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("foobar"),
+		csc = &v1beta1.ClusterServiceClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "foobar", ResourceVersion: "1",
+				Labels: map[string]string{
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("foobar"),
+				},
 			},
-		}}
+			Spec: v1beta1.ClusterServiceClassSpec{
+				ClusterServiceBrokerName: "mysql-broker",
+			},
+		}
 		csc2 = &v1beta1.ClusterServiceClass{
 			ObjectMeta: metav1.ObjectMeta{Name: "barbaz", ResourceVersion: "1",
 				Labels: map[string]string{
 					v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("barbaz"),
 				},
-			}}
+			},
+			Spec: v1beta1.ClusterServiceClassSpec{
+				ClusterServiceBrokerName: "not-mysql-broker",
+			},
+		}
 
-		sc = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{
-			Name: "foobar", Namespace: "default", ResourceVersion: "1",
-			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("foobar"),
+		sc = &v1beta1.ServiceClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "foobar", Namespace: "default", ResourceVersion: "1",
+				Labels: map[string]string{
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("foobar"),
+				},
 			},
-		}}
-		sc2 = &v1beta1.ServiceClass{ObjectMeta: metav1.ObjectMeta{
-			Name: "barbaz", Namespace: "ns2", ResourceVersion: "1",
-			Labels: map[string]string{
-				v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("barbaz"),
+			Spec: v1beta1.ServiceClassSpec{
+				ServiceBrokerName: "mysql-broker",
 			},
-		}}
+		}
+		sc2 = &v1beta1.ServiceClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "barbaz", Namespace: "ns2", ResourceVersion: "1",
+				Labels: map[string]string{
+					v1beta1.GroupName + "/" + v1beta1.FilterSpecExternalName: util.GenerateSHA("barbaz"),
+				},
+			},
+			Spec: v1beta1.ServiceClassSpec{
+				ServiceBrokerName: "no-mysql-broker",
+			},
+		}
 		svcCatClient = fake.NewSimpleClientset(csc, csc2, sc, sc2)
 		sdk = &SDK{
 			ServiceCatalogClient: svcCatClient,
@@ -78,7 +97,7 @@ var _ = Describe("Class", func() {
 
 	Describe("RetrieveClasses", func() {
 		It("Calls the generated v1beta1 List methods", func() {
-			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope})
+			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope}, "")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(classes).Should(ConsistOf(csc, csc2, sc, sc2))
@@ -86,22 +105,29 @@ var _ = Describe("Class", func() {
 			Expect(svcCatClient.Actions()[1].Matches("list", "serviceclasses")).To(BeTrue())
 		})
 		It("Filters by namespace scope", func() {
-			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: NamespaceScope, Namespace: "default"})
+			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: NamespaceScope, Namespace: "default"}, "")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(classes).Should(ConsistOf(sc))
 			Expect(len(svcCatClient.Actions())).Should(Equal(1))
 			Expect(svcCatClient.Actions()[0].Matches("list", "serviceclasses")).To(BeTrue())
-
 		})
 		It("Filters by cluster scope", func() {
-			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: ClusterScope, Namespace: "default"})
+			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: ClusterScope, Namespace: "default"}, "")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(classes).Should(ConsistOf(csc, csc2))
 			Expect(len(svcCatClient.Actions())).Should(Equal(1))
 			Expect(svcCatClient.Actions()[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
+		})
+		It("Filters by broker", func() {
+			classes, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope}, "mysql-broker")
 
+			Expect(err).NotTo(HaveOccurred())
+			Expect(classes).Should(ConsistOf(csc, sc))
+			Expect(len(svcCatClient.Actions())).Should(Equal(2))
+			Expect(svcCatClient.Actions()[0].Matches("list", "clusterserviceclasses")).To(BeTrue())
+			Expect(svcCatClient.Actions()[1].Matches("list", "serviceclasses")).To(BeTrue())
 		})
 		It("Bubbles up errors", func() {
 			badClient := fake.NewSimpleClientset()
@@ -113,7 +139,7 @@ var _ = Describe("Class", func() {
 				ServiceCatalogClient: badClient,
 			}
 
-			_, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope})
+			_, err := sdk.RetrieveClasses(ScopeOptions{Scope: AllScope}, "")
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring(errorMessage))

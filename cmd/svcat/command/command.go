@@ -52,6 +52,12 @@ func PreRunE(cmd Command) func(*cobra.Command, []string) error {
 				return err
 			}
 		}
+		if brokerFilteredCmd, ok := cmd.(HasBrokerFlag); ok {
+			err := brokerFilteredCmd.ApplyBrokerFlag(c)
+			if err != nil {
+				return err
+			}
+		}
 		if classFilteredCmd, ok := cmd.(HasClassFlag); ok {
 			err := classFilteredCmd.ApplyClassFlag(c)
 			if err != nil {

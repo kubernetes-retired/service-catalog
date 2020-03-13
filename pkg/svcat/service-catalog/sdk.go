@@ -56,7 +56,7 @@ type SvcatClient interface {
 	Sync(string, ScopeOptions, int) error
 	WaitForBroker(string, *ScopeOptions, time.Duration, *time.Duration) (Broker, error)
 
-	RetrieveClasses(ScopeOptions) ([]Class, error)
+	RetrieveClasses(ScopeOptions, string) ([]Class, error)
 	RetrieveClassByName(string, ScopeOptions) (Class, error)
 	RetrieveClassByID(string, ScopeOptions) (Class, error)
 	RetrieveClassByPlan(Plan) (Class, error)

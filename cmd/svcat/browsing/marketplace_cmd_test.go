@@ -21,7 +21,7 @@ import (
 
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/browsing"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
@@ -149,11 +149,12 @@ var _ = Describe("Register Command", func() {
 			err := cmd.Run()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-			scopeOpts := fakeSDK.RetrieveClassesArgsForCall(0)
+			scopeOpts, brokerFilter := fakeSDK.RetrieveClassesArgsForCall(0)
 			Expect(scopeOpts).To(Equal(servicecatalog.ScopeOptions{
 				Scope:     servicecatalog.AllScope,
 				Namespace: namespace,
 			}))
+			Expect(brokerFilter).To((Equal("")))
 
 			Expect(fakeSDK.RetrievePlansCallCount()).To(Equal(1))
 			class, scopeOpts := fakeSDK.RetrievePlansArgsForCall(0)
