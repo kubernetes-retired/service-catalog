@@ -24,6 +24,6 @@ in sync.
 ## Long-term plan
 
 In the long term the packages used by Kubernetes-based projects will be moved
-from the main repo to separate top-level repositories, [k8s.io/common](https://github.com/kubernetes/common)
-and [k8s.io/utils](https://github.com/kubernetes/utils). Once it is done, we can
+from the main repo to separate top-level repositories, k8s.io/common and
+[k8s.io/utils](https://github.com/kubernetes/utils). Once it is done, we can
 eventually switch to those packages and drop this directory.

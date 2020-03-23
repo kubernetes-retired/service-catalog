@@ -57,7 +57,7 @@ STAT           = stat -c '%Y %n'
 endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
-GO_VERSION    ?= 1.12
+GO_VERSION    ?= 1.13
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
@@ -225,7 +225,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@#
 	$(DOCKER_CMD) go vet $(SC_PKG)/...
 	@echo Running repo-infra verify scripts
-	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -Fv -e generated -e .pkg -e docsite > .out 2>&1 || true
+	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -Fv -e generated -e .pkg -e docsite -e bin/verify-links.sh > .out 2>&1 || true
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
@@ -238,7 +238,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 
 verify-docs: .init
 	@echo Running href checker$(SKIP_COMMENT):
-	@$(DOCKER_CMD) verify-links.sh -s .pkg -s .bundler -s _plugins -s _includes -t $(SKIP_HTTP) .
+	@$(DOCKER_CMD) verify-links.sh -s .pkg -s .bundler -s _plugins -s _includes -s contribute/docs.md -t $(SKIP_HTTP) .
 
 verify-generated: .init generators
 	$(DOCKER_CMD) $(BUILD_DIR)/update-apis-gen.sh --verify-only
