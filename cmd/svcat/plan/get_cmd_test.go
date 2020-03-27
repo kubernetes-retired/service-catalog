@@ -22,10 +22,10 @@ import (
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/plan"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -248,11 +248,12 @@ var _ = Describe("Get Plans Command", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-				scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
+				scopeArg, brokerFilterArg := fakeSDK.RetrieveClassesArgsForCall(0)
 				Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 					Scope:     servicecatalog.AllScope,
 					Namespace: defaultNamespace,
 				}))
+				Expect(brokerFilterArg).To(Equal(""))
 				Expect(fakeSDK.RetrievePlansCallCount()).To(Equal(1))
 				classID, scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
 				Expect(classID).To(Equal(""))
@@ -300,11 +301,12 @@ var _ = Describe("Get Plans Command", func() {
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-					scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
+					scopeArg, brokerFilterArg := fakeSDK.RetrieveClassesArgsForCall(0)
 					Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 						Scope:     servicecatalog.NamespaceScope,
 						Namespace: defaultNamespace,
 					}))
+					Expect(brokerFilterArg).To(Equal(""))
 					Expect(fakeSDK.RetrievePlansCallCount()).To(Equal(1))
 					classID, scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
 					Expect(classID).To(Equal(""))
@@ -333,11 +335,12 @@ var _ = Describe("Get Plans Command", func() {
 
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeSDK.RetrieveClassesCallCount()).To(Equal(1))
-					scopeArg := fakeSDK.RetrieveClassesArgsForCall(0)
+					scopeArg, brokerFilterArg := fakeSDK.RetrieveClassesArgsForCall(0)
 					Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{
 						Scope:     servicecatalog.AllScope,
 						Namespace: "",
 					}))
+					Expect(brokerFilterArg).To(Equal(""))
 					classID, scopeArg := fakeSDK.RetrievePlansArgsForCall(0)
 					Expect(classID).To(Equal(""))
 					Expect(scopeArg).To(Equal(servicecatalog.ScopeOptions{

@@ -36,14 +36,16 @@ func writeClassListTable(w io.Writer, classes []servicecatalog.Class) {
 	t.SetHeader([]string{
 		"Name",
 		"Namespace",
+		"Broker",
 		"Description",
 	})
-	t.SetVariableColumn(3)
+	t.SetVariableColumn(4)
 
 	for _, class := range classes {
 		t.Append([]string{
 			class.GetExternalName(),
 			class.GetNamespace(),
+			class.GetServiceBrokerName(),
 			class.GetDescription(),
 		})
 	}

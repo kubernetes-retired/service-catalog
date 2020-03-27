@@ -228,12 +228,16 @@ tree:
         svcat get classes
         svcat get classes --scope cluster
         svcat get classes --scope namespace --namespace dev
+        svcat get classes --broker mysql-broker
         svcat get class mysqldb
         svcat get class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5
     flags:
     - desc: If present, list the requested object(s) across all namespaces. Namespace
         in current context is ignored even if specified with --namespace
       name: all-namespaces
+    - desc: If present, specify the broker used as a filter for this request
+      name: broker
+      shorthand: b
     - desc: Whether or not to get the class by its Kubernetes name (the default is
         by external name)
       name: kube-name

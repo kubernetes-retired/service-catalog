@@ -19,6 +19,7 @@ package servicecatalog
 import (
 	"errors"
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -71,7 +72,7 @@ type Class interface {
 }
 
 // RetrieveClasses lists all classes defined in the cluster.
-func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
+func (sdk *SDK) RetrieveClasses(opts ScopeOptions, brokerFilter string) ([]Class, error) {
 	var classes []Class
 	if opts.Scope.Matches(ClusterScope) {
 		csc, err := sdk.ServiceCatalog().ClusterServiceClasses().List(metav1.ListOptions{})
@@ -80,6 +81,9 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 		}
 		for _, c := range csc.Items {
 			class := c
+			if brokerFilter != "" && c.GetServiceBrokerName() != brokerFilter {
+				continue
+			}
 			classes = append(classes, &class)
 		}
 	}
@@ -95,6 +99,9 @@ func (sdk *SDK) RetrieveClasses(opts ScopeOptions) ([]Class, error) {
 		}
 		for _, c := range sc.Items {
 			class := c
+			if brokerFilter != "" && c.GetServiceBrokerName() != brokerFilter {
+				continue
+			}
 			classes = append(classes, &class)
 		}
 	}

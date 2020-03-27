@@ -22,7 +22,7 @@ import (
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,7 @@ type GetCmd struct {
 	*command.Namespaced
 	*command.Scoped
 	*command.Formatted
+	*command.BrokerFiltered
 
 	LookupByKubeName bool
 	KubeName         string
@@ -40,9 +41,10 @@ type GetCmd struct {
 // NewGetCmd builds a "svcat get classes" command
 func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd := &GetCmd{
-		Namespaced: command.NewNamespaced(cxt),
-		Scoped:     command.NewScoped(),
-		Formatted:  command.NewFormatted(),
+		Namespaced:     command.NewNamespaced(cxt),
+		Scoped:         command.NewScoped(),
+		Formatted:      command.NewFormatted(),
+		BrokerFiltered: command.NewBrokerFiltered(),
 	}
 	cmd := &cobra.Command{
 		Use:     "classes [NAME]",
@@ -52,6 +54,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get classes
   svcat get classes --scope cluster
   svcat get classes --scope namespace --namespace dev
+  svcat get classes --broker mysql-broker
   svcat get class mysqldb
   svcat get class --kube-name 997b8372-8dac-40ac-ae65-758b4a5075a5
 `),
@@ -68,6 +71,7 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	getCmd.AddOutputFlags(cmd.Flags())
 	getCmd.AddNamespaceFlags(cmd.Flags(), true)
 	getCmd.AddScopedFlags(cmd.Flags(), true)
+	getCmd.AddBrokerFlag(cmd)
 	return cmd
 }
 
@@ -78,6 +82,10 @@ func (c *GetCmd) Validate(args []string) error {
 			c.KubeName = args[0]
 		} else {
 			c.Name = args[0]
+		}
+
+		if c.BrokerFilter != "" {
+			return fmt.Errorf("broker filter is not supported when specifying class name")
 		}
 	}
 
@@ -99,7 +107,7 @@ func (c *GetCmd) getAll() error {
 		Namespace: c.Namespace,
 		Scope:     c.Scope,
 	}
-	classes, err := c.App.RetrieveClasses(opts)
+	classes, err := c.App.RetrieveClasses(opts, c.BrokerFilter)
 	if err != nil {
 		return err
 	}

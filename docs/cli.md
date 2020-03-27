@@ -63,11 +63,11 @@ Synchronization requested for broker: ups-broker
 This lists all classes available in the current namespace and at the cluster scope.
 ```console
 $ svcat get classes
-                 NAME                  NAMESPACE         DESCRIPTION        
-+------------------------------------+-----------+-------------------------+
-  user-provided-service                            A user provided service  
-  user-provided-service-single-plan                A user provided service  
-  user-provided-service-with-schemas               A user provided service  
+                 NAME                  NAMESPACE     BROKER          DESCRIPTION         
++------------------------------------+-----------+------------+-------------------------+
+  user-provided-service                            ups-broker   A user provided service  
+  user-provided-service-single-plan                ups-broker   A user provided service  
+  user-provided-service-with-schemas               ups-broker   A user provided service  
   ```
 
 ## See all services offered in the current namespace and at the cluster scope.

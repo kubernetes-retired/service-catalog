@@ -1,6 +1,6 @@
-            NAME             NAMESPACE         DESCRIPTION         
-+--------------------------+-----------+--------------------------+
-  user-provided-service                  A user provided service   
-  another-provided-service               Another provided service  
-  user-provided-service      default     A user provided service   
-  another-provided-service   default     Another provided service  
+            NAME             NAMESPACE          BROKER                 DESCRIPTION         
++--------------------------+-----------+-----------------------+--------------------------+
+  user-provided-service                  ups-broker              A user provided service   
+  another-provided-service               ups-broker              Another provided service  
+  user-provided-service      default     namespaced-ups-broker   A user provided service   
+  another-provided-service   default     namespaced-ups-broker   Another provided service  
