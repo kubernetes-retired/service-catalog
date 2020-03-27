@@ -30,7 +30,7 @@ when running in plugin mode, so instead of using `--flag` you must specify a val
 Run `svcat --help` to see the available commands.
 
 Below are some common tasks made easy with svcat. The example output assumes that the
-[User Provided Service Broker](../charts/ups-broker) is installed on the cluster.
+[User Provided Service Broker](https://github.com/kubernetes-sigs/service-catalog/tree/master/charts/ups-broker) is installed on the cluster.
 
 ## Register a broker
 ```console 
