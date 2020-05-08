@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2017 The Kubernetes Authors.
+#!/usr/bin/env bash
+# Copyright 2019 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,34 +17,16 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-KUBE_ROOT=$(dirname "${BASH_SOURCE}")/..
+readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+readonly ROOT_PATH=$( cd "${CURRENT_DIR}/../.." && pwd )
 
-boilerDir="${KUBE_ROOT}/contrib/hack/boilerplate"
-boiler="${boilerDir}/boilerplate.py"
+pushd "${ROOT_PATH}" > /dev/null
 
-files_need_boilerplate=($(${boiler} "$@"))
-
-# Run boilerplate.py unit tests
-unitTestOut="$(mktemp)"
-trap cleanup EXIT
-cleanup() {
-	rm "${unitTestOut}"
+# Exit handler. This function is called anytime an EXIT signal is received.
+# This function should never be explicitly called.
+function _trap_exit () {
+    popd > /dev/null
 }
+trap _trap_exit EXIT
 
-pushd "${boilerDir}" >/dev/null
-if ! python -m unittest boilerplate_test 2>"${unitTestOut}"; then
-	echo "boilerplate_test.py failed"
-	echo
-	cat "${unitTestOut}"
-	exit 1
-fi
-popd >/dev/null
-
-# Run boilerplate check
-if [[ ${#files_need_boilerplate[@]} -gt 0 ]]; then
-  for file in "${files_need_boilerplate[@]}"; do
-    echo "Boilerplate header is wrong for: ${file}"
-  done
-
-  exit 1
-fi
+git ls-files -- '*.go' '*.py' '*.sh' ':!:vendor/*' | xargs go run ./contrib/hack/verify-boilerplate.go

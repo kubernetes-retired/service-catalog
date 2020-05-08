@@ -47,7 +47,7 @@ type fakedClient struct {
 }
 
 // Create overrides real client Create method for the test
-func (m *fakedClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOptionFunc) error {
+func (m *fakedClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
 	if _, ok := obj.(*v1.SubjectAccessReview); !ok {
 		return errors.New("Input object is not SubjectAccessReview type")
 	}

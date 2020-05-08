@@ -28,6 +28,35 @@ shout() {
 "
 }
 
+# Ensure the go tool exists and is a viable version.
+golang::verify_go_version() {
+  shout "Verify Go version"
+  if [[ -z "$(command -v go)" ]]; then
+    echo "Can't find 'go' in PATH, please fix and retry.
+See http://golang.org/doc/install for installation instructions."
+    exit 1
+  fi
+
+  local go_version
+  IFS=" " read -ra go_version <<< "$(go version)"
+  local minimum_go_version
+  minimum_go_version=go1.13
+  if [[ "${minimum_go_version}" != $(echo -e "${minimum_go_version}\n${go_version[2]}" | sort -s -t. -k 1,1 -k 2,2n -k 3,3n | head -n1) && "${go_version[2]}" != "devel" ]]; then
+    echo "Detected go version: ${go_version[*]}.
+Kubernetes requires ${minimum_go_version} or greater.
+Please install ${minimum_go_version} or later."
+    exit 1
+  fi
+}
+
+# Checks whether jq is installed.
+require-jq() {
+  if ! command -v jq &>/dev/null; then
+    echo "jq not found. Please install." 1>&2
+    return 1
+  fi
+}
+
 dump_logs() {
     # The $ARTIFACTS environment variable is set by prow.
     # It's a directory where job artifacts can be dumped for automatic upload to GCS upon job completion.
@@ -73,7 +102,7 @@ host::os() {
       host_os=linux
       ;;
     *)
-      kube::log::error "Unsupported host OS.  Must be Linux or Mac OS X."
+      echo "Unsupported host OS. Must be Linux or Mac OS X."
       exit 1
       ;;
   esac
@@ -105,7 +134,7 @@ host::arch() {
       host_arch=ppc64le
       ;;
     *)
-      kube::log::error "Unsupported host arch. Must be x86_64, arm, arm64, or ppc64le."
+      echo "Unsupported host arch. Must be x86_64, arm, arm64, or ppc64le."
       exit 1
       ;;
   esac

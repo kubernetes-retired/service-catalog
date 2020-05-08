@@ -493,39 +493,91 @@ $ ./contrib/hack/deploy-local-canary.sh
 ```
 
 ## Dependency Management
-We use [dep](https://golang.github.io/dep) to manage our dependencies. We commit the resulting
-vendor directory to ensure repeatable builds and isolation from upstream source disruptions.
-Because vendor is committed, you do not need to interact with dep unless you are
-changing dependencies.
 
-* Gopkg.toml - the dep manifest, this is intended to be hand-edited and contains a set of
-constraints and other rules for dep to apply when selecting appropriate versions of dependencies.
-* Gopkg.lock - the dep lockfile, do not edit because it is a generated file.
-* vendor/ - the source of all of our dependencies. Commit changes to this directory in a
-separate commit from any other changes (including to the Gopkg files) so that it's easier to
-review your pull request.
+This section is intended to show a way for managing `vendor/` tree dependencies using go modules.
 
-If you use VS Code, we recommend installing the [dep extension](https://marketplace.visualstudio.com/items?itemName=carolynvs.dep).
-It provides snippets and improved highlighting that makes it easier to work with dep.
+### Theory of operation
 
-### Selecting the version for a dependency
-* Use released versions of a dependency, for example v1.2.3.
-* Use the master branch when a dependency does not tag releases, or we require an unreleased change.
-* Include an explanatory comment with a link to any relevant issues anytime a dependency is
-  pinned to a specific revision in Gopkg.toml.
+The `go.mod` file describes dependencies using two directives:
 
-### Add a new dependency
-1. Run `dep ensure -add github.com/example/project/pkg/foo`. This adds a constraint to Gopkg.toml,
-and downloads the dependency to vendor/.
-1. Import the package in the code and use it.
-1. Run `dep ensure -v` to sync Gopkg.lock and vendor/ with your changes.
+* `require` directives list the preferred version of dependencies (this is auto-updated by go tooling to the maximum preferred version of the module)
+* `replace` directives pin to specific tags or commits
 
-### Change the version of a dependency
-1. Edit Gopkg.toml and update the version for the project. If the project is not in
-Gopkg.toml already, add a constraint for it and set the version.
-1. Run `dep ensure -v` to sync Gopkg.lock and vendor/ with the updated version.
+### Adding or updating a dependency
 
-[Watch a screencast](https://youtu.be/yvL66s_hQ94)
+The most common things people need to do with dependencies are adding and updating them.
+These operations are handled the same way:
+
+For the sake of examples, consider that we have discovered a wonderful Go
+library at `example.com/go/foo`.
+
+Step 1: Ensure there is go code in place that references the packages you want to use.
+```go
+import "example.com/go/foo"
+// ...
+frob.DoStuff()
+```
+
+Step 2: Determine what version of the dependency you want to use, and add that version to the go.mod file:
+
+```sh
+contrib/hack/pin-dependency.sh example.com/go/foo v1.0.4
+```
+
+This fetches the dependency, resolves the specified sha or tag, and adds two entries to the `go.mod` file:
+
+```
+require (
+    example.com/go/foo v1.0.4
+    ...
+)
+
+replace (
+    example.com/go/foo => example.com/go/foo v1.0.4
+    ...
+)
+```
+
+The `require` directive indicates our module requires `example.com/go/foo` >= `v1.0.4`.
+If our module was included as a dependency in a build with other modules that also required `example.com/go/foo`,
+the maximum required version would be selected (unless the main module in that build pinned to a lower version).
+
+The `replace` directive pins us to the desired version when running go commands e.g. build svcat binary.
+
+Step 3: Rebuild the `vendor` directory:
+
+```sh
+contrib/hack/update-vendor.sh
+```
+
+Step 4: Check if the new dependency was added correctly:
+
+```sh
+contrib/hack/lint-dependencies.sh
+```
+
+### Removing a dependency
+
+This happens almost for free.  If you edit Service Catalog code and remove the last
+use of a given dependency, you only need to run `contrib/hack/update-vendor.sh`, and the
+tooling will figure out that you don't need that dependency anymore and remove it,
+along with any unused transitive dependencies.
+
+### Reviewing and approving dependency changes
+
+Particular attention to detail should be exercised when reviewing and approving
+PRs that add/remove/update dependencies. Importing a new dependency should bring
+a certain degree of value as there is a maintenance overhead for maintaining
+dependencies into the future.
+
+When importing a new dependency, be sure to keep an eye out for the following:
+- Is the dependency maintained?
+- Does the dependency bring value to the project? Could this be done without adding a new dependency?
+- Is the target dependency the original source, or a fork?
+- Is there already a dependency in the project that does something similar?
+  
+>**NOTE:** Always check if there is a tagged release we can vendor instead of a random hash
+
 
 ## Demo walkthrough
 

@@ -14,11 +14,6 @@
 
 FROM golang:GO_VERSION
 
-# Install dep as root
-ENV DEP_VERSION=v0.5.0
-RUN curl -sSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && \
-    chmod +x /usr/local/bin/dep
-
 # Install etcd
 RUN curl -sSL https://github.com/coreos/etcd/releases/download/v3.2.24/etcd-v3.2.24-linux-amd64.tar.gz \
     | tar -vxz -C /usr/local/bin --strip=1 etcd-v3.2.24-linux-amd64/etcd
@@ -26,6 +21,9 @@ RUN curl -sSL https://github.com/coreos/etcd/releases/download/v3.2.24/etcd-v3.2
 # Install the golint, use this to check our source for niceness
 COPY vendor/golang.org /go/src/golang.org
 RUN go install golang.org/x/lint/golint
+
+RUN apt-get update && \
+    apt-get install jq -y
 
 # Install the href checker for our md files, update PATH to include it
 RUN git clone https://github.com/duglin/vlinker.git /vlinker
