@@ -36,7 +36,7 @@ preview() {
     -v $DOCSITE:/srv/jekyll \
     -v $REPO_ROOT/docs:/srv/docs \
     -v $DOCSITE/.bundler:/usr/local/bundle \
-    -p 4000:4000 jekyll/jekyll jekyll serve
+    -p 4000:4000 jekyll/jekyll:4.0 jekyll serve
 }
 
 # Generate the static site's content
@@ -48,7 +48,7 @@ generate() {
     -v $DOCSITE:/srv/jekyll \
     -v $REPO_ROOT/docs:/srv/docs \
     -v $DOCSITE/.bundler:/usr/local/bundle \
-    jekyll/jekyll /bin/bash -c "bundle install; jekyll build"
+    jekyll/jekyll:4.0 /bin/bash -c "bundle install; jekyll build"
 }
 
 "$@"
