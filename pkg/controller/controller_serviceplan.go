@@ -62,7 +62,7 @@ func (c *controller) reconcileServicePlanKey(key string) error {
 		return err
 	}
 	pcb := pretty.NewContextBuilder(pretty.ServicePlan, namespace, name, "")
-	plan, err := c.servicePlanLister.ServicePlans(namespace).Get(key)
+	plan, err := c.servicePlanLister.ServicePlans(namespace).Get(name)
 	if errors.IsNotFound(err) {
 		klog.Infof(pcb.Message("not doing work because plan has been deleted"))
 		return nil
