@@ -18,6 +18,7 @@ package controller
 
 import (
 	"errors"
+	"k8s.io/client-go/tools/cache"
 	"testing"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -116,7 +117,7 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, fakeCatalogClient, _, testController, _ := newTestController(t, noFakeActions())
+			_, fakeCatalogClient, _, testController, sharedInformers := newTestController(t, noFakeActions())
 
 			fakeCatalogClient.AddReactor("list", "serviceinstances", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 				return true, &v1beta1.ServiceInstanceList{Items: tc.instances}, nil
@@ -126,7 +127,15 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 				tc.catalogClientPrepFunc(fakeCatalogClient)
 			}
 
-			err := reconcileServicePlan(t, testController, tc.plan)
+			err := sharedInformers.ServicePlans().Informer().GetStore().Add(tc.plan)
+			if err != nil {
+				t.Fatalf("unexpected error while creating test service plan: %v", err)
+			}
+			if testController.servicePlanLister == nil {
+				testController.servicePlanLister = sharedInformers.ServicePlans().Lister()
+			}
+
+			err = reconcileServicePlanKey(t, testController, tc.plan)
 			if err != nil {
 				if !tc.shouldError {
 					t.Fatalf("unexpected error from method under test: %v", err)
@@ -146,11 +155,16 @@ func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
 	}
 }
 
-func reconcileServicePlan(t *testing.T, testController *controller, servicePlan *v1beta1.ServicePlan) error {
+func reconcileServicePlanKey(t *testing.T, testController *controller, servicePlan *v1beta1.ServicePlan) error {
 	clone := servicePlan.DeepCopy()
-	err := testController.reconcileServicePlan(servicePlan)
+	key, err := cache.MetaNamespaceKeyFunc(servicePlan)
+	if err != nil {
+		t.Fatalf("unexpected error while buidling service plan key: %v", err)
+	}
+
+	err = testController.reconcileServicePlanKey(key)
 	if !reflect.DeepEqual(servicePlan, clone) {
-		t.Errorf("reconcileServicePlan shouldn't mutate input, but it does: %s", expectedGot(clone, servicePlan))
+		t.Errorf("reconcileServicePlanKey shouldn't mutate input, but it does: %s", expectedGot(clone, servicePlan))
 	}
 	return err
 }
