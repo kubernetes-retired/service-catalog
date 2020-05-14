@@ -58,7 +58,7 @@ endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION    ?= 1.13
-
+export GO111MODULE=on
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
 
@@ -113,9 +113,9 @@ ifdef NO_DOCKER
 else
 	# Mount .pkg as pkg so that we save our cached "go build" output files
 	DOCKER_CMD = docker run --security-opt label:disable --rm \
-	  -v $(CURDIR):/go/src/$(SC_PKG) \
-	  -v $(CURDIR)/.cache:/root/.cache/ \
-	  -v $(CURDIR)/.pkg:/go/pkg --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
+	  -v $(CURDIR):/go/src/$(SC_PKG):delegated \
+	  -v $(CURDIR)/.cache:/root/.cache/:cached \
+	  -v $(CURDIR)/.pkg:/go/pkg:cached --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
 	scBuildImageTarget = .scBuildImage
 endif
 
@@ -202,8 +202,8 @@ $(BINDIR):
 
 # Util targets
 ##############
-.PHONY: verify verify-generated verify-client-gen verify-docs
-verify: .init verify-generated verify-client-gen verify-docs verify-vendor
+.PHONY: verify verify-generated verify-client-gen verify-docs verify-modules
+verify: .init verify-generated verify-client-gen verify-docs verify-modules
 	@echo Running gofmt:
 	@$(DOCKER_CMD) gofmt -l -s $(TOP_TEST_DIRS) $(TOP_SRC_DIRS)>.out 2>&1||true
 	@[ ! -s .out ] || \
@@ -225,7 +225,7 @@ verify: .init verify-generated verify-client-gen verify-docs verify-vendor
 	@#
 	$(DOCKER_CMD) go vet $(SC_PKG)/...
 	@echo Running repo-infra verify scripts
-	@$(DOCKER_CMD) vendor/github.com/kubernetes/repo-infra/verify/verify-boilerplate.sh --rootdir=. | grep -Fv -e generated -e .pkg -e docsite -e bin/verify-links.sh > .out 2>&1 || true
+	@$(DOCKER_CMD) ./contrib/hack/verify-boilerplate.sh > .out 2>&1 || true
 	@[ ! -s .out ] || (cat .out && rm .out && false)
 	@rm .out
 	@#
@@ -441,15 +441,10 @@ svcat-publish: clean-bin svcat-all
 	# AZURE_STORAGE_CONNECTION_STRING will be used for auth in the following command
 	$(DOCKER_CMD) az storage blob upload-batch -d cli -s $(BINDIR)/svcat
 
-# Dependency management via dep (https://golang.github.io/dep)
-.PHONY: verify-vendor test-dep
-verify-vendor: .init
-	# Verify that vendor/ is in sync with Gopkg.lock
-	$(DOCKER_CMD) $(BUILD_DIR)/verify-vendor.sh
-
-test-dep: .init
-	# Test that a downstream consumer of our client library can use dep
-	$(DOCKER_CMD) test/test-dep.sh
+# Dependency management via go modules
+.PHONY: verify-modules
+verify-modules: .init
+	$(DOCKER_CMD) ./contrib/hack/verify-modules.sh
 
 .PHONY: docs
 docs:

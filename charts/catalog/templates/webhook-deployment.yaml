@@ -42,7 +42,7 @@ spec:
         - --secure-port
         - "8443"
         - --healthz-server-bind-port
-        - "8080"
+        - "8081"
         - -v
         - "{{ .Values.webhook.verbosity }}"
         - --feature-gates
@@ -62,7 +62,7 @@ spec:
         {{- if .Values.webhook.healthcheck.enabled }}
         readinessProbe:
           httpGet:
-            port: 8080
+            port: 8081
             path: /healthz/ready
             scheme: HTTP
           failureThreshold: 1
@@ -72,7 +72,7 @@ spec:
           timeoutSeconds: 5
         livenessProbe:
           httpGet:
-            port: 8080
+            port: 8081
             path: /healthz
             scheme: HTTP
           failureThreshold: 3

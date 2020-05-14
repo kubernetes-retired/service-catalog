@@ -16,7 +16,7 @@ limitations under the License.
 
 package tester
 
-import "github.com/appscode/jsonpatch"
+import "gomodules.xyz/jsonpatch/v2"
 
 // FilterOutStatusPatch filters out the status operation
 func FilterOutStatusPatch(operations []jsonpatch.JsonPatchOperation) []jsonpatch.JsonPatchOperation {

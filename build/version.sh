@@ -131,7 +131,6 @@ catalog::version::ldflag() {
 
   # If you update these, also update the list pkg/version/def.bzl.
   echo "-X ${SC_GO_PACKAGE}/pkg/version.${key}=${val}"
-  echo "-X ${SC_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.${key}=${val}"
 }
 
 # Prints the value that needs to be passed to the -ldflags parameter of go build
