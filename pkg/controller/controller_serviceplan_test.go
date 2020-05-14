@@ -18,16 +18,15 @@ package controller
 
 import (
 	"errors"
-	"k8s.io/client-go/tools/cache"
 	"testing"
+	"reflect"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/test/fake"
+
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"reflect"
-
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	clientgotesting "k8s.io/client-go/testing"
