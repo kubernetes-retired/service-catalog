@@ -43,7 +43,7 @@ func Resource(resource string) schema.GroupResource {
 var (
 	// SchemeBuilder needs to be exported as `SchemeBuilder` so
 	// the code-generation can find it.
-	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
+	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes)
 	localSchemeBuilder = &SchemeBuilder
 
 	// AddToScheme is exposed for API installation
@@ -74,16 +74,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	scheme.AddKnownTypes(schema.GroupVersion{Version: "v1"}, &metav1.Status{})
-	scheme.AddFieldLabelConversionFunc(serviceCatalogV1Beta1GVK("ClusterServiceClass"), ClusterServiceClassFieldLabelConversionFunc)
-	scheme.AddFieldLabelConversionFunc(serviceCatalogV1Beta1GVK("ServiceClass"), ServiceClassFieldLabelConversionFunc)
-	scheme.AddFieldLabelConversionFunc(serviceCatalogV1Beta1GVK("ClusterServicePlan"), ClusterServicePlanFieldLabelConversionFunc)
-	scheme.AddFieldLabelConversionFunc(serviceCatalogV1Beta1GVK("ServicePlan"), ServicePlanFieldLabelConversionFunc)
-	scheme.AddFieldLabelConversionFunc(serviceCatalogV1Beta1GVK("ServiceInstance"), ServiceInstanceFieldLabelConversionFunc)
-	scheme.AddFieldLabelConversionFunc(serviceCatalogV1Beta1GVK("ServiceBinding"), ServiceBindingFieldLabelConversionFunc)
 
 	return nil
-}
-
-func serviceCatalogV1Beta1GVK(kind string) schema.GroupVersionKind {
-	return schema.GroupVersionKind{Group: "servicecatalog.k8s.io", Version: "v1beta1", Kind: kind}
 }

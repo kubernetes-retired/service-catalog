@@ -19,7 +19,6 @@ limitations under the License.
 package fake
 
 import (
-	servicecataloginternalversion "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog"
 	settingsinternalversion "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -32,7 +31,6 @@ var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 var parameterCodec = runtime.NewParameterCodec(scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
-	servicecataloginternalversion.AddToScheme,
 	settingsinternalversion.AddToScheme,
 }
 

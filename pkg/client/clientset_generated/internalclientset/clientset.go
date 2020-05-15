@@ -19,7 +19,6 @@ limitations under the License.
 package internalclientset
 
 import (
-	servicecataloginternalversion "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset/typed/servicecatalog/internalversion"
 	settingsinternalversion "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/internalclientset/typed/settings/internalversion"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -28,7 +27,6 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	Servicecatalog() servicecataloginternalversion.ServicecatalogInterface
 	Settings() settingsinternalversion.SettingsInterface
 }
 
@@ -36,13 +34,7 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	servicecatalog *servicecataloginternalversion.ServicecatalogClient
-	settings       *settingsinternalversion.SettingsClient
-}
-
-// Servicecatalog retrieves the ServicecatalogClient
-func (c *Clientset) Servicecatalog() servicecataloginternalversion.ServicecatalogInterface {
-	return c.servicecatalog
+	settings *settingsinternalversion.SettingsClient
 }
 
 // Settings retrieves the SettingsClient
@@ -66,10 +58,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.servicecatalog, err = servicecataloginternalversion.NewForConfig(&configShallowCopy)
-	if err != nil {
-		return nil, err
-	}
 	cs.settings, err = settingsinternalversion.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -86,7 +74,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.servicecatalog = servicecataloginternalversion.NewForConfigOrDie(c)
 	cs.settings = settingsinternalversion.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
@@ -96,7 +83,6 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.servicecatalog = servicecataloginternalversion.New(c)
 	cs.settings = settingsinternalversion.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
