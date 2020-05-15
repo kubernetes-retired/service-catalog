@@ -17,6 +17,7 @@ limitations under the License.
 package probe
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -84,14 +85,14 @@ func (r CRDProbe) Name() string {
 }
 
 // Check if all CRDs with specific label are ready
-func (r *CRDProbe) Check(_ *http.Request) error {
+func (r *CRDProbe) Check(req *http.Request) error {
 	if r.counter < r.delay {
 		r.counter++
 		klog.V(4).Infof("%s CRDProbe skipped. Will be executed in %d iteration", r.Name(), r.delay-r.counter)
 		return nil
 	}
 	r.counter = 0
-	result, err := r.check()
+	result, err := r.check(req.Context())
 	if result && err == nil {
 		return nil
 	}
@@ -101,11 +102,11 @@ func (r *CRDProbe) Check(_ *http.Request) error {
 
 // IsReady returns true if all required CRDs are ready
 func (r *CRDProbe) IsReady() (bool, error) {
-	return r.check()
+	return r.check(context.Background())
 }
 
-func (r *CRDProbe) check() (bool, error) {
-	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"svcat": "true"}).String()})
+func (r *CRDProbe) check(ctx context.Context) (bool, error) {
+	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"svcat": "true"}).String()})
 	if err != nil {
 		return false, fmt.Errorf("failed to list CustomResourceDefinition: %s", err)
 	}

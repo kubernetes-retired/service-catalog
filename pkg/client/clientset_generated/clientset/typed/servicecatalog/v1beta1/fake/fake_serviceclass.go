@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -39,7 +41,7 @@ var serviceclassesResource = schema.GroupVersionResource{Group: "servicecatalog.
 var serviceclassesKind = schema.GroupVersionKind{Group: "servicecatalog.k8s.io", Version: "v1beta1", Kind: "ServiceClass"}
 
 // Get takes name of the serviceClass, and returns the corresponding serviceClass object, and an error if there is any.
-func (c *FakeServiceClasses) Get(name string, options v1.GetOptions) (result *v1beta1.ServiceClass, err error) {
+func (c *FakeServiceClasses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ServiceClass, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(serviceclassesResource, c.ns, name), &v1beta1.ServiceClass{})
 
@@ -50,7 +52,7 @@ func (c *FakeServiceClasses) Get(name string, options v1.GetOptions) (result *v1
 }
 
 // List takes label and field selectors, and returns the list of ServiceClasses that match those selectors.
-func (c *FakeServiceClasses) List(opts v1.ListOptions) (result *v1beta1.ServiceClassList, err error) {
+func (c *FakeServiceClasses) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ServiceClassList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(serviceclassesResource, serviceclassesKind, c.ns, opts), &v1beta1.ServiceClassList{})
 
@@ -72,14 +74,14 @@ func (c *FakeServiceClasses) List(opts v1.ListOptions) (result *v1beta1.ServiceC
 }
 
 // Watch returns a watch.Interface that watches the requested serviceClasses.
-func (c *FakeServiceClasses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeServiceClasses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(serviceclassesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a serviceClass and creates it.  Returns the server's representation of the serviceClass, and an error, if there is any.
-func (c *FakeServiceClasses) Create(serviceClass *v1beta1.ServiceClass) (result *v1beta1.ServiceClass, err error) {
+func (c *FakeServiceClasses) Create(ctx context.Context, serviceClass *v1beta1.ServiceClass, opts v1.CreateOptions) (result *v1beta1.ServiceClass, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(serviceclassesResource, c.ns, serviceClass), &v1beta1.ServiceClass{})
 
@@ -90,7 +92,7 @@ func (c *FakeServiceClasses) Create(serviceClass *v1beta1.ServiceClass) (result 
 }
 
 // Update takes the representation of a serviceClass and updates it. Returns the server's representation of the serviceClass, and an error, if there is any.
-func (c *FakeServiceClasses) Update(serviceClass *v1beta1.ServiceClass) (result *v1beta1.ServiceClass, err error) {
+func (c *FakeServiceClasses) Update(ctx context.Context, serviceClass *v1beta1.ServiceClass, opts v1.UpdateOptions) (result *v1beta1.ServiceClass, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(serviceclassesResource, c.ns, serviceClass), &v1beta1.ServiceClass{})
 
@@ -102,7 +104,7 @@ func (c *FakeServiceClasses) Update(serviceClass *v1beta1.ServiceClass) (result 
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeServiceClasses) UpdateStatus(serviceClass *v1beta1.ServiceClass) (*v1beta1.ServiceClass, error) {
+func (c *FakeServiceClasses) UpdateStatus(ctx context.Context, serviceClass *v1beta1.ServiceClass, opts v1.UpdateOptions) (*v1beta1.ServiceClass, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(serviceclassesResource, "status", c.ns, serviceClass), &v1beta1.ServiceClass{})
 
@@ -113,7 +115,7 @@ func (c *FakeServiceClasses) UpdateStatus(serviceClass *v1beta1.ServiceClass) (*
 }
 
 // Delete takes name of the serviceClass and deletes it. Returns an error if one occurs.
-func (c *FakeServiceClasses) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeServiceClasses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(serviceclassesResource, c.ns, name), &v1beta1.ServiceClass{})
 
@@ -121,15 +123,15 @@ func (c *FakeServiceClasses) Delete(name string, options *v1.DeleteOptions) erro
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeServiceClasses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(serviceclassesResource, c.ns, listOptions)
+func (c *FakeServiceClasses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(serviceclassesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.ServiceClassList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched serviceClass.
-func (c *FakeServiceClasses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceClass, err error) {
+func (c *FakeServiceClasses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServiceClass, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(serviceclassesResource, c.ns, name, pt, data, subresources...), &v1beta1.ServiceClass{})
 

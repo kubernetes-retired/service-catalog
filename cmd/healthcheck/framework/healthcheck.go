@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	goflag "flag"
 	"fmt"
 	"os"
@@ -235,7 +236,7 @@ func (h *HealthCheck) createInstance() error {
 		},
 	}
 	operationStartTime := time.Now()
-	instance, err = h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Create(instance)
+	instance, err = h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Create(context.Background(), instance, metav1.CreateOptions{})
 	if err != nil {
 		return h.setError("error creating instance: %v", err.Error())
 	}
@@ -259,7 +260,7 @@ func (h *HealthCheck) createInstance() error {
 	ReportOperationCompleted("create_instance", operationStartTime)
 
 	klog.V(4).Info("Verifing references are resolved")
-	sc, err := h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Get(h.instanceName, metav1.GetOptions{})
+	sc, err := h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Get(context.Background(), h.instanceName, metav1.GetOptions{})
 	if err != nil {
 		return h.setError("error getting instance: %v", err.Error())
 	}
@@ -300,7 +301,7 @@ func (h *HealthCheck) createBinding() error {
 		},
 	}
 	operationStartTime := time.Now()
-	binding, err := h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Create(binding)
+	binding, err := h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Create(context.Background(), binding, metav1.CreateOptions{})
 	if err != nil {
 		return h.setError("Error creating binding: %v", err.Error())
 	}
@@ -323,7 +324,7 @@ func (h *HealthCheck) createBinding() error {
 	ReportOperationCompleted("binding_ready", operationStartTime)
 
 	klog.V(4).Info("Validating that a secret was created after binding")
-	_, err = h.kubeClientSet.CoreV1().Secrets(h.namespace.Name).Get("my-secret", metav1.GetOptions{})
+	_, err = h.kubeClientSet.CoreV1().Secrets(h.namespace.Name).Get(context.Background(), "my-secret", metav1.GetOptions{})
 	if err != nil {
 		return h.setError("Error getting secret: %v", err.Error())
 	}
@@ -339,7 +340,7 @@ func (h *HealthCheck) deprovision() error {
 	}
 	klog.V(4).Info("Deleting the ServiceBinding.")
 	operationStartTime := time.Now()
-	err := h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Delete(h.bindingName, nil)
+	err := h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Delete(context.Background(), h.bindingName, metav1.DeleteOptions{})
 	if err != nil {
 		return h.setError("error deleting binding: %v", err.Error())
 	}
@@ -352,7 +353,7 @@ func (h *HealthCheck) deprovision() error {
 	ReportOperationCompleted("binding_deleted", operationStartTime)
 
 	klog.V(4).Info("Verifying that the secret was deleted after deleting the binding")
-	_, err = h.kubeClientSet.CoreV1().Secrets(h.namespace.Name).Get("my-secret", metav1.GetOptions{})
+	_, err = h.kubeClientSet.CoreV1().Secrets(h.namespace.Name).Get(context.Background(), "my-secret", metav1.GetOptions{})
 	if err == nil {
 		return h.setError("secret not deleted")
 	}
@@ -360,7 +361,7 @@ func (h *HealthCheck) deprovision() error {
 	// Deprovisioning the ServiceInstance
 	klog.V(4).Info("Deleting the ServiceInstance")
 	operationStartTime = time.Now()
-	err = h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Delete(h.instanceName, nil)
+	err = h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Delete(context.Background(), h.instanceName, metav1.DeleteOptions{})
 	if err != nil {
 		return h.setError("error deleting instance: %v", err.Error())
 	}
@@ -378,8 +379,8 @@ func (h *HealthCheck) deprovision() error {
 func (h *HealthCheck) cleanup() {
 	if h.frameworkError != nil && h.namespace != nil {
 		klog.V(4).Infof("Cleaning up.  Deleting the binding, instance and test namespace %v", h.namespace.Name)
-		h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Delete(h.bindingName, nil)
-		h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Delete(h.instanceName, nil)
+		h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceBindings(h.namespace.Name).Delete(context.Background(), h.bindingName, metav1.DeleteOptions{})
+		h.serviceCatalogClientSet.ServicecatalogV1beta1().ServiceInstances(h.namespace.Name).Delete(context.Background(), h.instanceName, metav1.DeleteOptions{})
 		DeleteKubeNamespace(h.kubeClientSet, h.namespace.Name)
 		h.namespace = nil
 	}

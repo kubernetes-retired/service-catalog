@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -90,7 +92,7 @@ func (c *controller) reconcileClusterServicePlan(clusterServicePlan *v1beta1.Clu
 	}
 
 	klog.Infof("ClusterServicePlan %q (ExternalName: %q): has been removed from broker catalog and has zero instances remaining; deleting", clusterServicePlan.Name, clusterServicePlan.Spec.ExternalName)
-	return c.serviceCatalogClient.ClusterServicePlans().Delete(clusterServicePlan.Name, &metav1.DeleteOptions{})
+	return c.serviceCatalogClient.ClusterServicePlans().Delete(context.Background(), clusterServicePlan.Name, metav1.DeleteOptions{})
 }
 
 func (c *controller) findServiceInstancesOnClusterServicePlan(clusterServicePlan *v1beta1.ClusterServicePlan) (*v1beta1.ServiceInstanceList, error) {
@@ -102,5 +104,5 @@ func (c *controller) findServiceInstancesOnClusterServicePlan(clusterServicePlan
 		LabelSelector: labelSelector,
 	}
 
-	return c.serviceCatalogClient.ServiceInstances(metav1.NamespaceAll).List(listOpts)
+	return c.serviceCatalogClient.ServiceInstances(metav1.NamespaceAll).List(context.Background(), listOpts)
 }

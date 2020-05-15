@@ -17,6 +17,8 @@ limitations under the License.
 package broker
 
 import (
+	"context"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scClientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -63,7 +65,7 @@ func (c *creator) execute() error {
 func (c *creator) registerServiceBroker() error {
 	klog.Infof("Create ServiceBroker %q", serviceBrokerName)
 
-	_, err := c.sc.ServiceBrokers(c.namespace).Create(&v1beta1.ServiceBroker{
+	_, err := c.sc.ServiceBrokers(c.namespace).Create(context.Background(), &v1beta1.ServiceBroker{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceBrokerName,
 			Namespace: c.namespace,
@@ -73,7 +75,7 @@ func (c *creator) registerServiceBroker() error {
 				URL: "http://test-broker-test-broker.test-broker.svc.cluster.local",
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 
 	if err != nil {
 		return errors.Wrap(err, "failed during creating ServiceBroker")
@@ -97,7 +99,7 @@ func (c *creator) createServiceInstance() error {
 }
 
 func (c *creator) createDefaultServiceInstance() error {
-	_, err := c.sc.ServiceInstances(c.namespace).Create(&v1beta1.ServiceInstance{
+	_, err := c.sc.ServiceInstances(c.namespace).Create(context.Background(), &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceInstanceName,
 			Namespace: c.namespace,
@@ -111,7 +113,7 @@ func (c *creator) createDefaultServiceInstance() error {
 				Raw: []byte(`{ "param-1":"value-1", "param-2":"value-2" }`),
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 
 	return err
 }
@@ -131,7 +133,7 @@ func (c *creator) createServiceBinding() error {
 }
 
 func (c *creator) createDefaultServiceBinding() error {
-	_, err := c.sc.ServiceBindings(c.namespace).Create(&v1beta1.ServiceBinding{
+	_, err := c.sc.ServiceBindings(c.namespace).Create(context.Background(), &v1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceBindingName,
 			Namespace: c.namespace,
@@ -141,7 +143,7 @@ func (c *creator) createDefaultServiceBinding() error {
 				Name: serviceInstanceName,
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 
 	return err
 }

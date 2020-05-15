@@ -21,11 +21,6 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
-	"k8s.io/kubectl/pkg/pluginutils"
-
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/browsing"
@@ -42,7 +37,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	k8sclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 )
 
 // These are build-time values, set during an official release
@@ -216,7 +215,9 @@ func getClients(kubeConfig, kubeContext string) (k8sClient k8sclient.Interface, 
 	var config clientcmd.ClientConfig
 
 	if plugin.IsPlugin() {
-		restConfig, config, err = pluginutils.InitClientAndConfig()
+		configFlags := genericclioptions.NewConfigFlags(true)
+		config = configFlags.ToRawKubeConfigLoader()
+		restConfig, err = configFlags.ToRESTConfig()
 		if err != nil {
 			return nil, nil, "", fmt.Errorf("could not get Kubernetes config from kubectl plugin context: %s", err)
 		}

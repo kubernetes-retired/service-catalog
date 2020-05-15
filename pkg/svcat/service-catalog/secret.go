@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -29,7 +30,7 @@ import (
 // A nil secret is returned without error when the secret has not been created by Service Catalog yet.
 // An error is returned when the binding is Ready but the secret could not be retrieved.
 func (sdk *SDK) RetrieveSecretByBinding(binding *v1beta1.ServiceBinding) (*corev1.Secret, error) {
-	secret, err := sdk.Core().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
+	secret, err := sdk.Core().Secrets(binding.Namespace).Get(context.Background(), binding.Spec.SecretName, metav1.GetOptions{})
 	if err != nil {
 		// It's expected to not have the secret until the binding is ready
 		if !sdk.IsBindingReady(binding) && errors.IsNotFound(err) {

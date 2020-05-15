@@ -17,6 +17,7 @@ limitations under the License.
 package fake
 
 import (
+	"context"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -33,50 +34,50 @@ type ServiceInstances struct {
 	v1beta1typed.ServiceInstanceInterface
 }
 
-func (c *ServiceInstances) Create(serviceInstance *v1beta1.ServiceInstance) (result *v1beta1.ServiceInstance, err error) {
-	return c.ServiceInstanceInterface.Create(serviceInstance)
+func (c *ServiceInstances) Create(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.CreateOptions) (*v1beta1.ServiceInstance, error) {
+	return c.ServiceInstanceInterface.Create(ctx, serviceInstance, opts)
 }
 
-func (c *ServiceInstances) Update(serviceInstance *v1beta1.ServiceInstance) (result *v1beta1.ServiceInstance, err error) {
+func (c *ServiceInstances) Update(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.UpdateOptions) (*v1beta1.ServiceInstance, error) {
 	instanceCopy := serviceInstance.DeepCopy()
-	updatedInstance, err := c.ServiceInstanceInterface.Update(instanceCopy)
+	updatedInstance, err := c.ServiceInstanceInterface.Update(ctx, instanceCopy, opts)
 	if updatedInstance != nil {
 		updatedInstance.ResourceVersion = rand.String(10)
 	}
 	return updatedInstance, err
 }
 
-func (c *ServiceInstances) UpdateStatus(serviceInstance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
+func (c *ServiceInstances) UpdateStatus(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.UpdateOptions) (*v1beta1.ServiceInstance, error) {
 	instanceCopy := serviceInstance.DeepCopy()
-	updatedInstance, err := c.ServiceInstanceInterface.UpdateStatus(instanceCopy)
+	updatedInstance, err := c.ServiceInstanceInterface.UpdateStatus(ctx, instanceCopy, opts)
 	if updatedInstance != nil {
 		updatedInstance.ResourceVersion = rand.String(10)
 	}
 	return updatedInstance, err
 }
 
-func (c *ServiceInstances) Delete(name string, options *v1.DeleteOptions) error {
-	return c.ServiceInstanceInterface.Delete(name, options)
+func (c *ServiceInstances) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+	return c.ServiceInstanceInterface.Delete(ctx, name, opts)
 }
 
-func (c *ServiceInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	return c.ServiceInstanceInterface.DeleteCollection(options, listOptions)
+func (c *ServiceInstances) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	return c.ServiceInstanceInterface.DeleteCollection(ctx, opts, listOpts)
 }
 
-func (c *ServiceInstances) Get(name string, options v1.GetOptions) (result *v1beta1.ServiceInstance, err error) {
-	return c.ServiceInstanceInterface.Get(name, options)
+func (c *ServiceInstances) Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.ServiceInstance, error) {
+	return c.ServiceInstanceInterface.Get(ctx, name, opts)
 }
 
-func (c *ServiceInstances) List(opts v1.ListOptions) (result *v1beta1.ServiceInstanceList, err error) {
-	return c.ServiceInstanceInterface.List(opts)
+func (c *ServiceInstances) List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ServiceInstanceList, error) {
+	return c.ServiceInstanceInterface.List(ctx, opts)
 }
 
 // Watch returns a watch.Interface that watches the requested serviceInstances.
-func (c *ServiceInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	return c.ServiceInstanceInterface.Watch(opts)
+func (c *ServiceInstances) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+	return c.ServiceInstanceInterface.Watch(ctx, opts)
 }
 
 // Patch applies the patch and returns the patched serviceInstance.
-func (c *ServiceInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceInstance, err error) {
-	return c.ServiceInstanceInterface.Patch(name, pt, data, subresources...)
+func (c *ServiceInstances) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServiceInstance, err error) {
+	return c.ServiceInstanceInterface.Patch(ctx, name, pt, data, opts, subresources...)
 }

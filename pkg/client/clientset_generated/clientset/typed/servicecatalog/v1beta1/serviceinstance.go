@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -37,15 +38,15 @@ type ServiceInstancesGetter interface {
 
 // ServiceInstanceInterface has methods to work with ServiceInstance resources.
 type ServiceInstanceInterface interface {
-	Create(*v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error)
-	Update(*v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error)
-	UpdateStatus(*v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.ServiceInstance, error)
-	List(opts v1.ListOptions) (*v1beta1.ServiceInstanceList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceInstance, err error)
+	Create(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.CreateOptions) (*v1beta1.ServiceInstance, error)
+	Update(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.UpdateOptions) (*v1beta1.ServiceInstance, error)
+	UpdateStatus(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.UpdateOptions) (*v1beta1.ServiceInstance, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.ServiceInstance, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ServiceInstanceList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServiceInstance, err error)
 	ServiceInstanceExpansion
 }
 
@@ -64,20 +65,20 @@ func newServiceInstances(c *ServicecatalogV1beta1Client, namespace string) *serv
 }
 
 // Get takes name of the serviceInstance, and returns the corresponding serviceInstance object, and an error if there is any.
-func (c *serviceInstances) Get(name string, options v1.GetOptions) (result *v1beta1.ServiceInstance, err error) {
+func (c *serviceInstances) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ServiceInstance, err error) {
 	result = &v1beta1.ServiceInstance{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("serviceinstances").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of ServiceInstances that match those selectors.
-func (c *serviceInstances) List(opts v1.ListOptions) (result *v1beta1.ServiceInstanceList, err error) {
+func (c *serviceInstances) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ServiceInstanceList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -88,13 +89,13 @@ func (c *serviceInstances) List(opts v1.ListOptions) (result *v1beta1.ServiceIns
 		Resource("serviceinstances").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested serviceInstances.
-func (c *serviceInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *serviceInstances) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -105,87 +106,90 @@ func (c *serviceInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("serviceinstances").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a serviceInstance and creates it.  Returns the server's representation of the serviceInstance, and an error, if there is any.
-func (c *serviceInstances) Create(serviceInstance *v1beta1.ServiceInstance) (result *v1beta1.ServiceInstance, err error) {
+func (c *serviceInstances) Create(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.CreateOptions) (result *v1beta1.ServiceInstance, err error) {
 	result = &v1beta1.ServiceInstance{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("serviceinstances").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(serviceInstance).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a serviceInstance and updates it. Returns the server's representation of the serviceInstance, and an error, if there is any.
-func (c *serviceInstances) Update(serviceInstance *v1beta1.ServiceInstance) (result *v1beta1.ServiceInstance, err error) {
+func (c *serviceInstances) Update(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.UpdateOptions) (result *v1beta1.ServiceInstance, err error) {
 	result = &v1beta1.ServiceInstance{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("serviceinstances").
 		Name(serviceInstance.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(serviceInstance).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *serviceInstances) UpdateStatus(serviceInstance *v1beta1.ServiceInstance) (result *v1beta1.ServiceInstance, err error) {
+func (c *serviceInstances) UpdateStatus(ctx context.Context, serviceInstance *v1beta1.ServiceInstance, opts v1.UpdateOptions) (result *v1beta1.ServiceInstance, err error) {
 	result = &v1beta1.ServiceInstance{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("serviceinstances").
 		Name(serviceInstance.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(serviceInstance).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the serviceInstance and deletes it. Returns an error if one occurs.
-func (c *serviceInstances) Delete(name string, options *v1.DeleteOptions) error {
+func (c *serviceInstances) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("serviceinstances").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *serviceInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *serviceInstances) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("serviceinstances").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched serviceInstance.
-func (c *serviceInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceInstance, err error) {
+func (c *serviceInstances) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServiceInstance, err error) {
 	result = &v1beta1.ServiceInstance{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("serviceinstances").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

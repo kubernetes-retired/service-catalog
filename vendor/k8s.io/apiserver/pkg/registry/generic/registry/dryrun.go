@@ -38,8 +38,7 @@ func (s *DryRunnableStorage) Create(ctx context.Context, key string, obj, out ru
 		if err := s.Storage.Get(ctx, key, "", out, false); err == nil {
 			return storage.NewKeyExistsError(key, 0)
 		}
-		s.copyInto(obj, out)
-		return nil
+		return s.copyInto(obj, out)
 	}
 	return s.Storage.Create(ctx, key, obj, out, ttl)
 }
@@ -52,7 +51,7 @@ func (s *DryRunnableStorage) Delete(ctx context.Context, key string, out runtime
 		if err := preconditions.Check(key, out); err != nil {
 			return err
 		}
-		return deleteValidation(out)
+		return deleteValidation(ctx, out)
 	}
 	return s.Storage.Delete(ctx, key, out, preconditions, deleteValidation)
 }
@@ -90,12 +89,14 @@ func (s *DryRunnableStorage) GuaranteedUpdate(
 			return err
 		}
 		rev, err := s.Versioner().ObjectResourceVersion(ptrToType)
+		if err != nil {
+			return err
+		}
 		out, _, err := tryUpdate(ptrToType, storage.ResponseMeta{ResourceVersion: rev})
 		if err != nil {
 			return err
 		}
-		s.copyInto(out, ptrToType)
-		return nil
+		return s.copyInto(out, ptrToType)
 	}
 	return s.Storage.GuaranteedUpdate(ctx, key, ptrToType, ignoreNotFound, preconditions, tryUpdate, suggestion...)
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package migration
 
 import (
+	"context"
 	"k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
@@ -26,10 +27,8 @@ import (
 func (m *Service) DisableBlocker(baseName string) {
 	klog.Info("Deleting deployment of WriteBlocker")
 
-	options := metav1.DeleteOptions{}
-
 	klog.Info("Deleting ValidatingWebhook")
-	err := m.admInterface.ValidatingWebhookConfigurations().Delete(baseName, &options)
+	err := m.admInterface.ValidatingWebhookConfigurations().Delete(context.Background(), baseName, metav1.DeleteOptions{})
 	if err != nil {
 		klog.Warning(err)
 	}
@@ -43,7 +42,7 @@ func (m *Service) EnableBlocker(baseName string) error {
 
 	klog.Info("Creating ValidationWebhook")
 	webhookConf := getValidationWebhookConfigurationObject(baseName)
-	_, err := m.admInterface.ValidatingWebhookConfigurations().Create(webhookConf)
+	_, err := m.admInterface.ValidatingWebhookConfigurations().Create(context.Background(), webhookConf, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

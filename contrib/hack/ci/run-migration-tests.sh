@@ -47,6 +47,8 @@ export TB_NAMESPACE="test-broker"
 
 DUMP_CLUSTER_INFO="${DUMP_CLUSTER_INFO:-false}"
 
+export GOFLAGS=-mod=vendor
+
 cleanup() {
     if [[ "${DUMP_CLUSTER_INFO}" == true ]]; then
         shout '- Creating artifacts...'
@@ -98,7 +100,7 @@ examiner::prepare_resources() {
         --wait
 
     shout "- Create sample resources for testing purpose..."
-    go run "${REPO_ROOT_DIR}/test/upgrade/examiner/main.go" --action prepareData
+    go run "${REPO_ROOT_DIR}"/test/upgrade/examiner/main.go --action prepareData
 }
 
 examiner::execute_test() {
@@ -106,6 +108,7 @@ examiner::execute_test() {
     # Required environment variables:
     # SC_APISERVER, SC_CONTROLLER, SC_NAMESPACE, TB_NAME, TB_NAMESPACE
     go run "${REPO_ROOT_DIR}/test/upgrade/examiner/main.go" --action executeTests
+    pushd "${REPO_ROOT_DIR}"
 }
 
 main() {

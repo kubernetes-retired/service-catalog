@@ -18,6 +18,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"reflect"
@@ -554,7 +555,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 
 	// Creating/updating the Secret
 	secretClient := c.kubeClient.CoreV1().Secrets(binding.Namespace)
-	existingSecret, err := secretClient.Get(binding.Spec.SecretName, metav1.GetOptions{})
+	existingSecret, err := secretClient.Get(context.Background(), binding.Spec.SecretName, metav1.GetOptions{})
 	if err == nil {
 		// Update existing secret
 		if !metav1.IsControlledBy(existingSecret, binding) {
@@ -562,7 +563,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 			return fmt.Errorf(`Secret "%s/%s" is not owned by ServiceBinding, controllerRef: %v`, binding.Namespace, existingSecret.Name, controllerRef)
 		}
 		existingSecret.Data = secretData
-		if _, err = secretClient.Update(existingSecret); err != nil {
+		if _, err = secretClient.Update(context.Background(), existingSecret, metav1.UpdateOptions{}); err != nil {
 			if apierrors.IsConflict(err) {
 				// Conflicting update detected, try again later
 				return fmt.Errorf(`Conflicting Secret "%s/%s" update detected`, binding.Namespace, existingSecret.Name)
@@ -587,7 +588,7 @@ func (c *controller) injectServiceBinding(binding *v1beta1.ServiceBinding, crede
 			Data: secretData,
 		}
 
-		if _, err = secretClient.Create(secret); err != nil {
+		if _, err = secretClient.Create(context.Background(), secret, metav1.CreateOptions{}); err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// Concurrent controller has created secret under the same name,
 				// Update the secret at the next retry iteration
@@ -627,7 +628,7 @@ func (c *controller) transformCredentials(transforms []v1beta1.SecretTransform, 
 		case t.AddKeysFrom != nil:
 			secret, err := c.kubeClient.CoreV1().
 				Secrets(t.AddKeysFrom.SecretRef.Namespace).
-				Get(t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
+				Get(context.Background(), t.AddKeysFrom.SecretRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return err // TODO: if the Secret doesn't exist yet, can we perform the transform when it does?
 			}
@@ -660,7 +661,7 @@ func (c *controller) ejectServiceBinding(binding *v1beta1.ServiceBinding) error 
 		binding.Namespace, binding.Spec.SecretName,
 	))
 
-	if err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(binding.Spec.SecretName, &metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+	if err = c.kubeClient.CoreV1().Secrets(binding.Namespace).Delete(context.Background(), binding.Spec.SecretName, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
@@ -745,7 +746,7 @@ func setServiceBindingConditionInternal(toUpdate *v1beta1.ServiceBinding,
 func (c *controller) updateServiceBindingStatus(toUpdate *v1beta1.ServiceBinding) (*v1beta1.ServiceBinding, error) {
 	pcb := pretty.NewBindingContextBuilder(toUpdate)
 	klog.V(4).Info(pcb.Message("Updating status"))
-	updatedBinding, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).UpdateStatus(toUpdate)
+	updatedBinding, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Errorf(pcb.Messagef("Error updating status: %v", err))
 	} else {
@@ -774,7 +775,7 @@ func (c *controller) updateServiceBindingCondition(
 		"Updating %v condition to %v (Reason: %q, Message: %q)",
 		conditionType, status, reason, message,
 	))
-	_, err := c.serviceCatalogClient.ServiceBindings(binding.Namespace).UpdateStatus(toUpdate)
+	_, err := c.serviceCatalogClient.ServiceBindings(binding.Namespace).UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Errorf(pcb.Messagef(
 			"Error updating %v condition to %v: %v",
@@ -800,7 +801,7 @@ func (c *controller) initializeServiceBindingStatus(binding *v1beta1.ServiceBind
 		UnbindStatus: v1beta1.ServiceBindingUnbindStatusNotRequired,
 	}
 
-	_, err := c.serviceCatalogClient.ServiceBindings(updated.Namespace).UpdateStatus(updated)
+	_, err := c.serviceCatalogClient.ServiceBindings(updated.Namespace).UpdateStatus(context.Background(), updated, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -1229,7 +1230,7 @@ func (c *controller) prepareBindRequest(
 		scBindingRetrievable = serviceClass.Spec.BindingRetrievable
 	}
 
-	ns, err := c.kubeClient.CoreV1().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
+	ns, err := c.kubeClient.CoreV1().Namespaces().Get(context.Background(), instance.Namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, &operationError{
 			reason:  errorFindingNamespaceServiceInstanceReason,
@@ -1537,7 +1538,7 @@ func (c *controller) processServiceBindingGracefulDeletionSuccess(binding *v1bet
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	toUpdate.Finalizers = finalizers.List()
 
-	_, err = c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(toUpdate)
+	_, err = c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("while removing finalizer entry: %v", err)
 	}

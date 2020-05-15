@@ -48,10 +48,10 @@ func WaitForBrokerCondition(client v1beta1servicecatalog.ServicecatalogV1beta1In
 		func() (bool, error) {
 			if len(namespace) == 0 {
 				klog.V(5).Infof("Waiting for ClusterServiceBroker %v condition %#v", name, condition)
-				broker, err = client.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
+				broker, err = client.ClusterServiceBrokers().Get(context.Background(), name, metav1.GetOptions{})
 			} else {
 				klog.V(5).Infof("Waiting for ServiceBroker %v in namespace %v to have condition %#v", name, namespace[0], condition)
-				broker, err = client.ServiceBrokers(namespace[0]).Get(name, metav1.GetOptions{})
+				broker, err = client.ServiceBrokers(namespace[0]).Get(context.Background(), name, metav1.GetOptions{})
 			}
 			if nil != err {
 				return false, fmt.Errorf("error getting Broker %v: %v", name, err)
@@ -85,10 +85,10 @@ func WaitForBrokerToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1I
 		func() (bool, error) {
 			if len(namespace) == 0 {
 				klog.V(5).Infof("Waiting for ClusterServiceBroker %v to not exist", name)
-				_, err = client.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
+				_, err = client.ClusterServiceBrokers().Get(context.Background(), name, metav1.GetOptions{})
 			} else {
 				klog.V(5).Infof("Waiting for ServiceBroker %v in namespace %v to not exist", name, namespace[0])
-				_, err = client.ServiceBrokers(namespace[0]).Get(name, metav1.GetOptions{})
+				_, err = client.ServiceBrokers(namespace[0]).Get(context.Background(), name, metav1.GetOptions{})
 			}
 			if nil == err {
 				return false, nil
@@ -112,10 +112,10 @@ func WaitForServiceClassToExist(client v1beta1servicecatalog.ServicecatalogV1bet
 			var err error
 			if len(namespace) == 0 {
 				klog.V(5).Infof("Waiting for ClusterServiceClass %v to exist", name)
-				_, err = client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
+				_, err = client.ClusterServiceClasses().Get(context.Background(), name, metav1.GetOptions{})
 			} else {
 				klog.V(5).Infof("Waiting for ServiceClass %v in namespace %v to exist", name, namespace[0])
-				_, err = client.ServiceClasses(namespace[0]).Get(name, metav1.GetOptions{})
+				_, err = client.ServiceClasses(namespace[0]).Get(context.Background(), name, metav1.GetOptions{})
 			}
 			if nil == err {
 				return true, nil
@@ -135,10 +135,10 @@ func WaitForServicePlanToExist(client v1beta1servicecatalog.ServicecatalogV1beta
 			var err error
 			if len(namespace) == 0 {
 				klog.V(5).Infof("Waiting for ClusterServicePlan %v to exist", name)
-				_, err = client.ClusterServicePlans().Get(name, metav1.GetOptions{})
+				_, err = client.ClusterServicePlans().Get(context.Background(), name, metav1.GetOptions{})
 			} else {
 				klog.V(5).Infof("Waiting for ServicePlan %v in namespace %v to exist", name, namespace[0])
-				_, err = client.ServicePlans(namespace[0]).Get(name, metav1.GetOptions{})
+				_, err = client.ServicePlans(namespace[0]).Get(context.Background(), name, metav1.GetOptions{})
 			}
 			if nil == err {
 				return true, nil
@@ -158,10 +158,10 @@ func WaitForServicePlanToNotExist(client v1beta1servicecatalog.ServicecatalogV1b
 			var err error
 			if len(namespace) == 0 {
 				klog.V(5).Infof("Waiting for ClusterServicePlan %q to not exist", name)
-				_, err = client.ClusterServicePlans().Get(name, metav1.GetOptions{})
+				_, err = client.ClusterServicePlans().Get(context.Background(), name, metav1.GetOptions{})
 			} else {
 				klog.V(5).Infof("Waiting for ServicePlan %q in namespace %v to not exist", name, namespace[0])
-				_, err = client.ServicePlans(namespace[0]).Get(name, metav1.GetOptions{})
+				_, err = client.ServicePlans(namespace[0]).Get(context.Background(), name, metav1.GetOptions{})
 			}
 			if nil == err {
 				return false, nil
@@ -185,10 +185,10 @@ func WaitForServiceClassToNotExist(client v1beta1servicecatalog.ServicecatalogV1
 			var err error
 			if len(namespace) == 0 {
 				klog.V(5).Infof("Waiting for ClusterServiceClass %v to not exist", name)
-				_, err = client.ClusterServiceClasses().Get(name, metav1.GetOptions{})
+				_, err = client.ClusterServiceClasses().Get(context.Background(), name, metav1.GetOptions{})
 			} else {
 				klog.V(5).Infof("Waiting for ServiceClass %v in namespace %v to not exist", name, namespace[0])
-				_, err = client.ServiceClasses(namespace[0]).Get(name, metav1.GetOptions{})
+				_, err = client.ServiceClasses(namespace[0]).Get(context.Background(), name, metav1.GetOptions{})
 			}
 			if nil == err {
 				return false, nil
@@ -209,7 +209,7 @@ func WaitForInstanceCondition(client v1beta1servicecatalog.ServicecatalogV1beta1
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			klog.V(5).Infof("Waiting for instance %v/%v condition %#v", namespace, name, condition)
-			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
+			instance, err := client.ServiceInstances(namespace).Get(context.Background(), name, metav1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Instance %v/%v: %v", namespace, name, err)
 			}
@@ -240,7 +240,7 @@ func WaitForInstanceToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta
 		func() (bool, error) {
 			klog.V(5).Infof("Waiting for instance %v/%v to not exist", namespace, name)
 
-			_, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
+			_, err := client.ServiceInstances(namespace).Get(context.Background(), name, metav1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}
@@ -260,7 +260,7 @@ func WaitForInstanceProcessedGeneration(client v1beta1servicecatalog.Servicecata
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			klog.V(5).Infof("Waiting for instance %v/%v to have processed generation of %v", namespace, name, processedGeneration)
-			instance, err := client.ServiceInstances(namespace).Get(name, metav1.GetOptions{})
+			instance, err := client.ServiceInstances(namespace).Get(context.Background(), name, metav1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Instance %v/%v: %v", namespace, name, err)
 			}
@@ -309,7 +309,7 @@ func WaitForBindingCondition(client v1beta1servicecatalog.ServicecatalogV1beta1I
 		func() (bool, error) {
 			klog.V(5).Infof("Waiting for binding %v/%v condition %#v", namespace, name, condition)
 
-			binding, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
+			binding, err := client.ServiceBindings(namespace).Get(context.Background(), name, metav1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting Binding %v/%v: %v", namespace, name, err)
 			}
@@ -343,7 +343,7 @@ func WaitForBindingToNotExist(client v1beta1servicecatalog.ServicecatalogV1beta1
 		func() (bool, error) {
 			klog.V(5).Infof("Waiting for binding %v/%v to not exist", namespace, name)
 
-			_, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
+			_, err := client.ServiceBindings(namespace).Get(context.Background(), name, metav1.GetOptions{})
 			if nil == err {
 				return false, nil
 			}
@@ -363,7 +363,7 @@ func WaitForBindingReconciledGeneration(client v1beta1servicecatalog.Servicecata
 	return wait.PollImmediate(500*time.Millisecond, wait.ForeverTestTimeout,
 		func() (bool, error) {
 			klog.V(5).Infof("Waiting for binding %v/%v to have reconciled generation of %v", namespace, name, reconciledGeneration)
-			binding, err := client.ServiceBindings(namespace).Get(name, metav1.GetOptions{})
+			binding, err := client.ServiceBindings(namespace).Get(context.Background(), name, metav1.GetOptions{})
 			if nil != err {
 				return false, fmt.Errorf("error getting ServiceBinding %v/%v: %v", namespace, name, err)
 			}

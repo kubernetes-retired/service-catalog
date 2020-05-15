@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"context"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
@@ -94,7 +96,7 @@ func (c *controller) reconcileServiceClass(serviceClass *v1beta1.ServiceClass) e
 	}
 
 	klog.Info(pcb.Message("Removed from broker catalog and has zero instances remaining; deleting"))
-	return c.serviceCatalogClient.ServiceClasses(serviceClass.Namespace).Delete(serviceClass.Name, &metav1.DeleteOptions{})
+	return c.serviceCatalogClient.ServiceClasses(serviceClass.Namespace).Delete(context.Background(), serviceClass.Name, metav1.DeleteOptions{})
 }
 
 func (c *controller) findServiceInstancesOnServiceClass(serviceClass *v1beta1.ServiceClass) (*v1beta1.ServiceInstanceList, error) {
@@ -106,5 +108,5 @@ func (c *controller) findServiceInstancesOnServiceClass(serviceClass *v1beta1.Se
 		LabelSelector: labelSelector,
 	}
 
-	return c.serviceCatalogClient.ServiceInstances(serviceClass.Namespace).List(listOpts)
+	return c.serviceCatalogClient.ServiceInstances(serviceClass.Namespace).List(context.Background(), listOpts)
 }

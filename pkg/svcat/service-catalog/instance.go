@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"time"
@@ -32,7 +33,7 @@ import (
 
 // RetrieveInstances lists all instances in a namespace.
 func (sdk *SDK) RetrieveInstances(ns, classFilter, planFilter string) (*v1beta1.ServiceInstanceList, error) {
-	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(v1.ListOptions{})
+	instances, err := sdk.ServiceCatalog().ServiceInstances(ns).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to list instances in %s", ns)
 	}
@@ -62,7 +63,7 @@ func (sdk *SDK) RetrieveInstances(ns, classFilter, planFilter string) (*v1beta1.
 
 // RetrieveInstance gets an instance by its name.
 func (sdk *SDK) RetrieveInstance(ns, name string) (*v1beta1.ServiceInstance, error) {
-	instance, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(name, v1.GetOptions{})
+	instance, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get instance '%s.%s' (%s)", ns, name, err)
 	}
@@ -74,7 +75,7 @@ func (sdk *SDK) RetrieveInstanceByBinding(b *v1beta1.ServiceBinding,
 ) (*v1beta1.ServiceInstance, error) {
 	ns := b.Namespace
 	instName := b.Spec.InstanceRef.Name
-	inst, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(instName, v1.GetOptions{})
+	inst, err := sdk.ServiceCatalog().ServiceInstances(ns).Get(context.Background(), instName, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func (sdk *SDK) RetrieveInstancesByPlan(plan Plan) ([]v1beta1.ServiceInstance, e
 			v1beta1.GroupName + "/" + v1beta1.FilterSpecClusterServicePlanRefName: plan.GetName(),
 		}).String(),
 	}
-	instances, err := sdk.ServiceCatalog().ServiceInstances("").List(planOpts)
+	instances, err := sdk.ServiceCatalog().ServiceInstances("").List(context.Background(), planOpts)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list instances (%s)", err)
 	}
@@ -119,7 +120,7 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 	classCh := make(chan *v1beta1.ClusterServiceClass)
 	classErrCh := make(chan error)
 	go func() {
-		class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(classID, v1.GetOptions{})
+		class, err := sdk.ServiceCatalog().ClusterServiceClasses().Get(context.Background(), classID, v1.GetOptions{})
 		if err != nil {
 			classErrCh <- err
 			return
@@ -131,7 +132,7 @@ func (sdk *SDK) InstanceToServiceClassAndPlan(instance *v1beta1.ServiceInstance,
 	planCh := make(chan *v1beta1.ClusterServicePlan)
 	planErrCh := make(chan error)
 	go func() {
-		plan, err := sdk.ServiceCatalog().ClusterServicePlans().Get(planID, v1.GetOptions{})
+		plan, err := sdk.ServiceCatalog().ClusterServicePlans().Get(context.Background(), planID, v1.GetOptions{})
 		if err != nil {
 			planErrCh <- err
 			return
@@ -200,7 +201,7 @@ func (sdk *SDK) Provision(instanceName, classKubeName, planKubeName string, prov
 			},
 		}
 	}
-	result, err := sdk.ServiceCatalog().ServiceInstances(opts.Namespace).Create(request)
+	result, err := sdk.ServiceCatalog().ServiceInstances(opts.Namespace).Create(context.Background(), request, v1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("provision request failed (%s)", err)
 	}
@@ -209,7 +210,7 @@ func (sdk *SDK) Provision(instanceName, classKubeName, planKubeName string, prov
 
 // Deprovision deletes an instance.
 func (sdk *SDK) Deprovision(namespace, instanceName string) error {
-	err := sdk.ServiceCatalog().ServiceInstances(namespace).Delete(instanceName, &v1.DeleteOptions{})
+	err := sdk.ServiceCatalog().ServiceInstances(namespace).Delete(context.Background(), instanceName, v1.DeleteOptions{})
 	if err != nil {
 		return fmt.Errorf("deprovision request failed (%s)", err)
 	}
@@ -227,7 +228,7 @@ func (sdk *SDK) TouchInstance(ns, name string, retries int) error {
 
 		inst.Spec.UpdateRequests = inst.Spec.UpdateRequests + 1
 
-		_, err = sdk.ServiceCatalog().ServiceInstances(ns).Update(inst)
+		_, err = sdk.ServiceCatalog().ServiceInstances(ns).Update(context.Background(), inst, v1.UpdateOptions{})
 		if err == nil {
 			return nil
 		}
@@ -250,7 +251,7 @@ func (sdk *SDK) WaitForInstanceToNotExist(ns, name string, interval time.Duratio
 
 	err = wait.PollImmediate(interval, *timeout,
 		func() (bool, error) {
-			instance, err = sdk.ServiceCatalog().ServiceInstances(ns).Get(name, v1.GetOptions{})
+			instance, err = sdk.ServiceCatalog().ServiceInstances(ns).Get(context.Background(), name, v1.GetOptions{})
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					err = nil
@@ -320,7 +321,7 @@ func (sdk *SDK) RemoveFinalizerForInstance(ns, name string) error {
 	finalizers := sets.NewString(instance.Finalizers...)
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	instance.Finalizers = finalizers.List()
-	_, err = sdk.ServiceCatalog().ServiceInstances(instance.Namespace).UpdateStatus(instance)
+	_, err = sdk.ServiceCatalog().ServiceInstances(instance.Namespace).UpdateStatus(context.Background(), instance, v1.UpdateOptions{})
 	if err != nil {
 		return err
 	}

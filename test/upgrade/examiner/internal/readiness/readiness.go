@@ -17,6 +17,7 @@ limitations under the License.
 package readiness
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -83,7 +84,7 @@ func (r *readiness) assertServiceCatalogIsReady() error {
 
 func (r *readiness) assertServiceCatalogAPIServerIsUp() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		deployment, err := r.client.AppsV1().Deployments(r.cfg.ServiceCatalogNamespace).Get(r.cfg.ServiceCatalogAPIServerName, v1.GetOptions{})
+		deployment, err := r.client.AppsV1().Deployments(r.cfg.ServiceCatalogNamespace).Get(context.Background(), r.cfg.ServiceCatalogAPIServerName, v1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -98,7 +99,7 @@ func (r *readiness) assertServiceCatalogAPIServerIsUp() error {
 
 func (r *readiness) assertServiceCatalogControllerIsUp() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		deployment, err := r.client.AppsV1().Deployments(r.cfg.ServiceCatalogNamespace).Get(r.cfg.ServiceCatalogControllerServerName, v1.GetOptions{})
+		deployment, err := r.client.AppsV1().Deployments(r.cfg.ServiceCatalogNamespace).Get(context.Background(), r.cfg.ServiceCatalogControllerServerName, v1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -123,7 +124,7 @@ func (r *readiness) assertTestBrokerIsReady() error {
 
 func (r *readiness) assertTestBrokerIsUp() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		deployment, err := r.client.AppsV1().Deployments(r.cfg.TestBrokerNamespace).Get(r.cfg.TestBrokerName, v1.GetOptions{})
+		deployment, err := r.client.AppsV1().Deployments(r.cfg.TestBrokerNamespace).Get(context.Background(), r.cfg.TestBrokerName, v1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

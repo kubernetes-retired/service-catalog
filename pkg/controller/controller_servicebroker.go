@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -179,7 +180,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			if broker.Status.OperationStartTime == nil {
 				toUpdate := broker.DeepCopy()
 				toUpdate.Status.OperationStartTime = &now
-				updated, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate)
+				updated, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 				if err != nil {
 					klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
 					return err
@@ -207,7 +208,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		if broker.Status.OperationStartTime != nil {
 			toUpdate := broker.DeepCopy()
 			toUpdate.Status.OperationStartTime = nil
-			if _, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate); err != nil {
+			if _, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{}); err != nil {
 				klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
 				return err
 			}
@@ -277,7 +278,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 
 			klog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ServiceClassName(existingServiceClass)))
 			existingServiceClass.Status.RemovedFromBrokerCatalog = true
-			_, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).UpdateStatus(existingServiceClass)
+			_, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).UpdateStatus(context.Background(), existingServiceClass, metav1.UpdateOptions{})
 			if err != nil {
 				s := fmt.Sprintf(
 					"Error updating status of %s: %v",
@@ -329,7 +330,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 			}
 			klog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ServicePlanName(existingServicePlan)))
 			existingServicePlan.Status.RemovedFromBrokerCatalog = true
-			_, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).UpdateStatus(existingServicePlan)
+			_, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).UpdateStatus(context.Background(), existingServicePlan, metav1.UpdateOptions{})
 			if err != nil {
 				s := fmt.Sprintf(
 					"Error updating status of %s: %v",
@@ -376,7 +377,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 
 		for _, plan := range existingServicePlans {
 			klog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ServicePlanName(&plan)))
-			err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Delete(plan.Name, &metav1.DeleteOptions{})
+			err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Delete(context.Background(), plan.Name, metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ServicePlanName(&plan), err)
 				klog.Warning(pcb.Message(s))
@@ -394,7 +395,7 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 
 		for _, svcClass := range existingServiceClasses {
 			klog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ServiceClassName(&svcClass)))
-			err = c.serviceCatalogClient.ServiceClasses(broker.Namespace).Delete(svcClass.Name, &metav1.DeleteOptions{})
+			err = c.serviceCatalogClient.ServiceClasses(broker.Namespace).Delete(context.Background(), svcClass.Name, metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ServiceClassName(&svcClass), err)
 				klog.Warning(pcb.Message(s))
@@ -468,7 +469,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 		}
 
 		klog.V(5).Info(pcb.Messagef("Fresh %s; creating", pretty.ServiceClassName(serviceClass)))
-		if _, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).Create(serviceClass); err != nil {
+		if _, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).Create(context.Background(), serviceClass, metav1.CreateOptions{}); err != nil {
 			klog.Error(pcb.Messagef("Error creating %s: %v", pretty.ServiceClassName(serviceClass), err))
 			return err
 		}
@@ -499,7 +500,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 	toUpdate.Spec.ExternalName = serviceClass.Spec.ExternalName
 	toUpdate.Spec.ExternalMetadata = serviceClass.Spec.ExternalMetadata
 
-	updatedServiceClass, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).Update(toUpdate)
+	updatedServiceClass, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %s: %v", pretty.ServiceClassName(serviceClass), err))
 		return err
@@ -508,7 +509,7 @@ func (c *controller) reconcileServiceClassFromServiceBrokerCatalog(broker *v1bet
 	if updatedServiceClass.Status.RemovedFromBrokerCatalog {
 		klog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ServiceClassName(serviceClass)))
 		updatedServiceClass.Status.RemovedFromBrokerCatalog = false
-		_, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).UpdateStatus(updatedServiceClass)
+		_, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).UpdateStatus(context.Background(), updatedServiceClass, metav1.UpdateOptions{})
 		if err != nil {
 			s := fmt.Sprintf("Error updating status of %s: %v", pretty.ServiceClassName(updatedServiceClass), err)
 			klog.Warning(pcb.Message(s))
@@ -553,7 +554,7 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ServicePlan.
-		if _, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Create(servicePlan); err != nil {
+		if _, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Create(context.Background(), servicePlan, metav1.CreateOptions{}); err != nil {
 			klog.Error(pcb.Messagef("Error creating %s: %v", pretty.ServicePlanName(servicePlan), err))
 			return err
 		}
@@ -584,7 +585,7 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 	toUpdate.Spec.InstanceUpdateParameterSchema = servicePlan.Spec.InstanceUpdateParameterSchema
 	toUpdate.Spec.ServiceBindingCreateParameterSchema = servicePlan.Spec.ServiceBindingCreateParameterSchema
 
-	updatedPlan, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Update(toUpdate)
+	updatedPlan, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %s: %v", pretty.ServicePlanName(servicePlan), err))
 		return err
@@ -594,7 +595,7 @@ func (c *controller) reconcileServicePlanFromServiceBrokerCatalog(broker *v1beta
 		updatedPlan.Status.RemovedFromBrokerCatalog = false
 		klog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ServicePlanName(updatedPlan)))
 
-		_, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).UpdateStatus(updatedPlan)
+		_, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).UpdateStatus(context.Background(), updatedPlan, metav1.UpdateOptions{})
 		if err != nil {
 			s := fmt.Sprintf("Error updating status of %s: %v", pretty.ServicePlanName(updatedPlan), err)
 			klog.Error(pcb.Message(s))
@@ -663,7 +664,7 @@ func (c *controller) updateServiceBrokerCondition(broker *v1beta1.ServiceBroker,
 	toUpdate.RecalculatePrinterColumnStatusFields()
 
 	klog.V(4).Info(pcb.Messagef("Updating ready condition to %v", status))
-	_, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(toUpdate)
+	_, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating ready condition: %v", err))
 	} else {
@@ -682,7 +683,7 @@ func (c *controller) updateServiceBrokerFinalizers(
 	// Get the latest version of the broker so that we can avoid conflicts
 	// (since we have probably just updated the status of the broker and are
 	// now removing the last finalizer).
-	broker, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).Get(broker.Name, metav1.GetOptions{})
+	broker, err := c.serviceCatalogClient.ServiceBrokers(broker.Namespace).Get(context.Background(), broker.Name, metav1.GetOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error finalizing: %v", err))
 	}
@@ -693,7 +694,7 @@ func (c *controller) updateServiceBrokerFinalizers(
 	logContext := fmt.Sprint(pcb.Messagef("Updating finalizers to %v", finalizers))
 
 	klog.V(4).Info(pcb.Messagef("Updating %v", logContext))
-	_, err = c.serviceCatalogClient.ServiceBrokers(broker.Namespace).Update(toUpdate)
+	_, err = c.serviceCatalogClient.ServiceBrokers(broker.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %v: %v", logContext, err))
 	}
@@ -709,7 +710,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForNamespacedBroker(broker 
 	listOpts := metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
-	existingServiceClasses, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).List(listOpts)
+	existingServiceClasses, err := c.serviceCatalogClient.ServiceClasses(broker.Namespace).List(context.Background(), listOpts)
 	if err != nil {
 		c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingServiceClassesReason, "%v %v", errorListingServiceClassesMessage, err)
 		if err := c.updateServiceBrokerCondition(
@@ -726,7 +727,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForNamespacedBroker(broker 
 	}
 	klog.Info(pcb.Messagef("Found %d ServiceClasses", len(existingServiceClasses.Items)))
 
-	existingServicePlans, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).List(listOpts)
+	existingServicePlans, err := c.serviceCatalogClient.ServicePlans(broker.Namespace).List(context.Background(), listOpts)
 	if err != nil {
 		c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingServicePlansReason, "%v %v", errorListingServicePlansMessage, err)
 		if err := c.updateServiceBrokerCondition(

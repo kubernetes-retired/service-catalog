@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	time "time"
 
 	servicecatalogv1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -61,13 +62,13 @@ func NewFilteredServicePlanInformer(client clientset.Interface, namespace string
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ServicecatalogV1beta1().ServicePlans(namespace).List(options)
+				return client.ServicecatalogV1beta1().ServicePlans(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ServicecatalogV1beta1().ServicePlans(namespace).Watch(options)
+				return client.ServicecatalogV1beta1().ServicePlans(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&servicecatalogv1beta1.ServicePlan{},

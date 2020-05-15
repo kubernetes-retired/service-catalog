@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -55,13 +56,13 @@ type Broker interface {
 // Deregister deletes a broker
 func (sdk *SDK) Deregister(brokerName string, scopeOpts *ScopeOptions) error {
 	if scopeOpts.Scope.Matches(NamespaceScope) {
-		err := sdk.ServiceCatalog().ServiceBrokers(scopeOpts.Namespace).Delete(brokerName, &v1.DeleteOptions{})
+		err := sdk.ServiceCatalog().ServiceBrokers(scopeOpts.Namespace).Delete(context.Background(), brokerName, v1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("deregister request failed (%s)", err)
 		}
 		return nil
 	} else if scopeOpts.Scope.Matches(ClusterScope) {
-		err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(brokerName, &v1.DeleteOptions{})
+		err := sdk.ServiceCatalog().ClusterServiceBrokers().Delete(context.Background(), brokerName, v1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("deregister request failed (%s)", err)
 		}
@@ -75,7 +76,7 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 	var brokers []Broker
 
 	if opts.Scope.Matches(ClusterScope) {
-		csb, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(v1.ListOptions{})
+		csb, err := sdk.ServiceCatalog().ClusterServiceBrokers().List(context.Background(), v1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to list cluster-scoped brokers (%s)", err)
 		}
@@ -86,7 +87,7 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		sb, err := sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).List(v1.ListOptions{})
+		sb, err := sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).List(context.Background(), v1.ListOptions{})
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
 			if apierrors.IsNotFound(err) {
@@ -104,7 +105,7 @@ func (sdk *SDK) RetrieveBrokers(opts ScopeOptions) ([]Broker, error) {
 }
 
 func (sdk *SDK) retrieveBroker(name string) (*v1beta1.ClusterServiceBroker, error) {
-	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(name, v1.GetOptions{})
+	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get broker '%s'", name)
 	}
@@ -118,7 +119,7 @@ func (sdk *SDK) RetrieveBrokerByID(kubeName string, opts ScopeOptions) (Broker, 
 	var sb *v1beta1.ServiceBroker
 	var err error
 	if opts.Scope.Matches(ClusterScope) {
-		csb, err = sdk.ServiceCatalog().ClusterServiceBrokers().Get(kubeName, v1.GetOptions{})
+		csb, err = sdk.ServiceCatalog().ClusterServiceBrokers().Get(context.Background(), kubeName, v1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			csb = nil
 		}
@@ -128,7 +129,7 @@ func (sdk *SDK) RetrieveBrokerByID(kubeName string, opts ScopeOptions) (Broker, 
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		sb, err = sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).Get(kubeName, v1.GetOptions{})
+		sb, err = sdk.ServiceCatalog().ServiceBrokers(opts.Namespace).Get(context.Background(), kubeName, v1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				sb = nil
@@ -154,7 +155,7 @@ func (sdk *SDK) RetrieveBrokerByID(kubeName string, opts ScopeOptions) (Broker, 
 
 // retrieveNamespacedBroker gets a broker by its name & namespace.
 func (sdk *SDK) retrieveNamespacedBroker(namespace string, name string) (*v1beta1.ServiceBroker, error) {
-	broker, err := sdk.ServiceCatalog().ServiceBrokers(namespace).Get(name, v1.GetOptions{})
+	broker, err := sdk.ServiceCatalog().ServiceBrokers(namespace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get broker '%s' (%s)", name, err)
 	}
@@ -166,7 +167,7 @@ func (sdk *SDK) retrieveNamespacedBroker(namespace string, name string) (*v1beta
 func (sdk *SDK) RetrieveBrokerByClass(class *v1beta1.ClusterServiceClass,
 ) (*v1beta1.ClusterServiceBroker, error) {
 	brokerName := class.Spec.ClusterServiceBrokerName
-	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(brokerName, v1.GetOptions{})
+	broker, err := sdk.ServiceCatalog().ClusterServiceBrokers().Get(context.Background(), brokerName, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +222,7 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions, s
 			}
 		}
 
-		result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(request)
+		result, err := sdk.ServiceCatalog().ClusterServiceBrokers().Create(context.Background(), request, v1.CreateOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("register request failed (%s)", err)
 		}
@@ -252,7 +253,7 @@ func (sdk *SDK) Register(brokerName string, url string, opts *RegisterOptions, s
 		}
 	}
 
-	result, err := sdk.ServiceCatalog().ServiceBrokers(scopeOpts.Namespace).Create(request)
+	result, err := sdk.ServiceCatalog().ServiceBrokers(scopeOpts.Namespace).Create(context.Background(), request, v1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("register request failed (%s)", err)
 	}
@@ -271,7 +272,7 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 			if err == nil {
 				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
-				_, err = sdk.ServiceCatalog().ServiceBrokers(namespace).Update(broker)
+				_, err = sdk.ServiceCatalog().ServiceBrokers(namespace).Update(context.Background(), broker, v1.UpdateOptions{})
 				if err == nil {
 					success = true
 				}
@@ -287,7 +288,7 @@ func (sdk *SDK) Sync(name string, scopeOpts ScopeOptions, retries int) error {
 			if err == nil {
 				broker.Spec.RelistRequests = broker.Spec.RelistRequests + 1
 
-				_, err = sdk.ServiceCatalog().ClusterServiceBrokers().Update(broker)
+				_, err = sdk.ServiceCatalog().ClusterServiceBrokers().Update(context.Background(), broker, v1.UpdateOptions{})
 				if err == nil {
 					success = true
 				}

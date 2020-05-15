@@ -17,6 +17,7 @@ limitations under the License.
 package migration
 
 import (
+	"context"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,13 +57,13 @@ func (s *ScalingService) ScaleUp() error {
 
 func (s *ScalingService) scaleTo(v int) error {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		deploy, err := s.appInterface.Deployments(s.namespace).Get(s.deploymentName, metav1.GetOptions{})
+		deploy, err := s.appInterface.Deployments(s.namespace).Get(context.Background(), s.deploymentName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		r := int32(v)
 		deploy.Spec.Replicas = &r
-		_, err = s.appInterface.Deployments(s.namespace).Update(deploy)
+		_, err = s.appInterface.Deployments(s.namespace).Update(context.Background(), deploy, metav1.UpdateOptions{})
 		return err
 	})
 	if err != nil {
@@ -70,7 +71,7 @@ func (s *ScalingService) scaleTo(v int) error {
 	}
 
 	err = wait.Poll(time.Second, time.Second*45, func() (bool, error) {
-		deploy, err := s.appInterface.Deployments(s.namespace).Get(s.deploymentName, metav1.GetOptions{})
+		deploy, err := s.appInterface.Deployments(s.namespace).Get(context.Background(), s.deploymentName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
