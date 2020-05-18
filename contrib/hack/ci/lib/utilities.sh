@@ -179,6 +179,7 @@ install::cluster::service_catalog_v2() {
     shout "- Installing Service Catalog in version 0.2.x"
     helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
     # install always the newest service catalog with apiserver
+    helm repo update svc-cat
     helm install svc-cat/catalog-v0.2 --name ${SC_CHART_NAME} --namespace ${SC_NAMESPACE} --wait
 }
 
@@ -189,8 +190,7 @@ readonly KIND_CLUSTER_NAME="kind-ci"
 
 kind::create_cluster() {
     shout "- Create k8s cluster..."
-    kind create cluster --name=${KIND_CLUSTER_NAME} --image=kindest/node:${KUBERNETES_VERSION} --wait=5m
-    export KUBECONFIG="$(kind get kubeconfig-path --name=${KIND_CLUSTER_NAME})"
+    kind create cluster --name=${KIND_CLUSTER_NAME} --image="kindest/node:${KUBERNETES_VERSION}" --wait=5m
 }
 
 kind::delete_cluster() {

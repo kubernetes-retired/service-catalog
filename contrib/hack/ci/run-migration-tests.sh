@@ -64,7 +64,7 @@ trap cleanup EXIT
 
 upgrade::cluster::service_catalog() {
     shout "- Building Service Catalog image from sources..."
-    pushd ${REPO_ROOT_DIR}
+    pushd "${REPO_ROOT_DIR}"
 
     make service-catalog-image
 
@@ -81,18 +81,31 @@ upgrade::cluster::service_catalog() {
 }
 
 examiner::prepare_resources() {
+    shout "- Building Test Broker image from sources..."
+    pushd "${REPO_ROOT_DIR}"
+
+    make test-broker-image
+
+    shout "- Load Service Catalog image into cluster..."
+    kind::load_image test-broker:canary
+
     shout "- Installing Test broker..."
-    helm install svc-cat/test-broker --name ${TB_CHART_NAME} --namespace ${TB_NAMESPACE} --wait
+    helm install charts/test-broker \
+        --set imagePullPolicy=IfNotPresent \
+        --set image=test-broker:canary \
+        --name ${TB_CHART_NAME} \
+        --namespace ${TB_NAMESPACE} \
+        --wait
 
     shout "- Create sample resources for testing purpose..."
-    go run ${REPO_ROOT_DIR}/test/upgrade/examiner/main.go --action prepareData
+    go run "${REPO_ROOT_DIR}/test/upgrade/examiner/main.go" --action prepareData
 }
 
 examiner::execute_test() {
     shout "- Execute upgrade tests..."
     # Required environment variables:
     # SC_APISERVER, SC_CONTROLLER, SC_NAMESPACE, TB_NAME, TB_NAMESPACE
-    go run ${REPO_ROOT_DIR}/test/upgrade/examiner/main.go --action executeTests
+    go run "${REPO_ROOT_DIR}/test/upgrade/examiner/main.go" --action executeTests
 }
 
 main() {
@@ -106,7 +119,7 @@ main() {
         echo "Skipping kind and helm installation cause SKIP_DEPS_INSTALLATION is set to true."
     fi
 
-    export KUBERNETES_VERSION=${STABLE_KUBERNETES_VERSION}
+    export KUBERNETES_VERSION=${KUBERNETES_VERSION:-${STABLE_KUBERNETES_VERSION}} KUBECONFIG="${TMP_DIR}/kubeconfig"
     kind::create_cluster
 
     # Cluster is already created, and all below operation are performed against that cluster,
