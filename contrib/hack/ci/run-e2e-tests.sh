@@ -54,7 +54,7 @@ cleanup() {
 trap cleanup EXIT
 
 install::cluster::service_catalog_latest() {
-    pushd ${REPO_ROOT_DIR}
+    pushd "${REPO_ROOT_DIR}"
     shout "- Building Service Catalog image from sources..."
     env REGISTRY="" VERSION=canary ARCH=amd64 \
         make service-catalog-image
@@ -74,7 +74,7 @@ install::cluster::service_catalog_latest() {
 
 test::prepare_data() {
     shout "- Building User Broker image from sources..."
-    pushd ${REPO_ROOT_DIR}
+    pushd "${REPO_ROOT_DIR}"
     env REGISTRY="" VERSION=canary ARCH=amd64 \
         make user-broker-image
     popd
@@ -85,7 +85,7 @@ test::prepare_data() {
 
 test::execute() {
     shout "- Executing e2e test..."
-    pushd ${REPO_ROOT_DIR}/test/e2e/
+    pushd "${REPO_ROOT_DIR}/test/e2e/"
     env SERVICECATALOGCONFIG="${KUBECONFIG}" go test -v ./... -broker-image="user-broker:canary"
     popd
 }
@@ -101,7 +101,7 @@ main() {
         echo "Skipping kind and helm installation cause SKIP_DEPS_INSTALLATION is set to true."
     fi
 
-    export KUBERNETES_VERSION=${STABLE_KUBERNETES_VERSION}
+    export KUBERNETES_VERSION=${KUBERNETES_VERSION:-${STABLE_KUBERNETES_VERSION}} KUBECONFIG="${TMP_DIR}/kubeconfig"
     kind::create_cluster
 
     # Cluster is already created, and all below operation are performed against that cluster,
