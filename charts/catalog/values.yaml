@@ -11,8 +11,11 @@ imagePullPolicy: Always
 rbacEnable: true
 rbacApiVersion: rbac.authorization.k8s.io/v1
 webhook:
-  # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
-  updateStrategy: RollingUpdate
+  # deployment strategy for service-catalog webhook
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
   minReadySeconds: 1
   # annotations is a collection of annotations to add to the webhook pods.
   annotations: {}
@@ -23,11 +26,11 @@ webhook:
     enabled: true
   # Attributes of the webhook's service resource
   service:
+    port: 443
     # Type of service; valid values are "LoadBalancer", "NodePort" or "ClusterIP"
     # NodePort is useful if deploying on bare metal or hacking locally on
     # minikube
-    port: 443
-    type: NodePort
+    type: ClusterIP
     # Further configuration for services of type NodePort
     nodePort:
       # Available port in allowable range (e.g. 30000 - 32767 on minikube)
@@ -41,14 +44,17 @@ webhook:
   resources:
     requests:
       cpu: 100m
-      memory: 20Mi
+      memory: 35Mi
     limits:
       cpu: 100m
-      memory: 30Mi
+      memory: 45Mi
 controllerManager:
   replicas: 1
-  # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"
-  updateStrategy: RollingUpdate
+  # deployment strategy for service-catalog controllerManager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
   minReadySeconds: 1
   # annotations is a collection of annotations to add to the controllerManager pod.
   annotations: {}
