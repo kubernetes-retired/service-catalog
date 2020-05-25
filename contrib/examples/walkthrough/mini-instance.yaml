@@ -5,7 +5,7 @@ metadata:
   namespace: test-ns
 spec:
   clusterServiceClassExternalName: mariadb
-  clusterServicePlanExternalName: 10-1-26
+  clusterServicePlanExternalName: 10-3-22
   parameters:
     param-1: value-1
     param-2: value-2

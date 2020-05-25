@@ -78,7 +78,7 @@ $ svcat describe class mariadb
 Plans:
         NAME                  DESCRIPTION            
 +------------------+--------------------------------+
-  10-1-26            Fast, reliable, scalable,       
+  10-3-22            Fast, reliable, scalable,       
                      and easy to use open-source     
                      relational database system.     
                      MariaDB Server is intended      
@@ -138,7 +138,7 @@ resources available in the cluster:
 $ svcat get plans
        NAME         NAMESPACE     CLASS                DESCRIPTION            
 +------------------+-----------+------------+---------------------------------+
-  10-1-26                        mariadb      Fast, reliable, scalable,        
+  10-3-22                        mariadb      Fast, reliable, scalable,        
                                               and easy to use open-source      
                                               relational database system.      
                                               MariaDB Server is intended       
@@ -159,7 +159,7 @@ $ svcat get plans
 .
 $ kubectl get clusterserviceplans
 NAME                       EXTERNAL-NAME      BROKER       CLASS        AGE                                                                                                                                                                                                    
-mariadb-10-1-26            10-1-26            minibroker   mariadb      34m                                                                                                                                                                                                    
+mariadb-10-3-22            10-3-22            minibroker   mariadb      34m                                                                                                                                                                                                    
 mariadb-10-1-28            10-1-28            minibroker   mariadb      34m                                                                                                                                                                                                    
 mariadb-10-1-29            10-1-29            minibroker   mariadb      34m                                                                                                                                                                                                    
 mariadb-10-1-30            10-1-30            minibroker   mariadb      34m                                                                                                                                                                                                    
@@ -173,10 +173,10 @@ mariadb-10-1-34-debian-9   10-1-34-debian-9   minibroker   mariadb      34m
 You can view the details of a `ClusterServicePlan` with this command:
 
 ```console
-$ svcat describe plan 10-1-26 --scope cluster
-  Name:              10-1-26                                                                                                                                                                                                                 
+$ svcat describe plan 10-3-22 --scope cluster
+  Name:              10-3-22                                                                                                                                                                                                                 
   Description:       Fast, reliable, scalable, and easy to use open-source relational database system. MariaDB Server is intended for mission-critical, heavy-load production systems as well as for embedding into mass-deployed software.  
-  Kubernetes Name:   mariadb-10-1-26                                                                                                                                                                                                         
+  Kubernetes Name:   mariadb-10-3-22                                                                                                                                                                                                         
   Status:            Active                                                                                                                                                                                                                  
   Free:              true                                                                                                                                                                                                                    
   Class:             mariadb                                                                                                                                                                                                                 
@@ -184,12 +184,12 @@ $ svcat describe plan 10-1-26 --scope cluster
 Instances:
 No instances defined
 
-$ kubectl get clusterserviceplans mariadb-10-1-26 -o yaml
+$ kubectl get clusterserviceplans mariadb-10-3-22 -o yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ClusterServicePlan
 metadata:
   creationTimestamp: "2019-06-18T03:32:31Z"
-  name: mariadb-10-1-26
+  name: mariadb-10-3-22
   ownerReferences:
   - apiVersion: servicecatalog.k8s.io/v1beta1
     blockOwnerDeletion: false
@@ -198,7 +198,7 @@ metadata:
     name: minibroker
     uid: 6ee99fc5-9179-11e9-8cb6-0242ac110009
   resourceVersion: "28"
-  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/mariadb-10-1-26
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterserviceplans/mariadb-10-3-22
   uid: b496eaf5-9179-11e9-8cb6-0242ac110009
 spec:
   clusterServiceBrokerName: minibroker
@@ -207,8 +207,8 @@ spec:
   description: Fast, reliable, scalable, and easy to use open-source relational database
     system. MariaDB Server is intended for mission-critical, heavy-load production
     systems as well as for embedding into mass-deployed software.
-  externalID: mariadb-10-1-26
-  externalName: 10-1-26
+  externalID: mariadb-10-3-22
+  externalName: 10-3-22
   free: true
 status:
   removedFromBrokerCatalog: false
@@ -245,7 +245,7 @@ $ svcat describe instance -n test-ns mini-instance
   Namespace:   test-ns                                                                            
   Status:      Ready - The instance was provisioned successfully @ 2019-06-18 02:42:55 +0000 UTC  
   Class:       mariadb                                                                            
-  Plan:        10-1-26                                                                            
+  Plan:        10-3-22                                                                            
 
 Parameters:
   param-1: value-1
@@ -271,9 +271,9 @@ spec:
   clusterServiceClassExternalName: mariadb
   clusterServiceClassRef:
     name: mariadb
-  clusterServicePlanExternalName: 10-1-26
+  clusterServicePlanExternalName: 10-3-22
   clusterServicePlanRef:
-    name: mariadb-10-1-26
+    name: mariadb-10-3-22
   externalID: c3b56b2e-9172-11e9-bfe5-0242ac110008
   parameters:
     param-1: value-1
@@ -295,8 +295,8 @@ status:
     type: Ready
   deprovisionStatus: Required
   externalProperties:
-    clusterServicePlanExternalID: mariadb-10-1-26
-    clusterServicePlanExternalName: 10-1-26
+    clusterServicePlanExternalID: mariadb-10-3-22
+    clusterServicePlanExternalName: 10-3-22
     parameterChecksum: 4fa544b50ca7a33fe5e8bc0780f1f36aa0c2c7098242db27bc8a3e21f4b4ab55
     parameters:
       param-1: value-1
