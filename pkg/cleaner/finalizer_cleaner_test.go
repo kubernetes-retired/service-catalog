@@ -17,6 +17,7 @@ limitations under the License.
 package cleaner
 
 import (
+	"context"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/stretchr/testify/assert"
@@ -36,49 +37,49 @@ func TestFinalizerCleaner_RemoveFinalizers(t *testing.T) {
 	assert.NoError(t, clr.RemoveFinalizers())
 
 	// Then
-	listCsb, err := fakeClisc.ServicecatalogV1beta1().ClusterServiceBrokers().List(apimachinaryv1.ListOptions{})
+	listCsb, err := fakeClisc.ServicecatalogV1beta1().ClusterServiceBrokers().List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listCsb.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listSb, err := fakeClisc.ServicecatalogV1beta1().ServiceBrokers(v1.NamespaceAll).List(apimachinaryv1.ListOptions{})
+	listSb, err := fakeClisc.ServicecatalogV1beta1().ServiceBrokers(v1.NamespaceAll).List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listSb.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listCsc, err := fakeClisc.ServicecatalogV1beta1().ClusterServiceClasses().List(apimachinaryv1.ListOptions{})
+	listCsc, err := fakeClisc.ServicecatalogV1beta1().ClusterServiceClasses().List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listCsc.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listSc, err := fakeClisc.ServicecatalogV1beta1().ServiceClasses(v1.NamespaceAll).List(apimachinaryv1.ListOptions{})
+	listSc, err := fakeClisc.ServicecatalogV1beta1().ServiceClasses(v1.NamespaceAll).List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listSc.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listCsp, err := fakeClisc.ServicecatalogV1beta1().ClusterServicePlans().List(apimachinaryv1.ListOptions{})
+	listCsp, err := fakeClisc.ServicecatalogV1beta1().ClusterServicePlans().List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listCsp.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listSp, err := fakeClisc.ServicecatalogV1beta1().ServicePlans(v1.NamespaceAll).List(apimachinaryv1.ListOptions{})
+	listSp, err := fakeClisc.ServicecatalogV1beta1().ServicePlans(v1.NamespaceAll).List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listSp.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listI, err := fakeClisc.ServicecatalogV1beta1().ServiceInstances(v1.NamespaceAll).List(apimachinaryv1.ListOptions{})
+	listI, err := fakeClisc.ServicecatalogV1beta1().ServiceInstances(v1.NamespaceAll).List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listI.Items {
 		assert.Empty(t, item.Finalizers)
 	}
 
-	listB, err := fakeClisc.ServicecatalogV1beta1().ServiceBindings(v1.NamespaceAll).List(apimachinaryv1.ListOptions{})
+	listB, err := fakeClisc.ServicecatalogV1beta1().ServiceBindings(v1.NamespaceAll).List(context.Background(), apimachinaryv1.ListOptions{})
 	assert.NoError(t, err)
 	for _, item := range listB.Items {
 		assert.Empty(t, item.Finalizers)

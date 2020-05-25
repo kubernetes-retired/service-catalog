@@ -18,6 +18,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -338,7 +339,7 @@ func (c *controller) monitorConfigMap() {
 	// only ever want to monitor and be notified about one configmap
 	// in a hardcoded place.
 	klog.V(9).Info("cluster ID monitor loop enter")
-	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(c.clusterIDConfigMapName, metav1.GetOptions{})
+	cm, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Get(context.Background(), c.clusterIDConfigMapName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		m := make(map[string]string)
 		m["id"] = c.getClusterID()
@@ -351,7 +352,7 @@ func (c *controller) monitorConfigMap() {
 		// if we fail to set the id,
 		// it could be due to permissions
 		// or due to being already set while we were trying
-		if _, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Create(cm); err != nil {
+		if _, err := c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Create(context.Background(), cm, metav1.CreateOptions{}); err != nil {
 			klog.Warningf("due to error %q, could not set clusterid configmap to %#v ", err, cm)
 		}
 	} else if err == nil {
@@ -366,7 +367,7 @@ func (c *controller) monitorConfigMap() {
 				cm.Data = m
 			}
 			m["id"] = c.getClusterID()
-			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(cm)
+			c.kubeClient.CoreV1().ConfigMaps(c.clusterIDConfigMapNamespace).Update(context.Background(), cm, metav1.UpdateOptions{})
 		}
 	} else { // some err we can't handle
 		klog.V(4).Infof("error getting the cluster info configmap: %q", err)

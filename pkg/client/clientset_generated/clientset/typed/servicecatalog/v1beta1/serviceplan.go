@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -37,15 +38,15 @@ type ServicePlansGetter interface {
 
 // ServicePlanInterface has methods to work with ServicePlan resources.
 type ServicePlanInterface interface {
-	Create(*v1beta1.ServicePlan) (*v1beta1.ServicePlan, error)
-	Update(*v1beta1.ServicePlan) (*v1beta1.ServicePlan, error)
-	UpdateStatus(*v1beta1.ServicePlan) (*v1beta1.ServicePlan, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.ServicePlan, error)
-	List(opts v1.ListOptions) (*v1beta1.ServicePlanList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServicePlan, err error)
+	Create(ctx context.Context, servicePlan *v1beta1.ServicePlan, opts v1.CreateOptions) (*v1beta1.ServicePlan, error)
+	Update(ctx context.Context, servicePlan *v1beta1.ServicePlan, opts v1.UpdateOptions) (*v1beta1.ServicePlan, error)
+	UpdateStatus(ctx context.Context, servicePlan *v1beta1.ServicePlan, opts v1.UpdateOptions) (*v1beta1.ServicePlan, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.ServicePlan, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ServicePlanList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServicePlan, err error)
 	ServicePlanExpansion
 }
 
@@ -64,20 +65,20 @@ func newServicePlans(c *ServicecatalogV1beta1Client, namespace string) *serviceP
 }
 
 // Get takes name of the servicePlan, and returns the corresponding servicePlan object, and an error if there is any.
-func (c *servicePlans) Get(name string, options v1.GetOptions) (result *v1beta1.ServicePlan, err error) {
+func (c *servicePlans) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ServicePlan, err error) {
 	result = &v1beta1.ServicePlan{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("serviceplans").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of ServicePlans that match those selectors.
-func (c *servicePlans) List(opts v1.ListOptions) (result *v1beta1.ServicePlanList, err error) {
+func (c *servicePlans) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ServicePlanList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -88,13 +89,13 @@ func (c *servicePlans) List(opts v1.ListOptions) (result *v1beta1.ServicePlanLis
 		Resource("serviceplans").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested servicePlans.
-func (c *servicePlans) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *servicePlans) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -105,87 +106,90 @@ func (c *servicePlans) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("serviceplans").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a servicePlan and creates it.  Returns the server's representation of the servicePlan, and an error, if there is any.
-func (c *servicePlans) Create(servicePlan *v1beta1.ServicePlan) (result *v1beta1.ServicePlan, err error) {
+func (c *servicePlans) Create(ctx context.Context, servicePlan *v1beta1.ServicePlan, opts v1.CreateOptions) (result *v1beta1.ServicePlan, err error) {
 	result = &v1beta1.ServicePlan{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("serviceplans").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(servicePlan).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a servicePlan and updates it. Returns the server's representation of the servicePlan, and an error, if there is any.
-func (c *servicePlans) Update(servicePlan *v1beta1.ServicePlan) (result *v1beta1.ServicePlan, err error) {
+func (c *servicePlans) Update(ctx context.Context, servicePlan *v1beta1.ServicePlan, opts v1.UpdateOptions) (result *v1beta1.ServicePlan, err error) {
 	result = &v1beta1.ServicePlan{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("serviceplans").
 		Name(servicePlan.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(servicePlan).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *servicePlans) UpdateStatus(servicePlan *v1beta1.ServicePlan) (result *v1beta1.ServicePlan, err error) {
+func (c *servicePlans) UpdateStatus(ctx context.Context, servicePlan *v1beta1.ServicePlan, opts v1.UpdateOptions) (result *v1beta1.ServicePlan, err error) {
 	result = &v1beta1.ServicePlan{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("serviceplans").
 		Name(servicePlan.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(servicePlan).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the servicePlan and deletes it. Returns an error if one occurs.
-func (c *servicePlans) Delete(name string, options *v1.DeleteOptions) error {
+func (c *servicePlans) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("serviceplans").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *servicePlans) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *servicePlans) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("serviceplans").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched servicePlan.
-func (c *servicePlans) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServicePlan, err error) {
+func (c *servicePlans) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServicePlan, err error) {
 	result = &v1beta1.ServicePlan{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("serviceplans").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

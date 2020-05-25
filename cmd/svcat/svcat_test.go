@@ -112,6 +112,9 @@ func TestGetSvcatWithNamespacedBrokerFeatureDisabled(t *testing.T) {
 						CommonServicePlanSpec: v1beta1.CommonServicePlanSpec{
 							ExternalName: "my-cluster-plan",
 						},
+						ClusterServiceClassRef: v1beta1.ClusterObjectReference{
+							Name: "my-cluster-class",
+						},
 					},
 				},
 			}
@@ -549,17 +552,18 @@ func executeCommand(t *testing.T, cmd string, continueOnErr bool) string {
 // executeCommand runs a svcat command against a fake k8s api,
 // returning the cli output.
 func executeFakeCommand(t *testing.T, cmd string, fakeContext *command.Context, continueOnErr bool) string {
+	t.Helper()
 	// Setup the svcat command
-	svcat, _, err := buildCommand(cmd, fakeContext, "")
+	cli, _, err := buildCommand(cmd, fakeContext, "")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
 	// Capture all output: stderr and stdout
 	output := &bytes.Buffer{}
-	svcat.SetOutput(output)
+	cli.SetOutput(output)
 
-	err = svcat.Execute()
+	err = cli.Execute()
 	if err != nil && !continueOnErr {
 		t.Fatalf("%+v", err)
 	}

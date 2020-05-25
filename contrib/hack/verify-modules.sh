@@ -59,8 +59,6 @@ if [[ -n "${outdated}" ]]; then
   echo "3. Run ./contrib/hack/verify-modules.sh to verify no additional changes are required"
   echo ""
   echo "${outdated}"
-
-  echo "Skip for now unitl switch to K8s 1.18"
 fi
 
 unused=$(comm -23 \
@@ -79,8 +77,7 @@ if [ -n "$modifedModules" ]; then
     echo "go mod tidy modified go.mod and/or go.sum"
 fi
 
-#if [[ -n "${unused}${outdated}" ]]; then # replace if statement after switching to K8s 1.18
-if [[ -n "${unused}${modifedModules}" ]]; then
+if [[ -n "${unused}${modifedModules}${outdated}" ]]; then
   exit 1
 fi
 

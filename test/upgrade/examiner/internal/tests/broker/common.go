@@ -17,6 +17,8 @@ limitations under the License.
 package broker
 
 import (
+	"context"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scClientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
@@ -42,7 +44,7 @@ func (c *common) checkServiceClass() error {
 
 func (c *common) assertProperAmountOfServiceClasses() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		list, err := c.sc.ServiceClasses(c.namespace).List(metav1.ListOptions{})
+		list, err := c.sc.ServiceClasses(c.namespace).List(context.Background(), metav1.ListOptions{})
 		if apiErr.IsNotFound(err) {
 			klog.Info("ServiceClasses not exist")
 			return false, nil
@@ -73,7 +75,7 @@ func (c *common) checkServicePlan() error {
 
 func (c *common) assertProperAmountOfServicePlans() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		list, err := c.sc.ServicePlans(c.namespace).List(metav1.ListOptions{})
+		list, err := c.sc.ServicePlans(c.namespace).List(context.Background(), metav1.ListOptions{})
 		if apiErr.IsNotFound(err) {
 			klog.Info("ServicePlans not exist")
 			return false, nil
@@ -95,7 +97,7 @@ func (c *common) assertProperAmountOfServicePlans() error {
 
 func (c *common) assertServiceInstanceIsReady() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		instance, err := c.sc.ServiceInstances(c.namespace).Get(serviceInstanceName, metav1.GetOptions{})
+		instance, err := c.sc.ServiceInstances(c.namespace).Get(context.Background(), serviceInstanceName, metav1.GetOptions{})
 		if apiErr.IsNotFound(err) {
 			klog.Infof("ServiceInstance %q not exist", serviceInstanceName)
 			return false, nil
@@ -123,7 +125,7 @@ func (c *common) assertServiceInstanceIsReady() error {
 
 func (c *common) assertServiceBindingIsReady() error {
 	return wait.Poll(waitInterval, timeoutInterval, func() (done bool, err error) {
-		binding, err := c.sc.ServiceBindings(c.namespace).Get(serviceBindingName, metav1.GetOptions{})
+		binding, err := c.sc.ServiceBindings(c.namespace).Get(context.Background(), serviceBindingName, metav1.GetOptions{})
 		if apiErr.IsNotFound(err) {
 			klog.Infof("ServiceBinding %q not exist", serviceBindingName)
 			return false, nil

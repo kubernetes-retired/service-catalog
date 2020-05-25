@@ -17,6 +17,7 @@ limitations under the License.
 package runner
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -42,7 +43,7 @@ type taskFn func(stopCh <-chan struct{}, namespace string) error
 
 // NamespaceCreator has methods required to create k8s ns.
 type NamespaceCreator interface {
-	Create(*v1.Namespace) (*v1.Namespace, error)
+	Create(ctx context.Context, namespace *v1.Namespace, opts metav1.CreateOptions) (*v1.Namespace, error)
 }
 
 // TestRunner executes registered tests
@@ -146,7 +147,7 @@ func (r *TestRunner) sanitizedNamespaceName(nameToSanitize string) string {
 }
 
 func (r *TestRunner) ensureNamespaceExists(name string) error {
-	_, err := r.nsCreator.Create(&v1.Namespace{
+	_, err := r.nsCreator.Create(context.Background(), &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Labels: map[string]string{
@@ -154,7 +155,7 @@ func (r *TestRunner) ensureNamespaceExists(name string) error {
 				createdByLabelName: "upgrade-test",
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err

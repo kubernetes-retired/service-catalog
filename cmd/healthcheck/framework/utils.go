@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -76,7 +77,7 @@ func CreateKubeNamespace(c kubernetes.Interface) (*corev1.Namespace, error) {
 	var got *corev1.Namespace
 	err := wait.PollImmediate(poll, defaultTimeout, func() (bool, error) {
 		var err error
-		got, err = c.CoreV1().Namespaces().Create(ns)
+		got, err = c.CoreV1().Namespaces().Create(context.Background(), ns, metav1.CreateOptions{})
 		if err != nil {
 			klog.Errorf("Unexpected error while creating namespace: %v", err)
 			return false, err
@@ -91,7 +92,7 @@ func CreateKubeNamespace(c kubernetes.Interface) (*corev1.Namespace, error) {
 
 // DeleteKubeNamespace deletes the specified K8s namespace
 func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
-	return c.CoreV1().Namespaces().Delete(namespace, nil)
+	return c.CoreV1().Namespaces().Delete(context.Background(), namespace, metav1.DeleteOptions{})
 }
 
 // WaitForEndpoint waits for 'defaultTimeout' interval for an endpoint to be available
@@ -101,7 +102,7 @@ func WaitForEndpoint(c kubernetes.Interface, namespace, name string) error {
 
 func endpointAvailable(c kubernetes.Interface, namespace, name string) wait.ConditionFunc {
 	return func() (bool, error) {
-		endpoint, err := c.CoreV1().Endpoints(namespace).Get(name, metav1.GetOptions{})
+		endpoint, err := c.CoreV1().Endpoints(namespace).Get(context.Background(), name, metav1.GetOptions{})
 		if err != nil {
 			if apierrs.IsNotFound(err) {
 				return false, nil

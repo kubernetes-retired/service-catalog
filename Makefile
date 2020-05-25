@@ -58,8 +58,15 @@ endif
 
 TYPES_FILES    = $(shell find pkg/apis -name types.go)
 GO_VERSION    ?= 1.13
-GOFLAGS		   =-mod=vendor
 
+# Preserve also user values
+ifeq ($(GOFLAGS),)
+GOFLAGS := -mod=vendor
+else
+GOFLAGS := $(GOFLAGS) -mod=vendor
+endif
+
+export GOFLAGS
 export GO111MODULE=on
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
@@ -80,7 +87,7 @@ endif
 BASEIMAGE?=gcr.io/google-containers/debian-base-$(ARCH):v1.0.0
 
 GO_BUILD       = env CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) \
-                  go build $(GOFLAGS) -a -tags netgo -installsuffix netgo \
+                  go build -a -tags netgo -installsuffix netgo \
                   -ldflags '-s -w -X $(SC_PKG)/pkg.VERSION=$(VERSION) $(BUILD_LDFLAGS)'
 
 BASE_PATH      = $(ROOT:/src/github.com/kubernetes-sigs/service-catalog/=)
@@ -168,13 +175,13 @@ generators: $(GENERATORS)
 .SECONDEXPANSION:
 
 $(BINDIR)/openapi-gen: $$(shell find vendor/k8s.io/kube-openapi/cmd/openapi-gen vendor/k8s.io/gengo) .init
-	$(DOCKER_CMD) go build $(GOFLAGS) -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/kube-openapi/cmd/openapi-gen
 
 # We specify broad dependencies for these generator binaries: each one depends
 # on everything under its source tree as well as gengo's.  This uses GNU Make's
 # secondary expansion feature to pass $* to `find`.
 $(BINDIR)/%-gen: $$(shell find vendor/k8s.io/code-generator/cmd/$$*-gen vendor/k8s.io/gengo) .init
-	$(DOCKER_CMD) go build $(GOFLAGS) -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/$*-gen
+	$(DOCKER_CMD) go build -o $@ $(SC_PKG)/vendor/k8s.io/code-generator/cmd/$*-gen
 
 # Regenerate all files if the gen exes changed or any "types.go" files changed
 .generate_files: .init generators $(TYPES_FILES)

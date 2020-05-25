@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -39,7 +41,7 @@ var servicebrokersResource = schema.GroupVersionResource{Group: "servicecatalog.
 var servicebrokersKind = schema.GroupVersionKind{Group: "servicecatalog.k8s.io", Version: "v1beta1", Kind: "ServiceBroker"}
 
 // Get takes name of the serviceBroker, and returns the corresponding serviceBroker object, and an error if there is any.
-func (c *FakeServiceBrokers) Get(name string, options v1.GetOptions) (result *v1beta1.ServiceBroker, err error) {
+func (c *FakeServiceBrokers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(servicebrokersResource, c.ns, name), &v1beta1.ServiceBroker{})
 
@@ -50,7 +52,7 @@ func (c *FakeServiceBrokers) Get(name string, options v1.GetOptions) (result *v1
 }
 
 // List takes label and field selectors, and returns the list of ServiceBrokers that match those selectors.
-func (c *FakeServiceBrokers) List(opts v1.ListOptions) (result *v1beta1.ServiceBrokerList, err error) {
+func (c *FakeServiceBrokers) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ServiceBrokerList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(servicebrokersResource, servicebrokersKind, c.ns, opts), &v1beta1.ServiceBrokerList{})
 
@@ -72,14 +74,14 @@ func (c *FakeServiceBrokers) List(opts v1.ListOptions) (result *v1beta1.ServiceB
 }
 
 // Watch returns a watch.Interface that watches the requested serviceBrokers.
-func (c *FakeServiceBrokers) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeServiceBrokers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(servicebrokersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a serviceBroker and creates it.  Returns the server's representation of the serviceBroker, and an error, if there is any.
-func (c *FakeServiceBrokers) Create(serviceBroker *v1beta1.ServiceBroker) (result *v1beta1.ServiceBroker, err error) {
+func (c *FakeServiceBrokers) Create(ctx context.Context, serviceBroker *v1beta1.ServiceBroker, opts v1.CreateOptions) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(servicebrokersResource, c.ns, serviceBroker), &v1beta1.ServiceBroker{})
 
@@ -90,7 +92,7 @@ func (c *FakeServiceBrokers) Create(serviceBroker *v1beta1.ServiceBroker) (resul
 }
 
 // Update takes the representation of a serviceBroker and updates it. Returns the server's representation of the serviceBroker, and an error, if there is any.
-func (c *FakeServiceBrokers) Update(serviceBroker *v1beta1.ServiceBroker) (result *v1beta1.ServiceBroker, err error) {
+func (c *FakeServiceBrokers) Update(ctx context.Context, serviceBroker *v1beta1.ServiceBroker, opts v1.UpdateOptions) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(servicebrokersResource, c.ns, serviceBroker), &v1beta1.ServiceBroker{})
 
@@ -102,7 +104,7 @@ func (c *FakeServiceBrokers) Update(serviceBroker *v1beta1.ServiceBroker) (resul
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeServiceBrokers) UpdateStatus(serviceBroker *v1beta1.ServiceBroker) (*v1beta1.ServiceBroker, error) {
+func (c *FakeServiceBrokers) UpdateStatus(ctx context.Context, serviceBroker *v1beta1.ServiceBroker, opts v1.UpdateOptions) (*v1beta1.ServiceBroker, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(servicebrokersResource, "status", c.ns, serviceBroker), &v1beta1.ServiceBroker{})
 
@@ -113,7 +115,7 @@ func (c *FakeServiceBrokers) UpdateStatus(serviceBroker *v1beta1.ServiceBroker) 
 }
 
 // Delete takes name of the serviceBroker and deletes it. Returns an error if one occurs.
-func (c *FakeServiceBrokers) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeServiceBrokers) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(servicebrokersResource, c.ns, name), &v1beta1.ServiceBroker{})
 
@@ -121,15 +123,15 @@ func (c *FakeServiceBrokers) Delete(name string, options *v1.DeleteOptions) erro
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeServiceBrokers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(servicebrokersResource, c.ns, listOptions)
+func (c *FakeServiceBrokers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(servicebrokersResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.ServiceBrokerList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched serviceBroker.
-func (c *FakeServiceBrokers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ServiceBroker, err error) {
+func (c *FakeServiceBrokers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ServiceBroker, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(servicebrokersResource, c.ns, name, pt, data, subresources...), &v1beta1.ServiceBroker{})
 

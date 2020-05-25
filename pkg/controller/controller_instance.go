@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	stderrors "errors"
 	"fmt"
 	"net/url"
@@ -1412,7 +1413,7 @@ func (c *controller) resolveClusterServiceClassRef(instance *v1beta1.ServiceInst
 			LabelSelector: labelSelector,
 		}
 
-		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
+		serviceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(context.Background(), listOpts)
 		klog.Info(pcb.Messagef("Found %d ClusterServiceClasses", len(serviceClasses.Items)))
 
 		if err == nil && len(serviceClasses.Items) == 1 {
@@ -1486,7 +1487,7 @@ func (c *controller) resolveServiceClassRef(instance *v1beta1.ServiceInstance) (
 			LabelSelector: labelSelector,
 		}
 
-		serviceClasses, err := c.serviceCatalogClient.ServiceClasses(instance.Namespace).List(listOpts)
+		serviceClasses, err := c.serviceCatalogClient.ServiceClasses(instance.Namespace).List(context.Background(), listOpts)
 		klog.Info(pcb.Messagef("Found %d ServiceClasses", len(serviceClasses.Items)))
 
 		if err == nil && len(serviceClasses.Items) == 1 {
@@ -1547,7 +1548,7 @@ func (c *controller) resolveClusterServicePlanRef(instance *v1beta1.ServiceInsta
 		listOpts := metav1.ListOptions{
 			LabelSelector: labelSelector,
 		}
-		servicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
+		servicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(context.Background(), listOpts)
 		klog.Info(pcb.Messagef("Found %d ClusterServicePlans", len(servicePlans.Items)))
 
 		if err == nil && len(servicePlans.Items) == 1 {
@@ -1607,7 +1608,7 @@ func (c *controller) resolveServicePlanRef(instance *v1beta1.ServiceInstance, br
 		listOpts := metav1.ListOptions{
 			LabelSelector: labelSelector,
 		}
-		servicePlans, err := c.serviceCatalogClient.ServicePlans(instance.Namespace).List(listOpts)
+		servicePlans, err := c.serviceCatalogClient.ServicePlans(instance.Namespace).List(context.Background(), listOpts)
 		klog.Info(pcb.Messagef("Found %d ServicePlans", len(servicePlans.Items)))
 
 		if err == nil && len(servicePlans.Items) == 1 {
@@ -1876,7 +1877,7 @@ func setServiceInstanceConditionInternal(toUpdate *v1beta1.ServiceInstance,
 func (c *controller) updateServiceInstanceReferences(toUpdate *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
 	pcb := pretty.NewInstanceContextBuilder(toUpdate)
 	klog.V(4).Info(pcb.Message("Updating references"))
-	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).Update(toUpdate)
+	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Errorf(pcb.Messagef("Failed to update references: %v", err))
 	}
@@ -1902,14 +1903,14 @@ func (c *controller) updateServiceInstanceWithRetries(
 	instanceToUpdate := instance
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
 		klog.V(4).Info(pcb.Message("Updating instance"))
-		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).Update(instanceToUpdate)
+		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).Update(context.Background(), instanceToUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			if !apierrors.IsConflict(err) {
 				return false, err
 			}
 			klog.V(4).Info(pcb.Message("Couldn't update instance because the resource was stale"))
 			// Fetch a fresh instance to resolve the update conflict and retry
-			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(context.Background(), instance.Name, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -1958,14 +1959,14 @@ func (c *controller) updateServiceInstanceStatusWithRetries(
 	instanceToUpdate := instance
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
 		klog.V(4).Info(pcb.Message("Updating status"))
-		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(instanceToUpdate)
+		upd, err := c.serviceCatalogClient.ServiceInstances(instanceToUpdate.Namespace).UpdateStatus(context.Background(), instanceToUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			if !apierrors.IsConflict(err) {
 				return false, err
 			}
 			klog.V(4).Info(pcb.Message("Couldn't update status because the resource was stale"))
 			// Fetch a fresh instance to resolve the update conflict and retry
-			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(instance.Name, metav1.GetOptions{})
+			instanceToUpdate, err = c.serviceCatalogClient.ServiceInstances(instance.Namespace).Get(context.Background(), instance.Name, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -2002,7 +2003,7 @@ func (c *controller) updateServiceInstanceCondition(
 	toUpdate.RecalculatePrinterColumnStatusFields()
 
 	klog.V(4).Info(pcb.Messagef("Updating %v condition to %v", conditionType, status))
-	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(instance.Namespace).UpdateStatus(toUpdate)
+	updatedInstance, err := c.serviceCatalogClient.ServiceInstances(instance.Namespace).UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Errorf(pcb.Messagef("Failed to update condition %v to true: %v", conditionType, err))
 	}
@@ -2251,7 +2252,7 @@ func (c *controller) deleteExistingBindings(instance *v1beta1.ServiceInstance) e
 		return errors.Wrapf(err, "while listing existing service bindings")
 	}
 	for _, binding := range bindings {
-		err := c.serviceCatalogClient.ServiceBindings(instance.Namespace).Delete(binding.Name, &metav1.DeleteOptions{})
+		err := c.serviceCatalogClient.ServiceBindings(instance.Namespace).Delete(context.Background(), binding.Name, metav1.DeleteOptions{})
 		switch {
 		case apierrors.IsNotFound(err):
 			continue
@@ -2294,7 +2295,7 @@ func (c *controller) prepareRequestHelper(instance *v1beta1.ServiceInstance, pla
 	}
 
 	// Only prepare namespace, parameters, and context for provision/update
-	ns, err := c.kubeClient.CoreV1().Namespaces().Get(instance.Namespace, metav1.GetOptions{})
+	ns, err := c.kubeClient.CoreV1().Namespaces().Get(context.Background(), instance.Namespace, metav1.GetOptions{})
 	if err != nil {
 		return nil, &operationError{
 			reason:  errorFindingNamespaceServiceInstanceReason,
@@ -2646,7 +2647,7 @@ func (c *controller) processServiceInstanceGracefulDeletionSuccess(instance *v1b
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	toUpdate.Finalizers = finalizers.List()
 
-	_, err = c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).Update(toUpdate)
+	_, err = c.serviceCatalogClient.ServiceInstances(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("while removing finalizer entry: %v", err)
 	}
@@ -3007,7 +3008,7 @@ func (c *controller) triggerServiceBindingReconciliation(instance *v1beta1.Servi
 		klog.V(4).Infof("ServiceBinding %s/%s triggered to reconciliation", binding.Namespace, binding.Name)
 		toUpdate := binding.DeepCopy()
 		toUpdate.ObjectMeta.Annotations["reconciliationTriggered"] = metav1.Now().String()
-		if _, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(toUpdate); err != nil {
+		if _, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{}); err != nil {
 			klog.Errorf("Couldn't update ServiceBinding %q status for instance %q. Bindings will be triggered after set delay. error: %v", binding.Name, binding.Spec.InstanceRef.Name, err)
 		}
 	}

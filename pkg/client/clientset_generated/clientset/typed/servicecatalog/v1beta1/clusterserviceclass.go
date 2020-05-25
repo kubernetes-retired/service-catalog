@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -37,15 +38,15 @@ type ClusterServiceClassesGetter interface {
 
 // ClusterServiceClassInterface has methods to work with ClusterServiceClass resources.
 type ClusterServiceClassInterface interface {
-	Create(*v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error)
-	Update(*v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error)
-	UpdateStatus(*v1beta1.ClusterServiceClass) (*v1beta1.ClusterServiceClass, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.ClusterServiceClass, error)
-	List(opts v1.ListOptions) (*v1beta1.ClusterServiceClassList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ClusterServiceClass, err error)
+	Create(ctx context.Context, clusterServiceClass *v1beta1.ClusterServiceClass, opts v1.CreateOptions) (*v1beta1.ClusterServiceClass, error)
+	Update(ctx context.Context, clusterServiceClass *v1beta1.ClusterServiceClass, opts v1.UpdateOptions) (*v1beta1.ClusterServiceClass, error)
+	UpdateStatus(ctx context.Context, clusterServiceClass *v1beta1.ClusterServiceClass, opts v1.UpdateOptions) (*v1beta1.ClusterServiceClass, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.ClusterServiceClass, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ClusterServiceClassList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ClusterServiceClass, err error)
 	ClusterServiceClassExpansion
 }
 
@@ -62,19 +63,19 @@ func newClusterServiceClasses(c *ServicecatalogV1beta1Client) *clusterServiceCla
 }
 
 // Get takes name of the clusterServiceClass, and returns the corresponding clusterServiceClass object, and an error if there is any.
-func (c *clusterServiceClasses) Get(name string, options v1.GetOptions) (result *v1beta1.ClusterServiceClass, err error) {
+func (c *clusterServiceClasses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ClusterServiceClass, err error) {
 	result = &v1beta1.ClusterServiceClass{}
 	err = c.client.Get().
 		Resource("clusterserviceclasses").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of ClusterServiceClasses that match those selectors.
-func (c *clusterServiceClasses) List(opts v1.ListOptions) (result *v1beta1.ClusterServiceClassList, err error) {
+func (c *clusterServiceClasses) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ClusterServiceClassList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -84,13 +85,13 @@ func (c *clusterServiceClasses) List(opts v1.ListOptions) (result *v1beta1.Clust
 		Resource("clusterserviceclasses").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested clusterServiceClasses.
-func (c *clusterServiceClasses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *clusterServiceClasses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -100,81 +101,84 @@ func (c *clusterServiceClasses) Watch(opts v1.ListOptions) (watch.Interface, err
 		Resource("clusterserviceclasses").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a clusterServiceClass and creates it.  Returns the server's representation of the clusterServiceClass, and an error, if there is any.
-func (c *clusterServiceClasses) Create(clusterServiceClass *v1beta1.ClusterServiceClass) (result *v1beta1.ClusterServiceClass, err error) {
+func (c *clusterServiceClasses) Create(ctx context.Context, clusterServiceClass *v1beta1.ClusterServiceClass, opts v1.CreateOptions) (result *v1beta1.ClusterServiceClass, err error) {
 	result = &v1beta1.ClusterServiceClass{}
 	err = c.client.Post().
 		Resource("clusterserviceclasses").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(clusterServiceClass).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a clusterServiceClass and updates it. Returns the server's representation of the clusterServiceClass, and an error, if there is any.
-func (c *clusterServiceClasses) Update(clusterServiceClass *v1beta1.ClusterServiceClass) (result *v1beta1.ClusterServiceClass, err error) {
+func (c *clusterServiceClasses) Update(ctx context.Context, clusterServiceClass *v1beta1.ClusterServiceClass, opts v1.UpdateOptions) (result *v1beta1.ClusterServiceClass, err error) {
 	result = &v1beta1.ClusterServiceClass{}
 	err = c.client.Put().
 		Resource("clusterserviceclasses").
 		Name(clusterServiceClass.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(clusterServiceClass).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *clusterServiceClasses) UpdateStatus(clusterServiceClass *v1beta1.ClusterServiceClass) (result *v1beta1.ClusterServiceClass, err error) {
+func (c *clusterServiceClasses) UpdateStatus(ctx context.Context, clusterServiceClass *v1beta1.ClusterServiceClass, opts v1.UpdateOptions) (result *v1beta1.ClusterServiceClass, err error) {
 	result = &v1beta1.ClusterServiceClass{}
 	err = c.client.Put().
 		Resource("clusterserviceclasses").
 		Name(clusterServiceClass.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(clusterServiceClass).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the clusterServiceClass and deletes it. Returns an error if one occurs.
-func (c *clusterServiceClasses) Delete(name string, options *v1.DeleteOptions) error {
+func (c *clusterServiceClasses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("clusterserviceclasses").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *clusterServiceClasses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *clusterServiceClasses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("clusterserviceclasses").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched clusterServiceClass.
-func (c *clusterServiceClasses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ClusterServiceClass, err error) {
+func (c *clusterServiceClasses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ClusterServiceClass, err error) {
 	result = &v1beta1.ClusterServiceClass{}
 	err = c.client.Patch(pt).
 		Resource("clusterserviceclasses").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

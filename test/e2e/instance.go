@@ -17,6 +17,7 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -51,18 +52,18 @@ func newTestInstance(name, serviceClassName, planName string) *v1beta1.ServiceIn
 
 // createInstance in the specified namespace
 func createInstance(c clientset.Interface, namespace string, instance *v1beta1.ServiceInstance) (*v1beta1.ServiceInstance, error) {
-	return c.ServicecatalogV1beta1().ServiceInstances(namespace).Create(instance)
+	return c.ServicecatalogV1beta1().ServiceInstances(namespace).Create(context.Background(), instance, metav1.CreateOptions{})
 }
 
 // deleteInstance with the specified namespace and name
 func deleteInstance(c clientset.Interface, namespace, name string) error {
-	return c.ServicecatalogV1beta1().ServiceInstances(namespace).Delete(name, nil)
+	return c.ServicecatalogV1beta1().ServiceInstances(namespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 }
 
 // waitForInstanceToBeDeleted waits for the instance to be removed.
 func waitForInstanceToBeDeleted(c clientset.Interface, namespace, name string) error {
 	return wait.Poll(framework.Poll, instanceDeleteTimeout, func() (bool, error) {
-		_, err := c.ServicecatalogV1beta1().ServiceInstances(namespace).Get(name, metav1.GetOptions{})
+		_, err := c.ServicecatalogV1beta1().ServiceInstances(namespace).Get(context.Background(), name, metav1.GetOptions{})
 		if err == nil {
 			framework.Logf("waiting for service instance %s to be deleted", name)
 			return false, nil

@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -895,7 +896,7 @@ func testReconcileClusterServiceBrokerWithAuth(t *testing.T, authInfo *v1beta1.C
 
 	broker := getTestClusterServiceBrokerWithAuth(authInfo)
 	if secret != nil {
-		fakeKubeClient.CoreV1().Secrets(secret.Namespace).Create(secret)
+		fakeKubeClient.CoreV1().Secrets(secret.Namespace).Create(context.Background(), secret, metav1.CreateOptions{})
 	}
 	testClusterServiceClass := getTestClusterServiceClass()
 	fakeClusterServiceBrokerClient.CatalogReaction = &fakeosb.CatalogReaction{

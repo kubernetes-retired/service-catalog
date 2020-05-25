@@ -18,26 +18,31 @@ package probe
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"net/http"
 	"testing"
 )
 
 func TestCRDProbe_Check(t *testing.T) {
 	// Given
-	fakeCliext := apiextfake.NewSimpleClientset(newTestCRD()...)
-	probe := NewCRDProbe(fakeCliext, 0)
+	req, err := http.NewRequest(http.MethodGet, "http://some.url", nil)
+	require.NoError(t, err)
+
+	fakeClient := apiextfake.NewSimpleClientset(newTestCRD()...)
+	probe := NewCRDProbe(fakeClient, 0)
 
 	// Then
-	assert.NoError(t, probe.Check(nil))
+	assert.NoError(t, probe.Check(req))
 }
 
 func TestCRDProbe_IsReady(t *testing.T) {
 	// Given
-	fakeCliext := apiextfake.NewSimpleClientset(newTestCRD()...)
-	probe := NewCRDProbe(fakeCliext, 0)
+	fakeClient := apiextfake.NewSimpleClientset(newTestCRD()...)
+	probe := NewCRDProbe(fakeClient, 0)
 
 	// Then
 	ready, err := probe.IsReady()
@@ -47,22 +52,28 @@ func TestCRDProbe_IsReady(t *testing.T) {
 
 func TestCRDProbe_IsReadyWithDelay(t *testing.T) {
 	// Given
-	fakeCliext := apiextfake.NewSimpleClientset(newTestCRDNotReady()...)
-	probe := NewCRDProbe(fakeCliext, 2)
+	req, err := http.NewRequest(http.MethodGet, "http://some.url", nil)
+	require.NoError(t, err)
+
+	fakeClient := apiextfake.NewSimpleClientset(newTestCRDNotReady()...)
+	probe := NewCRDProbe(fakeClient, 2)
 
 	// Then
-	assert.NoError(t, probe.Check(nil))
-	assert.NoError(t, probe.Check(nil))
-	assert.EqualError(t, probe.Check(nil), "CRDs are not ready")
+	assert.NoError(t, probe.Check(req))
+	assert.NoError(t, probe.Check(req))
+	assert.EqualError(t, probe.Check(req), "CRDs are not ready")
 }
 
 func TestCRDProbe_CheckFailed(t *testing.T) {
 	// Given
-	fakeCliext := apiextfake.NewSimpleClientset(newTestCRDNotReady()...)
-	probe := NewCRDProbe(fakeCliext, 0)
+	req, err := http.NewRequest(http.MethodGet, "http://some.url", nil)
+	require.NoError(t, err)
+
+	fakeClient := apiextfake.NewSimpleClientset(newTestCRDNotReady()...)
+	probe := NewCRDProbe(fakeClient, 0)
 
 	// Then
-	assert.EqualError(t, probe.Check(nil), "CRDs are not ready")
+	assert.EqualError(t, probe.Check(req), "CRDs are not ready")
 }
 
 func newTestCRD() []runtime.Object {

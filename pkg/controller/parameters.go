@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -127,7 +128,7 @@ func unmarshalJSON(in []byte) (map[string]interface{}, error) {
 
 // fetchSecretKeyValue requests and returns the contents of the given secret key
 func fetchSecretKeyValue(kubeClient kubernetes.Interface, namespace string, secretKeyRef *v1beta1.SecretKeyReference) ([]byte, error) {
-	secret, err := kubeClient.CoreV1().Secrets(namespace).Get(secretKeyRef.Name, metav1.GetOptions{})
+	secret, err := kubeClient.CoreV1().Secrets(namespace).Get(context.Background(), secretKeyRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -123,9 +123,8 @@ func TestSpecValidationHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
 
 	request := admission.Request{
 		AdmissionRequest: admissionv1beta1.AdmissionRequest{
-			UID:       "2222-bbbb",
-			Name:      "test-binding",
-			Namespace: namespace,
+			UID:  "2222-bbbb",
+			Name: "test-binding",
 			Kind: metav1.GroupVersionKind{
 				Kind:    "ServiceBinding",
 				Version: "v1beta1",
@@ -137,7 +136,8 @@ func TestSpecValidationHandlerServiceInstanceReferenceOutOfDate(t *testing.T) {
   				"metadata": {
 				  "finalizers": ["kubernetes-incubator/service-catalog"],
   				  "creationTimestamp": null,
-  				  "name": "test-binding"
+  				  "name": "test-binding",
+  				  "namespace": "` + namespace + `"
   				},
   				"spec": {
 				  "instanceRef": {

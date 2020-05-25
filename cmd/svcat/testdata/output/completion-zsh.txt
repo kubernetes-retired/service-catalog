@@ -241,7 +241,13 @@ __svcat_handle_reply()
     fi
 
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
-        declare -F __custom_func >/dev/null && __custom_func
+		if declare -F __svcat_custom_func >/dev/null; then
+			# try command name qualified custom func
+			__svcat_custom_func
+		else
+			# otherwise fall back to unqualified for compatibility
+			declare -F __custom_func >/dev/null && __custom_func
+		fi
     fi
 
     # available in bash-completion >= 2, not always present on macOS
@@ -305,7 +311,8 @@ __svcat_handle_flag()
     fi
 
     # skip the argument to a two word flag
-    if __svcat_contains_word "${words[c]}" "${two_word_flags[@]}"; then
+    if [[ ${words[c]} != *"="* ]] && __svcat_contains_word "${words[c]}" "${two_word_flags[@]}"; then
+			  __svcat_debug "${FUNCNAME[0]}: found a flag ${words[c]}, skip the next argument"
         c=$((c+1))
         # if we are looking for a flags value, don't show commands
         if [[ $c -eq $cword ]]; then
@@ -363,6 +370,14 @@ __svcat_handle_word()
         __svcat_handle_command
     elif [[ $c -eq 0 ]]; then
         __svcat_handle_command
+    elif __svcat_contains_word "${words[c]}" "${command_aliases[@]}"; then
+        # aliashash variable is an associative array which is only supported in bash > 3.
+        if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+            words[c]=${aliashash[${words[c]}]}
+            __svcat_handle_command
+        else
+            __svcat_handle_noun
+        fi
     else
         __svcat_handle_noun
     fi
@@ -372,6 +387,9 @@ __svcat_handle_word()
 _svcat_bind()
 {
     last_command="svcat_bind"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -381,32 +399,44 @@ _svcat_bind()
     flags_completion=()
 
     flags+=("--external-id=")
+    two_word_flags+=("--external-id")
     local_nonpersistent_flags+=("--external-id=")
     flags+=("--interval=")
+    two_word_flags+=("--interval")
     local_nonpersistent_flags+=("--interval=")
     flags+=("--name=")
+    two_word_flags+=("--name")
     local_nonpersistent_flags+=("--name=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--param=")
+    two_word_flags+=("--param")
     two_word_flags+=("-p")
     local_nonpersistent_flags+=("--param=")
     flags+=("--params-json=")
+    two_word_flags+=("--params-json")
     local_nonpersistent_flags+=("--params-json=")
     flags+=("--secret=")
+    two_word_flags+=("--secret")
     two_word_flags+=("-s")
     local_nonpersistent_flags+=("--secret=")
     flags+=("--secret-name=")
+    two_word_flags+=("--secret-name")
     local_nonpersistent_flags+=("--secret-name=")
     flags+=("--timeout=")
+    two_word_flags+=("--timeout")
     local_nonpersistent_flags+=("--timeout=")
     flags+=("--wait")
     local_nonpersistent_flags+=("--wait")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -417,6 +447,9 @@ _svcat_bind()
 _svcat_completion()
 {
     last_command="svcat_completion"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -429,9 +462,12 @@ _svcat_completion()
     flags+=("-h")
     local_nonpersistent_flags+=("--help")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -444,6 +480,9 @@ _svcat_completion()
 _svcat_create_class()
 {
     last_command="svcat_create_class"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -453,17 +492,23 @@ _svcat_create_class()
     flags_completion=()
 
     flags+=("--from=")
+    two_word_flags+=("--from")
     two_word_flags+=("-f")
     local_nonpersistent_flags+=("--from=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -476,6 +521,9 @@ _svcat_create_class()
 _svcat_create()
 {
     last_command="svcat_create"
+
+    command_aliases=()
+
     commands=()
     commands+=("class")
 
@@ -486,9 +534,12 @@ _svcat_create()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -499,6 +550,9 @@ _svcat_create()
 _svcat_deprovision()
 {
     last_command="svcat_deprovision"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -510,11 +564,14 @@ _svcat_deprovision()
     flags+=("--abandon")
     local_nonpersistent_flags+=("--abandon")
     flags+=("--interval=")
+    two_word_flags+=("--interval")
     local_nonpersistent_flags+=("--interval=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--timeout=")
+    two_word_flags+=("--timeout")
     local_nonpersistent_flags+=("--timeout=")
     flags+=("--wait")
     local_nonpersistent_flags+=("--wait")
@@ -522,9 +579,12 @@ _svcat_deprovision()
     flags+=("-y")
     local_nonpersistent_flags+=("--yes")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -535,6 +595,9 @@ _svcat_deprovision()
 _svcat_deregister()
 {
     last_command="svcat_deregister"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -544,20 +607,27 @@ _svcat_deregister()
     flags_completion=()
 
     flags+=("--interval=")
+    two_word_flags+=("--interval")
     local_nonpersistent_flags+=("--interval=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--timeout=")
+    two_word_flags+=("--timeout")
     local_nonpersistent_flags+=("--timeout=")
     flags+=("--wait")
     local_nonpersistent_flags+=("--wait")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -568,6 +638,9 @@ _svcat_deregister()
 _svcat_describe_binding()
 {
     last_command="svcat_describe_binding"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -577,14 +650,18 @@ _svcat_describe_binding()
     flags_completion=()
 
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--show-secrets")
     local_nonpersistent_flags+=("--show-secrets")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -595,6 +672,9 @@ _svcat_describe_binding()
 _svcat_describe_broker()
 {
     last_command="svcat_describe_broker"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -604,14 +684,19 @@ _svcat_describe_broker()
     flags_completion=()
 
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -622,6 +707,9 @@ _svcat_describe_broker()
 _svcat_describe_class()
 {
     last_command="svcat_describe_class"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -636,14 +724,19 @@ _svcat_describe_class()
     flags+=("-k")
     local_nonpersistent_flags+=("--kube-name")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -654,6 +747,9 @@ _svcat_describe_class()
 _svcat_describe_instance()
 {
     last_command="svcat_describe_instance"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -663,12 +759,16 @@ _svcat_describe_instance()
     flags_completion=()
 
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -679,6 +779,9 @@ _svcat_describe_instance()
 _svcat_describe_plan()
 {
     last_command="svcat_describe_plan"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -691,16 +794,21 @@ _svcat_describe_plan()
     flags+=("-k")
     local_nonpersistent_flags+=("--kube-name")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--show-schemas")
     local_nonpersistent_flags+=("--show-schemas")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -711,12 +819,45 @@ _svcat_describe_plan()
 _svcat_describe()
 {
     last_command="svcat_describe"
+
+    command_aliases=()
+
     commands=()
     commands+=("binding")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("bindings")
+        aliashash["bindings"]="binding"
+        command_aliases+=("bnd")
+        aliashash["bnd"]="binding"
+    fi
     commands+=("broker")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("brk")
+        aliashash["brk"]="broker"
+        command_aliases+=("brokers")
+        aliashash["brokers"]="broker"
+    fi
     commands+=("class")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("cl")
+        aliashash["cl"]="class"
+        command_aliases+=("classes")
+        aliashash["classes"]="class"
+    fi
     commands+=("instance")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("inst")
+        aliashash["inst"]="instance"
+        command_aliases+=("instances")
+        aliashash["instances"]="instance"
+    fi
     commands+=("plan")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("pl")
+        aliashash["pl"]="plan"
+        command_aliases+=("plans")
+        aliashash["plans"]="plan"
+    fi
 
     flags=()
     two_word_flags=()
@@ -725,9 +866,12 @@ _svcat_describe()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -738,6 +882,9 @@ _svcat_describe()
 _svcat_get_bindings()
 {
     last_command="svcat_get_bindings"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -749,15 +896,20 @@ _svcat_get_bindings()
     flags+=("--all-namespaces")
     local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--output=")
+    two_word_flags+=("--output")
     two_word_flags+=("-o")
     local_nonpersistent_flags+=("--output=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -768,6 +920,9 @@ _svcat_get_bindings()
 _svcat_get_brokers()
 {
     last_command="svcat_get_brokers"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -779,17 +934,23 @@ _svcat_get_brokers()
     flags+=("--all-namespaces")
     local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--output=")
+    two_word_flags+=("--output")
     two_word_flags+=("-o")
     local_nonpersistent_flags+=("--output=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -800,6 +961,9 @@ _svcat_get_brokers()
 _svcat_get_classes()
 {
     last_command="svcat_get_classes"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -811,23 +975,30 @@ _svcat_get_classes()
     flags+=("--all-namespaces")
     local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--broker=")
+    two_word_flags+=("--broker")
     two_word_flags+=("-b")
     local_nonpersistent_flags+=("--broker=")
     flags+=("--kube-name")
     flags+=("-k")
     local_nonpersistent_flags+=("--kube-name")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--output=")
+    two_word_flags+=("--output")
     two_word_flags+=("-o")
     local_nonpersistent_flags+=("--output=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -838,6 +1009,9 @@ _svcat_get_classes()
 _svcat_get_instances()
 {
     last_command="svcat_get_instances"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -849,21 +1023,28 @@ _svcat_get_instances()
     flags+=("--all-namespaces")
     local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--class=")
+    two_word_flags+=("--class")
     two_word_flags+=("-c")
     local_nonpersistent_flags+=("--class=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--output=")
+    two_word_flags+=("--output")
     two_word_flags+=("-o")
     local_nonpersistent_flags+=("--output=")
     flags+=("--plan=")
+    two_word_flags+=("--plan")
     two_word_flags+=("-p")
     local_nonpersistent_flags+=("--plan=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -874,6 +1055,9 @@ _svcat_get_instances()
 _svcat_get_plans()
 {
     last_command="svcat_get_plans"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -885,23 +1069,30 @@ _svcat_get_plans()
     flags+=("--all-namespaces")
     local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--class=")
+    two_word_flags+=("--class")
     two_word_flags+=("-c")
     local_nonpersistent_flags+=("--class=")
     flags+=("--kube-name")
     flags+=("-k")
     local_nonpersistent_flags+=("--kube-name")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--output=")
+    two_word_flags+=("--output")
     two_word_flags+=("-o")
     local_nonpersistent_flags+=("--output=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -912,12 +1103,45 @@ _svcat_get_plans()
 _svcat_get()
 {
     last_command="svcat_get"
+
+    command_aliases=()
+
     commands=()
     commands+=("bindings")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("binding")
+        aliashash["binding"]="bindings"
+        command_aliases+=("bnd")
+        aliashash["bnd"]="bindings"
+    fi
     commands+=("brokers")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("brk")
+        aliashash["brk"]="brokers"
+        command_aliases+=("broker")
+        aliashash["broker"]="brokers"
+    fi
     commands+=("classes")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("cl")
+        aliashash["cl"]="classes"
+        command_aliases+=("class")
+        aliashash["class"]="classes"
+    fi
     commands+=("instances")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("inst")
+        aliashash["inst"]="instances"
+        command_aliases+=("instance")
+        aliashash["instance"]="instances"
+    fi
     commands+=("plans")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("pl")
+        aliashash["pl"]="plans"
+        command_aliases+=("plan")
+        aliashash["plan"]="plans"
+    fi
 
     flags=()
     two_word_flags=()
@@ -926,9 +1150,12 @@ _svcat_get()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -939,6 +1166,9 @@ _svcat_get()
 _svcat_install_plugin()
 {
     last_command="svcat_install_plugin"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -948,12 +1178,16 @@ _svcat_install_plugin()
     flags_completion=()
 
     flags+=("--plugins-path=")
+    two_word_flags+=("--plugins-path")
     two_word_flags+=("-p")
     local_nonpersistent_flags+=("--plugins-path=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -964,6 +1198,9 @@ _svcat_install_plugin()
 _svcat_install()
 {
     last_command="svcat_install"
+
+    command_aliases=()
+
     commands=()
     commands+=("plugin")
 
@@ -974,9 +1211,12 @@ _svcat_install()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -987,6 +1227,9 @@ _svcat_install()
 _svcat_marketplace()
 {
     last_command="svcat_marketplace"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -998,15 +1241,20 @@ _svcat_marketplace()
     flags+=("--all-namespaces")
     local_nonpersistent_flags+=("--all-namespaces")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--output=")
+    two_word_flags+=("--output")
     two_word_flags+=("-o")
     local_nonpersistent_flags+=("--output=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1017,6 +1265,9 @@ _svcat_marketplace()
 _svcat_provision()
 {
     last_command="svcat_provision"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -1026,35 +1277,47 @@ _svcat_provision()
     flags_completion=()
 
     flags+=("--class=")
+    two_word_flags+=("--class")
     local_nonpersistent_flags+=("--class=")
     flags+=("--external-id=")
+    two_word_flags+=("--external-id")
     local_nonpersistent_flags+=("--external-id=")
     flags+=("--interval=")
+    two_word_flags+=("--interval")
     local_nonpersistent_flags+=("--interval=")
     flags+=("--kube-name")
     flags+=("-k")
     local_nonpersistent_flags+=("--kube-name")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--param=")
+    two_word_flags+=("--param")
     two_word_flags+=("-p")
     local_nonpersistent_flags+=("--param=")
     flags+=("--params-json=")
+    two_word_flags+=("--params-json")
     local_nonpersistent_flags+=("--params-json=")
     flags+=("--plan=")
+    two_word_flags+=("--plan")
     local_nonpersistent_flags+=("--plan=")
     flags+=("--secret=")
+    two_word_flags+=("--secret")
     two_word_flags+=("-s")
     local_nonpersistent_flags+=("--secret=")
     flags+=("--timeout=")
+    two_word_flags+=("--timeout")
     local_nonpersistent_flags+=("--timeout=")
     flags+=("--wait")
     local_nonpersistent_flags+=("--wait")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1067,6 +1330,9 @@ _svcat_provision()
 _svcat_register()
 {
     last_command="svcat_register"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -1076,38 +1342,53 @@ _svcat_register()
     flags_completion=()
 
     flags+=("--basic-secret=")
+    two_word_flags+=("--basic-secret")
     local_nonpersistent_flags+=("--basic-secret=")
     flags+=("--bearer-secret=")
+    two_word_flags+=("--bearer-secret")
     local_nonpersistent_flags+=("--bearer-secret=")
     flags+=("--ca=")
+    two_word_flags+=("--ca")
     local_nonpersistent_flags+=("--ca=")
     flags+=("--class-restrictions=")
+    two_word_flags+=("--class-restrictions")
     local_nonpersistent_flags+=("--class-restrictions=")
     flags+=("--interval=")
+    two_word_flags+=("--interval")
     local_nonpersistent_flags+=("--interval=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--plan-restrictions=")
+    two_word_flags+=("--plan-restrictions")
     local_nonpersistent_flags+=("--plan-restrictions=")
     flags+=("--relist-behavior=")
+    two_word_flags+=("--relist-behavior")
     local_nonpersistent_flags+=("--relist-behavior=")
     flags+=("--relist-duration=")
+    two_word_flags+=("--relist-duration")
     local_nonpersistent_flags+=("--relist-duration=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--skip-tls")
     local_nonpersistent_flags+=("--skip-tls")
     flags+=("--timeout=")
+    two_word_flags+=("--timeout")
     local_nonpersistent_flags+=("--timeout=")
     flags+=("--url=")
+    two_word_flags+=("--url")
     local_nonpersistent_flags+=("--url=")
     flags+=("--wait")
     local_nonpersistent_flags+=("--wait")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1119,6 +1400,9 @@ _svcat_register()
 _svcat_sync_broker()
 {
     last_command="svcat_sync_broker"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -1128,14 +1412,19 @@ _svcat_sync_broker()
     flags_completion=()
 
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--scope=")
+    two_word_flags+=("--scope")
     local_nonpersistent_flags+=("--scope=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1146,6 +1435,9 @@ _svcat_sync_broker()
 _svcat_sync()
 {
     last_command="svcat_sync"
+
+    command_aliases=()
+
     commands=()
     commands+=("broker")
 
@@ -1156,9 +1448,12 @@ _svcat_sync()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1169,6 +1464,9 @@ _svcat_sync()
 _svcat_touch_instance()
 {
     last_command="svcat_touch_instance"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -1178,12 +1476,16 @@ _svcat_touch_instance()
     flags_completion=()
 
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1194,6 +1496,9 @@ _svcat_touch_instance()
 _svcat_touch()
 {
     last_command="svcat_touch"
+
+    command_aliases=()
+
     commands=()
     commands+=("instance")
 
@@ -1204,9 +1509,12 @@ _svcat_touch()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1217,6 +1525,9 @@ _svcat_touch()
 _svcat_unbind()
 {
     last_command="svcat_unbind"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -1228,13 +1539,17 @@ _svcat_unbind()
     flags+=("--abandon")
     local_nonpersistent_flags+=("--abandon")
     flags+=("--interval=")
+    two_word_flags+=("--interval")
     local_nonpersistent_flags+=("--interval=")
     flags+=("--name=")
+    two_word_flags+=("--name")
     local_nonpersistent_flags+=("--name=")
     flags+=("--namespace=")
+    two_word_flags+=("--namespace")
     two_word_flags+=("-n")
     local_nonpersistent_flags+=("--namespace=")
     flags+=("--timeout=")
+    two_word_flags+=("--timeout")
     local_nonpersistent_flags+=("--timeout=")
     flags+=("--wait")
     local_nonpersistent_flags+=("--wait")
@@ -1242,9 +1557,12 @@ _svcat_unbind()
     flags+=("-y")
     local_nonpersistent_flags+=("--yes")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1255,6 +1573,9 @@ _svcat_unbind()
 _svcat_version()
 {
     last_command="svcat_version"
+
+    command_aliases=()
+
     commands=()
 
     flags=()
@@ -1267,9 +1588,12 @@ _svcat_version()
     flags+=("-c")
     local_nonpersistent_flags+=("--client")
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1280,6 +1604,9 @@ _svcat_version()
 _svcat_root_command()
 {
     last_command="svcat"
+
+    command_aliases=()
+
     commands=()
     commands+=("bind")
     commands+=("completion")
@@ -1290,9 +1617,19 @@ _svcat_root_command()
     commands+=("get")
     commands+=("install")
     commands+=("marketplace")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("marketplace")
+        aliashash["marketplace"]="marketplace"
+        command_aliases+=("mp")
+        aliashash["mp"]="marketplace"
+    fi
     commands+=("provision")
     commands+=("register")
     commands+=("sync")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("relist")
+        aliashash["relist"]="sync"
+    fi
     commands+=("touch")
     commands+=("unbind")
     commands+=("version")
@@ -1304,9 +1641,12 @@ _svcat_root_command()
     flags_completion=()
 
     flags+=("--context=")
+    two_word_flags+=("--context")
     flags+=("--kubeconfig=")
+    two_word_flags+=("--kubeconfig")
     flags+=("--logtostderr")
     flags+=("--v=")
+    two_word_flags+=("--v")
     two_word_flags+=("-v")
 
     must_have_one_flag=()
@@ -1318,6 +1658,7 @@ __start_svcat()
 {
     local cur prev words cword
     declare -A flaghash 2>/dev/null || :
+    declare -A aliashash 2>/dev/null || :
     if declare -F _init_completion >/dev/null 2>&1; then
         _init_completion -s || return
     else

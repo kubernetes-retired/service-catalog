@@ -17,6 +17,7 @@ limitations under the License.
 package cleaner
 
 import (
+	"context"
 	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	"github.com/stretchr/testify/assert"
@@ -50,21 +51,21 @@ func TestCleaner_RemoveCRDs(t *testing.T) {
 	assert.NoError(t, clr.RemoveCRDs(cmNamespace, cmName, []string{mutatingWebhookConfiguration}))
 
 	// Then
-	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(v1.ListOptions{})
+	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Items, 1)
 	assert.Equal(t, "NotServiceCatalogCRD", list.Items[0].Name)
 
-	deployment, err := fakeClik8s.AppsV1().Deployments(cmNamespace).Get(cmName, v1.GetOptions{})
+	deployment, err := fakeClik8s.AppsV1().Deployments(cmNamespace).Get(context.Background(), cmName, v1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, int32(0), deployment.Status.Replicas)
 
-	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(v1.ListOptions{})
+	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, mwcList.Items, 1)
 	assert.Equal(t, "custom-mutating-webhook-configuration", mwcList.Items[0].Name)
 
-	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(v1.ListOptions{})
+	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, vwcList.Items, 1)
 }

@@ -17,6 +17,8 @@ limitations under the License.
 package fake
 
 import (
+	"golang.org/x/net/context"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	clientgotesting "k8s.io/client-go/testing"
@@ -29,7 +31,7 @@ func TestClientsetStoresServiceInstanceClone(t *testing.T) {
 	clientset := Clientset{&servicecatalogclientset.Clientset{}}
 	instance := &v1beta1.ServiceInstance{}
 	instance.Name = "test-instance"
-	returnedInstance, err := clientset.ServicecatalogV1beta1().ServiceInstances("test-namespace").UpdateStatus(instance)
+	returnedInstance, err := clientset.ServicecatalogV1beta1().ServiceInstances("test-namespace").UpdateStatus(context.Background(), instance, v1.UpdateOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error from UpdateStatus: %v", err)
 	}
@@ -66,7 +68,7 @@ func TestClientsetStoresServiceBindingClone(t *testing.T) {
 	clientset := Clientset{&servicecatalogclientset.Clientset{}}
 	binding := &v1beta1.ServiceBinding{}
 	binding.Name = "test-instance"
-	returnedBinding, err := clientset.ServicecatalogV1beta1().ServiceBindings("test-namespace").UpdateStatus(binding)
+	returnedBinding, err := clientset.ServicecatalogV1beta1().ServiceBindings("test-namespace").UpdateStatus(context.Background(), binding, v1.UpdateOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error from UpdateStatus: %v", err)
 	}

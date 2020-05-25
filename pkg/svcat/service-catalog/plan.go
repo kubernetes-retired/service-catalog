@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -92,7 +93,7 @@ func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts meta
 	var plans []Plan
 
 	if scopeOpts.Scope.Matches(ClusterScope) {
-		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(listOpts)
+		csp, err := sdk.ServiceCatalog().ClusterServicePlans().List(context.Background(), listOpts)
 		if err != nil {
 			return nil, fmt.Errorf("unable to list cluster-scoped plans (%s)", err)
 		}
@@ -104,7 +105,7 @@ func (sdk *SDK) retrievePlansByListOptions(scopeOpts ScopeOptions, listOpts meta
 	}
 
 	if scopeOpts.Scope.Matches(NamespaceScope) {
-		sp, err := sdk.ServiceCatalog().ServicePlans(scopeOpts.Namespace).List(listOpts)
+		sp, err := sdk.ServiceCatalog().ServicePlans(scopeOpts.Namespace).List(context.Background(), listOpts)
 		if err != nil {
 			// Gracefully handle when the feature-flag for namespaced broker resources isn't enabled on the server.
 			if apierrors.IsNotFound(err) {
@@ -242,7 +243,7 @@ func (sdk *SDK) RetrievePlanByID(kubeName string, opts ScopeOptions) (Plan, erro
 	}
 
 	if opts.Scope.Matches(ClusterScope) {
-		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(kubeName, metav1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ClusterServicePlans().Get(context.Background(), kubeName, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to get cluster-scoped plan by Kubernetes name'%s' (%s)", kubeName, err)
 		}
@@ -250,7 +251,7 @@ func (sdk *SDK) RetrievePlanByID(kubeName string, opts ScopeOptions) (Plan, erro
 	}
 
 	if opts.Scope.Matches(NamespaceScope) {
-		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(kubeName, metav1.GetOptions{})
+		p, err := sdk.ServiceCatalog().ServicePlans(opts.Namespace).Get(context.Background(), kubeName, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("unable to get plan by Kubernetes name'%s' (%s)", kubeName, err)
 		}

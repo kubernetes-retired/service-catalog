@@ -17,6 +17,8 @@ limitations under the License.
 package migration
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	apiErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +28,7 @@ import (
 // AssertPersistentVolumeClaimDeleted deletes PVC resource in which backup data will be kept and make sure it was removed
 func (m *Service) AssertPersistentVolumeClaimDeleted(name string) error {
 	klog.Info("Deleting PersistentVolumeClaim")
-	err := m.coreInterface.PersistentVolumeClaims(m.releaseNamespace).Delete(name, &metav1.DeleteOptions{})
+	err := m.coreInterface.PersistentVolumeClaims(m.releaseNamespace).Delete(context.Background(), name, metav1.DeleteOptions{})
 	if apiErr.IsNotFound(err) {
 		klog.Info("PersistentVolumeClaim was removed")
 		return nil

@@ -19,6 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	time "time"
 
 	servicecatalogv1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -60,13 +61,13 @@ func NewFilteredClusterServiceClassInformer(client clientset.Interface, resyncPe
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ServicecatalogV1beta1().ClusterServiceClasses().List(options)
+				return client.ServicecatalogV1beta1().ClusterServiceClasses().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ServicecatalogV1beta1().ClusterServiceClasses().Watch(options)
+				return client.ServicecatalogV1beta1().ClusterServiceClasses().Watch(context.TODO(), options)
 			},
 		},
 		&servicecatalogv1beta1.ClusterServiceClass{},

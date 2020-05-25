@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -188,7 +189,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 			if broker.Status.OperationStartTime == nil {
 				toUpdate := broker.DeepCopy()
 				toUpdate.Status.OperationStartTime = &now
-				if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate); err != nil {
+				if _, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{}); err != nil {
 					klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
 					return err
 				}
@@ -214,7 +215,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 		if broker.Status.OperationStartTime != nil {
 			toUpdate := broker.DeepCopy()
 			toUpdate.Status.OperationStartTime = nil
-			updated, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate)
+			updated, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 			if err != nil {
 				klog.Error(pcb.Messagef("Error updating operation start time: %v", err))
 				return err
@@ -289,7 +290,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 			klog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServiceClassName(existingServiceClass)))
 			existingServiceClass.Status.RemovedFromBrokerCatalog = true
-			_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(existingServiceClass)
+			_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(context.Background(), existingServiceClass, metav1.UpdateOptions{})
 			if err != nil {
 				s := fmt.Sprintf(
 					"Error updating status of %s: %v",
@@ -347,7 +348,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 			klog.V(4).Info(pcb.Messagef("%s has been removed from broker's catalog; marking", pretty.ClusterServicePlanName(existingServicePlan)))
 			existingServicePlan.Status.RemovedFromBrokerCatalog = true
-			_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(existingServicePlan)
+			_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(context.Background(), existingServicePlan, metav1.UpdateOptions{})
 			if err != nil {
 				s := fmt.Sprintf(
 					"Error updating status of %s: %v",
@@ -394,7 +395,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		for _, plan := range existingServicePlans {
 			klog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ClusterServicePlanName(&plan)))
-			err := c.serviceCatalogClient.ClusterServicePlans().Delete(plan.Name, &metav1.DeleteOptions{})
+			err := c.serviceCatalogClient.ClusterServicePlans().Delete(context.Background(), plan.Name, metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ClusterServicePlanName(&plan), err)
 				klog.Warning(pcb.Message(s))
@@ -412,7 +413,7 @@ func (c *controller) reconcileClusterServiceBroker(broker *v1beta1.ClusterServic
 
 		for _, svcClass := range existingServiceClasses {
 			klog.V(4).Info(pcb.Messagef("Deleting %s", pretty.ClusterServiceClassName(&svcClass)))
-			err = c.serviceCatalogClient.ClusterServiceClasses().Delete(svcClass.Name, &metav1.DeleteOptions{})
+			err = c.serviceCatalogClient.ClusterServiceClasses().Delete(context.Background(), svcClass.Name, metav1.DeleteOptions{})
 			if err != nil && !errors.IsNotFound(err) {
 				s := fmt.Sprintf("Error deleting %s: %s", pretty.ClusterServiceClassName(&svcClass), err)
 				klog.Warning(pcb.Message(s))
@@ -488,7 +489,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 		markAsServiceCatalogManagedResource(serviceClass, broker)
 
 		klog.V(5).Info(pcb.Messagef("Fresh %s; creating", pretty.ClusterServiceClassName(serviceClass)))
-		if _, err := c.serviceCatalogClient.ClusterServiceClasses().Create(serviceClass); err != nil {
+		if _, err := c.serviceCatalogClient.ClusterServiceClasses().Create(context.Background(), serviceClass, metav1.CreateOptions{}); err != nil {
 			klog.Error(pcb.Messagef("Error creating %s: %v", pretty.ClusterServiceClassName(serviceClass), err))
 			return err
 		}
@@ -521,7 +522,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 
 	markAsServiceCatalogManagedResource(toUpdate, broker)
 
-	updatedServiceClass, err := c.serviceCatalogClient.ClusterServiceClasses().Update(toUpdate)
+	updatedServiceClass, err := c.serviceCatalogClient.ClusterServiceClasses().Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %s: %v", pretty.ClusterServiceClassName(serviceClass), err))
 		return err
@@ -530,7 +531,7 @@ func (c *controller) reconcileClusterServiceClassFromClusterServiceBrokerCatalog
 	if updatedServiceClass.Status.RemovedFromBrokerCatalog {
 		klog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ClusterServiceClassName(serviceClass)))
 		updatedServiceClass.Status.RemovedFromBrokerCatalog = false
-		_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(updatedServiceClass)
+		_, err := c.serviceCatalogClient.ClusterServiceClasses().UpdateStatus(context.Background(), updatedServiceClass, metav1.UpdateOptions{})
 		if err != nil {
 			s := fmt.Sprintf("Error updating status of %s: %v", pretty.ClusterServiceClassName(updatedServiceClass), err)
 			klog.Warning(pcb.Message(s))
@@ -577,7 +578,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 
 		// An error returned from a lister Get call means that the object does
 		// not exist.  Create a new ClusterServicePlan.
-		if _, err := c.serviceCatalogClient.ClusterServicePlans().Create(servicePlan); err != nil {
+		if _, err := c.serviceCatalogClient.ClusterServicePlans().Create(context.Background(), servicePlan, metav1.CreateOptions{}); err != nil {
 			klog.Error(pcb.Messagef("Error creating %s: %v", pretty.ClusterServicePlanName(servicePlan), err))
 			return err
 		}
@@ -610,7 +611,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 
 	markAsServiceCatalogManagedResource(toUpdate, broker)
 
-	updatedPlan, err := c.serviceCatalogClient.ClusterServicePlans().Update(toUpdate)
+	updatedPlan, err := c.serviceCatalogClient.ClusterServicePlans().Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %s: %v", pretty.ClusterServicePlanName(servicePlan), err))
 		return err
@@ -620,7 +621,7 @@ func (c *controller) reconcileClusterServicePlanFromClusterServiceBrokerCatalog(
 		updatedPlan.Status.RemovedFromBrokerCatalog = false
 		klog.V(4).Info(pcb.Messagef("Resetting RemovedFromBrokerCatalog status on %s", pretty.ClusterServicePlanName(updatedPlan)))
 
-		_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(updatedPlan)
+		_, err := c.serviceCatalogClient.ClusterServicePlans().UpdateStatus(context.Background(), updatedPlan, metav1.UpdateOptions{})
 		if err != nil {
 			s := fmt.Sprintf("Error updating status of %s: %v", pretty.ClusterServicePlanName(updatedPlan), err)
 			klog.Error(pcb.Message(s))
@@ -682,7 +683,7 @@ func (c *controller) updateClusterServiceBrokerCondition(broker *v1beta1.Cluster
 	toUpdate.RecalculatePrinterColumnStatusFields()
 
 	klog.V(4).Info(pcb.Messagef("Updating ready condition to %v", status))
-	_, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(toUpdate)
+	_, err := c.serviceCatalogClient.ClusterServiceBrokers().UpdateStatus(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating ready condition: %v", err))
 	} else {
@@ -701,7 +702,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 	// Get the latest version of the broker so that we can avoid conflicts
 	// (since we have probably just updated the status of the broker and are
 	// now removing the last finalizer).
-	broker, err := c.serviceCatalogClient.ClusterServiceBrokers().Get(broker.Name, metav1.GetOptions{})
+	broker, err := c.serviceCatalogClient.ClusterServiceBrokers().Get(context.Background(), broker.Name, metav1.GetOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error finalizing: %v", err))
 	}
@@ -712,7 +713,7 @@ func (c *controller) updateClusterServiceBrokerFinalizers(
 	logContext := fmt.Sprint(pcb.Messagef("Updating finalizers to %v", finalizers))
 
 	klog.V(4).Info(pcb.Messagef("Updating %v", logContext))
-	_, err = c.serviceCatalogClient.ClusterServiceBrokers().Update(toUpdate)
+	_, err = c.serviceCatalogClient.ClusterServiceBrokers().Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		klog.Error(pcb.Messagef("Error updating %v: %v", logContext, err))
 	}
@@ -730,7 +731,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.C
 		LabelSelector: labelSelector,
 	}
 
-	existingServiceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(listOpts)
+	existingServiceClasses, err := c.serviceCatalogClient.ClusterServiceClasses().List(context.Background(), listOpts)
 	if err != nil {
 		c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServiceClassesReason, "%v %v", errorListingClusterServiceClassesMessage, err)
 		if err := c.updateClusterServiceBrokerCondition(
@@ -747,7 +748,7 @@ func (c *controller) getCurrentServiceClassesAndPlansForBroker(broker *v1beta1.C
 	}
 	klog.Info(pcb.Messagef("Found %d ClusterServiceClasses", len(existingServiceClasses.Items)))
 
-	existingServicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(listOpts)
+	existingServicePlans, err := c.serviceCatalogClient.ClusterServicePlans().List(context.Background(), listOpts)
 	if err != nil {
 		c.recorder.Eventf(broker, corev1.EventTypeWarning, errorListingClusterServicePlansReason, "%v %v", errorListingClusterServicePlansMessage, err)
 		if err := c.updateClusterServiceBrokerCondition(

@@ -24,12 +24,11 @@ import (
 	"sync"
 	"time"
 
-	kubeerr "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/validation/path"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,8 +43,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage"
 	storeerr "k8s.io/apiserver/pkg/storage/errors"
-	"k8s.io/apiserver/pkg/storage/etcd/metrics"
+	"k8s.io/apiserver/pkg/storage/etcd3/metrics"
 	"k8s.io/apiserver/pkg/util/dryrun"
+	"k8s.io/client-go/tools/cache"
 
 	"k8s.io/klog"
 )
@@ -221,13 +221,13 @@ func NamespaceKeyFunc(ctx context.Context, prefix string, name string) (string, 
 	key := NamespaceKeyRootFunc(ctx, prefix)
 	ns, ok := genericapirequest.NamespaceFrom(ctx)
 	if !ok || len(ns) == 0 {
-		return "", kubeerr.NewBadRequest("Namespace parameter required.")
+		return "", apierrors.NewBadRequest("Namespace parameter required.")
 	}
 	if len(name) == 0 {
-		return "", kubeerr.NewBadRequest("Name parameter required.")
+		return "", apierrors.NewBadRequest("Name parameter required.")
 	}
 	if msgs := path.IsValidPathSegmentName(name); len(msgs) != 0 {
-		return "", kubeerr.NewBadRequest(fmt.Sprintf("Name parameter invalid: %q: %s", name, strings.Join(msgs, ";")))
+		return "", apierrors.NewBadRequest(fmt.Sprintf("Name parameter invalid: %q: %s", name, strings.Join(msgs, ";")))
 	}
 	key = key + "/" + name
 	return key, nil
@@ -237,10 +237,10 @@ func NamespaceKeyFunc(ctx context.Context, prefix string, name string) (string, 
 // to a resource relative to the given prefix without a namespace.
 func NoNamespaceKeyFunc(ctx context.Context, prefix string, name string) (string, error) {
 	if len(name) == 0 {
-		return "", kubeerr.NewBadRequest("Name parameter required.")
+		return "", apierrors.NewBadRequest("Name parameter required.")
 	}
 	if msgs := path.IsValidPathSegmentName(name); len(msgs) != 0 {
-		return "", kubeerr.NewBadRequest(fmt.Sprintf("Name parameter invalid: %q: %s", name, strings.Join(msgs, ";")))
+		return "", apierrors.NewBadRequest(fmt.Sprintf("Name parameter invalid: %q: %s", name, strings.Join(msgs, ";")))
 	}
 	key := prefix + "/" + name
 	return key, nil
@@ -342,7 +342,7 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 	// at this point we have a fully formed object.  It is time to call the validators that the apiserver
 	// handling chain wants to enforce.
 	if createValidation != nil {
-		if err := createValidation(obj.DeepCopyObject()); err != nil {
+		if err := createValidation(ctx, obj.DeepCopyObject()); err != nil {
 			return nil, err
 		}
 	}
@@ -364,7 +364,7 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 	if err := e.Storage.Create(ctx, key, obj, out, ttl, dryrun.IsDryRun(options.DryRun)); err != nil {
 		err = storeerr.InterpretCreateError(err, qualifiedResource, name)
 		err = rest.CheckGeneratedNameError(e.CreateStrategy, err, obj)
-		if !kubeerr.IsAlreadyExists(err) {
+		if !apierrors.IsAlreadyExists(err) {
 			return nil, err
 		}
 		if errGet := e.Storage.Get(ctx, key, "", out, false); errGet != nil {
@@ -375,7 +375,7 @@ func (e *Store) Create(ctx context.Context, obj runtime.Object, createValidation
 			return nil, err
 		}
 		if accessor.GetDeletionTimestamp() != nil {
-			msg := &err.(*kubeerr.StatusError).ErrStatus.Message
+			msg := &err.(*apierrors.StatusError).ErrStatus.Message
 			*msg = fmt.Sprintf("object is being deleted: %s", *msg)
 		}
 		return nil, err
@@ -494,7 +494,7 @@ func (e *Store) Update(ctx context.Context, name string, objInfo rest.UpdatedObj
 		}
 		if version == 0 {
 			if !e.UpdateStrategy.AllowCreateOnUpdate() && !forceAllowCreate {
-				return nil, nil, kubeerr.NewNotFound(qualifiedResource, name)
+				return nil, nil, apierrors.NewNotFound(qualifiedResource, name)
 			}
 			creating = true
 			creatingObj = obj
@@ -504,7 +504,7 @@ func (e *Store) Update(ctx context.Context, name string, objInfo rest.UpdatedObj
 			// at this point we have a fully formed object.  It is time to call the validators that the apiserver
 			// handling chain wants to enforce.
 			if createValidation != nil {
-				if err := createValidation(obj.DeepCopyObject()); err != nil {
+				if err := createValidation(ctx, obj.DeepCopyObject()); err != nil {
 					return nil, nil, err
 				}
 			}
@@ -534,10 +534,10 @@ func (e *Store) Update(ctx context.Context, name string, objInfo rest.UpdatedObj
 				// leave the Kind field empty. See the discussion in #18526.
 				qualifiedKind := schema.GroupKind{Group: qualifiedResource.Group, Kind: qualifiedResource.Resource}
 				fieldErrList := field.ErrorList{field.Invalid(field.NewPath("metadata").Child("resourceVersion"), resourceVersion, "must be specified for an update")}
-				return nil, nil, kubeerr.NewInvalid(qualifiedKind, name, fieldErrList)
+				return nil, nil, apierrors.NewInvalid(qualifiedKind, name, fieldErrList)
 			}
 			if resourceVersion != version {
-				return nil, nil, kubeerr.NewConflict(qualifiedResource, name, fmt.Errorf(OptimisticLockErrorMsg))
+				return nil, nil, apierrors.NewConflict(qualifiedResource, name, fmt.Errorf(OptimisticLockErrorMsg))
 			}
 		}
 		if err := rest.BeforeUpdate(e.UpdateStrategy, ctx, obj, existing); err != nil {
@@ -546,7 +546,7 @@ func (e *Store) Update(ctx context.Context, name string, objInfo rest.UpdatedObj
 		// at this point we have a fully formed object.  It is time to call the validators that the apiserver
 		// handling chain wants to enforce.
 		if updateValidation != nil {
-			if err := updateValidation(obj.DeepCopyObject(), existing.DeepCopyObject()); err != nil {
+			if err := updateValidation(ctx, obj.DeepCopyObject(), existing.DeepCopyObject()); err != nil {
 				return nil, nil, err
 			}
 		}
@@ -812,7 +812,7 @@ func (e *Store) updateForGracefulDeletionAndFinalizers(ctx context.Context, name
 		false, /* ignoreNotFound */
 		&preconditions,
 		storage.SimpleUpdate(func(existing runtime.Object) (runtime.Object, error) {
-			if err := deleteValidation(existing); err != nil {
+			if err := deleteValidation(ctx, existing); err != nil {
 				return nil, err
 			}
 			graceful, pendingGraceful, err := rest.BeforeDelete(e.DeleteStrategy, ctx, existing, options)
@@ -917,7 +917,7 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 	// check if obj has pending finalizers
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
-		return nil, false, kubeerr.NewInternalError(err)
+		return nil, false, apierrors.NewInternalError(err)
 	}
 	pendingFinalizers := len(accessor.GetFinalizers()) != 0
 	var ignoreNotFound bool
@@ -930,6 +930,15 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 	// TODO: remove the check, because we support no-op updates now.
 	if graceful || pendingFinalizers || shouldUpdateFinalizers {
 		err, ignoreNotFound, deleteImmediately, out, lastExisting = e.updateForGracefulDeletionAndFinalizers(ctx, name, key, options, preconditions, deleteValidation, obj)
+		// Update the preconditions.ResourceVersion if set since we updated the object.
+		if err == nil && deleteImmediately && preconditions.ResourceVersion != nil {
+			accessor, err = meta.Accessor(out)
+			if err != nil {
+				return out, false, apierrors.NewInternalError(err)
+			}
+			resourceVersion := accessor.GetResourceVersion()
+			preconditions.ResourceVersion = &resourceVersion
+		}
 	}
 
 	// !deleteImmediately covers all cases where err != nil. We keep both to be future-proof.
@@ -965,6 +974,11 @@ func (e *Store) Delete(ctx context.Context, name string, deleteValidation rest.V
 	}
 	out, err = e.finalizeDelete(ctx, out, true)
 	return out, true, err
+}
+
+// DeleteReturnsDeletedObject implements the rest.MayReturnFullObjectDeleter interface
+func (e *Store) DeleteReturnsDeletedObject() bool {
+	return e.ReturnDeletedObject
 }
 
 // DeleteCollection removes all items returned by List with a given ListOptions from storage.
@@ -1030,7 +1044,7 @@ func (e *Store) DeleteCollection(ctx context.Context, deleteValidation rest.Vali
 					errs <- err
 					return
 				}
-				if _, _, err := e.Delete(ctx, accessor.GetName(), deleteValidation, options); err != nil && !kubeerr.IsNotFound(err) {
+				if _, _, err := e.Delete(ctx, accessor.GetName(), deleteValidation, options); err != nil && !apierrors.IsNotFound(err) {
 					klog.V(4).Infof("Delete %s in DeleteCollection failed: %v", accessor.GetName(), err)
 					errs <- err
 					return
@@ -1239,6 +1253,11 @@ func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
 		}
 	}
 
+	err := validateIndexers(options.Indexers)
+	if err != nil {
+		return err
+	}
+
 	opts, err := options.RESTOptions.GetRESTOptions(e.DefaultQualifiedResource)
 	if err != nil {
 		return err
@@ -1287,11 +1306,6 @@ func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
 		return e.KeyFunc(genericapirequest.NewContext(), accessor.GetName())
 	}
 
-	triggerFunc := options.TriggerFunc
-	if triggerFunc == nil {
-		triggerFunc = storage.NoTriggerPublisher
-	}
-
 	if e.DeleteCollectionWorkers == 0 {
 		e.DeleteCollectionWorkers = opts.DeleteCollectionWorkers
 	}
@@ -1310,15 +1324,20 @@ func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
 
 	if e.Storage.Storage == nil {
 		e.Storage.Codec = opts.StorageConfig.Codec
-		e.Storage.Storage, e.DestroyFunc = opts.Decorator(
+		var err error
+		e.Storage.Storage, e.DestroyFunc, err = opts.Decorator(
 			opts.StorageConfig,
 			prefix,
 			keyFunc,
 			e.NewFunc,
 			e.NewListFunc,
 			attrFunc,
-			triggerFunc,
+			options.TriggerFunc,
+			options.Indexers,
 		)
+		if err != nil {
+			return err
+		}
 		e.StorageVersioner = opts.StorageConfig.EncodeVersioner
 
 		if opts.CountMetricPollPeriod > 0 {
@@ -1354,7 +1373,7 @@ func (e *Store) startObservingCount(period time.Duration) func() {
 	return func() { close(stopCh) }
 }
 
-func (e *Store) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1beta1.Table, error) {
+func (e *Store) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
 	if e.TableConvertor != nil {
 		return e.TableConvertor.ConvertToTable(ctx, object, tableOptions)
 	}
@@ -1363,4 +1382,17 @@ func (e *Store) ConvertToTable(ctx context.Context, object runtime.Object, table
 
 func (e *Store) StorageVersion() runtime.GroupVersioner {
 	return e.StorageVersioner
+}
+
+// validateIndexers will check the prefix of indexers.
+func validateIndexers(indexers *cache.Indexers) error {
+	if indexers == nil {
+		return nil
+	}
+	for indexName := range *indexers {
+		if len(indexName) <= 2 || (indexName[:2] != "l:" && indexName[:2] != "f:") {
+			return fmt.Errorf("index must prefix with \"l:\" or \"f:\"")
+		}
+	}
+	return nil
 }

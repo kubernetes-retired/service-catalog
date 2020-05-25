@@ -17,6 +17,7 @@ limitations under the License.
 package servicecatalog
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strings"
@@ -34,7 +35,7 @@ import (
 
 // RetrieveBindings lists all bindings in a namespace.
 func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error) {
-	bindings, err := sdk.ServiceCatalog().ServiceBindings(ns).List(v1.ListOptions{})
+	bindings, err := sdk.ServiceCatalog().ServiceBindings(ns).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to list bindings in %s", ns)
 	}
@@ -44,7 +45,7 @@ func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error)
 
 // RetrieveBinding gets a binding by its name.
 func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error) {
-	binding, err := sdk.ServiceCatalog().ServiceBindings(ns).Get(name, v1.GetOptions{})
+	binding, err := sdk.ServiceCatalog().ServiceBindings(ns).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get binding '%s.%s'", ns, name)
 	}
@@ -55,7 +56,7 @@ func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error
 func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 ) ([]v1beta1.ServiceBinding, error) {
 	// Not using a filtered list operation because it's not supported yet.
-	results, err := sdk.ServiceCatalog().ServiceBindings(instance.Namespace).List(v1.ListOptions{})
+	results, err := sdk.ServiceCatalog().ServiceBindings(instance.Namespace).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to search bindings")
 	}
@@ -96,7 +97,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 		},
 	}
 
-	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(request)
+	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(context.Background(), request, v1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "bind request failed")
 	}
@@ -163,7 +164,7 @@ func (sdk *SDK) DeleteBindings(bindings []types.NamespacedName) ([]types.Namespa
 
 // DeleteBinding by name.
 func (sdk *SDK) DeleteBinding(ns, bindingName string) error {
-	err := sdk.ServiceCatalog().ServiceBindings(ns).Delete(bindingName, &v1.DeleteOptions{})
+	err := sdk.ServiceCatalog().ServiceBindings(ns).Delete(context.Background(), bindingName, v1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "remove binding %s/%s failed", ns, bindingName)
 	}
@@ -276,7 +277,7 @@ func (sdk *SDK) RemoveFinalizerForBinding(namespacedName types.NamespacedName) e
 	finalizers := sets.NewString(binding.Finalizers...)
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	binding.Finalizers = finalizers.List()
-	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).UpdateStatus(binding)
+	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).UpdateStatus(context.Background(), binding, v1.UpdateOptions{})
 	return err
 }
 

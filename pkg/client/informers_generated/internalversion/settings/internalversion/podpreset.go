@@ -19,6 +19,7 @@ limitations under the License.
 package internalversion
 
 import (
+	"context"
 	time "time"
 
 	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
@@ -61,13 +62,13 @@ func NewFilteredPodPresetInformer(client internalclientset.Interface, namespace 
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Settings().PodPresets(namespace).List(options)
+				return client.Settings().PodPresets(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Settings().PodPresets(namespace).Watch(options)
+				return client.Settings().PodPresets(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&settings.PodPreset{},
