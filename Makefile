@@ -125,7 +125,7 @@ else
 	DOCKER_CMD = docker run --security-opt label:disable --rm \
 	  -v $(CURDIR):/go/src/$(SC_PKG):delegated \
 	  -v $(CURDIR)/.cache:/root/.cache/:cached \
-	  -v $(CURDIR)/.pkg:/go/pkg:cached --env AZURE_STORAGE_CONNECTION_STRING scbuildimage
+	  -v $(CURDIR)/.pkg:/go/pkg:cached --env AZURE_STORAGE_CONNECTION_STRING --env GOFLAGS scbuildimage
 	scBuildImageTarget = .scBuildImage
 endif
 
@@ -288,11 +288,8 @@ test-update-goldenfiles: .init
 	@echo Updating golden files to match current test output
 	$(DOCKER_CMD) go test ./cmd/svcat/... -update
 
-build-integration: .generate_files
-	$(DOCKER_CMD) go test --tags="integration" -race github.com/kubernetes-sigs/service-catalog/pkg/controller/... -c
-
-test-integration: .init $(scBuildImageTarget) build build-integration
-	$(DOCKER_CMD) ./controller.test
+test-integration: .init
+	$(DOCKER_CMD) go test -v --tags="integration" -race github.com/kubernetes-sigs/service-catalog/pkg/controller/...
 
 test-e2e:
 	./contrib/hack/ci/run-e2e-tests.sh

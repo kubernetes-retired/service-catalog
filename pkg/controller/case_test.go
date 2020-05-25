@@ -107,7 +107,7 @@ func newControllerTest(t *testing.T) *controllerTest {
 
 	fakeOSBClient := fakeosb.NewFakeClient(fixtureHappyPathBrokerClientConfig())
 
-	coreInformerFactory := k8sinformers.NewSharedInformerFactory(k8sClient, time.Minute)
+	coreInformerFactory := k8sinformers.NewSharedInformerFactory(k8sClient, 0)
 	coreInformers := coreInformerFactory.Core()
 
 	scClient := fakesc.NewSimpleClientset()
@@ -501,12 +501,15 @@ func (ct *controllerTest) AddServiceClassRestrictionsToBroker() error {
 }
 
 // CreateServiceInstance creates a ServiceInstance which is used in testing scenarios.
-func (ct *controllerTest) CreateServiceInstance() error {
+func (ct *controllerTest) CreateServiceInstance(name string) error {
 	_, err := ct.scInterface.ServiceInstances(testNamespace).Create(context.Background(), &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testServiceInstanceName,
 			// added by a Webhook, which is not tested here
 			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+			Labels: map[string]string{
+				"name": name,
+			},
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
@@ -1085,11 +1088,13 @@ func (ct *controllerTest) WaitForInstanceCondition(condition v1beta1.ServiceInst
 // equal or higher than ServiceInstance `generation` value, ServiceInstance is in Ready/True status and
 // ServiceInstance is not in Orphan Mitigation progress
 func (ct *controllerTest) WaitForServiceInstanceProcessedGeneration(generation int64) error {
+	var lastInstance *v1beta1.ServiceInstance
 	err := wait.PollImmediate(pollingInterval, pollingTimeout, func() (bool, error) {
 		instance, err := ct.scInterface.ServiceInstances(testNamespace).Get(context.Background(), testServiceInstanceName, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error getting Instance: %v", err)
 		}
+		lastInstance = instance
 
 		if instance.Status.ObservedGeneration >= generation &&
 			isServiceInstanceConditionTrue(instance) &&
@@ -1102,7 +1107,7 @@ func (ct *controllerTest) WaitForServiceInstanceProcessedGeneration(generation i
 
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf(
-			"instance with proper ProcessedGeneration status not found")
+			"instance with proper ProcessedGeneration status not found, want generation: %v,  observed instance %+v", generation, lastInstance)
 	}
 	return err
 }
@@ -1234,7 +1239,7 @@ func (ct *controllerTest) UpdateServiceInstanceInternalPlanName(planName string)
 
 // CreateServiceInstanceWithCustomParameters creates ServiceInstance with parameters from map or
 // by adding reference to Secret. If parameters are empty method creates ServiceInstance without parameters
-func (ct *controllerTest) CreateServiceInstanceWithCustomParameters(withParam, paramFromSecret bool) error {
+func (ct *controllerTest) CreateServiceInstanceWithCustomParameters(withParam, paramFromSecret bool, name string) error {
 	var params map[string]interface{}
 	var paramsFrom []v1beta1.ParametersFromSource
 
@@ -1257,9 +1262,9 @@ func (ct *controllerTest) CreateServiceInstanceWithCustomParameters(withParam, p
 
 	var err error
 	if withParam || paramFromSecret {
-		_, err = ct.CreateServiceInstanceWithParameters(params, paramsFrom)
+		_, err = ct.CreateServiceInstanceWithParameters(params, paramsFrom, name)
 	} else {
-		err = ct.CreateServiceInstance()
+		err = ct.CreateServiceInstance(name)
 	}
 
 	if err != nil {
@@ -1271,9 +1276,7 @@ func (ct *controllerTest) CreateServiceInstanceWithCustomParameters(withParam, p
 
 // CreateServiceInstanceWithParameters creates ServiceInstance with parameters from map and by adding
 // Secret reference
-func (ct *controllerTest) CreateServiceInstanceWithParameters(
-	params map[string]interface{},
-	paramsFrom []v1beta1.ParametersFromSource) (*v1beta1.ServiceInstance, error) {
+func (ct *controllerTest) CreateServiceInstanceWithParameters(params map[string]interface{}, paramsFrom []v1beta1.ParametersFromSource, name string) (*v1beta1.ServiceInstance, error) {
 	rawParams, err := convertParametersIntoRawExtension(params)
 	if err != nil {
 		return nil, err
@@ -1283,6 +1286,9 @@ func (ct *controllerTest) CreateServiceInstanceWithParameters(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       testServiceInstanceName,
 			Finalizers: []string{v1beta1.FinalizerServiceCatalog},
+			Labels: map[string]string{
+				"name": name,
+			},
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
 			PlanReference: v1beta1.PlanReference{
@@ -1317,21 +1323,21 @@ func (ct *controllerTest) UpdateCustomServiceInstanceParameters(
 	if err != nil {
 		return 0, err
 	}
-
+	toUpdate := instance.DeepCopy()
 	if update {
 		instanceParam, err := convertParametersIntoRawExtension(map[string]interface{}{"param-key": "new-param-value"})
 		if err != nil {
 			return 0, err
 		}
-		instance.Spec.Parameters = instanceParam
+		toUpdate.Spec.Parameters = instanceParam
 	}
 
 	if delete {
-		instance.Spec.Parameters = nil
+		toUpdate.Spec.Parameters = nil
 	}
 
 	if updateFromSecret {
-		instance.Spec.ParametersFrom = []v1beta1.ParametersFromSource{
+		toUpdate.Spec.ParametersFrom = []v1beta1.ParametersFromSource{
 			{
 				SecretKeyRef: &v1beta1.SecretKeyReference{
 					Name: otherSecretNameWithParameters,
@@ -1342,11 +1348,11 @@ func (ct *controllerTest) UpdateCustomServiceInstanceParameters(
 	}
 
 	if deleteFromSecret {
-		instance.Spec.ParametersFrom = nil
+		toUpdate.Spec.ParametersFrom = nil
 	}
 
-	instance.Generation = instance.Generation + 1
-	updatedInstance, err := ct.scInterface.ServiceInstances(testNamespace).Update(context.Background(), instance, metav1.UpdateOptions{})
+	toUpdate.Generation = toUpdate.Generation + 1
+	updatedInstance, err := ct.scInterface.ServiceInstances(testNamespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 	if err != nil {
 		return 0, err
 	}

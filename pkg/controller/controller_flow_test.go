@@ -47,7 +47,7 @@ func TestBasicFlowWithBasicAuth(t *testing.T) {
 
 	// WHEN
 	assert.NoError(t, ct.UpdateSecretWithBasicAuth("user1", "newp2sswd"))
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 
 	// THEN
 	assert.NoError(t, ct.WaitForReadyInstance())
@@ -73,7 +73,7 @@ func TestOriginatingIdentity(t *testing.T) {
 	assert.NoError(t, ct.WaitForReadyBroker())
 
 	// WHEN
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 	// THEN
 	assert.NoError(t, ct.WaitForReadyInstance())
 
@@ -137,7 +137,7 @@ func TestBasicFlow(t *testing.T) {
 			ct.AssertClusterServiceClassAndPlan(t)
 
 			// WHEN
-			require.NoError(t, ct.CreateServiceInstance())
+			require.NoError(t, ct.CreateServiceInstance(""))
 
 			// THEN
 			assert.NoError(t, ct.WaitForReadyInstance())

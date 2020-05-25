@@ -43,7 +43,7 @@ func TestServiceBindingOrphanMitigation(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	require.NoError(t, ct.CreateServiceInstance())
+	require.NoError(t, ct.CreateServiceInstance(""))
 	require.NoError(t, ct.WaitForReadyInstance())
 
 	// WHEN
@@ -64,7 +64,7 @@ func TestServiceBindingFailure(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	require.NoError(t, ct.CreateServiceInstance())
+	require.NoError(t, ct.CreateServiceInstance(""))
 	require.NoError(t, ct.WaitForReadyInstance())
 
 	// WHEN
@@ -89,7 +89,7 @@ func TestServiceBindingRetryForNonExistingInstance(t *testing.T) {
 	assert.NoError(t, ct.CreateBinding())
 	assert.NoError(t, ct.WaitForNotReadyBinding())
 	// create an instance referenced by the binding
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 	assert.NoError(t, ct.WaitForReadyInstance())
 
 	// THEN
@@ -118,7 +118,7 @@ func TestServiceBindingDeleteWithAsyncBindInProgress(t *testing.T) {
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.WaitForReadyBroker())
 			ct.AssertClusterServiceClassAndPlan(t)
-			assert.NoError(t, ct.CreateServiceInstance())
+			assert.NoError(t, ct.CreateServiceInstance(""))
 			assert.NoError(t, ct.WaitForReadyInstance())
 			assert.NoError(t, ct.CreateBinding())
 			assert.NoError(t, ct.WaitForBindingInProgress())
@@ -146,7 +146,7 @@ func TestDeleteServiceBindingFailureRetry(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 	assert.NoError(t, ct.WaitForReadyInstance())
 	assert.NoError(t, ct.CreateBinding())
 	assert.NoError(t, ct.WaitForReadyBinding())
@@ -175,7 +175,7 @@ func TestDeleteServiceBindingFailureRetryAsync(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 	assert.NoError(t, ct.WaitForReadyInstance())
 	assert.NoError(t, ct.CreateBinding())
 	assert.NoError(t, ct.WaitForReadyBinding())
@@ -228,7 +228,7 @@ func TestCreateServiceBindingInstanceNotReady(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 
 	// WHEN
 	assert.NoError(t, ct.CreateBinding())
@@ -251,7 +251,7 @@ func TestCreateServiceBindingInvalidInstanceFailure(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 
 	// WHEN
 	assert.NoError(t, ct.CreateBinding())
@@ -486,7 +486,7 @@ func TestCreateServiceBindingWithParameters(t *testing.T) {
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.WaitForReadyBroker())
 			ct.AssertClusterServiceClassAndPlan(t)
-			assert.NoError(t, ct.CreateServiceInstance())
+			assert.NoError(t, ct.CreateServiceInstance(""))
 			for _, secret := range tc.secrets {
 				ct.CreateSecret(secret.name, secret.data)
 			}
@@ -613,7 +613,7 @@ func TestCreateServiceBindingWithSecretTransform(t *testing.T) {
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.WaitForReadyBroker())
 			ct.AssertClusterServiceClassAndPlan(t)
-			assert.NoError(t, ct.CreateServiceInstance())
+			assert.NoError(t, ct.CreateServiceInstance(""))
 			for _, secret := range tc.secrets {
 				ct.CreateSecret(secret.name, secret.data)
 			}

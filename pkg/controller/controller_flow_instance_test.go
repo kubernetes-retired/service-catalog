@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"runtime"
+	"runtime/pprof"
 	"testing"
 
 	"github.com/kubernetes-sigs/go-open-service-broker-client/v2"
@@ -31,6 +34,16 @@ import (
 	"github.com/stretchr/testify/require"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
+
+func TestMain(m *testing.M) {
+	// call flag.Parse() here if TestMain uses flags
+	exit := m.Run()
+
+	fmt.Println(runtime.NumGoroutine())
+	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+
+	os.Exit(exit)
+}
 
 // TestProvisionInstanceWithRetries tests creating a ServiceInstance
 // with retry after temporary error with/without orphan mitigation.
@@ -59,7 +72,7 @@ func TestProvisionInstanceWithRetries(t *testing.T) {
 			require.NoError(t, ct.WaitForReadyBroker())
 
 			// WHEN
-			assert.NoError(t, ct.CreateServiceInstance())
+			assert.NoError(t, ct.CreateServiceInstance(""))
 
 			// THEN
 			assert.NoError(t, ct.WaitForReadyInstance())
@@ -86,7 +99,7 @@ func TestRetryAsyncDeprovision(t *testing.T) {
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
 
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 	assert.NoError(t, ct.WaitForReadyInstance())
 
 	// WHEN
@@ -117,7 +130,7 @@ func TestServiceInstanceDeleteWithAsyncProvisionInProgress(t *testing.T) {
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.WaitForReadyBroker())
 			ct.AssertClusterServiceClassAndPlan(t)
-			assert.NoError(t, ct.CreateServiceInstance())
+			assert.NoError(t, ct.CreateServiceInstance(""))
 			assert.NoError(t, ct.WaitForAsyncProvisioningInProgress())
 
 			// WHEN
@@ -145,7 +158,7 @@ func TestServiceInstanceDeleteWithExistingServiceBindings(t *testing.T) {
 	require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 	require.NoError(t, ct.WaitForReadyBroker())
 	ct.AssertClusterServiceClassAndPlan(t)
-	assert.NoError(t, ct.CreateServiceInstance())
+	assert.NoError(t, ct.CreateServiceInstance(""))
 	assert.NoError(t, ct.WaitForReadyInstance())
 	assert.NoError(t, ct.CreateBinding())
 	assert.NoError(t, ct.WaitForReadyBinding())
@@ -180,7 +193,7 @@ func TestServiceInstanceDeleteWithAsyncUpdateInProgress(t *testing.T) {
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
 			require.NoError(t, ct.WaitForReadyBroker())
 			ct.AssertClusterServiceClassAndPlan(t)
-			assert.NoError(t, ct.CreateServiceInstance())
+			assert.NoError(t, ct.CreateServiceInstance(""))
 			assert.NoError(t, ct.WaitForReadyInstance())
 			assert.NoError(t, ct.UpdateServiceInstanceParameters())
 			assert.NoError(t, ct.WaitForInstanceUpdating())
@@ -212,7 +225,7 @@ func TestCreateServiceInstanceFailsWithNonexistentPlan(t *testing.T) {
 	require.NoError(t, ct.WaitForReadyBroker())
 
 	// WHEN
-	require.NoError(t, ct.CreateServiceInstance())
+	require.NoError(t, ct.CreateServiceInstance(""))
 
 	// THEN
 	condition := v1beta1.ServiceInstanceCondition{
@@ -239,7 +252,7 @@ func TestCreateServiceInstanceNonExistentClusterServiceBroker(t *testing.T) {
 	require.NoError(t, ct.WaitForClusterServicePlan())
 
 	// WHEN
-	require.NoError(t, ct.CreateServiceInstance())
+	require.NoError(t, ct.CreateServiceInstance(""))
 
 	// THEN
 	condition := v1beta1.ServiceInstanceCondition{
@@ -478,7 +491,7 @@ func TestCreateServiceInstanceWithParameters(t *testing.T) {
 			require.NoError(t, ct.WaitForReadyBroker())
 
 			// WHEN
-			_, err := ct.CreateServiceInstanceWithParameters(state.params, state.paramsFrom)
+			_, err := ct.CreateServiceInstanceWithParameters(state.params, state.paramsFrom, "")
 			require.NoError(t, err)
 			require.NoError(t, ct.CreateSecret(state.secret.name, state.secret.data))
 
@@ -593,7 +606,7 @@ func TestCreateServiceInstanceWithProvisionFailure(t *testing.T) {
 				ct.SetErrorReactionForProvisioningToOSBClient(state.provisionResponseStatusCode)
 			}
 			ct.SetErrorReactionForDeprovisioningToOSBClient(http.StatusInternalServerError, blockDeprovisioning)
-			require.NoError(t, ct.CreateServiceInstance())
+			require.NoError(t, ct.CreateServiceInstance(""))
 
 			// THEN
 			// Wait for the provision to fail
@@ -714,7 +727,7 @@ func TestUpdateServiceInstanceChangePlans(t *testing.T) {
 			require.NoError(t, ct.WaitForClusterServiceClass())
 			require.NoError(t, ct.WaitForClusterServicePlan())
 
-			require.NoError(t, ct.CreateServiceInstance())
+			require.NoError(t, ct.CreateServiceInstance(""))
 			require.NoError(t, ct.WaitForReadyInstance())
 
 			switch state.dynamicUpdateInstanceReaction {
@@ -760,7 +773,7 @@ func TestUpdateServiceInstanceChangePlansToNonexistentPlan(t *testing.T) {
 	require.NoError(t, ct.WaitForClusterServiceClass())
 	require.NoError(t, ct.WaitForClusterServicePlan())
 
-	require.NoError(t, ct.CreateServiceInstance())
+	require.NoError(t, ct.CreateServiceInstance(""))
 	require.NoError(t, ct.WaitForReadyInstance())
 
 	// WHEN
@@ -801,7 +814,7 @@ func TestUpdateServiceInstanceNewDashboardResponse(t *testing.T) {
 			defer require.NoError(t, ct.SetFeatureGateDashboardURL(false))
 
 			require.NoError(t, ct.CreateSimpleClusterServiceBroker())
-			require.NoError(t, ct.CreateServiceInstance())
+			require.NoError(t, ct.CreateServiceInstance(""))
 			require.NoError(t, ct.WaitForReadyInstance())
 			ct.SetUpdateServiceInstanceResponseWithDashboardURL()
 
@@ -953,7 +966,8 @@ func TestUpdateServiceInstanceUpdateParameters(t *testing.T) {
 
 			require.NoError(t, ct.CreateServiceInstanceWithCustomParameters(
 				state.instanceWithParams,
-				state.instanceWithParamsFromSecret))
+				state.instanceWithParamsFromSecret,
+				t.Name()))
 			require.NoError(t, ct.WaitForReadyInstance())
 
 			// WHEN
