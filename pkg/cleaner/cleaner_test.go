@@ -70,6 +70,33 @@ func TestCleaner_RemoveCRDs(t *testing.T) {
 	assert.Len(t, vwcList.Items, 1)
 }
 
+func TestCleaner_RemoveCRDsNoDeployment(t *testing.T) {
+	// Given
+	fakeClik8s := k8sfake.NewSimpleClientset(newTestMutatingWC(), newTestValidatingWC(), newTestWC())
+	fakeCliext := apiextfake.NewSimpleClientset(newTestCRDs()...)
+	fakeClisc := scfake.NewSimpleClientset()
+
+	clr := New(fakeClik8s, fakeClisc, fakeCliext)
+
+	// When
+	assert.NoError(t, clr.RemoveCRDs(cmNamespace, cmName, []string{mutatingWebhookConfiguration}))
+
+	// Then
+	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
+	assert.NoError(t, err)
+	assert.Len(t, list.Items, 1)
+	assert.Equal(t, "NotServiceCatalogCRD", list.Items[0].Name)
+
+	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	assert.NoError(t, err)
+	assert.Len(t, mwcList.Items, 1)
+	assert.Equal(t, "custom-mutating-webhook-configuration", mwcList.Items[0].Name)
+
+	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	assert.NoError(t, err)
+	assert.Len(t, vwcList.Items, 1)
+}
+
 func newTestDeployment() *appsv1.Deployment {
 	var rep int32 = 1
 	return &appsv1.Deployment{
