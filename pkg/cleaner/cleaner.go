@@ -25,6 +25,7 @@ import (
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -90,35 +91,41 @@ func (c *Cleaner) RemoveCRDs(releaseNamespace, controllerManagerName string, web
 func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 	klog.V(4).Infof("Fetching deployment %s/%s", namespace, controllerName)
 	deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, v1.GetOptions{})
-	if err == nil {
-		klog.V(4).Info("Scaling down deployment to zero")
-		replicas := int32(0)
-		deploymentCopy := deployment.DeepCopy()
-		deploymentCopy.Spec.Replicas = &replicas
-		_, err = c.client.AppsV1().Deployments(deploymentCopy.Namespace).Update(context.Background(), deploymentCopy, v1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update deployment %s/%s: %v", namespace, controllerName, err)
-		}
-
-		err = wait.Poll(3*time.Second, 120*time.Second, func() (done bool, err error) {
-			klog.V(4).Info("Waiting for deployment scales down...")
-			deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, v1.GetOptions{})
-			if err != nil {
-				return false, err
-			}
-			ready := deployment.Status.ReadyReplicas
-			available := deployment.Status.AvailableReplicas
-			if ready == 0 && available == 0 {
-				return true, nil
-			}
-			klog.V(4).Infof("Controller manager is not down, (ready: %d, available: %d) retry...", ready, available)
-			return false, nil
-		})
-		if err != nil {
-			return fmt.Errorf("failed during waiting for scale down controller manager: %s", err)
-		}
+	switch {
+	case err == nil:
+	case apierrors.IsNotFound(err):
+		klog.V(4).Info("Deployment not found. Skipping scale down to zero.")
+		return nil
+	default:
+		return fmt.Errorf("cannot get deployment %s/%s: %s", namespace, controllerName, err)
 	}
-	klog.V(4).Infof("Controller manager deployment replicas is down to zero")
+
+	klog.V(4).Info("Scaling down deployment to zero")
+	replicas := int32(0)
+	deploymentCopy := deployment.DeepCopy()
+	deploymentCopy.Spec.Replicas = &replicas
+	_, err = c.client.AppsV1().Deployments(deploymentCopy.Namespace).Update(context.Background(), deploymentCopy, v1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update deployment %s/%s: %v", namespace, controllerName, err)
+	}
+
+	err = wait.Poll(3*time.Second, 120*time.Second, func() (done bool, err error) {
+		klog.V(4).Info("Waiting for deployment scales down...")
+		deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, v1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		ready := deployment.Status.ReadyReplicas
+		available := deployment.Status.AvailableReplicas
+		if ready == 0 && available == 0 {
+			return true, nil
+		}
+		klog.V(4).Infof("Controller manager is not down, (ready: %d, available: %d) retry...", ready, available)
+		return false, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed during waiting for scale down controller manager: %s", err)
+	}
 
 	return nil
 }
