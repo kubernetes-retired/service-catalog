@@ -19,15 +19,17 @@ package cleaner
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
-	"log"
-	"time"
 )
 
 // Cleaner provides functionality to remove all ServiceCatalog CRDs/CRs
@@ -89,7 +91,12 @@ func (c *Cleaner) RemoveCRDs(releaseNamespace, controllerManagerName string, web
 func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 	klog.V(4).Infof("Fetching deployment %s/%s", namespace, controllerName)
 	deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, v1.GetOptions{})
-	if err != nil {
+	switch {
+	case err == nil:
+	case apierrors.IsNotFound(err):
+		klog.V(4).Info("Deployment not found. Skipping scale down to zero.")
+		return nil
+	default:
 		return fmt.Errorf("cannot get deployment %s/%s: %s", namespace, controllerName, err)
 	}
 
