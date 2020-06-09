@@ -35,6 +35,9 @@ spec:
       serviceAccountName: "{{ .Values.controllerManager.serviceAccount }}"
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
+      volumes:
+        - name: run
+          emptyDir: {}
       containers:
       - name: controller-manager
         image: {{ .Values.image }}
@@ -99,6 +102,9 @@ spec:
         - --feature-gates
         - CascadingDeletion=true
         {{- end }}
+        volumeMounts:
+        - mountPath: /var/run
+          name: run
         ports:
         - containerPort: 8444
         {{- if .Values.controllerManager.healthcheck.enabled }}

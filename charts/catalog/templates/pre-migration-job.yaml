@@ -92,6 +92,13 @@ spec:
   resources:
     requests:
       storage: 200Mi
+{{- if .Values.persistence.storageClass }}
+  {{- if (eq "-" .Values.persistence.storageClass) }}
+      storageClassName: ""
+  {{- else }}
+      storageClassName: "{{ .Values.persistence.storageClass }}"
+  {{- end }}
+{{- end }}
 
 ---
 apiVersion: batch/v1
@@ -119,7 +126,12 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
     spec:
-      restartPolicy: Never
+{{- with .Values.securityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+{{- end }}
+
+        restartPolicy: Never
       serviceAccountName: pre-migration-job-account
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
