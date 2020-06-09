@@ -91,8 +91,7 @@ spec:
       securityContext:
 {{ toYaml . | indent 8 }}
 {{- end }}
-
-        restartPolicy: Never
+      restartPolicy: Never
       serviceAccountName: clean-job-account
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
