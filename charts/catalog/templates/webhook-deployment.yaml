@@ -32,7 +32,6 @@ spec:
       securityContext:
 {{ toYaml . | indent 8 }}
 {{- end }}
-
       serviceAccountName: "{{ .Values.webhook.serviceAccount }}"
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
