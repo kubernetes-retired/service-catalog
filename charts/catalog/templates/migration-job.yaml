@@ -112,6 +112,10 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
     spec:
+{{- with .Values.securityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+{{- end }}
       restartPolicy: Never
       serviceAccountName: migration-job-account
       imagePullSecrets:
