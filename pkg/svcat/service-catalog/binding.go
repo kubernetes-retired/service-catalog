@@ -277,7 +277,7 @@ func (sdk *SDK) RemoveFinalizerForBinding(namespacedName types.NamespacedName) e
 	finalizers := sets.NewString(binding.Finalizers...)
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	binding.Finalizers = finalizers.List()
-	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).UpdateStatus(context.Background(), binding, v1.UpdateOptions{})
+	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).Update(context.Background(), binding, v1.UpdateOptions{})
 	return err
 }
 

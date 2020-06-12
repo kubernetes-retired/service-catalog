@@ -321,7 +321,7 @@ func (sdk *SDK) RemoveFinalizerForInstance(ns, name string) error {
 	finalizers := sets.NewString(instance.Finalizers...)
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	instance.Finalizers = finalizers.List()
-	_, err = sdk.ServiceCatalog().ServiceInstances(instance.Namespace).UpdateStatus(context.Background(), instance, v1.UpdateOptions{})
+	_, err = sdk.ServiceCatalog().ServiceInstances(instance.Namespace).Update(context.Background(), instance, v1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
