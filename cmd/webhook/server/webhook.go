@@ -104,11 +104,11 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		"/mutating-clusterserviceclasses": &cscmutation.CreateUpdateHandler{},
 		"/mutating-clusterserviceplans":   &cspmutation.CreateUpdateHandler{},
 
-		"/mutating-servicebindings":  &sbmutation.CreateUpdateHandler{},
+		"/mutating-servicebindings":  &sbmutation.CreateUpdateDeleteHandler{},
 		"/mutating-servicebrokers":   &brmutation.CreateUpdateHandler{},
 		"/mutating-serviceclasses":   &scmutation.CreateUpdateHandler{},
 		"/mutating-serviceplans":     &spmutation.CreateUpdateHandler{},
-		"/mutating-serviceinstances": simutation.NewCreateUpdateHandler(),
+		"/mutating-serviceinstances": simutation.NewCreateUpdateDeleteHandler(),
 
 		"/validating-clusterservicebrokers":        csbrvalidation.NewSpecValidationHandler(),
 		"/validating-clusterservicebrokers/status": &csbrvalidation.StatusValidationHandler{},

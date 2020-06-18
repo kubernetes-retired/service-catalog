@@ -104,6 +104,41 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 				},
 			},
 		},
+		"Should clear out the manually set UserInfo field": {
+			givenRawObj: []byte(`{
+				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ServiceBinding",
+  				"metadata": {
+  				  "creationTimestamp": null,
+  				  "name": "test-binding"
+  				},
+  				"spec": {
+				  "instanceRef": {
+					"name": "some-instance"
+				  },
+				  "externalID": "my-external-id-123",
+				  "secretName": "overridden-name",
+				  "userInfo": {
+                    "username": "foo@bar.com",
+                    "uid": "123-123",
+                    "groups": ["val1", "val2"]
+                  }
+  				}
+			}`),
+			expPatches: []jsonpatch.Operation{
+				{
+					Operation: "add",
+					Path:      "/metadata/finalizers",
+					Value: []interface{}{
+						"kubernetes-incubator/service-catalog",
+					},
+				},
+				{
+					Operation: "remove",
+					Path:      "/spec/userInfo",
+				},
+			},
+		},
 	}
 
 	for tn, tc := range tests {
@@ -132,7 +167,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 				},
 			}
 
-			handler := mutation.CreateUpdateHandler{
+			handler := mutation.CreateUpdateDeleteHandler{
 				UUID: func() types.UID { return fixUUID },
 			}
 			handler.InjectDecoder(decoder)
@@ -229,7 +264,7 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
 				},
 			}
 
-			handler := mutation.CreateUpdateHandler{
+			handler := mutation.CreateUpdateDeleteHandler{
 				UUID: func() types.UID { return fixUUID },
 			}
 			handler.InjectDecoder(decoder)
@@ -254,34 +289,14 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
 }
 
 func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *testing.T) {
-	// given
-	sc.AddToScheme(scheme.Scheme)
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
-
-	// assumption that OriginatingIdentity is enabled by default
-
-	reqUserInfo := authenticationv1.UserInfo{
-		Username: "minikube",
-		UID:      "123",
-		Groups:   []string{"unauthorized"},
-		Extra: map[string]authenticationv1.ExtraValue{
-			"extra": {"val1", "val2"},
-		},
-	}
-
-	fixReq := admission.Request{
-		AdmissionRequest: admissionv1beta1.AdmissionRequest{
-			Operation: admissionv1beta1.Create,
-			Name:      "test-binding",
-			Namespace: "system",
-			Kind: metav1.GroupVersionKind{
-				Kind:    "ServiceBinding",
-				Version: "v1beta1",
-				Group:   "servicecatalog.k8s.io",
-			},
-			UserInfo: reqUserInfo,
-			Object: runtime.RawExtension{Raw: []byte(`{
+	tests := map[string]struct {
+		reqOperation admissionv1beta1.Operation
+		givenRawObj  []byte
+		expPatches   []jsonpatch.Operation
+	}{
+		"Should clear out the ClusterServicePlanRef": {
+			reqOperation: admissionv1beta1.Create,
+			givenRawObj: []byte(`{
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",
   				"metadata": {
@@ -296,46 +311,119 @@ func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *t
 				  "externalID": "123-abc",
 				  "secretName": "test-binding"
   				}
-			}`)},
-		},
-	}
-
-	expPatches := []jsonpatch.Operation{
-		{
-			Operation: "add",
-			Path:      "/spec/userInfo",
-			Value: map[string]interface{}{
-				"username": "minikube",
-				"uid":      "123",
-				"groups": []interface{}{
-					"unauthorized",
+			}`),
+			expPatches: []jsonpatch.Operation{
+				{
+					Operation: "add",
+					Path:      "/spec/userInfo",
+					Value: map[string]interface{}{
+						"username": "minikube",
+						"uid":      "123",
+						"groups": []interface{}{
+							"unauthorized",
+						},
+						"extra": map[string]interface{}{
+							"extra": []interface{}{
+								"val1", "val2",
+							},
+						},
+					},
 				},
-				"extra": map[string]interface{}{
-					"extra": []interface{}{
-						"val1", "val2",
+			},
+		},
+		"Should clear out the ClusterServicePlanRef2": {
+			reqOperation: admissionv1beta1.Delete,
+			givenRawObj: []byte(`{
+  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
+  				"kind": "ServiceBinding",
+  				"metadata": {
+				  "finalizers": ["kubernetes-incubator/service-catalog"],
+  				  "creationTimestamp": null,
+  				  "name": "test-binding"
+  				},
+  				"spec": {
+				  "instanceRef": {
+					"name": "some-instance"
+				  },
+				  "externalID": "123-abc",
+				  "secretName": "test-binding"
+  				}
+			}`),
+			expPatches: []jsonpatch.Operation{
+				{
+					Operation: "add",
+					Path:      "/spec/userInfo",
+					Value: map[string]interface{}{
+						"username": "minikube",
+						"uid":      "123",
+						"groups": []interface{}{
+							"unauthorized",
+						},
+						"extra": map[string]interface{}{
+							"extra": []interface{}{
+								"val1", "val2",
+							},
+						},
 					},
 				},
 			},
 		},
 	}
 
-	handler := mutation.CreateUpdateHandler{}
-	handler.InjectDecoder(decoder)
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			// given
+			sc.AddToScheme(scheme.Scheme)
+			decoder, err := admission.NewDecoder(scheme.Scheme)
+			require.NoError(t, err)
 
-	// when
-	resp := handler.Handle(context.Background(), fixReq)
+			// assumption that OriginatingIdentity is enabled by default
 
-	// then
-	assert.True(t, resp.Allowed)
-	require.NotNil(t, resp.PatchType)
-	assert.Equal(t, admissionv1beta1.PatchTypeJSONPatch, *resp.PatchType)
+			reqUserInfo := authenticationv1.UserInfo{
+				Username: "minikube",
+				UID:      "123",
+				Groups:   []string{"unauthorized"},
+				Extra: map[string]authenticationv1.ExtraValue{
+					"extra": {"val1", "val2"},
+				},
+			}
 
-	// filtering out status cause k8s api-server will discard this too
-	patches := tester.FilterOutStatusPatch(resp.Patches)
+			fixReq := admission.Request{
+				AdmissionRequest: admissionv1beta1.AdmissionRequest{
+					Operation: tc.reqOperation,
+					Name:      "test-binding",
+					Namespace: "system",
+					Kind: metav1.GroupVersionKind{
+						Kind:    "ServiceBinding",
+						Version: "v1beta1",
+						Group:   "servicecatalog.k8s.io",
+					},
+					UserInfo: reqUserInfo,
+					Object: runtime.RawExtension{
+						Raw: tc.givenRawObj,
+					},
+				},
+			}
 
-	require.Len(t, patches, len(expPatches))
-	for _, expPatch := range expPatches {
-		assert.Contains(t, patches, expPatch)
+			handler := mutation.CreateUpdateDeleteHandler{}
+			handler.InjectDecoder(decoder)
+
+			// when
+			resp := handler.Handle(context.Background(), fixReq)
+
+			// then
+			assert.True(t, resp.Allowed)
+			require.NotNil(t, resp.PatchType)
+			assert.Equal(t, admissionv1beta1.PatchTypeJSONPatch, *resp.PatchType)
+
+			// filtering out status cause k8s api-server will discard this too
+			patches := tester.FilterOutStatusPatch(resp.Patches)
+
+			require.Len(t, patches, len(tc.expPatches))
+			for _, expPatch := range tc.expPatches {
+				assert.Contains(t, patches, expPatch)
+			}
+		})
 	}
 }
 
@@ -346,7 +434,7 @@ func TestCreateUpdateHandlerHandleDecoderErrors(t *testing.T) {
 		tester.AssertHandlerReturnErrorIfReqObjIsMalformed,
 		tester.AssertHandlerReturnErrorIfGVKMismatch,
 	} {
-		handler := mutation.CreateUpdateHandler{}
+		handler := mutation.CreateUpdateDeleteHandler{}
 		fn(t, &handler, "ServiceBinding")
 	}
 }

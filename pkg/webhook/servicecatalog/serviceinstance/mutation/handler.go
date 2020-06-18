@@ -26,33 +26,32 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	admissionTypes "k8s.io/api/admission/v1beta1"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// CreateUpdateHandler handles ServiceInstance
-type CreateUpdateHandler struct {
+// CreateUpdateDeleteHandler handles ServiceInstance
+type CreateUpdateDeleteHandler struct {
 	decoder            *admission.Decoder
 	UUID               webhookutil.UUIDGenerator
 	defaultServicePlan *DefaultServicePlan
 }
 
-// NewCreateUpdateHandler return new CreateUpdateHandler
-func NewCreateUpdateHandler() *CreateUpdateHandler {
-	return &CreateUpdateHandler{
+// NewCreateUpdateDeleteHandler return new CreateUpdateDeleteHandler
+func NewCreateUpdateDeleteHandler() *CreateUpdateDeleteHandler {
+	return &CreateUpdateDeleteHandler{
 		defaultServicePlan: &DefaultServicePlan{},
 	}
 }
 
-var _ admission.Handler = &CreateUpdateHandler{}
-var _ admission.DecoderInjector = &CreateUpdateHandler{}
+var _ admission.Handler = &CreateUpdateDeleteHandler{}
+var _ admission.DecoderInjector = &CreateUpdateDeleteHandler{}
 
 // Handle handles admission requests.
-func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *CreateUpdateDeleteHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
 	traced.Infof("Start handling mutation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 
@@ -79,6 +78,8 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 		}
 		h.mutateOnUpdate(ctx, req, oldObj, mutated)
 		h.syncLabels(mutated)
+	case admissionTypes.Delete:
+		h.mutateOnDelete(req, mutated)
 	default:
 		traced.Infof("ServiceInstance mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
@@ -105,12 +106,12 @@ func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request)
 }
 
 // InjectDecoder injects the decoder
-func (h *CreateUpdateHandler) InjectDecoder(d *admission.Decoder) error {
+func (h *CreateUpdateDeleteHandler) InjectDecoder(d *admission.Decoder) error {
 	h.decoder = d
 	return nil
 }
 
-func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.Request, instance *sc.ServiceInstance) {
+func (h *CreateUpdateDeleteHandler) mutateOnCreate(ctx context.Context, req admission.Request, instance *sc.ServiceInstance) {
 	// This feature was copied from Service Catalog registry: https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/registry/servicecatalog/instance/strategy.go
 	// If you want to track previous changes please check there.
 
@@ -118,16 +119,13 @@ func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.
 		instance.Spec.ExternalID = string(h.UUID.New())
 	}
 
-	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
-		setServiceInstanceUserInfo(req, instance)
-	}
-
+	instance.Spec.UserInfo = webhookutil.UserInfoFromRequest(req)
 	instance.Spec.ClusterServiceClassRef = nil
 	instance.Spec.ClusterServicePlanRef = nil
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
 
-func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, req admission.Request, oldServiceInstance, newServiceInstance *sc.ServiceInstance) {
+func (h *CreateUpdateDeleteHandler) mutateOnUpdate(ctx context.Context, req admission.Request, oldServiceInstance, newServiceInstance *sc.ServiceInstance) {
 
 	// Clear out the ClusterServicePlanRef so that it is resolved during reconciliation
 	planUpdated := newServiceInstance.Spec.ClusterServicePlanExternalName != oldServiceInstance.Spec.ClusterServicePlanExternalName ||
@@ -142,14 +140,52 @@ func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, req admission.
 		newServiceInstance.Spec.UpdateRequests = oldServiceInstance.Spec.UpdateRequests
 	}
 
-	if !apiequality.Semantic.DeepEqual(oldServiceInstance.Spec, newServiceInstance.Spec) {
-		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
-			setServiceInstanceUserInfo(req, newServiceInstance)
-		}
+	// ensure that UserInfo will not be set if the feature gate is disabled
+	if !utilfeature.DefaultFeatureGate.Enabled(scfeatures.OriginatingIdentity) {
+		newServiceInstance.Spec.UserInfo = nil
+	}
+
+	if modifiedByUser(oldServiceInstance, newServiceInstance) {
+		newServiceInstance.Spec.UserInfo = webhookutil.UserInfoFromRequest(req)
 	}
 }
 
-func (h *CreateUpdateHandler) syncLabels(obj *sc.ServiceInstance) {
+// modifiedByUser checks if fields under spec were changed. Ignores changes
+// to fields which are managed by the Service Catalog controller manager.
+// Validating webook ensures that only controller can change those fields.
+//
+// Exclude fields managed by controller:
+//  - ClusterServiceClassRef
+//  - ClusterServicePlanRef
+//  - ServiceClassRef
+//  - ServicePlanRef
+//
+// Excluded fields managed by webhook:
+//  - UserInfo
+func modifiedByUser(old, new *sc.ServiceInstance) bool {
+	oldCpy := old.DeepCopy()
+	newCpy := new.DeepCopy()
+
+	oldCpy.Spec.ClusterServiceClassRef = nil
+	oldCpy.Spec.ClusterServicePlanRef = nil
+	oldCpy.Spec.ServiceClassRef = nil
+	oldCpy.Spec.ServicePlanRef = nil
+	oldCpy.Spec.UserInfo = nil
+
+	newCpy.Spec.ClusterServiceClassRef = nil
+	newCpy.Spec.ClusterServicePlanRef = nil
+	newCpy.Spec.ServiceClassRef = nil
+	newCpy.Spec.ServicePlanRef = nil
+	newCpy.Spec.UserInfo = nil
+
+	return !apiequality.Semantic.DeepEqual(oldCpy.Spec, newCpy.Spec)
+}
+
+func (h *CreateUpdateDeleteHandler) mutateOnDelete(req admission.Request, instance *sc.ServiceInstance) {
+	instance.Spec.UserInfo = webhookutil.UserInfoFromRequest(req)
+}
+
+func (h *CreateUpdateDeleteHandler) syncLabels(obj *sc.ServiceInstance) {
 	if obj.Labels == nil {
 		obj.Labels = make(map[string]string)
 	}
@@ -166,25 +202,8 @@ func (h *CreateUpdateHandler) syncLabels(obj *sc.ServiceInstance) {
 	}
 }
 
-// setServiceInstanceUserInfo injects user.Info from the request context
-func setServiceInstanceUserInfo(req admission.Request, instance *sc.ServiceInstance) {
-	user := req.UserInfo
-
-	instance.Spec.UserInfo = &sc.UserInfo{
-		Username: user.Username,
-		UID:      user.UID,
-		Groups:   user.Groups,
-	}
-	if extra := user.Extra; len(extra) > 0 {
-		instance.Spec.UserInfo.Extra = map[string]sc.ExtraValue{}
-		for k, v := range extra {
-			instance.Spec.UserInfo.Extra[k] = sc.ExtraValue(v)
-		}
-	}
-}
-
 // InjectClient injects the client
-func (h *CreateUpdateHandler) InjectClient(c client.Client) error {
+func (h *CreateUpdateDeleteHandler) InjectClient(c client.Client) error {
 	_, err := inject.ClientInto(c, h.defaultServicePlan)
 	if err != nil {
 		return err

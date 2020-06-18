@@ -920,7 +920,7 @@ type ServiceInstanceSpec struct {
 	// and its data will not be migrated.
 	//
 	// UserInfo contains information about the user that last modified this
-	// instance. This field is set by the API server and not settable by the
+	// instance. This field is set by the webhook and not settable by the
 	// end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo `json:"userInfo,omitempty"`
@@ -1213,7 +1213,7 @@ type ServiceBindingSpec struct {
 	// and its data will not be migrated.
 	//
 	// UserInfo contains information about the user that last modified this
-	// ServiceBinding. This field is set by the API server and not
+	// ServiceBinding. This field is set by the webhook and not
 	// settable by the end-user. User-provided values for this field are not saved.
 	// +optional
 	UserInfo *UserInfo `json:"userInfo,omitempty"`

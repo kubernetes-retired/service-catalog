@@ -2136,7 +2136,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceBindingSpec(ref common.Refere
 					},
 					"userInfo": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this ServiceBinding. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.",
+							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this ServiceBinding. This field is set by the webhook and not settable by the end-user. User-provided values for this field are not saved.",
 							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 						},
 					},
@@ -3118,7 +3118,7 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServiceInstanceSpec(ref common.Refer
 					},
 					"userInfo": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this instance. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved.",
+							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nUserInfo contains information about the user that last modified this instance. This field is set by the webhook and not settable by the end-user. User-provided values for this field are not saved.",
 							Ref:         ref("github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1.UserInfo"),
 						},
 					},
