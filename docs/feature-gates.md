@@ -7,16 +7,16 @@ layout: docwithnav
 
 Feature gates are a set of key=value pairs that describe alpha or experimental
 features and can be turned on or off by specifying the key=value pair in the
-arguments list when launching the Service Catalog executable.  A new geature
+arguments list when launching the Service Catalog executable.  A new feature
 gate should be created when introducing new features that may break existing
 functionality or introduce instability.
 
 The following table is a summary of the feature gates that you can set on
-different Service Catalog.
+different versions of Service Catalog.
 
-- The "Since" column contains the Service Catalog release when a feature is
-  introduced or its release stage is changed.
-- The "Until" column, if not empty, contains the last Service Catalog release in
+- The "Since" column specifies the Service Catalog release when a feature was
+  introduced or its release stage was changed.
+- The "Until" column, if not empty, specifies the last Service Catalog release in
   which you can still use a feature gate.
 
 | Feature | Default | Stage | Since | Until |
