@@ -82,7 +82,7 @@ webhooks:
       path: "/mutating-servicebindings"
   failurePolicy: Fail
   rules:
-  - operations: [ "CREATE", "UPDATE", "DELETE"]
+  - operations: [ "CREATE", "UPDATE" ]
     apiGroups: ["servicecatalog.k8s.io"]
     apiVersions: ["v1beta1"]
     resources: ["servicebindings"]
@@ -108,7 +108,7 @@ webhooks:
       path: "/mutating-serviceinstances"
   failurePolicy: Fail
   rules:
-  - operations: [ "CREATE", "UPDATE", "DELETE" ]
+  - operations: [ "CREATE", "UPDATE" ]
     apiGroups: ["servicecatalog.k8s.io"]
     apiVersions: ["v1beta1"]
     resources: ["serviceinstances"]

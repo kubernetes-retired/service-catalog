@@ -127,10 +127,6 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 						"kubernetes-incubator/service-catalog",
 					},
 				},
-				{
-					Operation: "remove",
-					Path:      "/spec/userInfo",
-				},
 			},
 		},
 	}
@@ -161,7 +157,7 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 				},
 			}
 
-			handler := mutation.CreateUpdateDeleteHandler{
+			handler := mutation.CreateUpdateHandler{
 				UUID: func() types.UID { return fixUUID },
 			}
 			handler.InjectDecoder(decoder)
@@ -304,7 +300,7 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
 				},
 			}
 
-			handler := mutation.CreateUpdateDeleteHandler{
+			handler := mutation.CreateUpdateHandler{
 				UUID: func() types.UID { return fixUUID },
 			}
 			handler.InjectDecoder(decoder)
@@ -443,7 +439,7 @@ func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *t
 				},
 			}
 
-			handler := mutation.CreateUpdateDeleteHandler{}
+			handler := mutation.CreateUpdateHandler{}
 			handler.InjectDecoder(decoder)
 
 			// when
@@ -472,7 +468,7 @@ func TestCreateUpdateHandlerHandleDecoderErrors(t *testing.T) {
 		tester.AssertHandlerReturnErrorIfReqObjIsMalformed,
 		tester.AssertHandlerReturnErrorIfGVKMismatch,
 	} {
-		handler := mutation.CreateUpdateDeleteHandler{}
+		handler := mutation.CreateUpdateHandler{}
 		fn(t, &handler, "ServiceInstance")
 	}
 }

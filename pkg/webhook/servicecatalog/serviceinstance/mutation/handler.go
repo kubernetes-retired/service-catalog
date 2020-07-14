@@ -33,25 +33,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// CreateUpdateDeleteHandler handles ServiceInstance
-type CreateUpdateDeleteHandler struct {
+// CreateUpdateHandler handles ServiceInstance
+type CreateUpdateHandler struct {
 	decoder            *admission.Decoder
 	UUID               webhookutil.UUIDGenerator
 	defaultServicePlan *DefaultServicePlan
 }
 
-// NewCreateUpdateDeleteHandler return new CreateUpdateDeleteHandler
-func NewCreateUpdateDeleteHandler() *CreateUpdateDeleteHandler {
-	return &CreateUpdateDeleteHandler{
+// NewCreateUpdateHandler return new CreateUpdateHandler
+func NewCreateUpdateHandler() *CreateUpdateHandler {
+	return &CreateUpdateHandler{
 		defaultServicePlan: &DefaultServicePlan{},
 	}
 }
 
-var _ admission.Handler = &CreateUpdateDeleteHandler{}
-var _ admission.DecoderInjector = &CreateUpdateDeleteHandler{}
+var _ admission.Handler = &CreateUpdateHandler{}
+var _ admission.DecoderInjector = &CreateUpdateHandler{}
 
 // Handle handles admission requests.
-func (h *CreateUpdateDeleteHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *CreateUpdateHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
 	traced := webhookutil.NewTracedLogger(req.UID)
 	traced.Infof("Start handling mutation operation: %s for %s: %q", req.Operation, req.Kind.Kind, req.Name)
 
@@ -78,8 +78,6 @@ func (h *CreateUpdateDeleteHandler) Handle(ctx context.Context, req admission.Re
 		}
 		h.mutateOnUpdate(ctx, req, oldObj, mutated)
 		h.syncLabels(mutated)
-	case admissionTypes.Delete:
-		h.mutateOnDelete(req, mutated)
 	default:
 		traced.Infof("ServiceInstance mutation wehbook does not support action %q", req.Operation)
 		return admission.Allowed("action not taken")
@@ -106,12 +104,12 @@ func (h *CreateUpdateDeleteHandler) Handle(ctx context.Context, req admission.Re
 }
 
 // InjectDecoder injects the decoder
-func (h *CreateUpdateDeleteHandler) InjectDecoder(d *admission.Decoder) error {
+func (h *CreateUpdateHandler) InjectDecoder(d *admission.Decoder) error {
 	h.decoder = d
 	return nil
 }
 
-func (h *CreateUpdateDeleteHandler) mutateOnCreate(ctx context.Context, req admission.Request, instance *sc.ServiceInstance) {
+func (h *CreateUpdateHandler) mutateOnCreate(ctx context.Context, req admission.Request, instance *sc.ServiceInstance) {
 	// This feature was copied from Service Catalog registry: https://github.com/kubernetes-sigs/service-catalog/blob/master/pkg/registry/servicecatalog/instance/strategy.go
 	// If you want to track previous changes please check there.
 
@@ -125,7 +123,7 @@ func (h *CreateUpdateDeleteHandler) mutateOnCreate(ctx context.Context, req admi
 	instance.Finalizers = []string{sc.FinalizerServiceCatalog}
 }
 
-func (h *CreateUpdateDeleteHandler) mutateOnUpdate(ctx context.Context, req admission.Request, oldServiceInstance, newServiceInstance *sc.ServiceInstance) {
+func (h *CreateUpdateHandler) mutateOnUpdate(ctx context.Context, req admission.Request, oldServiceInstance, newServiceInstance *sc.ServiceInstance) {
 
 	// Clear out the ClusterServicePlanRef so that it is resolved during reconciliation
 	planUpdated := newServiceInstance.Spec.ClusterServicePlanExternalName != oldServiceInstance.Spec.ClusterServicePlanExternalName ||
@@ -181,11 +179,7 @@ func modifiedByUser(old, new *sc.ServiceInstance) bool {
 	return !apiequality.Semantic.DeepEqual(oldCpy.Spec, newCpy.Spec)
 }
 
-func (h *CreateUpdateDeleteHandler) mutateOnDelete(req admission.Request, instance *sc.ServiceInstance) {
-	instance.Spec.UserInfo = webhookutil.UserInfoFromRequest(req)
-}
-
-func (h *CreateUpdateDeleteHandler) syncLabels(obj *sc.ServiceInstance) {
+func (h *CreateUpdateHandler) syncLabels(obj *sc.ServiceInstance) {
 	if obj.Labels == nil {
 		obj.Labels = make(map[string]string)
 	}
@@ -203,7 +197,7 @@ func (h *CreateUpdateDeleteHandler) syncLabels(obj *sc.ServiceInstance) {
 }
 
 // InjectClient injects the client
-func (h *CreateUpdateDeleteHandler) InjectClient(c client.Client) error {
+func (h *CreateUpdateHandler) InjectClient(c client.Client) error {
 	_, err := inject.ClientInto(c, h.defaultServicePlan)
 	if err != nil {
 		return err
