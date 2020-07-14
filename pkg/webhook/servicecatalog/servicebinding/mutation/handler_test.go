@@ -104,37 +104,6 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 				},
 			},
 		},
-		"Should clear out the manually set UserInfo field": {
-			givenRawObj: []byte(`{
-				"apiVersion": "servicecatalog.k8s.io/v1beta1",
-  				"kind": "ServiceBinding",
-  				"metadata": {
-  				  "creationTimestamp": null,
-  				  "name": "test-binding"
-  				},
-  				"spec": {
-				  "instanceRef": {
-					"name": "some-instance"
-				  },
-				  "externalID": "my-external-id-123",
-				  "secretName": "overridden-name",
-				  "userInfo": {
-                    "username": "foo@bar.com",
-                    "uid": "123-123",
-                    "groups": ["val1", "val2"]
-                  }
-  				}
-			}`),
-			expPatches: []jsonpatch.Operation{
-				{
-					Operation: "add",
-					Path:      "/metadata/finalizers",
-					Value: []interface{}{
-						"kubernetes-incubator/service-catalog",
-					},
-				},
-			},
-		},
 	}
 
 	for tn, tc := range tests {
@@ -292,43 +261,6 @@ func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *t
 	}{
 		"Should clear out the ClusterServicePlanRef": {
 			reqOperation: admissionv1beta1.Create,
-			givenRawObj: []byte(`{
-  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
-  				"kind": "ServiceBinding",
-  				"metadata": {
-				  "finalizers": ["kubernetes-incubator/service-catalog"],
-  				  "creationTimestamp": null,
-  				  "name": "test-binding"
-  				},
-  				"spec": {
-				  "instanceRef": {
-					"name": "some-instance"
-				  },
-				  "externalID": "123-abc",
-				  "secretName": "test-binding"
-  				}
-			}`),
-			expPatches: []jsonpatch.Operation{
-				{
-					Operation: "add",
-					Path:      "/spec/userInfo",
-					Value: map[string]interface{}{
-						"username": "minikube",
-						"uid":      "123",
-						"groups": []interface{}{
-							"unauthorized",
-						},
-						"extra": map[string]interface{}{
-							"extra": []interface{}{
-								"val1", "val2",
-							},
-						},
-					},
-				},
-			},
-		},
-		"Should clear out the ClusterServicePlanRef2": {
-			reqOperation: admissionv1beta1.Delete,
 			givenRawObj: []byte(`{
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceBinding",

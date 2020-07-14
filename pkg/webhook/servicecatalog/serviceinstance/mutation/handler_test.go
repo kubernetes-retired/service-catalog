@@ -127,6 +127,10 @@ func TestCreateUpdateHandlerHandleCreateSuccess(t *testing.T) {
 						"kubernetes-incubator/service-catalog",
 					},
 				},
+				{
+					Operation: "remove",
+					Path:      "/spec/userInfo",
+				},
 			},
 		},
 	}
@@ -228,49 +232,6 @@ func TestCreateUpdateHandlerHandleUpdateSuccess(t *testing.T) {
 				},
 			},
 		},
-		"Should clear out the manually set UserInfo field": {
-			givenOldRawObj: []byte(`{
-  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
-  				"kind": "ServiceInstance",
-  				"metadata": {
-  				  "creationTimestamp": null,
-  				  "name": "test-instance",
-                  "generation": 1
-  				},
-  				"spec": {
-				  "updateRequests": 1,
-				  "clusterServiceClassExternalName": "some-class",
-				  "clusterServicePlanExternalName": "some-plan",
-                  "externalID": "external-id-001"
-  				}
-			}`),
-			givenNewRawObj: []byte(`{
-  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
-  				"kind": "ServiceInstance",
-  				"metadata": {
-  				  "creationTimestamp": null,
-  				  "name": "test-instance",
-				  "generation": 1
-  				},
-  				"spec": {
-				  "updateRequests": 1,
-				  "clusterServiceClassExternalName": "some-class",
-				  "clusterServicePlanExternalName": "some-plan",
-				  "externalID": "external-id-001",
-				  "userInfo": {
-                    "username": "foo@bar.com",
-                    "uid": "123-123",
-                    "groups": ["val1", "val2"]
-                  }
-  				}
-			}`),
-			expPatches: []jsonpatch.Operation{
-				{
-					Operation: "remove",
-					Path:      "/spec/userInfo",
-				},
-			},
-		},
 	}
 
 	for tn, tc := range tests {
@@ -332,42 +293,6 @@ func TestCreateUpdateHandlerHandleSetUserInfoIfOriginatingIdentityIsEnabled(t *t
 	}{
 		"Should clear out the ClusterServicePlanRef": {
 			reqOperation: admissionv1beta1.Create,
-			givenRawObj: []byte(`{
-  				"apiVersion": "servicecatalog.k8s.io/v1beta1",
-  				"kind": "ServiceInstance",
-  				"metadata": {
-				  "finalizers": [ "kubernetes-incubator/service-catalog" ],
-  				  "creationTimestamp": null,
-  				  "name": "test-instance"
-  				},
-  				"spec": {
-				  "updateRequests": 1,
-				  "clusterServiceClassExternalName": "some-class",
-				  "clusterServicePlanExternalName": "some-plan",
-				  "externalID": "my-external-id-123"
-  				}
-			}`),
-			expPatches: []jsonpatch.Operation{
-				{
-					Operation: "add",
-					Path:      "/spec/userInfo",
-					Value: map[string]interface{}{
-						"username": "minikube",
-						"uid":      "123",
-						"groups": []interface{}{
-							"unauthorized",
-						},
-						"extra": map[string]interface{}{
-							"extra": []interface{}{
-								"val1", "val2",
-							},
-						},
-					},
-				},
-			},
-		},
-		"Should clear out the ClusterServicePlanRef2": {
-			reqOperation: admissionv1beta1.Delete,
 			givenRawObj: []byte(`{
   				"apiVersion": "servicecatalog.k8s.io/v1beta1",
   				"kind": "ServiceInstance",
