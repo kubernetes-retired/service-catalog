@@ -4,7 +4,7 @@ layout: docwithnav
 ---
 
 Starting from version 0.3.x, Service Catalog uses [Admission Webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks)
-to manage custom resources. It uses [Additional Printer Columns](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/#additional-printer-columns)
+to manage custom resources. It uses [Additional Printer Columns](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#additional-printer-columns)
 so you can use `kubectl` to interact with Service Catalog.
 
 The rest of this document details how to:

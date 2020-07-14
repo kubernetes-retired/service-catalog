@@ -4,7 +4,7 @@
 
 The API server custom features were migrated to the admission webhook approach.
 
-The table converter API server feature was migrated to the [Additional Printer Columns](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/#additional-printer-columns) feature.
+The table converter API server feature was migrated to the [Additional Printer Columns](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#additional-printer-columns) feature.
 
 ## Project changes
 
