@@ -48,7 +48,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	k8sinformers "k8s.io/client-go/informers"
 	fakek8s "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
 )
@@ -107,9 +106,6 @@ func newControllerTest(t *testing.T) *controllerTest {
 
 	fakeOSBClient := fakeosb.NewFakeClient(fixtureHappyPathBrokerClientConfig())
 
-	coreInformerFactory := k8sinformers.NewSharedInformerFactory(k8sClient, time.Minute)
-	coreInformers := coreInformerFactory.Core()
-
 	scClient := fakesc.NewSimpleClientset()
 	informerFactory := scinformers.NewSharedInformerFactory(scClient, 0)
 	serviceCatalogSharedInformers := informerFactory.Servicecatalog().V1beta1()
@@ -136,7 +132,6 @@ func newControllerTest(t *testing.T) *controllerTest {
 
 	testController, err := controller.NewController(
 		k8sClient,
-		coreInformers.V1().Secrets(),
 		scClient.ServicecatalogV1beta1(),
 		serviceCatalogSharedInformers.ClusterServiceBrokers(),
 		serviceCatalogSharedInformers.ServiceBrokers(),
@@ -167,9 +162,7 @@ func newControllerTest(t *testing.T) *controllerTest {
 	// start and sync informers
 	testCase.stopCh = make(chan struct{})
 	informerFactory.Start(testCase.stopCh)
-	coreInformerFactory.Start(testCase.stopCh)
 	informerFactory.WaitForCacheSync(testCase.stopCh)
-	coreInformerFactory.WaitForCacheSync(testCase.stopCh)
 
 	// start the controller
 	go testController.Run(1, testCase.stopCh)
