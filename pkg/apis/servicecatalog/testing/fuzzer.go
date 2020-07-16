@@ -168,7 +168,6 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
 			}
 			csp.Spec.ExternalMetadata = metadata
-			csp.Spec.ServiceBindingCreateResponseSchema = metadata
 			csp.Spec.ServiceBindingCreateParameterSchema = metadata
 			csp.Spec.InstanceCreateParameterSchema = metadata
 			csp.Spec.InstanceUpdateParameterSchema = metadata
@@ -180,7 +179,6 @@ func servicecatalogFuncs(codecs runtimeserializer.CodecFactory) []interface{} {
 				panic(fmt.Sprintf("Failed to create metadata object: %v", err))
 			}
 			sp.Spec.ExternalMetadata = metadata
-			sp.Spec.ServiceBindingCreateResponseSchema = metadata
 			sp.Spec.ServiceBindingCreateParameterSchema = metadata
 			sp.Spec.InstanceCreateParameterSchema = metadata
 			sp.Spec.InstanceUpdateParameterSchema = metadata
