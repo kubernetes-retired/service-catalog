@@ -79,7 +79,7 @@ func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceRespon
 			Async:        false,
 			OperationKey: nil,
 		}
-		if c.validateAlphaAPIMethodsAllowed() == nil {
+		if c.APIVersion.AtLeast(Version2_14()) {
 			userResponse.DashboardURL = responseBodyObj.DashboardURL
 		}
 
@@ -107,7 +107,7 @@ func (c *client) UpdateInstance(r *UpdateInstanceRequest) (*UpdateInstanceRespon
 			Async:        true,
 			OperationKey: opPtr,
 		}
-		if c.validateAlphaAPIMethodsAllowed() == nil {
+		if c.APIVersion.AtLeast(Version2_14()) {
 			userResponse.DashboardURL = responseBodyObj.DashboardURL
 		}
 

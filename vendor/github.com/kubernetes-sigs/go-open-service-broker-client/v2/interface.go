@@ -148,6 +148,12 @@ type Client interface {
 	// there are special semantics for PollLastOperation when checking the
 	// status of deprovision operations; see the doc for that method.
 	DeprovisionInstance(r *DeprovisionRequest) (*DeprovisionResponse, error)
+	// GetInstance requires a client API version >= 2.14.
+	//
+	// GetInstance returns information about an existing instance.
+	// GetInstance calls GET on the Broker's endpoint for the requested
+	// instance ID (/v2/service_instances/instance-id)
+	GetInstance(r *GetInstanceRequest) (*GetInstanceResponse, error)
 	// PollLastOperation sends a request to query the last operation for a
 	// service instance to the broker and returns information about the
 	// operation or an error.  PollLastOperation does a GET on the broker's
@@ -163,9 +169,7 @@ type Client interface {
 	// asynchronous deprovision, callers should test the value of the returned
 	// error with IsGoneError.
 	PollLastOperation(r *LastOperationRequest) (*LastOperationResponse, error)
-	// PollBindingLastOperation is an ALPHA API method and may change.
-	// Alpha features must be enabled and the client must be using the
-	// latest API Version in order to use this method.
+	// PollBindingLastOperation requires a client API version >= 2.14.
 	//
 	// PollBindingLastOperation sends a request to query the last operation
 	// for a service binding to the broker and returns information about the
@@ -191,9 +195,7 @@ type Client interface {
 	// error. Unbind does a DELETE on the Broker's endpoint for the requested
 	// instance and binding IDs (/v2/service_instances/instance-id/service_bindings/binding-id).
 	Unbind(r *UnbindRequest) (*UnbindResponse, error)
-	// GetBinding is an ALPHA API method and may change. Alpha features must
-	// be enabled and the client must be using the latest API Version in
-	// order to use this method.
+	// GetBinding requires a client API version >= 2.14.
 	//
 	// GetBinding returns configuration and credential information
 	// about an existing binding. GetBindings calls GET on the Broker's

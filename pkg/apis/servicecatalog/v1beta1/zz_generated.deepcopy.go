@@ -662,11 +662,6 @@ func (in *CommonServicePlanSpec) DeepCopyInto(out *CommonServicePlanSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.ServiceBindingCreateResponseSchema != nil {
-		in, out := &in.ServiceBindingCreateResponseSchema, &out.ServiceBindingCreateResponseSchema
-		*out = new(runtime.RawExtension)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.DefaultProvisionParameters != nil {
 		in, out := &in.DefaultProvisionParameters, &out.DefaultProvisionParameters
 		*out = new(runtime.RawExtension)

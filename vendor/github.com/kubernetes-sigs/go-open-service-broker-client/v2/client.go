@@ -31,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -295,6 +295,22 @@ func (c *client) validateAlphaAPIMethodsAllowed() error {
 				"must have latest API Version. Current: %s, Expected: %s",
 				c.APIVersion.label,
 				LatestAPIVersion().label,
+			),
+		}
+	}
+
+	return nil
+}
+
+// validateClientVersionIsAtLeast returns an error if client version is not at
+// least the specified version
+func (c *client) validateClientVersionIsAtLeast(version APIVersion) error {
+	if !c.APIVersion.AtLeast(version) {
+		return OperationNotAllowedError{
+			reason: fmt.Sprintf(
+				"must have API version >= %s. Current: %s",
+				version,
+				c.APIVersion.label,
 			),
 		}
 	}

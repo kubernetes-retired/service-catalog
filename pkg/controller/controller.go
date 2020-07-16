@@ -1140,15 +1140,6 @@ func convertCommonServicePlan(plan osb.Plan, commonServicePlanSpec *v1beta1.Comm
 					}
 					commonServicePlanSpec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
 				}
-				if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ResponseSchema) && bindingCreateSchema.Response != nil {
-					schema, err := json.Marshal(bindingCreateSchema.Response)
-					if err != nil {
-						err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
-						klog.Error(err)
-						return err
-					}
-					commonServicePlanSpec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
-				}
 			}
 		}
 	}
@@ -1226,15 +1217,6 @@ func convertClusterServicePlans(plans []osb.Plan, serviceClassID string, existin
 							return nil, err
 						}
 						servicePlans[i].Spec.ServiceBindingCreateParameterSchema = &runtime.RawExtension{Raw: schema}
-					}
-					if utilfeature.DefaultFeatureGate.Enabled(scfeatures.ResponseSchema) && bindingCreateSchema.Response != nil {
-						schema, err := json.Marshal(bindingCreateSchema.Response)
-						if err != nil {
-							err = fmt.Errorf("Failed to marshal binding create response schema \n%+v\n %v", bindingCreateSchema.Response, err)
-							klog.Error(err)
-							return nil, err
-						}
-						servicePlans[i].Spec.ServiceBindingCreateResponseSchema = &runtime.RawExtension{Raw: schema}
 					}
 				}
 			}

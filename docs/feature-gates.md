@@ -29,7 +29,6 @@ different versions of Service Catalog.
 | `OriginatingIdentity` | `true` | GA | v0.1.30 | |
 | `OriginatingIdentityLocking` | `true` | Alpha | v0.1.14 | |
 | `PodPreset` | `false` | Alpha | v0.1.6 | |
-| `ResponseSchema` | `false` | Alpha | v0.1.12 | |
 | `ServicePlanDefaults` | `false` | Alpha | v0.1.32 | |
 | `UpdateDashboardURL` | `false` | Alpha | v0.1.13 | |
 | `CascadingDeletion` | ` false` | Alpha | v0.3.0 | |
@@ -91,9 +90,6 @@ for updating while we are still processing the current spec.
 
  - `PodPreset`: Controls whether PodPreset resource is enabled or not in the
  API server.
-
-- `ResponseSchema`:  Enables the storage of the binding response schema in
-ServicePlans
 
 - `ServicePlanDefaults`: Enables applying default values to service instances
 and bindings
