@@ -16,7 +16,7 @@ rules:
     # TODO: do not grant global access, limit to particular secrets referenced from servicebindings
     - apiGroups: [""]
       resources: ["secrets"]
-      verbs:     ["get","create","update","delete", "list", "watch"]
+      verbs:     ["get","create","update","delete"]
     - apiGroups: [""]
       resources: ["pods"]
       verbs:     ["get","list","update", "patch", "watch", "delete", "initialize"]
