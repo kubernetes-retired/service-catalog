@@ -52,8 +52,6 @@ import (
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	"github.com/kubernetes-sigs/service-catalog/pkg/filter"
 	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
-	v12 "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/listers/core/v1"
 )
 
 const (
@@ -78,7 +76,6 @@ const (
 // NewController returns a new Open Service Broker catalog controller.
 func NewController(
 	kubeClient kubernetes.Interface,
-	secretInformer v12.SecretInformer,
 	serviceCatalogClient servicecatalogclientset.ServicecatalogV1beta1Interface,
 	clusterServiceBrokerInformer informers.ClusterServiceBrokerInformer,
 	serviceBrokerInformer informers.ServiceBrokerInformer,
@@ -100,7 +97,6 @@ func NewController(
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
-		secretLister:                secretInformer.Lister(),
 		serviceCatalogClient:        serviceCatalogClient,
 		brokerRelistInterval:        brokerRelistInterval,
 		OSBAPIPreferredVersion:      osbAPIPreferredVersion,
@@ -205,7 +201,6 @@ type controller struct {
 	bindingLister               listers.ServiceBindingLister
 	clusterServicePlanLister    listers.ClusterServicePlanLister
 	servicePlanLister           listers.ServicePlanLister
-	secretLister                v1.SecretLister
 	brokerRelistInterval        time.Duration
 	OSBAPIPreferredVersion      string
 	OSBAPITimeOut               time.Duration
@@ -693,7 +688,7 @@ func (c *controller) getAuthCredentialsFromClusterServiceBroker(broker *v1beta1.
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
 		secretRef := authInfo.Basic.SecretRef
-		secret, err := c.secretLister.Secrets(secretRef.Namespace).Get(secretRef.Name)
+		secret, err := c.kubeClient.CoreV1().Secrets(secretRef.Namespace).Get(context.TODO(), secretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -706,7 +701,7 @@ func (c *controller) getAuthCredentialsFromClusterServiceBroker(broker *v1beta1.
 		}, nil
 	} else if authInfo.Bearer != nil {
 		secretRef := authInfo.Bearer.SecretRef
-		secret, err := c.secretLister.Secrets(secretRef.Namespace).Get(secretRef.Name)
+		secret, err := c.kubeClient.CoreV1().Secrets(secretRef.Namespace).Get(context.TODO(), secretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -731,7 +726,7 @@ func (c *controller) getAuthCredentialsFromServiceBroker(broker *v1beta1.Service
 	authInfo := broker.Spec.AuthInfo
 	if authInfo.Basic != nil {
 		secretRef := authInfo.Basic.SecretRef
-		secret, err := c.secretLister.Secrets(broker.Namespace).Get(secretRef.Name)
+		secret, err := c.kubeClient.CoreV1().Secrets(broker.Namespace).Get(context.TODO(), secretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -744,7 +739,7 @@ func (c *controller) getAuthCredentialsFromServiceBroker(broker *v1beta1.Service
 		}, nil
 	} else if authInfo.Bearer != nil {
 		secretRef := authInfo.Bearer.SecretRef
-		secret, err := c.secretLister.Secrets(broker.Namespace).Get(secretRef.Name)
+		secret, err := c.kubeClient.CoreV1().Secrets(broker.Namespace).Get(context.TODO(), secretRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
