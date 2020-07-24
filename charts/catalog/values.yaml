@@ -125,3 +125,8 @@ persistence:
   ##   GKE, AWS & OpenStack)
   ##
   storageClass:
+
+# Leverage a PriorityClass to ensure your pods survive resource shortages
+# ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+# PriorityClass: system-cluster-critical
+priorityClassName: ""
