@@ -55,12 +55,6 @@ const (
 	// alpha: v0.1.10
 	NamespacedServiceBroker utilfeature.Feature = "NamespacedServiceBroker"
 
-	// ResponseSchema enables the storage of the binding response schema
-	// in ServicePlans
-	// owner: @luksa
-	// alpha: v0.1.12
-	ResponseSchema utilfeature.Feature = "ResponseSchema"
-
 	// UpdateDashboardURL enables the update of DashboardURL in response
 	// to update service instance requests to brokers.
 	// owner: @jberkhahn
@@ -97,7 +91,6 @@ var defaultServiceCatalogFeatureGates = map[utilfeature.Feature]utilfeature.Feat
 	OriginatingIdentity:        {Default: true, PreRelease: utilfeature.GA},
 	AsyncBindingOperations:     {Default: false, PreRelease: utilfeature.Alpha},
 	NamespacedServiceBroker:    {Default: true, PreRelease: utilfeature.Alpha},
-	ResponseSchema:             {Default: false, PreRelease: utilfeature.Alpha},
 	UpdateDashboardURL:         {Default: false, PreRelease: utilfeature.Alpha},
 	OriginatingIdentityLocking: {Default: true, PreRelease: utilfeature.Alpha},
 	ServicePlanDefaults:        {Default: false, PreRelease: utilfeature.Alpha},

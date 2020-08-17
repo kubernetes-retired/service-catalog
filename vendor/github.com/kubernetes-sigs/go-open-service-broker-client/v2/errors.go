@@ -186,7 +186,7 @@ func IsConcurrencyError(err error) bool {
 }
 
 // AlphaAPIMethodsNotAllowedError is an error type signifying that alpha API
-// methods are not allowed for this client's API Version.
+// methods are not allowed for this client's API Version or alpha opt-in.
 type AlphaAPIMethodsNotAllowedError struct {
 	reason string
 }
@@ -194,6 +194,32 @@ type AlphaAPIMethodsNotAllowedError struct {
 func (e AlphaAPIMethodsNotAllowedError) Error() string {
 	return fmt.Sprintf(
 		"alpha API methods not allowed: %s",
+		e.reason,
+	)
+}
+
+// OperationNotAllowedError is an error type signifying that an operation
+// is not allowed for this client.
+type OperationNotAllowedError struct {
+	reason string
+}
+
+func (e OperationNotAllowedError) Error() string {
+	return fmt.Sprintf(
+		"operation not allowed: %s",
+		e.reason,
+	)
+}
+
+// GetInstanceNotAllowedError is an error type signifying that doing a GET to
+// fetch a service instance is not allowed for this client.
+type GetInstanceNotAllowedError struct {
+	reason string
+}
+
+func (e GetInstanceNotAllowedError) Error() string {
+	return fmt.Sprintf(
+		"GetInstance not allowed: %s",
 		e.reason,
 	)
 }

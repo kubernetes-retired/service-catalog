@@ -21,8 +21,14 @@ import (
 	"net/http"
 )
 
-func (c *client) GetCatalog() (*CatalogResponse, error) {
-	fullURL := fmt.Sprintf(catalogURL, c.URL)
+func (c *client) GetInstance(r *GetInstanceRequest) (*GetInstanceResponse, error) {
+	if err := c.validateClientVersionIsAtLeast(Version2_14()); err != nil {
+		return nil, GetInstanceNotAllowedError{
+			reason: err.Error(),
+		}
+	}
+
+	fullURL := fmt.Sprintf(serviceInstanceURLFmt, c.URL, r.InstanceID)
 
 	response, err := c.prepareAndDo(http.MethodGet, fullURL, nil /* params */, nil /* request body */, nil /* originating identity */)
 	if err != nil {
@@ -36,20 +42,12 @@ func (c *client) GetCatalog() (*CatalogResponse, error) {
 
 	switch response.StatusCode {
 	case http.StatusOK:
-		catalogResponse := &CatalogResponse{}
-		if err := c.unmarshalResponse(response, catalogResponse); err != nil {
+		userResponse := &GetInstanceResponse{}
+		if err := c.unmarshalResponse(response, userResponse); err != nil {
 			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
 		}
 
-		if !c.APIVersion.AtLeast(Version2_13()) {
-			for ii := range catalogResponse.Services {
-				for jj := range catalogResponse.Services[ii].Plans {
-					catalogResponse.Services[ii].Plans[jj].Schemas = nil
-				}
-			}
-		}
-
-		return catalogResponse, nil
+		return userResponse, nil
 	default:
 		return nil, c.handleFailureResponse(response)
 	}

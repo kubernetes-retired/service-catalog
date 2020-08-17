@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/kubernetes-sigs/go-open-service-broker-client/v2"
+	v2 "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 )
 
 // NewFakeClientFunc returns a v2.CreateFunc that returns a FakeClient with
@@ -49,6 +49,7 @@ func NewFakeClient(config FakeClientConfiguration) *FakeClient {
 		ProvisionReaction:                config.ProvisionReaction,
 		UpdateInstanceReaction:           config.UpdateInstanceReaction,
 		DeprovisionReaction:              config.DeprovisionReaction,
+		GetInstanceReaction:              config.GetInstanceReaction,
 		PollLastOperationReaction:        config.PollLastOperationReaction,
 		PollLastOperationReactions:       config.PollLastOperationReactions,
 		PollBindingLastOperationReaction: config.PollBindingLastOperationReaction,
@@ -64,6 +65,7 @@ type FakeClientConfiguration struct {
 	ProvisionReaction                ProvisionReactionInterface
 	UpdateInstanceReaction           UpdateInstanceReactionInterface
 	DeprovisionReaction              DeprovisionReactionInterface
+	GetInstanceReaction              GetInstanceReactionInterface
 	PollLastOperationReaction        PollLastOperationReactionInterface
 	PollLastOperationReactions       map[v2.OperationKey]*PollLastOperationReaction
 	PollBindingLastOperationReaction PollBindingLastOperationReactionInterface
@@ -88,6 +90,7 @@ const (
 	ProvisionInstance        ActionType = "ProvisionInstance"
 	UpdateInstance           ActionType = "UpdateInstance"
 	DeprovisionInstance      ActionType = "DeprovisionInstance"
+	GetInstance              ActionType = "GetInstance"
 	PollLastOperation        ActionType = "PollLastOperation"
 	PollBindingLastOperation ActionType = "PollBindingLastOperation"
 	Bind                     ActionType = "Bind"
@@ -104,6 +107,7 @@ type FakeClient struct {
 	ProvisionReaction                ProvisionReactionInterface
 	UpdateInstanceReaction           UpdateInstanceReactionInterface
 	DeprovisionReaction              DeprovisionReactionInterface
+	GetInstanceReaction              GetInstanceReactionInterface
 	PollLastOperationReaction        PollLastOperationReactionInterface
 	PollLastOperationReactions       map[v2.OperationKey]*PollLastOperationReaction
 	PollBindingLastOperationReaction PollBindingLastOperationReactionInterface
@@ -180,6 +184,20 @@ func (c *FakeClient) DeprovisionInstance(r *v2.DeprovisionRequest) (*v2.Deprovis
 
 	if c.DeprovisionReaction != nil {
 		return c.DeprovisionReaction.react(r)
+	}
+
+	return nil, UnexpectedActionError()
+}
+
+// GetInstance implements the Client.GetInstance method for the FakeClient.
+func (c *FakeClient) GetInstance(*v2.GetInstanceRequest) (*v2.GetInstanceResponse, error) {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	c.actions = append(c.actions, Action{Type: GetInstance})
+
+	if c.GetInstanceReaction != nil {
+		return c.GetInstanceReaction.react()
 	}
 
 	return nil, UnexpectedActionError()
@@ -364,6 +382,29 @@ type DynamicDeprovisionReaction func(*v2.DeprovisionRequest) (*v2.DeprovisionRes
 
 func (r DynamicDeprovisionReaction) react(req *v2.DeprovisionRequest) (*v2.DeprovisionResponse, error) {
 	return r(req)
+}
+
+// GetInstanceReactionInterface defines the reaction to GetInstance requests.
+type GetInstanceReactionInterface interface {
+	react() (*v2.GetInstanceResponse, error)
+}
+
+type GetInstanceReaction struct {
+	Response *v2.GetInstanceResponse
+	Error    error
+}
+
+func (r *GetInstanceReaction) react() (*v2.GetInstanceResponse, error) {
+	if r == nil {
+		return nil, UnexpectedActionError()
+	}
+	return r.Response, r.Error
+}
+
+type DynamicGetInstanceReaction func() (*v2.GetInstanceResponse, error)
+
+func (r DynamicGetInstanceReaction) react() (*v2.GetInstanceResponse, error) {
+	return r()
 }
 
 // PollLastOperationReactionInterface defines the reaction to PollLastOperation

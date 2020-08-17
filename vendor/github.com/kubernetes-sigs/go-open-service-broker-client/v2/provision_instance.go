@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // internal message body types
@@ -78,10 +78,6 @@ func (c *client) ProvisionInstance(r *ProvisionRequest) (*ProvisionResponse, err
 		userResponse := &ProvisionResponse{}
 		if err := c.unmarshalResponse(response, userResponse); err != nil {
 			return nil, HTTPStatusCodeError{StatusCode: response.StatusCode, ResponseError: err}
-		}
-
-		if !c.APIVersion.AtLeast(Version2_13()) || !c.EnableAlphaFeatures {
-			userResponse.ExtensionAPIs = nil
 		}
 
 		return userResponse, nil

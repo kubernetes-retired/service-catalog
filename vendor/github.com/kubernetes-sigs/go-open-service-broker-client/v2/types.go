@@ -43,6 +43,13 @@ type Service struct {
 	// Bindable represents whether a service is bindable. May be overridden
 	// on a per-plan basis by the Plan.Bindable field.
 	Bindable bool `json:"bindable"`
+	// InstancesRetrievable is ALPHA and may change or disappear at any time.
+	// InstancesRetrievable will only be provided if alpha features are enabled.
+	//
+	// InstancesRetrievable represents whether fetching a service instances via a
+	// GET on the service instance resource's endpoint
+	// (/v2/service_instances/instance-id) is supported for all plans.
+	InstancesRetrievable bool `json:"instances_retrievable,omitempty"`
 	// BindingsRetrievable is ALPHA and may change or disappear at any time.
 	// BindingsRetrievable will only be provided if alpha features are enabled.
 	//
@@ -139,7 +146,7 @@ type ServiceBindingSchema struct {
 	// Create holds the schemas for the parameters accepted when a new binding
 	// is created and for the credentials returned when a new binding is
 	// created.
-	Create *RequestResponseSchema `json:"create,omitempty"`
+	Create *InputParametersSchema `json:"create,omitempty"`
 }
 
 // InputParametersSchema requires a client API version >=2.13.
@@ -150,20 +157,6 @@ type InputParametersSchema struct {
 	// The schema definition for the input parameters. Each input parameter
 	// is expressed as a property within a JSON object.
 	Parameters interface{} `json:"parameters,omitempty"`
-}
-
-// RequestResponseSchema requires a client API version >=2.13.
-//
-// RequestResponseSchema contains a schema for input parameters for creation or
-// update of an API resource, and a schema for the credentials returned by the
-// broker
-type RequestResponseSchema struct {
-	InputParametersSchema
-	// The schema definition for the broker's response to the bind request.
-	// Response is an ALPHA API attribute and may change. Alpha features must be
-	// enabled and the client must be using the latest API Version in order to
-	// use this.
-	Response interface{} `json:"response,omitempty"`
 }
 
 // OriginatingIdentity requires a client API version >=2.13.
@@ -232,43 +225,6 @@ type ProvisionResponse struct {
 	// OperationKey is an extra identifier supplied by the broker to identify
 	// asynchronous operations.
 	OperationKey *OperationKey `json:"operation,omitempty"`
-	// ExtensionAPIs is a list of extension APIs for this instance.
-	//
-	// ExtensionsAPI is an ALPHA API attribute and may change. Alpha
-	// features must be enabled and the client must be using the
-	// latest API Version in order to use this.
-	ExtensionAPIs []ExtensionAPI `json:"extension_apis,omitempty"`
-}
-
-// ExtensionAPI contains information about an API endpoint that describes
-// extension operations on a ServiceInstance.
-//
-// ExtensionAPI is an ALPHA API attribute and may change. Alpha
-// features must be enabled and the client must be using the
-// latest API Version in order to use this.
-type ExtensionAPI struct {
-	// DiscoveryURL is a URI pointing to a valid OpenAPI 3.0+ document
-	// describing the API extension(s) to the Open Service Broker API including,
-	// endpoints, parameters, authentication mechanism and any other detail the
-	// platform needs for invocation. The location of the API extension
-	// endpoint(s) can be local to the Service Broker or on a remote server. If
-	// local to the Service Broker the same authentication method for normal
-	// Service Broker calls must be used.
-	DiscoveryURL string `json:"discovery_url,omitempty"`
-	// ServerURL is a URI pointing to a remote server where API extensions will
-	// run. This URI will be used as the basepath for the paths objects
-	// described by the `discovery_url` OpenAPI document. If ServerURL is
-	// missing, it means that the paths are invoked relative to the service
-	// broker URL.
-	ServerURL string `json:"server_url,omitempty"`
-	// Credentials is a set of authentication details for running any of the
-	// extension API calls, especially for those running on remote servers.
-	//
-	// The information in Credentials should be treated as SECRET.
-	Credentials map[string]interface{} `json:"credentials,omitempty"`
-	// AdheresTo is a URI refering to a specification detailing the interface
-	// the OpenAPI document hosted at the `discovery_url` adheres to.
-	AdheresTo string `json:"adheres_to,omitempty"`
 }
 
 // OperationKey is an extra identifier from the broker in order to provide extra
@@ -337,9 +293,7 @@ type UpdateInstanceResponse struct {
 	// Async indicates whether the broker is handling the update request
 	// asynchronously.
 	Async bool `json:"async"`
-	// DashboardURL is an ALPHA API attribute and may change. Alpha
-	// features must be enabled and the client must be using the latest
-	// API Version in order to use this.
+	// DashboardURL requires a client API version >= 2.14.
 	//
 	// DashboardURL is the URL of a web-based management user interface for
 	// the service instance.
@@ -369,6 +323,27 @@ type DeprovisionRequest struct {
 	// OriginatingIdentity is the identity on the platform of the user making
 	// this request.
 	OriginatingIdentity *OriginatingIdentity `json:"originatingIdentity,omitempty"`
+}
+
+// GetInstanceRequest represents a request to do a GET on a particular instance
+// of a service.
+type GetInstanceRequest struct {
+	// InstanceID is the ID of the instance
+	InstanceID string `json:"instance_id"`
+}
+
+// GetInstanceResponse is sent as the response to doing a GET on a particular
+// instance.
+type GetInstanceResponse struct {
+	// ServiceID is the ID of the service the instance is provisioned from.
+	ServiceID string `json:"service_id"`
+	// PlanID is the ID of the plan the instance is provisioned from.
+	PlanID string `json:"plan_id"`
+	// DashboardURL is the URL of a web-based management user interface for
+	// the service instance.
+	DashboardURL string `json:"dashboard_url,omitempty"`
+	// Parameters is a set of configuration options for the instance.
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
 }
 
 // DeprovisionResponse represents a broker's response to a deprovision request.
@@ -458,9 +433,7 @@ type BindRequest struct {
 	BindingID string `json:"binding_id"`
 	// InstanceID is the ID of the instance to bind to.
 	InstanceID string `json:"instance_id"`
-	// AcceptsIncomplete is an ALPHA API attribute and may change. Alpha
-	// features must be enabled and the client must be using the latest API
-	// Version in order to use this.
+	// AcceptsIncomplete requires a client API version >= 2.14.
 	//
 	// AcceptsIncomplete indicates whether the client can accept asynchronous
 	// binding. If the broker cannot fulfill a request synchronously and
@@ -500,9 +473,7 @@ type BindResource struct {
 
 // BindResponse represents a broker's response to a BindRequest.
 type BindResponse struct {
-	// Async is an ALPHA API attribute and may change. Alpha
-	// features must be enabled and the client must be using the
-	// latest API Version in order to use this.
+	// Async requires a client API version >= 2.14.
 	//
 	// Async indicates whether the broker is handling the bind request
 	// asynchronously.
@@ -523,9 +494,7 @@ type BindResponse struct {
 	// CF-specific. May only be supplied by a service that declares a
 	// requirement for the 'volume_mount' permission.
 	VolumeMounts []interface{} `json:"volume_mounts,omitempty"`
-	// OperationKey is an ALPHA API attribute and may change. Alpha
-	// features must be enabled and the client must be using the
-	// latest API Version in order to use this.
+	// OperationKey requires a client API version >= 2.14.
 	//
 	// OperationKey is an extra identifier supplied by the broker to identify
 	// asynchronous operations.
@@ -538,9 +507,7 @@ type UnbindRequest struct {
 	InstanceID string `json:"instance_id"`
 	// BindingID is the ID of the binding to delete.
 	BindingID string `json:"binding_id"`
-	// AcceptsIncomplete is an ALPHA API attribute and may change. Alpha
-	// features must be enabled and the client must be using the latest API
-	// Version in order to use this.
+	// AcceptsIncomplete requires a client API version >= 2.14.
 	//
 	// AcceptsIncomplete indicates whether the client can accept asynchronous
 	// unbinding. If the broker cannot fulfill a request synchronously and
@@ -561,16 +528,12 @@ type UnbindRequest struct {
 
 // UnbindResponse represents a broker's response to an UnbindRequest.
 type UnbindResponse struct {
-	// Async is an ALPHA API attribute and may change. Alpha features must be
-	// enabled and the client must be using the latest API Version in order to
-	// use this.
+	// Async requires a client API version >= 2.14.
 	//
 	// Async indicates whether the broker is handling the unbind request
 	// asynchronously.
 	Async bool `json:"async"`
-	// OperationKey is an ALPHA API attribute and may change. Alpha features
-	// must be enabled and the client must be using the latest API Version in
-	// order to use this.
+	// OperationKey requires a client API version >= 2.14.
 	//
 	// OperationKey is an extra identifier supplied by the broker to identify
 	// asynchronous operations.

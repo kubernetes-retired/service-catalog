@@ -22,7 +22,7 @@ import (
 )
 
 func (c *client) PollBindingLastOperation(r *BindingLastOperationRequest) (*LastOperationResponse, error) {
-	if err := c.validateAlphaAPIMethodsAllowed(); err != nil {
+	if err := c.validateClientVersionIsAtLeast(Version2_14()); err != nil {
 		return nil, AsyncBindingOperationsNotAllowedError{
 			reason: err.Error(),
 		}

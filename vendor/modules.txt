@@ -123,7 +123,7 @@ github.com/imdario/mergo
 github.com/inconshreveable/mousetrap
 # github.com/json-iterator/go v1.1.8
 github.com/json-iterator/go
-# github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20190909175253-906fa5f9c249
+# github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20200527163240-4406bd2cb6b8 => github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20200527163240-4406bd2cb6b8
 github.com/kubernetes-sigs/go-open-service-broker-client/v2
 github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de

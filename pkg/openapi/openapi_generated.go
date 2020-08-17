@@ -1212,12 +1212,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ClusterServicePlanSpec(ref common.Re
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
-					"serviceBindingCreateResponseSchema": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
-							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
-						},
-					},
 					"defaultProvisionParameters": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DefaultProvisionParameters are default parameters passed to the broker when an instance of this plan is provisioned. Any parameters defined on the instance are merged with these defaults, with instance-defined parameters taking precedence over defaults.",
@@ -1566,12 +1560,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_CommonServicePlanSpec(ref common.Ref
 					"serviceBindingCreateParameterSchema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to a ServiceInstance on this plan.",
-							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
-						},
-					},
-					"serviceBindingCreateResponseSchema": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},
@@ -3436,12 +3424,6 @@ func schema_pkg_apis_servicecatalog_v1beta1_ServicePlanSpec(ref common.Reference
 					"serviceBindingCreateParameterSchema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.\n\nServiceBindingCreateParameterSchema is the schema for the parameters that may be supplied binding to a ServiceInstance on this plan.",
-							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
-						},
-					},
-					"serviceBindingCreateResponseSchema": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated.when a bind operation stored in the Secret when binding to a ServiceInstance on this plan. The ResponseSchema feature gate needs to be enabled for this field to be populated.\n\nServiceBindingCreateResponseSchema is the schema for the response that will be returned by the broker when binding to a ServiceInstance on this plan. The schema also contains the sub-schema for the credentials part of the broker's response, which allows clients to see what the credentials will look like even before the binding operation is performed.",
 							Ref:         ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
 						},
 					},

@@ -12,7 +12,7 @@ require (
 	github.com/google/gofuzz v1.1.0
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/go-multierror v1.0.0
-	github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20190909175253-906fa5f9c249
+	github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20200527163240-4406bd2cb6b8
 	github.com/mattn/go-runewidth v0.0.3 // indirect
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/onsi/ginkgo v1.11.0
@@ -40,7 +40,6 @@ require (
 	k8s.io/component-base v0.18.2
 	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac // indirect
 	k8s.io/klog v1.0.0
-	k8s.io/klog/v2 v2.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/yaml v1.2.0
@@ -48,6 +47,7 @@ require (
 
 replace (
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.3.1
+	github.com/kubernetes-sigs/go-open-service-broker-client => github.com/kubernetes-sigs/go-open-service-broker-client v0.0.0-20200527163240-4406bd2cb6b8
 	go.etcd.io/bbolt => go.etcd.io/bbolt v1.3.3
 	go.etcd.io/etcd => go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738 // 3cf2f69b5738 is the SHA for git tag v3.4.3
 	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6

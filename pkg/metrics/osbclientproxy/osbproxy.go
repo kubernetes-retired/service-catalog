@@ -52,6 +52,7 @@ const (
 	provisionInstance        = "ProvisionInstance"
 	deprovisionInstance      = "DeprovisionInstance"
 	updateInstance           = "UpdateInstance"
+	getInstance              = "GetInstance"
 	pollLastOperation        = "PollLastOperation"
 	pollBindingLastOperation = "PollBindingLastOperation"
 	bind                     = "Bind"
@@ -66,6 +67,13 @@ func (pc proxyclient) GetCatalog() (*osb.CatalogResponse, error) {
 	klog.V(9).Info("OSBClientProxy getCatalog()")
 	response, err := pc.realOSBClient.GetCatalog()
 	pc.updateMetrics(getCatalog, err)
+	return response, err
+}
+
+func (pc proxyclient) GetInstance(r *osb.GetInstanceRequest) (*osb.GetInstanceResponse, error) {
+	klog.V(9).Info("OSBClientProxy getInstance()")
+	response, err := pc.realOSBClient.GetInstance(r)
+	pc.updateMetrics(getInstance, err)
 	return response, err
 }
 
