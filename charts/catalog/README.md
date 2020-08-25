@@ -78,6 +78,7 @@ chart and their default values.
 | `persistence.storageClass` | Define the storageclass use by pvc | `null` |
 | `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |
 | `namespacedServiceBrokerDisabled` | Whether or not alpha support for namespace scoped brokers is disabled | `false` |
+| `priorityClassName` | Define PriorityClass for pods | "" |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
