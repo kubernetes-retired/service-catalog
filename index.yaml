@@ -1,0 +1,10 @@
+apiVersion: v1
+entries:
+  catalog:
+  - created: "2020-05-25T13:48:17.729749097Z"
+    description: service-catalog webhook server and controller-manager helm chart
+    digest: 0f35292aef3fe8458ae1ec144ecf859f1f3c192e239c67a14aafb88f729d2b81
+    name: catalog
+    urls:
+    - https://kubernetes-sigs.github.io/service-catalog/somethingorother
+    version: 0.3.0
