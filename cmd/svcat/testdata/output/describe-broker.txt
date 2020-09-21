@@ -1,4 +1,0 @@
-  Name:     ups-broker                                                                                
-  Scope:    cluster                                                                                   
-  URL:      http://ups-broker-ups-broker.ups-broker.svc.cluster.local                                 
-  Status:   Ready - Successfully fetched catalog entries from broker @ 2018-01-11 20:53:31 +0000 UTC  

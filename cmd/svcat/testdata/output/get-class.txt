@@ -1,3 +1,0 @@
-          NAME            NAMESPACE     BROKER           DESCRIPTION        
-+-----------------------+-----------+------------+-------------------------+
-  user-provided-service               ups-broker   A user provided service  

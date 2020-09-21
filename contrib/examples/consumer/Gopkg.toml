@@ -1,3 +1,0 @@
-[[constraint]]
-  branch = "master"
-  name = "github.com/kubernetes-sigs/service-catalog"

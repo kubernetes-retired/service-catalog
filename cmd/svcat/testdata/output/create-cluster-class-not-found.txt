@@ -1,1 +1,0 @@
-Error: class 'foo' not found in cluster scope

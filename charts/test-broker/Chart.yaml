@@ -1,3 +1,0 @@
-name: test-broker
-description: test service-broker deployment Helm chart.
-version: 0.3.0
