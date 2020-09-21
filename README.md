@@ -13,5 +13,5 @@ Once Helm is set up properly, add the repo as follows:
 helm repo add service-catalog https://kubernetes-sigs.github.io/service-catalog
 ```
 
-You can then run `helm search repo service-catalog` to see the charts.
+You can then run `helm search service-catalog` to see the charts.
 

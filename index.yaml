@@ -6,5 +6,5 @@ entries:
     digest: 0f35292aef3fe8458ae1ec144ecf859f1f3c192e239c67a14aafb88f729d2b81
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.0.tgz?raw=true
     version: 0.3.0
