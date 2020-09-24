@@ -6,329 +6,329 @@ entries:
     digest: 0f35292aef3fe8458ae1ec144ecf859f1f3c192e239c67a14aafb88f729d2b81
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.3.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.0.tgz?raw=true
     version: 0.3.0
   - created: "2019-11-05T19:13:49.283325585Z"
     description: service-catalog webhook server and controller-manager helm chart
     digest: 5a97532aaff89cd3a4228d841160900d01531b6bce5f49101037746536450838
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.3.0-beta.2.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.0-beta.2.tgz?raw=true
     version: 0.3.0-beta.2
   - created: "2019-11-05T16:51:58.492791244Z"
     description: service-catalog webhook server and controller-manager helm chart
     digest: e0bfaa77b14144a4bfd1dbaaabb21df1490bef22b30e0ffc96727aecc5adc90d
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.3.0-beta.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.0-beta.1.tgz?raw=true
     version: 0.3.0-beta.1
   - created: "2019-09-27T17:43:37.521857304Z"
     description: service-catalog webhook server and controller-manager helm chart
     digest: 209b9c7f2bcbc75c110271f0fb9df00c168898aa1a15802757ea847a9575e62e
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.3.0-beta.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.0-beta.0.tgz?raw=true
     version: 0.3.0-beta.0
   - created: "2019-06-03T23:16:18.075379965Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 2b1695acb7fe928947e005d2d9fa32ee772b9d6ee6d8ff9728567933d9781104
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.2.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.2.1.tgz?raw=true
     version: 0.2.1
   - created: "2019-05-15T00:19:33.522464016Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 2f3c98dce0677512130448aa71bd15e0220c557dc1815e6c3a00682619554710
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.2.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.2.0.tgz?raw=true
     version: 0.2.0
   - created: "2019-04-18T00:21:03.189264242Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 01421ce66534af7497da6989532dee6593eced268bd50248b849da01377916f9
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.43.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.43.tgz?raw=true
     version: 0.1.43
   - created: "2019-03-01T20:27:19.553129087Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 97b71dc74a0903e461363b7be0db8310c8903a55521513e044e64e8369149774
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.42.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.42.tgz?raw=true
     version: 0.1.42
   - created: "2019-02-20T00:34:10.247649234Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 10c2187eff1d36aa7ea35085740204b09dfb923dcf0360edf6eef312093c7a7f
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.41.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.41.tgz?raw=true
     version: 0.1.41
   - created: "2019-03-07T21:44:38.467029806Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 5e6725c7eae4a0fe3ab82cfa3c4c7f3a9947e788f23602d1c3f769cec8daa60c
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.40.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.40.tgz?raw=true
     version: 0.1.40
   - created: "2019-01-18T17:44:24.550719026Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 14c08ec68411d1c333da28665a719f82032a3e2095cda633ca2a20db0dd5be82
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.39.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.39.tgz?raw=true
     version: 0.1.39
   - created: "2018-11-09T02:24:24.284936178Z"
     description: service-catalog API server and controller-manager helm chart
     digest: e39b87e017f1ea635200bffe098f6110fc5013a20f924526f20e585611b7d56c
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.38.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.38.tgz?raw=true
     version: 0.1.38
   - created: "2018-10-25T18:27:41.746516921Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 8df062b885713e4b198125a168b6eef66943357be62da723e93ef5c338e5ca03
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.37.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.37.tgz?raw=true
     version: 0.1.37
   - created: "2018-10-18T01:04:12.24283101Z"
     description: service-catalog API server and controller-manager helm chart
     digest: c33e9276e5403a061d584745ca1729799593175485f7246780c280c88c617b95
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.36.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.36.tgz?raw=true
     version: 0.1.36
   - created: "2018-10-05T05:17:40.174560982Z"
     description: service-catalog API server and controller-manager helm chart
     digest: eac176243a1e93fdac7ea94b05cd01ed4fb6640d3d68ac70a149b6eaea39480d
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.35.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.35.tgz?raw=true
     version: 0.1.35
   - created: "2018-10-02T23:22:22.02557098Z"
     description: service-catalog API server and controller-manager helm chart
     digest: fdcfe456db5dd00e90baa21ff8bd87755501eecfea0bc749a1cd26ec4ab99c0b
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.34.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.34.tgz?raw=true
     version: 0.1.34
   - created: "2018-09-27T20:38:35.543499138Z"
     description: service-catalog API server and controller-manager helm chart
     digest: f67728e7cb79d10a242cc62ef3f6b8c09e5aaacd2ae6831799a66ad3af0b9908
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.33.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.33.tgz?raw=true
     version: 0.1.33
   - created: "2018-09-15T01:52:14.827949769Z"
     description: service-catalog API server and controller-manager helm chart
     digest: fbc33b798fc9b7753ff8d529422aa9a3146423274dd50d7399749263821d2728
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.32.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.32.tgz?raw=true
     version: 0.1.32
   - created: "2018-09-06T01:16:22.72077807Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 186f4e2d2e8d702658bf5bfca2f686e2c7d81878aa003fa9096912f7875e3001
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.31.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.31.tgz?raw=true
     version: 0.1.31
   - created: "2018-08-28T01:06:21.164883675Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 5648942a1f9e552e0640ba4c655da4e5ee453631b2fb3fab8e99b86123fe0ead
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.30.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.30.tgz?raw=true
     version: 0.1.30
   - created: "2018-08-09T22:31:47.027535241Z"
     description: service-catalog API server and controller-manager helm chart
     digest: fca8d792a1704f74c544764ad33a262b9826ecb80237abf3d1a9d13e52a023f7
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.29.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.29.tgz?raw=true
     version: 0.1.29
   - created: "2018-08-03T01:33:38.99758168Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 0fd133db09cde834569cd58b455a55b4df5aa16dab72dcd3817867abb3b5c0bb
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.28.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.28.tgz?raw=true
     version: 0.1.28
   - created: "2018-07-26T01:24:18.614757674Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 98219ed32b1619e2587c47be51168724cfe3c7e4903cef7beb83f690669f67f6
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.27.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.27.tgz?raw=true
     version: 0.1.27
   - created: "2018-07-24T13:14:51.349243662-07:00"
     description: service-catalog API server and controller-manager helm chart
     digest: a986ddd5280afe759f8585be83a17c20ec16dd4ff3588104244c0c2109aeb8d3
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.26.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.26.tgz?raw=true
     version: 0.1.26
   - created: "2018-07-13T16:07:53.830743398-07:00"
     description: service-catalog API server and controller-manager helm chart
     digest: d07471a7aede7d9946395d66419b6111322e23d2d308400d6cb43ff756aac31b
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.25.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.25.tgz?raw=true
     version: 0.1.25
   - created: "2018-07-12T09:50:34.734801174-07:00"
     description: service-catalog API server and controller-manager helm chart
     digest: 6afad93328589ddcbe2852c97c9731cff7974153b5be91ac73d0ef54878bdf5f
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.24.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.24.tgz?raw=true
     version: 0.1.24
   - created: "2018-07-02T15:01:01.410326143-07:00"
     description: service-catalog API server and controller-manager helm chart
     digest: a68f67ca41a4a8b285be8e85082c6825f652ba83fcfe4a1f1d97a672a7227f52
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.23.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.23.tgz?raw=true
     version: 0.1.23
   - created: "2018-06-20T21:21:55.555315936-07:00"
     description: service-catalog API server and controller-manager helm chart
     digest: b8db1686d6c941dd88bdab87f9de59fe8959538885b3da2c587292aa47200b01
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.22.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.22.tgz?raw=true
     version: 0.1.22
   - created: "2018-06-11T21:54:48.849945813Z"
     description: service-catalog API server and controller-manager helm chart
     digest: f33ba9611e5d4acd3884ccf9e40ec8ae07f2e50bd11621ee080bacfc87f11033
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.21.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.21.tgz?raw=true
     version: 0.1.21
   - created: "2018-05-24T01:36:56.654855231Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 9617480c76c54c86d3d0aaed71f4415160ca932e789f10026d715c576098e1ec
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.20.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.20.tgz?raw=true
     version: 0.1.20
   - created: "2018-05-18T16:38:07.264484656Z"
     description: service-catalog API server and controller-manager helm chart
     digest: d0095847b08351210f1281dd4e4c4e159ea4d57e236a418c634def97dbd47e83
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.19.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.19.tgz?raw=true
     version: 0.1.19
   - created: "2018-05-10T17:52:31.018287663Z"
     description: service-catalog API server and controller-manager helm chart
     digest: c0ec5b5e1559630c9577bd0b05b8a8400cfd61cf0ab8ef933b11076b96ce9184
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.18.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.18.tgz?raw=true
     version: 0.1.18
   - created: "2018-05-03T17:34:58.1419847Z"
     description: service-catalog API server and controller-manager helm chart
     digest: d6743c655511e19389c27db06194cc8297a9b7d9e9d1433e8a45b4e8fba59be2
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.17.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.17.tgz?raw=true
     version: 0.1.17
   - created: "2018-04-27T20:58:59.891025621Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 34175ee463f1de290b18f08f16fdccce8130eb735595073e9ace4a19028be1ae
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.16.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.16.tgz?raw=true
     version: 0.1.16
   - created: "2018-04-26T18:28:41.839031128Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 47421b73e0bb1adbe2dcb1ac0f4f8eed8f9881734d8268280ffcc6cfb1cea0c3
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.15.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.15.tgz?raw=true
     version: 0.1.15
   - created: "2018-04-20T18:14:13.089502529Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 91704374928c8e18818ddfd8b21d7591f039ea0337a05c79c78bd254f7da5e38
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.14.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.14.tgz?raw=true
     version: 0.1.14
   - created: "2018-04-12T16:13:53.422094526Z"
     description: service-catalog API server and controller-manager helm chart
     digest: aa5e0dff1ec32768258b020a2c8daa537be3aa7906ac6310326d2853bfe1d723
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.13.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.13.tgz?raw=true
     version: 0.1.13
   - created: "2018-04-05T19:28:51.213776146Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 38b9767328a7846a662966630aecea0f1c62c4aa08a446f14695571ba8e4545c
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.12.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.12.tgz?raw=true
     version: 0.1.12
   - created: "2018-03-06T21:08:28.530852278Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 54604f7886b4d8efe477ca6dcc4563b7bd6dec73f44bc93cf729942a9906a0cf
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.9.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.9.tgz?raw=true
     version: 0.1.9
   - created: "2018-03-01T01:08:29.301379127Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 05fd8c37597986ae170c35a3ca8b28e9b1e22dc6dab0699ba4f163f4b6535466
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.8.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.8.tgz?raw=true
     version: 0.1.8
   - created: "2018-02-15T02:08:29.902319301Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 6318e584233f3a795ccc20e00bb347ad41114d674be74b64807f57b2c3f74cda
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.7.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.7.tgz?raw=true
     version: 0.1.7
   - created: "2018-02-08T03:08:28.655098695Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 19ee88f88fdddd44e269b197ed68ade6ba6867874f65d6dd2e6fe1e8423112e8
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.6.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.6.tgz?raw=true
     version: 0.1.6
   - created: "2018-02-07T21:08:29.440994667Z"
     description: service-catalog API server and controller-manager helm chart
     digest: e6cc3f1fb3ba756443f6bf95ce98e4456fda8f0d26bb1d22cf17fa6e254fa87e
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.5.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.5.tgz?raw=true
     version: 0.1.5
   - created: "2018-01-31T21:08:30.361909061Z"
     description: service-catalog API server and controller-manager helm chart
     digest: b75a610d9245ba8cc9150e2cebde55a5eba66924c1c8c5755f13f3718106302c
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.4.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.4.tgz?raw=true
     version: 0.1.4
   - created: "2018-01-17T20:08:26.714093242Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 0287c705bcd14afb502e51a3103280a12a197c0163b590ebcdb22cc78e7c921b
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.3.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.3.tgz?raw=true
     version: 0.1.3
   - created: "2017-11-16T02:08:23.573355086Z"
     description: service-catalog API server and controller-manager helm chart
     digest: d11f3a1a5cacb184907fe7bfa6d3499cc8c983267ba522fed8931de104c3ff17
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.1.2.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.1.2.tgz?raw=true
     version: 0.1.2
   - created: "2017-11-03T00:08:21.456051358Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 463538a8824ff89d2f414249c9a2bcc131f8953dec51024685020c9406553d49
     name: catalog
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-0.0.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.0.1.tgz?raw=true
     version: 0.0.1
   catalog-v0.2:
   - created: "2020-05-20T08:35:28.138013536Z"
@@ -336,14 +336,14 @@ entries:
     digest: b79bf75d9ef5d457a01abf841ed69b1086ad9e5833f6bd4c907af35061bfee66
     name: catalog-v0.2
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-v0.2-0.2.3.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-v0.2-0.2.3.tgz?raw=true
     version: 0.2.3
   - created: "2019-08-26T10:48:31.635851973Z"
     description: service-catalog API server and controller-manager helm chart
     digest: 8f17b6d9b4661f0fed9172e0b7d80936a8ae966b971d6b10a84c085a82680527
     name: catalog-v0.2
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/catalog/catalog-v0.2-0.2.2.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-v0.2-0.2.2.tgz?raw=true
     version: 0.2.2
   healthcheck:
   - created: "2020-05-25T13:48:17.730276234Z"
@@ -351,49 +351,49 @@ entries:
     digest: 64a85f3ed5d556cc05e946f39e4d6f3ecac6113ba94e656d16c25c670a359afb
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.3.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.3.0.tgz?raw=true
     version: 0.3.0
   - created: "2019-11-05T19:13:49.283913795Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: 3d0fd2a0c09d8731b3d5c8e3d481a5c14f1daec8a2ff8300abbdc6ebacac34d0
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.3.0-beta.2.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.3.0-beta.2.tgz?raw=true
     version: 0.3.0-beta.2
   - created: "2019-11-05T16:51:58.493352938Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: d40550530015818d6ccd7c9fe49ec0bc1dc59ee4380231d43718c524fa45058a
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.3.0-beta.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.3.0-beta.1.tgz?raw=true
     version: 0.3.0-beta.1
   - created: "2019-09-27T17:43:37.52239668Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: 5f9304628fb7917223cf00dc94ad6421d5c161496c7f91cb8ef5d136c65b7254
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.3.0-beta.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.3.0-beta.0.tgz?raw=true
     version: 0.3.0-beta.0
   - created: "2019-06-03T23:16:18.076100996Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: fa6fbd58cdcf26a94a9bad09acc69693d19c2534c96833bf2bd7a3be780c8d6f
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.2.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.2.1.tgz?raw=true
     version: 0.2.1
   - created: "2019-05-15T00:19:33.523012038Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: 1edaa1266e4f17970f4cf817b04b6aeaf4e1f7791f2e611e9f47f05e85eec9fd
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.2.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.2.0.tgz?raw=true
     version: 0.2.0
   - created: "2019-04-18T00:21:03.189882139Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: 5808cfb780a7a404b8dddda1b58795ed718da11c11d47c188fb365c91a2bccff
     name: healthcheck
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/healthcheck/healthcheck-0.0.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.0.1.tgz?raw=true
     version: 0.0.1
   test-broker:
   - created: "2020-05-25T13:48:17.730652939Z"
@@ -401,49 +401,49 @@ entries:
     digest: c061b994a9bd2448d9e81a0ca9ffb04c13b980f8bfcda63b117a142015de45a6
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.3.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.3.0.tgz?raw=true
     version: 0.3.0
   - created: "2019-11-05T19:13:49.284331745Z"
     description: test service-broker deployment Helm chart.
     digest: 411d06ea6b7c3fa104a2cc57c95b48277a109ba89d773eb14b52f7aacf468e98
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.3.0-beta.2.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.3.0-beta.2.tgz?raw=true
     version: 0.3.0-beta.2
   - created: "2019-11-05T16:51:58.493755364Z"
     description: test service-broker deployment Helm chart.
     digest: 46e0fad1eb704384ae52f35e8e1cebb2c4920e168f9b30699f040d375a365ed5
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.3.0-beta.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.3.0-beta.1.tgz?raw=true
     version: 0.3.0-beta.1
   - created: "2019-09-27T17:43:37.522760244Z"
     description: test service-broker deployment Helm chart.
     digest: f9a36d30c78b3b68ed19a8749c520c11cd4552c6081e9ae063392d5ffa42a450
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.3.0-beta.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.3.0-beta.0.tgz?raw=true
     version: 0.3.0-beta.0
   - created: "2019-06-03T23:16:18.076555538Z"
     description: test service-broker deployment Helm chart.
     digest: f00b5abc31e2863ea2a3780e715a15edaedaac9bd3ef14b2fc26b13f085d3340
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.2.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.2.1.tgz?raw=true
     version: 0.2.1
   - created: "2019-05-15T00:19:33.523441673Z"
     description: test service-broker deployment Helm chart.
     digest: 9b859a88105801cc0864d4df0dd2a496e4facf225a5caf8ca8ef0f36c98efed0
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.2.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.2.0.tgz?raw=true
     version: 0.2.0
   - created: "2019-04-18T00:21:03.190364284Z"
     description: test service-broker deployment Helm chart.
     digest: 4a0f03ebc88ee19a3a4a1f7644c5705153fea7f576e1357dba912d6d6562cc23
     name: test-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/test-broker/test-broker-0.0.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.0.1.tgz?raw=true
     version: 0.0.1
   ups-broker:
   - created: "2020-05-25T13:48:17.731014661Z"
@@ -451,48 +451,48 @@ entries:
     digest: d9a417d8eb6bcce9473c0aacdf298ef73bb538f5daa9bb3a156c570f474b91cc
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.3.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.3.0.tgz?raw=true
     version: 0.3.0
   - created: "2019-11-05T19:13:49.284733689Z"
     description: user-provided service-broker deployment Helm chart.
     digest: a6cd1e188915d8a537801c0c8b00e42a62c4892f699c85ca92157add751d1cb2
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.3.0-beta.2.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.3.0-beta.2.tgz?raw=true
     version: 0.3.0-beta.2
   - created: "2019-11-05T16:51:58.494184558Z"
     description: user-provided service-broker deployment Helm chart.
     digest: a4b2ae077ea273bea9a03b9c6c33f7520c147da232a26d5817453775c5dd47f6
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.3.0-beta.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.3.0-beta.1.tgz?raw=true
     version: 0.3.0-beta.1
   - created: "2019-09-27T17:43:37.523131343Z"
     description: user-provided service-broker deployment Helm chart.
     digest: e1e0778990356482826b7b853ae5b594db7ea846a50c912cb4bdb2e9cbf65a14
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.3.0-beta.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.3.0-beta.0.tgz?raw=true
     version: 0.3.0-beta.0
   - created: "2019-06-03T23:16:18.076936473Z"
     description: user-provided service-broker deployment Helm chart.
     digest: fc59746913333a167b13dc2e95cace652a4dca645d8d85753d951ba74606138d
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.2.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.2.1.tgz?raw=true
     version: 0.2.1
   - created: "2019-05-15T00:19:33.523883065Z"
     description: user-provided service-broker deployment Helm chart.
     digest: 4e6c3e079c97a32c1ee6d54023c898747abbde6de89646ea3bad934dd22c7616
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.2.0.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.2.0.tgz?raw=true
     version: 0.2.0
   - created: "2019-04-18T00:21:03.190909337Z"
     description: user-provided service-broker deployment Helm chart.
     digest: 743dfec7df63b5ef189f163ee239c9a65aee422f75b86115b6791dd6094662af
     name: ups-broker
     urls:
-    - https://github.com/kubernetes-sigs/service-catalog/charts_archive/ups-broker/ups-broker-0.0.1.tgz
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.0.1.tgz?raw=true
     version: 0.0.1
 generated: "2020-05-25T13:48:17.728119179Z"
