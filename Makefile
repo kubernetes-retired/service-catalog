@@ -71,6 +71,7 @@ export GO111MODULE=on
 
 ALL_ARCH=amd64 arm arm64 ppc64le s390x
 ALL_CLIENT_PLATFORM=darwin linux windows
+ALL_CLIENT_ARCHS=amd64 s390x
 
 PLATFORM ?= linux
 # This is the current platform, so that we can build a native client binary by default
@@ -437,7 +438,11 @@ svcat-install: svcat
 svcat-all: $(addprefix svcat-for-,$(ALL_CLIENT_PLATFORM))
 
 svcat-for-%:
-	$(MAKE) PLATFORM=$* VERSION=$(TAG_VERSION) svcat-xbuild
+	@if [ $(subst linux,,$*) ]; then \
+		$(MAKE) PLATFORM=$* VERSION=$(TAG_VERSION) svcat-xbuild; \
+	else \
+		$(foreach CLIENT_ARCH,$(ALL_CLIENT_ARCHS), $(MAKE) PLATFORM=$* VERSION=$(TAG_VERSION) ARCH=$(CLIENT_ARCH) svcat-xbuild;) \
+	fi
 
 svcat-xbuild: $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT)
 $(BINDIR)/svcat/$(TAG_VERSION)/$(PLATFORM)/$(ARCH)/svcat$(FILE_EXT): .init .generate_files
