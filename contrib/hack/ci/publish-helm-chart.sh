@@ -13,53 +13,89 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # standard bash error handling
 set -o nounset # treat unset variables as an error and exit immediately.
 set -o errexit # exit immediately when a command fails.
 
-readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+readonly CURRENT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 readonly TMP_DIR=$(mktemp -d)
+readonly TEMP_CHART_DIR=svc-catalog-repo
+readonly SVC_CATALOG_REPO_URL=https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/
 
-source "${CURRENT_DIR}/lib/utilities.sh" || { echo 'Cannot load CI utilities.'; exit 1; }
-source "${CURRENT_DIR}/lib/deps_ver.sh" || { echo 'Cannot load dependencies versions.'; exit 1; }
+declare COMMIT_MESSAGE="Publish the chart tarballs"
+if [[ "$(git describe --tags)" =~ ^v[0-9]+(\.[0-9]+){1,2}$ ]]; then
+  COMMIT_MESSAGE="${COMMIT_MESSAGE} for $(git describe --tags)"
+fi
 
-readonly SVC_CATALOG_BUCKET=${SVC_CATALOG_BUCKET:-svc-catalog-charts}
-readonly SVC_CATALOG_REPO_URL=https://${SVC_CATALOG_BUCKET}.storage.googleapis.com/
+source "${CURRENT_DIR}/lib/utilities.sh" || {
+  echo 'Cannot load CI utilities.'
+  exit 1
+}
 
-shout "- Setup Helm"
-export INSTALL_DIR=${TMP_DIR} HELM_VERSION=${STABLE_HELM_VERSION}
-install::local::helm
-helm init --client-only
+source "${CURRENT_DIR}/lib/deps_ver.sh" || {
+  echo 'Cannot load dependencies versions.'
+  exit 1
+}
 
-shout "- Install and configure gcloud"
-sudo apt-get install -y python
-export CLOUD_SDK_VERSION=204.0.0
-curl -LO "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-$CLOUD_SDK_VERSION-linux-x86_64.tar.gz"
-tar xzf "google-cloud-sdk-$CLOUD_SDK_VERSION-linux-x86_64.tar.gz"
-rm "google-cloud-sdk-$CLOUD_SDK_VERSION-linux-x86_64.tar.gz"
-rm -rf /google-cloud-sdk/.install/.backup
-export PATH="$(pwd)/google-cloud-sdk/bin:$PATH"
-gcloud version
-gcloud config set core/disable_usage_reporting true
-gcloud config set component_manager/disable_update_check true
+setup_helm() {
+  shout "- Setup Helm"
 
-shout "- Authenticate to Google Cloud Storage"
-gcloud auth activate-service-account --key-file contrib/hack/ci/assets/gcloud-key-file.json
+  export INSTALL_DIR=${TMP_DIR} HELM_VERSION=${STABLE_HELM_VERSION}
+  install::local::helm
+  helm init --client-only
+}
 
-shout "- Create the repository"
-SVC_CATALOG_REPO_DIR=svc-catalog-repo
-mkdir -p ${SVC_CATALOG_REPO_DIR}
-pushd ${SVC_CATALOG_REPO_DIR}
+create_tarballs() {
+  shout "- Create the chart tarballs"
 
-  gsutil cp gs://${SVC_CATALOG_BUCKET}/index.yaml .
-  for dir in `ls ../charts`;do
-    helm dep build ../charts/${dir}
-    helm package ../charts/${dir}
+  mkdir -p ${TEMP_CHART_DIR}
+  pushd ${TEMP_CHART_DIR}
+  for dir in ../charts/*; do
+    helm dep build "${dir}"
+    helm package "${dir}"
   done
-  helm repo index --url ${SVC_CATALOG_REPO_URL} --merge ./index.yaml .
-  gsutil -m rsync ./ gs://${SVC_CATALOG_BUCKET}/
+  for chart in *.tgz; do
+    chart_name=${chart/-[0-9.]*tgz/}
+    mkdir "$chart_name"
+    mv "$chart" "$chart_name/"
+  done
+  popd
+}
 
-popd
+reconfigure_git() {
+  git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+  git fetch --all
+  git config remote.origin.url "$(git config --get remote.origin.url | sed 's/https:\/\/github.com\//git@github.com:/')"
+  chmod 600 chart_key
+  git config --local core.sshCommand "/usr/bin/ssh -i $(pwd)/chart_key"
+}
 
-ls -l ${SVC_CATALOG_REPO_DIR}
+publish() {
+  shout "- Publish the new charts"
+
+  reconfigure_git
+  git checkout gh_pages
+  cp index.yaml "${TEMP_CHART_DIR}"
+
+  pushd "${TEMP_CHART_DIR}"
+    helm repo index --url "${SVC_CATALOG_REPO_URL}" --merge ./index.yaml .
+    sed 's/\.tgz$/.tgz?raw=true/' ./index.yaml > ../index.yaml
+    git add ../index.yaml
+    for package in **/*.tgz; do
+      dest_dir="../charts_archive/${package/\/[a-z0-9.-]*tgz/}"
+      mkdir -p "$dest_dir"
+      mv "$package" "../charts_archive/${dest_dir}/"
+      git add "../charts_archive/${package}"
+    done
+    git commit -m "$COMMIT_MESSAGE"
+    git push
+  popd
+}
+
+main() {
+  setup_helm
+  create_tarballs
+  publish
+}
+
+main
