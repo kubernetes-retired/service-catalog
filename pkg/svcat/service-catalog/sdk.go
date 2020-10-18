@@ -83,6 +83,7 @@ type SvcatClient interface {
 	RetrievePlanByID(string, ScopeOptions) (Plan, error)
 
 	RetrieveSecretByBinding(*apiv1beta1.ServiceBinding) (*apicorev1.Secret, error)
+	CreateSecret(secret *apicorev1.Secret) (*apicorev1.Secret, error)
 
 	ServerVersion() (*version.Info, error)
 }

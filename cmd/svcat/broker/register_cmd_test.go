@@ -111,7 +111,7 @@ var _ = Describe("Register Command", func() {
 			}
 			err := cmd.Validate([]string{"bananabroker", "http://bananabroker.com", "--basic-secret", basicSecret, "--bearer-secret", bearerSecret})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("cannot use both basic auth and bearer auth"))
+			Expect(err.Error()).To(ContainSubstring("cannot have more than one authentication parameter passed"))
 		})
 		It("errors if a provided CA file does not exist", func() {
 			cmd := RegisterCmd{
@@ -246,6 +246,49 @@ var _ = Describe("Register Command", func() {
 			Expect(*returnedOpts).To(Equal(opts))
 			Expect(returnedScopeOpts.Namespace).To(Equal(namespace))
 			Expect(returnedScopeOpts.Scope.Matches(servicecatalog.NamespaceScope)).To(BeTrue())
+			output := outputBuffer.String()
+			Expect(output).To(ContainSubstring(brokerName))
+			Expect(output).To(ContainSubstring(brokerURL))
+		})
+		It("Passes in the uesrname and password", func() {
+			// userName := "foobar"
+			// password := "foobar"
+
+			brokerToReturn.Spec.AuthInfo.Basic = &v1beta1.ClusterBasicAuthConfig{
+				SecretRef: &v1beta1.ObjectReference{
+					Name: brokerToReturn.Name,
+				},
+			}
+
+			outputBuffer := &bytes.Buffer{}
+			fakeApp, _ := svcat.NewApp(nil, nil, namespace)
+			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
+			fakeSDK.RegisterReturns(brokerToReturn, nil)
+			fakeApp.SvcatClient = fakeSDK
+			cxt := svcattest.NewContext(outputBuffer, fakeApp)
+			cmd := RegisterCmd{
+				BasicSecret: brokerToReturn.Name,
+				BrokerName:  brokerName,
+				Namespaced:  command.NewNamespaced(cxt),
+				Scoped:      command.NewScoped(),
+				Waitable:    command.NewWaitable(),
+				URL:         brokerURL,
+			}
+			cmd.Namespaced.ApplyNamespaceFlags(&pflag.FlagSet{})
+			cmd.Waitable.ApplyWaitFlags()
+			err := cmd.Run()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakeSDK.RegisterCallCount()).To(Equal(1))
+			returnedName, returnedURL, returnedOpts, _ := fakeSDK.RegisterArgsForCall(0)
+			Expect(returnedName).To(Equal(brokerName))
+			Expect(returnedURL).To(Equal(brokerURL))
+			opts := servicecatalog.RegisterOptions{
+				Namespace:   namespace,
+				BasicSecret: brokerToReturn.Name,
+			}
+			Expect(*returnedOpts).To(Equal(opts))
+
 			output := outputBuffer.String()
 			Expect(output).To(ContainSubstring(brokerName))
 			Expect(output).To(ContainSubstring(brokerURL))

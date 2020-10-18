@@ -238,6 +238,19 @@ type FakeSvcatClient struct {
 		result1 servicecatalog.Broker
 		result2 error
 	}
+	CreateSecretStub        func(*v1.Secret) (*v1.Secret, error)
+	createSecretMutex       sync.RWMutex
+	createSecretArgsForCall []struct {
+		arg1 *v1.Secret
+	}
+	createSecretReturns struct {
+		result1 *v1.Secret
+		result2 error
+	}
+	createSecretReturnsOnCall map[int]struct {
+		result1 *v1.Secret
+		result2 error
+	}
 	RemoveBindingFinalizerByInstanceStub        func(string, string) ([]types.NamespacedName, error)
 	removeBindingFinalizerByInstanceMutex       sync.RWMutex
 	removeBindingFinalizerByInstanceArgsForCall []struct {
@@ -1578,6 +1591,24 @@ func (fake *FakeSvcatClient) ProvisionReturnsOnCall(i int, result1 *v1beta1.Serv
 		result1 *v1beta1.ServiceInstance
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeSvcatClient) CreateSecret(arg1 *v1.Secret) (*v1.Secret, error) {
+	fake.createSecretMutex.Lock()
+	ret, specificReturn := fake.createSecretReturnsOnCall[len(fake.createSecretArgsForCall)]
+	fake.createSecretArgsForCall = append(fake.createSecretArgsForCall, struct {
+		arg1 *v1.Secret
+	}{arg1})
+	fake.recordInvocation("CreateSecret", []interface{}{arg1})
+	fake.createSecretMutex.Unlock()
+	if fake.CreateSecretStub != nil {
+		return fake.CreateSecretStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.createSecretReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeSvcatClient) Register(arg1 string, arg2 string, arg3 *servicecatalog.RegisterOptions, arg4 *servicecatalog.ScopeOptions) (servicecatalog.Broker, error) {

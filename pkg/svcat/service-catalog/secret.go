@@ -42,3 +42,8 @@ func (sdk *SDK) RetrieveSecretByBinding(binding *v1beta1.ServiceBinding) (*corev
 
 	return secret, nil
 }
+
+// CreateSecret creates a secret
+func (sdk *SDK) CreateSecret(secret *corev1.Secret) (*corev1.Secret, error) {
+	return sdk.Core().Secrets(secret.Namespace).Create(context.Background(), secret, metav1.CreateOptions{})
+}

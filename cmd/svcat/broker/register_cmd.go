@@ -17,6 +17,7 @@ limitations under the License.
 package broker
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -27,6 +28,7 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,6 +40,8 @@ type RegisterCmd struct {
 
 	BasicSecret       string
 	BearerSecret      string
+	UserName          string
+	UserPassword      string
 	BrokerName        string
 	CAFile            string
 	ClassRestrictions []string
@@ -66,6 +70,8 @@ func NewRegisterCmd(cxt *command.Context) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&registerCmd.URL, "url", "",
 		"The broker URL (Required)")
+	cmd.Flags().StringVarP(&registerCmd.UserName, "username", "u", "", "User name to create kubernetes secret with")
+	cmd.Flags().StringVarP(&registerCmd.UserPassword, "password", "p", "", "Password to create kubernetes secret with")
 	cmd.MarkFlagRequired("url")
 	cmd.Flags().StringVar(&registerCmd.BasicSecret, "basic-secret", "",
 		"A secret containing basic auth (username/password) information to connect to the broker")
@@ -97,8 +103,24 @@ func (c *RegisterCmd) Validate(args []string) error {
 	}
 	c.BrokerName = args[0]
 
-	if c.BasicSecret != "" && c.BearerSecret != "" {
-		return fmt.Errorf("cannot use both basic auth and bearer auth")
+	var isAuthParamSet bool
+
+	if c.UserName != "" && c.UserPassword != "" {
+		isAuthParamSet = true
+	}
+
+	if c.BasicSecret != "" {
+		if isAuthParamSet {
+			return fmt.Errorf("cannot have more than one authentication parameter passed. Please pass either basic-secret or bearer-secret or username and password")
+		}
+		isAuthParamSet = true
+	}
+
+	if c.BearerSecret != "" {
+		if isAuthParamSet {
+			return fmt.Errorf("cannot have more than one authentication parameter passed. Please pass either basic-secret or bearer-secret or username and password")
+		}
+		isAuthParamSet = true
 	}
 
 	if c.CAFile != "" {
@@ -118,6 +140,26 @@ func (c *RegisterCmd) Validate(args []string) error {
 
 // Run creates the broker and then displays the broker details
 func (c *RegisterCmd) Run() error {
+	if c.UserName != "" && c.UserPassword != "" {
+		secret, err := c.Context.App.CreateSecret(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      c.BrokerName,
+					Namespace: c.Namespace,
+				},
+				Data: map[string][]byte{
+					"username": []byte(base64.StdEncoding.EncodeToString([]byte(c.UserName))),
+					"password": []byte(base64.StdEncoding.EncodeToString([]byte(c.UserPassword))),
+				},
+				Type: corev1.SecretTypeBasicAuth,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		c.BasicSecret = secret.Name
+	}
 	opts := &servicecatalog.RegisterOptions{
 		BasicSecret:       c.BasicSecret,
 		BearerSecret:      c.BearerSecret,
