@@ -209,7 +209,7 @@ The snippets below install the latest version of svcat. We also publish binaries
   * [v0.2](https://github.com/kubernetes-sigs/service-catalog/tree/v0.2) branch: https://download.svcat.sh/cli/canary-v0.2
 
 * Tagged releases: https://download.svcat.sh/cli/VERSION
-  where `VERSION` is the release, for example `v0.3.0`, `v0.2.1`, etc.
+  where `VERSION` is the release, for example `v0.3.1`, `v0.2.1`, etc.
 
 * Previous canary builds: https://download.svcat.sh/cli/VERSION-GITDESCRIBE
   where `GITDESCRIBE` is the result of calling `git describe --tags`,  for example `v0.3.0-1-g84216bdf`, `v0.2.1-1-g203c8ad` etc.
