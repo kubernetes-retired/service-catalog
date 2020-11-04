@@ -1,6 +1,6 @@
 # Default values for Health Check
 # Image to use
-image: quay.io/kubernetes-service-catalog/healthcheck:v0.3.0
+image: quay.io/kubernetes-service-catalog/healthcheck:v0.3.1
 # imagePullSecrets pre-existing secrets to use to pull images from a private registry
 imagePullSecrets: []
 # ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
