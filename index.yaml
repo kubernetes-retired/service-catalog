@@ -1,6 +1,14 @@
 apiVersion: v1
 entries:
   catalog:
+  - apiVersion: v1
+    created: "2020-11-05T13:53:56.397114194Z"
+    description: service-catalog webhook server and controller-manager helm chart
+    digest: d9a2d3e139ca040b198d5ac66d02511636e85e62770ae9a679261ef708ceb4a5
+    name: catalog
+    urls:
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-0.3.1.tgz?raw=true
+    version: 0.3.1
   - created: "2020-05-25T13:48:17.729749097Z"
     description: service-catalog webhook server and controller-manager helm chart
     digest: 0f35292aef3fe8458ae1ec144ecf859f1f3c192e239c67a14aafb88f729d2b81
@@ -346,6 +354,13 @@ entries:
     - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/catalog/catalog-v0.2-0.2.2.tgz?raw=true
     version: 0.2.2
   healthcheck:
+  - created: "2020-11-05T13:53:56.397641603Z"
+    description: HealthCheck monitors the health of Service Catalog
+    digest: 2c763edcf8ea6a5e0c186fec85885a0a94acee8c89283827de3c2ba17d54d2cf
+    name: healthcheck
+    urls:
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.3.1.tgz?raw=true
+    version: 0.3.1
   - created: "2020-05-25T13:48:17.730276234Z"
     description: HealthCheck monitors the health of Service Catalog
     digest: 64a85f3ed5d556cc05e946f39e4d6f3ecac6113ba94e656d16c25c670a359afb
@@ -396,6 +411,13 @@ entries:
     - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/healthcheck/healthcheck-0.0.1.tgz?raw=true
     version: 0.0.1
   test-broker:
+  - created: "2020-11-05T13:53:56.398063906Z"
+    description: test service-broker deployment Helm chart.
+    digest: 4f383fba58eea1efaaf62536e3e17b5cc098038b7c62d318ae7601a4bfe3994e
+    name: test-broker
+    urls:
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.3.1.tgz?raw=true
+    version: 0.3.1
   - created: "2020-05-25T13:48:17.730652939Z"
     description: test service-broker deployment Helm chart.
     digest: c061b994a9bd2448d9e81a0ca9ffb04c13b980f8bfcda63b117a142015de45a6
@@ -446,6 +468,13 @@ entries:
     - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/test-broker/test-broker-0.0.1.tgz?raw=true
     version: 0.0.1
   ups-broker:
+  - created: "2020-11-05T13:53:56.398495791Z"
+    description: user-provided service-broker deployment Helm chart.
+    digest: f436db67a37fc7565d4e792c0354ae2c42ac4d50e3f64fb35259cc7b5c48bd87
+    name: ups-broker
+    urls:
+    - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.3.1.tgz?raw=true
+    version: 0.3.1
   - created: "2020-05-25T13:48:17.731014661Z"
     description: user-provided service-broker deployment Helm chart.
     digest: d9a417d8eb6bcce9473c0aacdf298ef73bb538f5daa9bb3a156c570f474b91cc
@@ -495,4 +524,4 @@ entries:
     urls:
     - https://github.com/kubernetes-sigs/service-catalog/blob/gh_pages/charts_archive/ups-broker/ups-broker-0.0.1.tgz?raw=true
     version: 0.0.1
-generated: "2020-05-25T13:48:17.728119179Z"
+generated: "2020-11-05T13:53:56.395381472Z"
