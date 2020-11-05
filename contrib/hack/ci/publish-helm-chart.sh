@@ -66,8 +66,7 @@ reconfigure_git() {
   git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
   git fetch --all
   git config remote.origin.url "$(git config --get remote.origin.url | sed 's/https:\/\/github.com\//git@github.com:/')"
-  chmod 600 chart_key
-  git config --local core.sshCommand "/usr/bin/ssh -i $(pwd)/chart_key"
+  git config --local core.sshCommand "/usr/bin/ssh -i ${CURRENT_DIR}/assets/chart_key"
 }
 
 publish() {
@@ -78,17 +77,17 @@ publish() {
   cp index.yaml "${TEMP_CHART_DIR}"
 
   pushd "${TEMP_CHART_DIR}"
-    helm repo index --url "${SVC_CATALOG_REPO_URL}" --merge ./index.yaml .
-    sed 's/\.tgz$/.tgz?raw=true/' ./index.yaml > ../index.yaml
-    git add ../index.yaml
-    for package in **/*.tgz; do
-      dest_dir="../charts_archive/${package/\/[a-z0-9.-]*tgz/}"
-      mkdir -p "$dest_dir"
-      mv "$package" "../charts_archive/${dest_dir}/"
-      git add "../charts_archive/${package}"
-    done
-    git commit -m "$COMMIT_MESSAGE"
-    git push
+  helm repo index --url "${SVC_CATALOG_REPO_URL}" --merge ./index.yaml .
+  sed 's/\.tgz$/.tgz?raw=true/' ./index.yaml >../index.yaml
+  git add ../index.yaml
+  for package in **/*.tgz; do
+    dest_dir="../charts_archive/${package/\/[a-z0-9.-]*tgz/}"
+    mkdir -p "$dest_dir"
+    mv "$package" "../charts_archive/${dest_dir}/"
+    git add "../charts_archive/${package}"
+  done
+  git commit -m "$COMMIT_MESSAGE"
+  git push
   popd
 }
 

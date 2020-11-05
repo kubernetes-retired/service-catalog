@@ -143,5 +143,8 @@ jobs:
     - stage: push-chart
       script:
       - |
-        openssl aes-256-cbc -K $encrypted_99eda037369e_key -iv $encrypted_99eda037369e_iv -in contrib/hack/ci/assets/chart_key.enc -out chart_key -d
+        set -e
+        openssl aes-256-cbc -K $encrypted_99eda037369e_key -iv $encrypted_99eda037369e_iv -in \
+          contrib/hack/ci/assets/chart_key.enc -out contrib/hack/ci/assets/chart_key -d
+        chmod 400 contrib/hack/ci/assets/chart_key
         contrib/hack/ci/publish-helm-chart.sh
