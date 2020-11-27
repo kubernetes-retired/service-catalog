@@ -33,7 +33,6 @@ const (
 	serviceCatalogNamespaceParameter = "service-catalog-namespace"
 	webhookServiceNameParameter      = "webhook-service-name"
 	webhookServicePortParameter      = "webhook-service-port"
-	pvcNameParameter                 = "pvc-name"
 )
 
 // Options holds configuration for the migration job
@@ -45,7 +44,6 @@ type Options struct {
 	ApiserverName             string
 	WebhookServiceName        string
 	WebhookServicePort        string
-	PersistentVolumeClaimName string
 }
 
 // NewMigrationOptions creates and returns a new Options
@@ -62,7 +60,6 @@ func (c *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&c.ApiserverName, apiserverNameParameter, "", "Name of apiserver deployment")
 	fs.StringVar(&c.WebhookServiceName, webhookServiceNameParameter, "", "Name of webhook service")
 	fs.StringVar(&c.WebhookServicePort, webhookServicePortParameter, "", "Port of the webhook service")
-	fs.StringVar(&c.PersistentVolumeClaimName, pvcNameParameter, "", "Name of PersistentVolumeClaim in which resources will be stored")
 }
 
 // Validate checks flag has been set and has a proper value
@@ -84,7 +81,6 @@ func (c *Options) Validate() error {
 			webhookServiceNameParameter:      c.WebhookServiceName,
 			webhookServicePortParameter:      c.WebhookServicePort,
 			storagePathParameter:             c.StoragePath,
-			pvcNameParameter:                 c.PersistentVolumeClaimName,
 		}); err != nil {
 			return err
 		}

@@ -37,9 +37,6 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs:     ["get", "update"]
-  - apiGroups: [""]
-    resources: ["persistentvolumeclaims"]
-    verbs:     ["delete"]
   - apiGroups: ["servicecatalog.k8s.io"]
     resources:
     - "clusterserviceclasses"
@@ -63,6 +60,9 @@ rules:
     - "serviceclasses/status"
     - "serviceplans/status"
     verbs: ["update"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    verbs: ["create", "delete"]
 
 ---
 kind: ClusterRoleBinding
@@ -122,8 +122,25 @@ spec:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
       volumes:
       - name: storage
-        persistentVolumeClaim:
-          claimName: {{ template "fullname" . }}-migration-storage
+        emptyDir: {}
+      initContainers:
+        - name: pre-migration-job
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          args:
+            - migration
+            - --action
+            - backup
+            - --service-catalog-namespace
+            - {{ .Release.Namespace }}
+            - --controller-manager-deployment
+            - {{ template "fullname" . }}-controller-manager
+            - --apiserver-deployment
+            - {{ template "fullname" . }}-apiserver
+            - --storage-path=data/
+          volumeMounts:
+            - name: storage
+              mountPath: /data
       containers:
         - name: job
           image: {{ .Values.image }}
@@ -141,8 +158,6 @@ spec:
           - {{ template "fullname" . }}-webhook
           - --webhook-service-port
           - "{{ .Values.webhook.service.port }}"
-          - --pvc-name
-          - {{ template "fullname" . }}-migration-storage
           volumeMounts:
           - name: storage
             mountPath: /data
