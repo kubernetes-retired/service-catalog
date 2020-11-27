@@ -37,13 +37,13 @@ const (
 
 // Options holds configuration for the migration job
 type Options struct {
-	Action                    string
-	StoragePath               string
-	ReleaseNamespace          string
-	ControllerManagerName     string
-	ApiserverName             string
-	WebhookServiceName        string
-	WebhookServicePort        string
+	Action                string
+	StoragePath           string
+	ReleaseNamespace      string
+	ControllerManagerName string
+	ApiserverName         string
+	WebhookServiceName    string
+	WebhookServicePort    string
 }
 
 // NewMigrationOptions creates and returns a new Options
