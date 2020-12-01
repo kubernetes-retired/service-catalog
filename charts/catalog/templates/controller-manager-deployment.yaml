@@ -9,8 +9,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   replicas: {{ .Values.controllerManager.replicas }}
-  strategy:
-    type: {{ .Values.controllerManager.updateStrategy }}
+  strategy: {{ toYaml .Values.controllerManager.strategy | nindent 4 }}
   minReadySeconds: {{ .Values.controllerManager.minReadySeconds }}
   selector:
     matchLabels:

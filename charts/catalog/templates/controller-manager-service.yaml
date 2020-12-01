@@ -23,4 +23,6 @@ spec:
     targetPort: 8444
     {{- if eq .Values.controllerManager.service.type "NodePort" }}
     nodePort: {{ .Values.controllerManager.service.nodePort.securePort }}
-    {{- end }}
+    {{ else }}
+    nodePort: null
+    {{ end }}
