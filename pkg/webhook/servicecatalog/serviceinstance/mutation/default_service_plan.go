@@ -131,7 +131,7 @@ func (d *DefaultServicePlan) handleDefaultServicePlan(ctx context.Context, insta
 	// the ServiceClass ensures that this will work correctly. If
 	// the order changes, we will need to rethink the
 	// implementation of this controller.
-	plans, err := d.getServicePlansByServiceClassName(ctx, serviceClass.Name, log)
+	plans, err := d.getServicePlansByServiceClassName(ctx, serviceClass.Name, serviceClass.Namespace, log)
 	if err != nil {
 		msg := fmt.Sprintf("Error listing ServicePlans for ServiceClass (K8S: %v ExternalName: %v) - retry and specify desired ServicePlan", serviceClass.Name, serviceClass.Spec.ExternalName)
 		log.V(4).Infof(`ServiceInstance "%s/%s": %s`, instance.Namespace, instance.Name, msg)
@@ -235,7 +235,7 @@ func (d *DefaultServicePlan) getServiceClassByField(ctx context.Context, instanc
 	serviceClassesList := &sc.ServiceClassList{}
 	err := d.client.List(ctx, serviceClassesList, client.MatchingLabels(map[string]string{
 		filterLabel: util.GenerateSHA(filterValue),
-	}))
+	}), client.InNamespace(instance.Namespace))
 	if err != nil {
 		log.V(4).Infof("Listing ServiceClasses failed: %q", err)
 		return nil, err
@@ -250,7 +250,7 @@ func (d *DefaultServicePlan) getServiceClassByField(ctx context.Context, instanc
 }
 
 // getClusterServicePlansByClusterServiceClassName() returns a list of
-// ServicePlans for the specified service class name
+// ClusterServicePlan for the specified cluster service class name
 func (d *DefaultServicePlan) getClusterServicePlansByClusterServiceClassName(ctx context.Context, scName string, log *webhookutil.TracedLogger) ([]sc.ClusterServicePlan, error) {
 	log.V(4).Infof("Fetching ClusterServicePlans by class name %q", scName)
 
@@ -270,13 +270,13 @@ func (d *DefaultServicePlan) getClusterServicePlansByClusterServiceClassName(ctx
 
 // getServicePlansByServiceClassName() returns a list of
 // ServicePlans for the specified service class name
-func (d *DefaultServicePlan) getServicePlansByServiceClassName(ctx context.Context, scName string, log *webhookutil.TracedLogger) ([]sc.ServicePlan, error) {
+func (d *DefaultServicePlan) getServicePlansByServiceClassName(ctx context.Context, scName string, scNamespace string, log *webhookutil.TracedLogger) ([]sc.ServicePlan, error) {
 	log.V(4).Infof("Fetching ServicePlans by class name %q", scName)
 
 	servicePlansList := &sc.ServicePlanList{}
 	err := d.client.List(ctx, servicePlansList, client.MatchingLabels(map[string]string{
 		sc.GroupName + "/" + sc.FilterSpecServiceClassRefName: util.GenerateSHA(scName),
-	}))
+	}), client.InNamespace(scNamespace))
 	if err != nil {
 		log.Infof("Listing ServicePlans failed: %q", err)
 		return nil, err
