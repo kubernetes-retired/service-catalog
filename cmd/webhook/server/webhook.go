@@ -83,7 +83,8 @@ func run(opts *WebhookServerOptions, stopCh <-chan struct{}) error {
 		return fmt.Errorf("while waiting for ready Service Catalog CRDs: %v", err)
 	}
 
-	mgr, err := manager.New(cfg, manager.Options{})
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress: fmt.Sprintf(":%d", opts.ControllerManagerMetricsPort)})
 	if err != nil {
 		return errors.Wrap(err, "while set up overall controller manager for webhook server")
 	}
