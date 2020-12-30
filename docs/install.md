@@ -166,6 +166,12 @@ check with your provider's documentation for details.
 
 # Step 2 - Install Service Catalog
 
+Create the `catalog` namespace:
+
+```console
+kubectl create namespace catalog
+```
+
 Now that your cluster and Helm are configured properly, installing
 Service Catalog is simple:
 {{< tabs name="helm versions" >}}
