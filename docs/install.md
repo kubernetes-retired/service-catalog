@@ -96,7 +96,7 @@ This chart is located in a
 just for Service Catalog. Add this repository to your local machine:
 
 ```console
-helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
+helm repo add svc-cat https://kubernetes-sigs.github.io/service-catalog
 ```
 
 Then, ensure that the repository was successfully added:
