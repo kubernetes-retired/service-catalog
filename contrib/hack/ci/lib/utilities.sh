@@ -154,12 +154,11 @@ install::local::helm() {
 
     pushd "${INSTALL_DIR}"
       shout "- Install helm ${HELM_VERSION} locally to a tempdir..."
-      curl -LO https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > ./get_helm.sh
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
       chmod 700 ./get_helm.sh
-      env HELM_INSTALL_DIR="${INSTALL_DIR}/bin" DEBUG=true ./get_helm.sh \
+      env HELM_INSTALL_DIR="${INSTALL_DIR}/bin" ./get_helm.sh \
           --version "${HELM_VERSION}" \
           --no-sudo
-      ls -lah "${INSTALL_DIR}/bin/"
     popd
 }
 
