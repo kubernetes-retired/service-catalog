@@ -38,7 +38,7 @@ require (
 	k8s.io/client-go v0.18.2
 	k8s.io/code-generator v0.18.2
 	k8s.io/component-base v0.18.2
-	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac // indirect
+	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac
 	k8s.io/klog v1.0.0
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 	sigs.k8s.io/controller-runtime v0.6.0
