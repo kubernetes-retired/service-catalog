@@ -129,7 +129,6 @@ main() {
     # so we should dump cluster info for debugging purpose in case of any error
     DUMP_CLUSTER_INFO=true
 
-    install::cluster::tiller
     install::cluster::service_catalog_v2
 
     examiner::prepare_resources

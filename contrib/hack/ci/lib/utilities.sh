@@ -162,13 +162,6 @@ install::local::helm() {
     popd
 }
 
-# Installs tiller on cluster
-install::cluster::tiller() {
-    shout "- Installing Tiller..."
-    kubectl create -f ${LIB_DIR}/../assets/tiller-rbac.yaml
-    helm init --service-account tiller --wait
-}
-
 # Installs Service Catalog from newest 0.2.x release on k8s cluster.
 # Required envs:
 #  - SC_CHART_NAME
