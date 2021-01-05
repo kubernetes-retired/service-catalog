@@ -65,11 +65,10 @@ install::cluster::service_catalog_latest() {
     kind::load_image service-catalog:canary
 
     shout "- Installing Service Catalog via helm chart from sources..."
-    helm install charts/catalog \
+    helm install ${SC_CHART_NAME} charts/catalog \
         --set imagePullPolicy=IfNotPresent \
         --set image=service-catalog:canary \
         --namespace=${SC_NAMESPACE} \
-        --name=${SC_CHART_NAME} \
         --wait
     popd
 }
