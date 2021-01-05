@@ -69,6 +69,7 @@ install::cluster::service_catalog_latest() {
         --set imagePullPolicy=IfNotPresent \
         --set image=service-catalog:canary \
         --namespace=${SC_NAMESPACE} \
+        --create-namespace \
         --wait
     popd
 }
