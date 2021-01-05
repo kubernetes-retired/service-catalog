@@ -134,6 +134,7 @@ GEM
 
 PLATFORMS
   ruby
+  x86_64-linux-musl
 
 DEPENDENCIES
   coffee-script (~> 2.4)
@@ -181,4 +182,4 @@ DEPENDENCIES
   unicode-display_width (~> 1.1)
 
 BUNDLED WITH
-   2.0.1
+   2.2.2
