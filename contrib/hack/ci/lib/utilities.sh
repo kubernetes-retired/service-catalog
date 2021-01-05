@@ -155,7 +155,7 @@ install::local::helm() {
     pushd "${INSTALL_DIR}"
 
     shout "- Install helm ${HELM_VERSION} locally to a tempdir..."
-    curl -LO https://git.io/get_helm.sh > ${INSTALL_DIR}/get_helm.sh
+    curl -LO https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > ${INSTALL_DIR}/get_helm.sh
     chmod 700 ${INSTALL_DIR}/get_helm.sh
     env HELM_INSTALL_DIR="${INSTALL_DIR}/bin" ./get_helm.sh \
         --version ${HELM_VERSION} \
@@ -177,7 +177,7 @@ install::cluster::tiller() {
 #  - SC_NAMESPACE
 install::cluster::service_catalog_v2() {
     shout "- Installing Service Catalog in version 0.2.x"
-    helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
+    helm repo add svc-cat https://kubernetes-sigs.github.io/service-catalog
     # install always the newest service catalog with apiserver
     helm repo update svc-cat
     helm install svc-cat/catalog-v0.2 --name ${SC_CHART_NAME} --namespace ${SC_NAMESPACE} --wait

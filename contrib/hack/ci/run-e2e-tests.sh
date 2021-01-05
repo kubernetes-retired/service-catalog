@@ -110,7 +110,6 @@ main() {
     # so we should dump cluster info for debugging purpose in case of any error
     DUMP_CLUSTER_INFO=true
 
-    install::cluster::tiller
     install::cluster::service_catalog_latest
 
     test::prepare_data
