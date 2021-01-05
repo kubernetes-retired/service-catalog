@@ -92,11 +92,11 @@ examiner::prepare_resources() {
     kind::load_image test-broker:canary
 
     shout "- Installing Test broker..."
-    helm install charts/test-broker \
+    helm install "$TB_CHART_NAME" charts/test-broker \
         --set imagePullPolicy=IfNotPresent \
         --set image=test-broker:canary \
-        --name ${TB_CHART_NAME} \
         --namespace ${TB_NAMESPACE} \
+        --create-namespace \
         --wait
 
     shout "- Create sample resources for testing purpose..."
