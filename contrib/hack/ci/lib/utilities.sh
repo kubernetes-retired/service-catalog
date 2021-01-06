@@ -153,22 +153,13 @@ install::local::helm() {
     export PATH="${INSTALL_DIR}/bin:${PATH}"
 
     pushd "${INSTALL_DIR}"
-
-    shout "- Install helm ${HELM_VERSION} locally to a tempdir..."
-    curl -LO https://git.io/get_helm.sh > ${INSTALL_DIR}/get_helm.sh
-    chmod 700 ${INSTALL_DIR}/get_helm.sh
-    env HELM_INSTALL_DIR="${INSTALL_DIR}/bin" ./get_helm.sh \
-        --version ${HELM_VERSION} \
-        --no-sudo
-
+      shout "- Install helm ${HELM_VERSION} locally to a tempdir..."
+      curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      chmod 700 ./get_helm.sh
+      env HELM_INSTALL_DIR="${INSTALL_DIR}/bin" ./get_helm.sh \
+          --version "${HELM_VERSION}" \
+          --no-sudo
     popd
-}
-
-# Installs tiller on cluster
-install::cluster::tiller() {
-    shout "- Installing Tiller..."
-    kubectl create -f ${LIB_DIR}/../assets/tiller-rbac.yaml
-    helm init --service-account tiller --wait
 }
 
 # Installs Service Catalog from newest 0.2.x release on k8s cluster.
@@ -177,10 +168,10 @@ install::cluster::tiller() {
 #  - SC_NAMESPACE
 install::cluster::service_catalog_v2() {
     shout "- Installing Service Catalog in version 0.2.x"
-    helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
-    # install always the newest service catalog with apiserver
-    helm repo update svc-cat
-    helm install svc-cat/catalog-v0.2 --name ${SC_CHART_NAME} --namespace ${SC_NAMESPACE} --wait
+    helm repo add svc-cat https://kubernetes-sigs.github.io/service-catalog
+    # always install the newest service catalog with apiserver
+    helm repo update
+    helm install "$SC_CHART_NAME" svc-cat/catalog-v0.2 --namespace "$SC_NAMESPACE" --create-namespace --wait
 }
 
 #

@@ -92,11 +92,11 @@ examiner::prepare_resources() {
     kind::load_image test-broker:canary
 
     shout "- Installing Test broker..."
-    helm install charts/test-broker \
+    helm install "$TB_CHART_NAME" charts/test-broker \
         --set imagePullPolicy=IfNotPresent \
         --set image=test-broker:canary \
-        --name ${TB_CHART_NAME} \
         --namespace ${TB_NAMESPACE} \
+        --create-namespace \
         --wait
 
     shout "- Create sample resources for testing purpose..."
@@ -129,7 +129,6 @@ main() {
     # so we should dump cluster info for debugging purpose in case of any error
     DUMP_CLUSTER_INFO=true
 
-    install::cluster::tiller
     install::cluster::service_catalog_v2
 
     examiner::prepare_resources
