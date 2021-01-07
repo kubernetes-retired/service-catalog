@@ -47,7 +47,7 @@ var (
 			Name:      "broker_service_class_count",
 			Help:      "Number of services classes by Broker and namespace.",
 		},
-		[]string{"broker","namespace"},
+		[]string{"broker", "namespace"},
 	)
 
 	// BrokerServicePlanCount exposes the number of Service Plans registered
@@ -58,7 +58,7 @@ var (
 			Name:      "broker_service_plan_count",
 			Help:      "Number of services plans by Broker and namespace.",
 		},
-		[]string{"broker","namespace"},
+		[]string{"broker", "namespace"},
 	)
 
 	// OSBRequestCount exposes the number of HTTP requests made to Open Service
