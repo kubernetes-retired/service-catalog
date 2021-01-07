@@ -356,8 +356,8 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		c.recorder.Event(broker, corev1.EventTypeNormal, successFetchedCatalogReason, successFetchedCatalogMessage)
 
 		// Update metrics with the number of serviceclass and serviceplans from this broker
-		metrics.BrokerServiceClassCount.WithLabelValues(broker.Name).Set(float64(len(payloadServiceClasses)))
-		metrics.BrokerServicePlanCount.WithLabelValues(broker.Name).Set(float64(len(payloadServicePlans)))
+		metrics.BrokerServiceClassCount.WithLabelValues(broker.Name, broker.Namespace).Set(float64(len(payloadServiceClasses)))
+		metrics.BrokerServicePlanCount.WithLabelValues(broker.Name, broker.Namespace).Set(float64(len(payloadServicePlans)))
 
 		return nil
 	}
@@ -430,8 +430,8 @@ func (c *controller) reconcileServiceBroker(broker *v1beta1.ServiceBroker) error
 		klog.V(5).Info(pcb.Message("Successfully deleted"))
 
 		// delete the metrics associated with this broker
-		metrics.BrokerServiceClassCount.DeleteLabelValues(broker.Name)
-		metrics.BrokerServicePlanCount.DeleteLabelValues(broker.Name)
+		metrics.BrokerServiceClassCount.DeleteLabelValues(broker.Name, broker.Namespace)
+		metrics.BrokerServicePlanCount.DeleteLabelValues(broker.Name, broker.Namespace)
 		return nil
 	}
 

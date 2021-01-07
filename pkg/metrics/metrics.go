@@ -40,25 +40,25 @@ var (
 	// Namespace and there is no correlation with Kubernetes Namespace.
 
 	// BrokerServiceClassCount exposes the number of Service Classes registered
-	// per broker.
+	// per broker and namespace.
 	BrokerServiceClassCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: catalogNamespace,
 			Name:      "broker_service_class_count",
-			Help:      "Number of services classes by Broker.",
+			Help:      "Number of services classes by Broker and namespace.",
 		},
-		[]string{"broker"},
+		[]string{"broker", "namespace"},
 	)
 
 	// BrokerServicePlanCount exposes the number of Service Plans registered
-	// per broker.
+	// per broker and namespace.
 	BrokerServicePlanCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: catalogNamespace,
 			Name:      "broker_service_plan_count",
-			Help:      "Number of services classes by Broker.",
+			Help:      "Number of services plans by Broker and namespace.",
 		},
-		[]string{"broker"},
+		[]string{"broker", "namespace"},
 	)
 
 	// OSBRequestCount exposes the number of HTTP requests made to Open Service
