@@ -171,7 +171,7 @@ Service Catalog is simple:
 {{< tabs name="helm versions" >}}
 {{% tab name="Helm version 3" %}}
 ```console
-helm install catalog svc-cat/catalog --namespace catalog
+helm install catalog svc-cat/catalog --namespace catalog --create-namespace
 ```
 {{% /tab %}}
 {{% tab name="helm version 2" %}}
