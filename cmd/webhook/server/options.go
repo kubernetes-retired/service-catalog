@@ -26,16 +26,18 @@ import (
 )
 
 const (
-	certDirectory            = "/var/run/service-catalog-webhook"
-	defaultWebhookServerPort = 8444
-	defaultHealthzServerPort = 8080
+	certDirectory                       = "/var/run/service-catalog-webhook"
+	defaultWebhookServerPort            = 8444
+	defaultHealthzServerPort            = 8080
+	defaultControllerManagerMetricsPort = 8082
 )
 
 // WebhookServerOptions holds configuration for mutating/validating webhook server.
 type WebhookServerOptions struct {
-	SecureServingOptions  *genericserveroptions.SecureServingOptions
-	ReleaseName           string
-	HealthzServerBindPort int
+	SecureServingOptions         *genericserveroptions.SecureServingOptions
+	ReleaseName                  string
+	HealthzServerBindPort        int
+	ControllerManagerMetricsPort int
 }
 
 // NewWebhookServerOptions creates a new WebhookServerOptions with a default settings.
@@ -54,6 +56,7 @@ func NewWebhookServerOptions() *WebhookServerOptions {
 // AddFlags adds flags for a WebhookServerOptions to the specified FlagSet.
 func (s *WebhookServerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&s.HealthzServerBindPort, "healthz-server-bind-port", defaultHealthzServerPort, "The port on which to serve HTTP  /healthz endpoint")
+	fs.IntVar(&s.ControllerManagerMetricsPort, "controller-manager-metrics-bind-port", defaultControllerManagerMetricsPort, "The address the metric endpoint binds to")
 
 	s.SecureServingOptions.AddFlags(fs)
 	utilfeature.DefaultMutableFeatureGate.AddFlag(fs)
