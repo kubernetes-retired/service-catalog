@@ -667,7 +667,7 @@ func (m *Service) AddOwnerReferenceToSecret(sb *sc.ServiceBinding) error {
 
 // RemoveOwnerReferenceFromSecrets removes owner references from secrets created for service bindings.
 func (m *Service) RemoveOwnerReferenceFromSecrets() error {
-	klog.Info("Removing owner referneces from secrets")
+	klog.Info("Removing owner references from secrets")
 	serviceBindings, err := m.scInterface.ServiceBindings(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
