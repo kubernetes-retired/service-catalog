@@ -18,10 +18,13 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: "{{ .Values.controllerManager.enablePrometheusScrape }}"
-      {{ if .Values.controllerManager.annotations }}
+      {{- if .Values.controllerManager.annotations }}
 {{ toYaml .Values.controllerManager.annotations | indent 8 }}
       {{- end }}
       labels:
+        {{- if .Values.podLabels }}
+        {{- tpl (toYaml .Values.podLabels) $ | nindent 8 }}
+        {{- end }}
         app: {{ template "fullname" . }}-controller-manager
         chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
         release: "{{ .Release.Name }}"
@@ -131,7 +134,14 @@ spec:
           successThreshold: 1
           timeoutSeconds: 5
         {{- end }}
-      {{ if .Values.controllerManager.nodeSelector }}
+{{- with .Values.affinity }}
+      affinity: {{- tpl (toYaml .) $ | nindent 8 }}
+{{- end }}
+      {{- if or .Values.controllerManager.nodeSelector .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.controllerManager.nodeSelector | indent 8 }}
-      {{ end }}
+{{ toYaml (mustMerge .Values.controllerManager.nodeSelector .Values.nodeSelector) | indent 8 }}
+      {{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}

@@ -76,9 +76,13 @@ chart and their default values.
 | `rbacEnable` | If true, create & use RBAC resources | `true` |
 | `originatingIdentityEnabled` | Whether the OriginatingIdentity feature should be enabled | `true` |
 | `persistence.storageClass` | Define the storageclass use by pvc | `null` |
+| `affinity`  | Affinity settings ([docs](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity)) | `{}` |
 | `asyncBindingOperationsEnabled` | Whether or not alpha support for async binding operations is enabled | `false` |
 | `namespacedServiceBrokerDisabled` | Whether or not alpha support for namespace scoped brokers is disabled | `false` |
+| `nodeSelector` | Node labels for pod assignment (global parameter for all pods) | `{}` |
+| `podLabels`  | Additional pod labels to include for all pods | `{}` |
 | `priorityClassName` | Define PriorityClass for pods | "" |
+| `tolerations` | Tolerations for pod assignment | `[]` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
