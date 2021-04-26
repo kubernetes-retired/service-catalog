@@ -3007,6 +3007,9 @@ func (c *controller) triggerServiceBindingReconciliation(instance *v1beta1.Servi
 		}
 		klog.V(4).Infof("ServiceBinding %s/%s triggered to reconciliation", binding.Namespace, binding.Name)
 		toUpdate := binding.DeepCopy()
+		if toUpdate.Annotations == nil {
+			toUpdate.Annotations = make(map[string]string, 0)
+		}
 		toUpdate.ObjectMeta.Annotations["reconciliationTriggered"] = metav1.Now().String()
 		if _, err := c.serviceCatalogClient.ServiceBindings(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{}); err != nil {
 			klog.Errorf("Couldn't update ServiceBinding %q status for instance %q. Bindings will be triggered after set delay. error: %v", binding.Name, binding.Spec.InstanceRef.Name, err)
