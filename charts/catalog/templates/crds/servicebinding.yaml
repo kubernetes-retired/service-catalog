@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: servicebindings.servicecatalog.k8s.io
@@ -6,28 +6,290 @@ metadata:
     svcat: "true"
 spec:
   group: servicecatalog.k8s.io
-  version: v1beta1
-  scope: Namespaced
   names:
+    kind: ServiceBinding
+    listKind: ServiceBindingList
     plural: servicebindings
     singular: servicebinding
-    kind: ServiceBinding
-    # categories is a list of grouped resources the custom resource belongs to.
-    categories:
-      - all
-      - svcat
-  additionalPrinterColumns:
-    - name: Service-Instance
-      type: string
-      JSONPath: .spec.instanceRef.name
-    - name: Secret-Name
-      type: string
-      JSONPath: .spec.secretName
-    - name: Status
-      type: string
-      JSONPath: .status.lastConditionState
-    - name: Age
-      type: date
-      JSONPath: .metadata.creationTimestamp
-  subresources:
-    status: {}
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: ServiceBinding represents a "used by" relationship between an application and an ServiceInstance.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec represents the desired state of a ServiceBinding.
+            properties:
+              externalID:
+                description: "ExternalID is the identity of this object for use with the OSB API. \n Immutable."
+                type: string
+              instanceRef:
+                description: "InstanceRef is the reference to the Instance this ServiceBinding is to. \n Immutable."
+                properties:
+                  name:
+                    description: Name of the referent.
+                    type: string
+                type: object
+              parameters:
+                description: "Parameters is a set of the parameters to be passed to the underlying broker. The inline YAML/JSON payload to be translated into equivalent JSON object. If a top-level parameter name exists in multiples sources among `Parameters` and `ParametersFrom` fields, it is considered to be a user error in the specification. \n The Parameters field is NOT secret or secured in any way and should NEVER be used to hold sensitive information. To set parameters that contain secret information, you should ALWAYS store that information in a Secret and use the ParametersFrom field."
+                type: object
+              parametersFrom:
+                description: List of sources to populate parameters. If a top-level parameter name exists in multiples sources among `Parameters` and `ParametersFrom` fields, it is considered to be a user error in the specification.
+                items:
+                  description: ParametersFromSource represents the source of a set of Parameters
+                  properties:
+                    secretKeyRef:
+                      description: The Secret key to select from. The value must be a JSON object.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must be a valid secret key.
+                          type: string
+                        name:
+                          description: The name of the secret in the pod's namespace to select from.
+                          type: string
+                      required:
+                      - key
+                      - name
+                      type: object
+                  type: object
+                type: array
+              secretName:
+                description: SecretName is the name of the secret to create in the ServiceBinding's namespace that will hold the credentials associated with the ServiceBinding.
+                type: string
+              secretTransforms:
+                description: List of transformations that should be applied to the credentials associated with the ServiceBinding before they are inserted into the Secret.
+                items:
+                  description: 'SecretTransform is a single transformation that is applied to the credentials returned from the broker before they are inserted into the Secret associated with the ServiceBinding. Because different brokers providing the same type of service may each return a different credentials structure, users can specify the transformations that should be applied to the Secret to adapt its entries to whatever the service consumer expects. For example, the credentials returned by the broker may include the key "USERNAME", but the consumer requires the username to be exposed under the key "DB_USER" instead. To have the Service Catalog transform the Secret, the following SecretTransform must be specified in ServiceBinding.spec.secretTransform: - {"renameKey": {"from": "USERNAME", "to": "DB_USER"}} Only one of the SecretTransform''s members may be specified.'
+                  properties:
+                    addKey:
+                      description: AddKey represents a transform that adds an additional key to the credentials Secret
+                      properties:
+                        jsonPathExpression:
+                          description: 'The JSONPath expression, the result of which will be added to the Secret under the specified key. For example, given the following credentials: { "foo": { "bar": "foobar" } } and the jsonPathExpression "{.foo.bar}", the value "foobar" will be stored in the credentials Secret under the specified key.'
+                          type: string
+                        key:
+                          description: The name of the key to add
+                          type: string
+                        stringValue:
+                          description: The string (non-binary) value to add to the Secret under the specified key.
+                          type: string
+                        value:
+                          description: The binary value (possibly non-string) to add to the Secret under the specified key. If both value and stringValue are specified, then value is ignored and stringValue is stored.
+                          format: byte
+                          type: string
+                      required:
+                      - jsonPathExpression
+                      - key
+                      - stringValue
+                      - value
+                      type: object
+                    addKeysFrom:
+                      description: AddKeysFrom represents a transform that merges all the entries of an existing Secret into the credentials Secret
+                      properties:
+                        secretRef:
+                          description: The reference to the Secret that should be merged into the credentials Secret.
+                          properties:
+                            name:
+                              description: Name of the referent.
+                              type: string
+                            namespace:
+                              description: Namespace of the referent.
+                              type: string
+                          type: object
+                      type: object
+                    removeKey:
+                      description: RemoveKey represents a transform that removes a credentials Secret entry
+                      properties:
+                        key:
+                          description: The key to remove from the Secret
+                          type: string
+                      required:
+                      - key
+                      type: object
+                    renameKey:
+                      description: RenameKey represents a transform that renames a credentials Secret entry's key
+                      properties:
+                        from:
+                          description: The name of the key to rename
+                          type: string
+                        to:
+                          description: The new name for the key
+                          type: string
+                      required:
+                      - from
+                      - to
+                      type: object
+                  type: object
+                type: array
+              userInfo:
+                description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated. \n UserInfo contains information about the user that last modified this ServiceBinding. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved."
+                properties:
+                  extra:
+                    additionalProperties:
+                      description: ExtraValue contains additional information about a user that may be provided by the authenticator.
+                      items:
+                        type: string
+                      type: array
+                    type: object
+                  groups:
+                    items:
+                      type: string
+                    type: array
+                  uid:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - uid
+                - username
+                type: object
+            required:
+            - instanceRef
+            type: object
+          status:
+            description: Status represents the current status of a ServiceBinding.
+            properties:
+              asyncOpInProgress:
+                description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated. \n AsyncOpInProgress is set to true if there is an ongoing async operation against this ServiceBinding in progress."
+                type: boolean
+              conditions:
+                items:
+                  description: ServiceBindingCondition condition information for a ServiceBinding.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the timestamp corresponding to the last status change of this condition.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human readable description of the details of the last transition, complementing reason.
+                      type: string
+                    reason:
+                      description: Reason is a brief machine readable explanation for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of ('True', 'False', 'Unknown').
+                      type: string
+                    type:
+                      description: Type of the condition, currently ('Ready').
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentOperation:
+                description: CurrentOperation is the operation the Controller is currently performing on the ServiceBinding.
+                type: string
+              externalProperties:
+                description: ExternalProperties is the properties state of the ServiceBinding which the broker knows about.
+                properties:
+                  parameterChecksum:
+                    description: ParameterChecksum is the checksum of the parameters that were sent.
+                    type: string
+                  parameters:
+                    description: Parameters is a blob of the parameters and their values that the broker knows about for this ServiceBinding.  If a parameter was sourced from a secret, its value will be "<redacted>" in this blob.
+                    type: object
+                  userInfo:
+                    description: UserInfo is information about the user that made the request.
+                    properties:
+                      extra:
+                        additionalProperties:
+                          description: ExtraValue contains additional information about a user that may be provided by the authenticator.
+                          items:
+                            type: string
+                          type: array
+                        type: object
+                      groups:
+                        items:
+                          type: string
+                        type: array
+                      uid:
+                        type: string
+                      username:
+                        type: string
+                    required:
+                    - uid
+                    - username
+                    type: object
+                type: object
+              inProgressProperties:
+                description: InProgressProperties is the properties state of the ServiceBinding when a Bind is in progress. If the current operation is an Unbind, this will be nil.
+                properties:
+                  parameterChecksum:
+                    description: ParameterChecksum is the checksum of the parameters that were sent.
+                    type: string
+                  parameters:
+                    description: Parameters is a blob of the parameters and their values that the broker knows about for this ServiceBinding.  If a parameter was sourced from a secret, its value will be "<redacted>" in this blob.
+                    type: object
+                  userInfo:
+                    description: UserInfo is information about the user that made the request.
+                    properties:
+                      extra:
+                        additionalProperties:
+                          description: ExtraValue contains additional information about a user that may be provided by the authenticator.
+                          items:
+                            type: string
+                          type: array
+                        type: object
+                      groups:
+                        items:
+                          type: string
+                        type: array
+                      uid:
+                        type: string
+                      username:
+                        type: string
+                    required:
+                    - uid
+                    - username
+                    type: object
+                type: object
+              lastConditionState:
+                description: LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns
+                type: string
+              lastOperation:
+                description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated. \n LastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param."
+                type: string
+              operationStartTime:
+                description: OperationStartTime is the time at which the current operation began.
+                format: date-time
+                type: string
+              orphanMitigationInProgress:
+                description: OrphanMitigationInProgress is a flag that represents whether orphan mitigation is in progress.
+                type: boolean
+              reconciledGeneration:
+                description: ReconciledGeneration is the 'Generation' of the ServiceBindingSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec.
+                format: int64
+                type: integer
+              unbindStatus:
+                description: UnbindStatus describes what has been done to unbind the ServiceBinding.
+                type: string
+            required:
+            - asyncOpInProgress
+            - conditions
+            - lastConditionState
+            - orphanMitigationInProgress
+            - reconciledGeneration
+            - unbindStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

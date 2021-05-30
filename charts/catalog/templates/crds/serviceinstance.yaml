@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: serviceinstances.servicecatalog.k8s.io
@@ -6,28 +6,335 @@ metadata:
     svcat: "true"
 spec:
   group: servicecatalog.k8s.io
-  version: v1beta1
-  scope: Namespaced
   names:
+    kind: ServiceInstance
+    listKind: ServiceInstanceList
     plural: serviceinstances
     singular: serviceinstance
-    kind: ServiceInstance
-    # categories is a list of grouped resources the custom resource belongs to.
-    categories:
-      - all
-      - svcat
-  additionalPrinterColumns:
-    - name: Class
-      type: string
-      JSONPath: .status.userSpecifiedClassName
-    - name: Plan
-      type: string
-      JSONPath: .status.userSpecifiedPlanName
-    - name: Status
-      type: string
-      JSONPath: .status.lastConditionState
-    - name: Age
-      type: date
-      JSONPath: .metadata.creationTimestamp
-  subresources:
-    status: {}
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: "ServiceInstance represents a provisioned instance of a ServiceClass. Currently, the spec field cannot be changed once a ServiceInstance is created.  Spec changes submitted by users will be ignored. \n In the future, this will be allowed and will represent the intention that the ServiceInstance should have the plan and/or parameters updated at the ClusterServiceBroker."
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the behavior of the service instance.
+            properties:
+              clusterServiceClassExternalID:
+                description: "ClusterServiceClassExternalID is the ClusterServiceBroker's external id for the class. \n Immutable."
+                type: string
+              clusterServiceClassExternalName:
+                description: "ClusterServiceClassExternalName is the human-readable name of the service as reported by the ClusterServiceBroker. Note that if the ClusterServiceBroker changes the name of the ClusterServiceClass, it will not be reflected here, and to see the current name of the ClusterServiceClass, you should follow the ClusterServiceClassRef below. \n Immutable."
+                type: string
+              clusterServiceClassName:
+                description: "ClusterServiceClassName is the kubernetes name of the ClusterServiceClass. \n Immutable."
+                type: string
+              clusterServiceClassRef:
+                description: ClusterServiceClassRef is a reference to the ClusterServiceClass that the user selected. This is set by the controller based on the cluster-scoped values specified in the PlanReference.
+                properties:
+                  name:
+                    description: Name of the referent.
+                    type: string
+                type: object
+              clusterServicePlanExternalID:
+                description: ClusterServicePlanExternalID is the ClusterServiceBroker's external id for the plan.
+                type: string
+              clusterServicePlanExternalName:
+                description: ClusterServicePlanExternalName is the human-readable name of the plan as reported by the ClusterServiceBroker. Note that if the ClusterServiceBroker changes the name of the ClusterServicePlan, it will not be reflected here, and to see the current name of the ClusterServicePlan, you should follow the ClusterServicePlanRef below.
+                type: string
+              clusterServicePlanName:
+                description: ClusterServicePlanName is kubernetes name of the ClusterServicePlan.
+                type: string
+              clusterServicePlanRef:
+                description: ClusterServicePlanRef is a reference to the ClusterServicePlan that the user selected. This is set by the controller based on the cluster-scoped values specified in the PlanReference.
+                properties:
+                  name:
+                    description: Name of the referent.
+                    type: string
+                type: object
+              externalID:
+                description: "ExternalID is the identity of this object for use with the OSB SB API. \n Immutable."
+                type: string
+              parameters:
+                description: "Parameters is a set of the parameters to be passed to the underlying broker. The inline YAML/JSON payload to be translated into equivalent JSON object. If a top-level parameter name exists in multiples sources among `Parameters` and `ParametersFrom` fields, it is considered to be a user error in the specification. \n The Parameters field is NOT secret or secured in any way and should NEVER be used to hold sensitive information. To set parameters that contain secret information, you should ALWAYS store that information in a Secret and use the ParametersFrom field."
+                type: object
+              parametersFrom:
+                description: List of sources to populate parameters. If a top-level parameter name exists in multiples sources among `Parameters` and `ParametersFrom` fields, it is considered to be a user error in the specification
+                items:
+                  description: ParametersFromSource represents the source of a set of Parameters
+                  properties:
+                    secretKeyRef:
+                      description: The Secret key to select from. The value must be a JSON object.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must be a valid secret key.
+                          type: string
+                        name:
+                          description: The name of the secret in the pod's namespace to select from.
+                          type: string
+                      required:
+                      - key
+                      - name
+                      type: object
+                  type: object
+                type: array
+              serviceClassExternalID:
+                description: "ServiceClassExternalID is the ServiceBroker's external id for the class. \n Immutable."
+                type: string
+              serviceClassExternalName:
+                description: "ServiceClassExternalName is the human-readable name of the service as reported by the ServiceBroker. Note that if the ServiceBroker changes the name of the ServiceClass, it will not be reflected here, and to see the current name of the ServiceClass, you should follow the ServiceClassRef below. \n Immutable."
+                type: string
+              serviceClassName:
+                description: "ServiceClassName is the kubernetes name of the ServiceClass. \n Immutable."
+                type: string
+              serviceClassRef:
+                description: ServiceClassRef is a reference to the ServiceClass that the user selected. This is set by the controller based on the namespace-scoped values specified in the PlanReference.
+                properties:
+                  name:
+                    description: Name of the referent.
+                    type: string
+                type: object
+              servicePlanExternalID:
+                description: ServicePlanExternalID is the ServiceBroker's external id for the plan.
+                type: string
+              servicePlanExternalName:
+                description: ServicePlanExternalName is the human-readable name of the plan as reported by the ServiceBroker. Note that if the ServiceBroker changes the name of the ServicePlan, it will not be reflected here, and to see the current name of the ServicePlan, you should follow the ServicePlanRef below.
+                type: string
+              servicePlanName:
+                description: ServicePlanName is kubernetes name of the ServicePlan.
+                type: string
+              servicePlanRef:
+                description: ServicePlanRef is a reference to the ServicePlan that the user selected. This is set by the controller based on the namespace-scoped values specified in the PlanReference.
+                properties:
+                  name:
+                    description: Name of the referent.
+                    type: string
+                type: object
+              updateRequests:
+                description: UpdateRequests is a strictly increasing, non-negative integer counter that can be manually incremented by a user to manually trigger an update. This allows for parameters to be updated with any out-of-band changes that have been made to the secrets from which the parameters are sourced.
+                format: int64
+                type: integer
+              userInfo:
+                description: "Currently, this field is ALPHA: it may change or disappear at any time and its data will not be migrated. \n UserInfo contains information about the user that last modified this instance. This field is set by the API server and not settable by the end-user. User-provided values for this field are not saved."
+                properties:
+                  extra:
+                    additionalProperties:
+                      description: ExtraValue contains additional information about a user that may be provided by the authenticator.
+                      items:
+                        type: string
+                      type: array
+                    type: object
+                  groups:
+                    items:
+                      type: string
+                    type: array
+                  uid:
+                    type: string
+                  username:
+                    type: string
+                required:
+                - uid
+                - username
+                type: object
+            type: object
+          status:
+            description: Status represents the current status of a service instance.
+            properties:
+              asyncOpInProgress:
+                description: AsyncOpInProgress is set to true if there is an ongoing async operation against this Service Instance in progress.
+                type: boolean
+              conditions:
+                description: Conditions is an array of ServiceInstanceConditions capturing aspects of an ServiceInstance's status.
+                items:
+                  description: ServiceInstanceCondition contains condition information about an Instance.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the timestamp corresponding to the last status change of this condition.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human readable description of the details of the last transition, complementing reason.
+                      type: string
+                    reason:
+                      description: Reason is a brief machine readable explanation for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of ('True', 'False', 'Unknown').
+                      type: string
+                    type:
+                      description: Type of the condition, currently ('Ready').
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentOperation:
+                description: CurrentOperation is the operation the Controller is currently performing on the ServiceInstance.
+                type: string
+              dashboardURL:
+                description: DashboardURL is the URL of a web-based management user interface for the service instance.
+                type: string
+              defaultProvisionParameters:
+                description: DefaultProvisionParameters are the default parameters applied to this instance.
+                type: object
+              deprovisionStatus:
+                description: DeprovisionStatus describes what has been done to deprovision the ServiceInstance.
+                type: string
+              externalProperties:
+                description: ExternalProperties is the properties state of the ServiceInstance which the broker knows about.
+                properties:
+                  clusterServicePlanExternalID:
+                    description: ClusterServicePlanExternalID is the external ID of the plan that the broker knows this ServiceInstance to be on.
+                    type: string
+                  clusterServicePlanExternalName:
+                    description: ClusterServicePlanExternalName is the name of the plan that the broker knows this ServiceInstance to be on. This is the human readable plan name from the OSB API.
+                    type: string
+                  parameterChecksum:
+                    description: ParameterChecksum is the checksum of the parameters that were sent.
+                    type: string
+                  parameters:
+                    description: Parameters is a blob of the parameters and their values that the broker knows about for this ServiceInstance.  If a parameter was sourced from a secret, its value will be "<redacted>" in this blob.
+                    type: object
+                  servicePlanExternalID:
+                    description: ServicePlanExternalID is the external ID of the plan that the broker knows this ServiceInstance to be on.
+                    type: string
+                  servicePlanExternalName:
+                    description: ServicePlanExternalName is the name of the plan that the broker knows this ServiceInstance to be on. This is the human readable plan name from the OSB API.
+                    type: string
+                  userInfo:
+                    description: UserInfo is information about the user that made the request.
+                    properties:
+                      extra:
+                        additionalProperties:
+                          description: ExtraValue contains additional information about a user that may be provided by the authenticator.
+                          items:
+                            type: string
+                          type: array
+                        type: object
+                      groups:
+                        items:
+                          type: string
+                        type: array
+                      uid:
+                        type: string
+                      username:
+                        type: string
+                    required:
+                    - uid
+                    - username
+                    type: object
+                required:
+                - clusterServicePlanExternalID
+                - clusterServicePlanExternalName
+                type: object
+              inProgressProperties:
+                description: InProgressProperties is the properties state of the ServiceInstance when a Provision, Update or Deprovision is in progress.
+                properties:
+                  clusterServicePlanExternalID:
+                    description: ClusterServicePlanExternalID is the external ID of the plan that the broker knows this ServiceInstance to be on.
+                    type: string
+                  clusterServicePlanExternalName:
+                    description: ClusterServicePlanExternalName is the name of the plan that the broker knows this ServiceInstance to be on. This is the human readable plan name from the OSB API.
+                    type: string
+                  parameterChecksum:
+                    description: ParameterChecksum is the checksum of the parameters that were sent.
+                    type: string
+                  parameters:
+                    description: Parameters is a blob of the parameters and their values that the broker knows about for this ServiceInstance.  If a parameter was sourced from a secret, its value will be "<redacted>" in this blob.
+                    type: object
+                  servicePlanExternalID:
+                    description: ServicePlanExternalID is the external ID of the plan that the broker knows this ServiceInstance to be on.
+                    type: string
+                  servicePlanExternalName:
+                    description: ServicePlanExternalName is the name of the plan that the broker knows this ServiceInstance to be on. This is the human readable plan name from the OSB API.
+                    type: string
+                  userInfo:
+                    description: UserInfo is information about the user that made the request.
+                    properties:
+                      extra:
+                        additionalProperties:
+                          description: ExtraValue contains additional information about a user that may be provided by the authenticator.
+                          items:
+                            type: string
+                          type: array
+                        type: object
+                      groups:
+                        items:
+                          type: string
+                        type: array
+                      uid:
+                        type: string
+                      username:
+                        type: string
+                    required:
+                    - uid
+                    - username
+                    type: object
+                required:
+                - clusterServicePlanExternalID
+                - clusterServicePlanExternalName
+                type: object
+              lastConditionState:
+                description: LastConditionState aggregates state from the Conditions array It is used for printing in a kubectl output via additionalPrinterColumns
+                type: string
+              lastOperation:
+                description: LastOperation is the string that the broker may have returned when an async operation started, it should be sent back to the broker on poll requests as a query param.
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the 'Generation' of the serviceInstanceSpec that was last processed by the controller. The observed generation is updated whenever the status is updated regardless of operation result.
+                format: int64
+                type: integer
+              operationStartTime:
+                description: OperationStartTime is the time at which the current operation began.
+                format: date-time
+                type: string
+              orphanMitigationInProgress:
+                description: OrphanMitigationInProgress is set to true if there is an ongoing orphan mitigation operation against this ServiceInstance in progress.
+                type: boolean
+              provisionStatus:
+                description: ProvisionStatus describes whether the instance is in the provisioned state.
+                type: string
+              reconciledGeneration:
+                description: 'ReconciledGeneration is the ''Generation'' of the serviceInstanceSpec that was last processed by the controller. The reconciled generation is updated even if the controller failed to process the spec. Deprecated: use ObservedGeneration with conditions set to true to find whether generation was reconciled.'
+                format: int64
+                type: integer
+              userSpecifiedClassName:
+                description: UserSpecifiedClassName aggregates cluster or namespace ClassName It is used for printing in a kubectl output via additionalPrinterColumns
+                type: string
+              userSpecifiedPlanName:
+                description: UserSpecifiedPlanName aggregates cluster or namespace PlanName It is used for printing in a kubectl output via additionalPrinterColumns
+                type: string
+            required:
+            - asyncOpInProgress
+            - conditions
+            - deprovisionStatus
+            - lastConditionState
+            - observedGeneration
+            - orphanMitigationInProgress
+            - provisionStatus
+            - reconciledGeneration
+            - userSpecifiedClassName
+            - userSpecifiedPlanName
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
