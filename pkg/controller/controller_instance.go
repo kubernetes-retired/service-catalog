@@ -89,7 +89,7 @@ const (
 	asyncDeprovisioningReason               string = "Deprovisioning"
 	asyncDeprovisioningMessage              string = "The instance is being deprovisioned asynchronously"
 	serviceBindingsDeletionReason           string = "ServiceBindingsDeletion"
-	serviceBindingsDeletionMessage          string = "The instance's service bindings is beaing deleted"
+	serviceBindingsDeletionMessage          string = "The instance's service bindings are being deleted"
 	provisioningInFlightReason              string = "ProvisionRequestInFlight"
 	provisioningInFlightMessage             string = "Provision request for ServiceInstance in-flight to Broker"
 	instanceUpdatingInFlightReason          string = "UpdateInstanceRequestInFlight"
