@@ -31,6 +31,13 @@ Otherwise, to install with sensible defaults, run the following command:
 
 ```console
 helm repo add minibroker https://minibroker.blob.core.windows.net/charts
+```
+If you are using Helm v3, run this command:
+```console
+helm install minibroker minibroker/minibroker --namespace minibroker --create-namespace
+```
+For older versions of Helm, use the --name option:
+```console
 helm install --name minibroker --namespace minibroker minibroker/minibroker
 ```
 
@@ -459,7 +466,14 @@ No resources found.
 
 # Step 9 - Final Cleanup
 
-To clean up minibroker deployment, delete the helm release:
+To clean up minibroker deployment, delete the helm release.
+
+If you are using Helm v3, run this command:
+
+```console
+helm delete minibroker
+```
+For older versions of Helm, use the --purge option:
 
 ```console
 helm delete --purge minibroker
