@@ -35,7 +35,7 @@ const (
 	webhookServiceNameParameter      = "webhook-service-name"
 	webhookServicePortParameter      = "webhook-service-port"
 	pvcNameParameter                 = "pvc-name"
-	migrationTimeout                 = "migrationTimeout"
+	migrationTimeout                 = "migration-timeout"
 )
 
 // Options holds configuration for the migration job
