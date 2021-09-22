@@ -31,14 +31,16 @@ import (
 type ScalingService struct {
 	namespace      string
 	deploymentName string
+	timeout        time.Duration
 	appInterface   appsv1.AppsV1Interface
 }
 
 // NewScalingService creates a new ScalingService instance.
-func NewScalingService(namespace string, deploymentName string, appInterface appsv1.AppsV1Interface) *ScalingService {
+func NewScalingService(namespace string, deploymentName string, timeout time.Duration, appInterface appsv1.AppsV1Interface) *ScalingService {
 	return &ScalingService{
 		namespace:      namespace,
 		deploymentName: deploymentName,
+		timeout:        timeout,
 		appInterface:   appInterface,
 	}
 }
@@ -70,7 +72,7 @@ func (s *ScalingService) scaleTo(v int) error {
 		return err
 	}
 
-	err = wait.Poll(time.Second, time.Second*45, func() (bool, error) {
+	err = wait.Poll(time.Second, s.timeout, func() (bool, error) {
 		deploy, err := s.appInterface.Deployments(s.namespace).Get(context.Background(), s.deploymentName, metav1.GetOptions{})
 		if err != nil {
 			return false, err

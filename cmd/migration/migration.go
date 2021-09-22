@@ -65,7 +65,7 @@ func RunCommand(opt *Options) error {
 	scInterface := scClient.ServicecatalogV1beta1()
 
 	svc := migration.NewMigrationService(scInterface, opt.StoragePath, opt.ReleaseNamespace, opt.ApiserverName, opt.WebhookServiceName, opt.WebhookServicePort, k8sCli)
-	scalingSvc := migration.NewScalingService(opt.ReleaseNamespace, opt.ControllerManagerName, k8sCli.AppsV1())
+	scalingSvc := migration.NewScalingService(opt.ReleaseNamespace, opt.ControllerManagerName, opt.MigrationTimeout, k8sCli.AppsV1())
 
 	switch opt.Action {
 	case backupActionName:

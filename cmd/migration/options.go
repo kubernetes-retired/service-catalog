@@ -19,6 +19,7 @@ package migration
 import (
 	"fmt"
 	"github.com/spf13/pflag"
+	"time"
 )
 
 const (
@@ -34,6 +35,7 @@ const (
 	webhookServiceNameParameter      = "webhook-service-name"
 	webhookServicePortParameter      = "webhook-service-port"
 	pvcNameParameter                 = "pvc-name"
+	migrationTimeout                 = "migrationTimeout"
 )
 
 // Options holds configuration for the migration job
@@ -46,6 +48,7 @@ type Options struct {
 	WebhookServiceName        string
 	WebhookServicePort        string
 	PersistentVolumeClaimName string
+	MigrationTimeout          time.Duration
 }
 
 // NewMigrationOptions creates and returns a new Options
@@ -63,6 +66,7 @@ func (c *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&c.WebhookServiceName, webhookServiceNameParameter, "", "Name of webhook service")
 	fs.StringVar(&c.WebhookServicePort, webhookServicePortParameter, "", "Port of the webhook service")
 	fs.StringVar(&c.PersistentVolumeClaimName, pvcNameParameter, "", "Name of PersistentVolumeClaim in which resources will be stored")
+	fs.DurationVar(&c.MigrationTimeout, migrationTimeout, 45, "Time in seconds to wait for migration to complete")
 }
 
 // Validate checks flag has been set and has a proper value
