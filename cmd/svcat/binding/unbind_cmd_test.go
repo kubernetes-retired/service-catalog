@@ -26,15 +26,16 @@ import (
 	"strings"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
+	testing2 "k8s.io/client-go/testing"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	k8sfake "k8s.io/client-go/kubernetes/fake"
-	testing2 "k8s.io/client-go/testing"
 )
 
 func TestUnbindCommand(t *testing.T) {
@@ -228,7 +229,7 @@ func TestUnbindCommand(t *testing.T) {
 			var fakes []runtime.Object
 			if tc.fakeInstance != "" {
 				fakes = append(fakes, &v1beta1.ServiceInstance{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Namespace: ns,
 						Name:      tc.fakeInstance,
 					},
@@ -236,7 +237,7 @@ func TestUnbindCommand(t *testing.T) {
 			}
 			for _, name := range tc.fakeBindings {
 				fakes = append(fakes, &v1beta1.ServiceBinding{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Namespace: ns,
 						Name:      name,
 					},

@@ -18,18 +18,17 @@ package controller
 
 import (
 	"errors"
+	"reflect"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgotesting "k8s.io/client-go/testing"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/test/fake"
-	"k8s.io/apimachinery/pkg/runtime"
-
-	"reflect"
-
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
-	clientgotesting "k8s.io/client-go/testing"
 )
 
 func TestReconcileClusterServicePlanRemovedFromCatalog(t *testing.T) {

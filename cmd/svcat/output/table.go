@@ -64,7 +64,7 @@ func (lt *ListTable) SetPageWidth(w int) { lt.pageWidth = w }
 // SetHeader tracks the width of each header value as we save them.
 func (lt *ListTable) SetHeader(keys []string) {
 	// Expand our slice if needed
-	if tmp := (len(keys) - len(lt.columnWidths)); tmp > 0 {
+	if tmp := len(keys) - len(lt.columnWidths); tmp > 0 {
 		lt.columnWidths = append(lt.columnWidths, make([]int, tmp)...)
 	}
 
@@ -83,7 +83,7 @@ func (lt *ListTable) SetHeader(keys []string) {
 // rendering.
 func (lt *ListTable) Append(row []string) {
 	// Expand our slice if needed
-	if tmp := (len(row) - len(lt.columnWidths)); tmp > 0 {
+	if tmp := len(row) - len(lt.columnWidths); tmp > 0 {
 		lt.columnWidths = append(lt.columnWidths, make([]int, tmp)...)
 	}
 

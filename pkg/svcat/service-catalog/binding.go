@@ -25,17 +25,18 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 // RetrieveBindings lists all bindings in a namespace.
 func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error) {
-	bindings, err := sdk.ServiceCatalog().ServiceBindings(ns).List(context.Background(), v1.ListOptions{})
+	bindings, err := sdk.ServiceCatalog().ServiceBindings(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to list bindings in %s", ns)
 	}
@@ -45,7 +46,7 @@ func (sdk *SDK) RetrieveBindings(ns string) (*v1beta1.ServiceBindingList, error)
 
 // RetrieveBinding gets a binding by its name.
 func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error) {
-	binding, err := sdk.ServiceCatalog().ServiceBindings(ns).Get(context.Background(), name, v1.GetOptions{})
+	binding, err := sdk.ServiceCatalog().ServiceBindings(ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get binding '%s.%s'", ns, name)
 	}
@@ -56,7 +57,7 @@ func (sdk *SDK) RetrieveBinding(ns, name string) (*v1beta1.ServiceBinding, error
 func (sdk *SDK) RetrieveBindingsByInstance(instance *v1beta1.ServiceInstance,
 ) ([]v1beta1.ServiceBinding, error) {
 	// Not using a filtered list operation because it's not supported yet.
-	results, err := sdk.ServiceCatalog().ServiceBindings(instance.Namespace).List(context.Background(), v1.ListOptions{})
+	results, err := sdk.ServiceCatalog().ServiceBindings(instance.Namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to search bindings")
 	}
@@ -82,7 +83,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 	}
 
 	request := &v1beta1.ServiceBinding{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      bindingName,
 			Namespace: namespace,
 		},
@@ -97,7 +98,7 @@ func (sdk *SDK) Bind(namespace, bindingName, externalID, instanceName, secretNam
 		},
 	}
 
-	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(context.Background(), request, v1.CreateOptions{})
+	result, err := sdk.ServiceCatalog().ServiceBindings(namespace).Create(context.Background(), request, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "bind request failed")
 	}
@@ -164,7 +165,7 @@ func (sdk *SDK) DeleteBindings(bindings []types.NamespacedName) ([]types.Namespa
 
 // DeleteBinding by name.
 func (sdk *SDK) DeleteBinding(ns, bindingName string) error {
-	err := sdk.ServiceCatalog().ServiceBindings(ns).Delete(context.Background(), bindingName, v1.DeleteOptions{})
+	err := sdk.ServiceCatalog().ServiceBindings(ns).Delete(context.Background(), bindingName, metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "remove binding %s/%s failed", ns, bindingName)
 	}
@@ -277,7 +278,7 @@ func (sdk *SDK) RemoveFinalizerForBinding(namespacedName types.NamespacedName) e
 	finalizers := sets.NewString(binding.Finalizers...)
 	finalizers.Delete(v1beta1.FinalizerServiceCatalog)
 	binding.Finalizers = finalizers.List()
-	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).Update(context.Background(), binding, v1.UpdateOptions{})
+	_, err = sdk.ServiceCatalog().ServiceBindings(binding.Namespace).Update(context.Background(), binding, metav1.UpdateOptions{})
 	return err
 }
 

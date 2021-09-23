@@ -21,7 +21,7 @@ import (
 	unversionedvalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	settings "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
 )
 
 // ValidatePodPresetName can be used to check whether the given PodPreset name is valid.

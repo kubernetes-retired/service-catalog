@@ -17,10 +17,11 @@ limitations under the License.
 package browsing
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/spf13/cobra"
 )
 
 // MarketplaceCmd contains the information needed to query the marketplace of

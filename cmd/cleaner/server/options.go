@@ -18,8 +18,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/spf13/pflag"
 	"strings"
+
+	"github.com/spf13/pflag"
 )
 
 const (

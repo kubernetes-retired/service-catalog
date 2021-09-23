@@ -19,9 +19,11 @@ package completion
 import (
 	"bytes"
 	"fmt"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/spf13/cobra"
 	"io"
+
+	"github.com/spf13/cobra"
+
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 )
 
 var (

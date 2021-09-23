@@ -21,13 +21,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
-	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
-
 	admissionTypes "k8s.io/api/admission/v1beta1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 )
 
 // CreateUpdateHandler handles ServiceBinding

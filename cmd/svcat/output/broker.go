@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 )
 
 func getBrokerScope(broker servicecatalog.Broker) string {
@@ -93,7 +93,7 @@ func WriteBroker(w io.Writer, outputFormat string, broker servicecatalog.Broker)
 // WriteBrokerDetails prints details for a single broker.
 func WriteBrokerDetails(w io.Writer, broker servicecatalog.Broker) {
 	t := NewDetailsTable(w)
-	table := [][]string{}
+	var table [][]string
 	table = append(table, []string{"Name:", broker.GetName()})
 	table = append(table, []string{"Scope:", getBrokerScope(broker)})
 	if broker.GetNamespace() != "" {

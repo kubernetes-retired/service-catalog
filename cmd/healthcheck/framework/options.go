@@ -21,9 +21,8 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
-	"k8s.io/client-go/tools/clientcmd"
-
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // HealthCheckServer is the main context object for the health check server

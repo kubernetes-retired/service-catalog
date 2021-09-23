@@ -21,17 +21,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	svcatfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	svcatfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 )
 
 func TestGetCommand(t *testing.T) {
@@ -117,7 +117,7 @@ func TestGetCommand(t *testing.T) {
 			var fakes []runtime.Object
 			for _, name := range tc.fakeBindings {
 				fakes = append(fakes, &v1beta1.ServiceBinding{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},

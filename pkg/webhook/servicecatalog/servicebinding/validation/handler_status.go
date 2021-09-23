@@ -25,7 +25,7 @@ import (
 
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
-	webhookutil "github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 )
 
 // StatusValidationHandler provides status resource validation

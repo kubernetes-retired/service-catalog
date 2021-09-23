@@ -23,11 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
-	"github.com/kubernetes-sigs/service-catalog/pkg/util"
-	"github.com/kubernetes-sigs/service-catalog/test/fake"
-
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientgotesting "k8s.io/client-go/testing"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
+	"github.com/kubernetes-sigs/service-catalog/test/fake"
 )
 
 // NOTE: This only tests a single test case. Others are tested in TestShouldReconcileClusterServiceBroker.

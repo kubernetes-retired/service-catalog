@@ -25,16 +25,17 @@ import (
 	"strings"
 	"time"
 
-	v1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
-	util "github.com/kubernetes-sigs/service-catalog/test/util"
 	"github.com/spf13/cobra"
-	pflag "github.com/spf13/pflag"
+	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/test/util"
 )
 
 var options *HealthCheckServer
@@ -440,7 +441,7 @@ func (h *HealthCheck) initBrokerAttributes(s *HealthCheckServer) error {
 // setError creates a new error using msg and param for the formatted message.
 // The message is logged and the HealthCheck error state is set and returned.
 // This function attempts to log the location of the caller (file name & line
-// number) so as to maintain context of where the error occured
+// number) so as to maintain context of where the error occurred
 func (h *HealthCheck) setError(msg string, v ...interface{}) error {
 	_, file, line, _ := runtime.Caller(1)
 

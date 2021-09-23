@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/parameters"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/spf13/cobra"
 )
 
 // ProvisionCmd contains the info needed to provision a new service instance

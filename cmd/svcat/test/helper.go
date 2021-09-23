@@ -19,12 +19,12 @@ package svcattest
 import (
 	"io"
 	"io/ioutil"
-
 	"strings"
+
+	"github.com/spf13/viper"
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	"github.com/spf13/viper"
 )
 
 // NewContext creates a test context for the svcat cli, optionally capturing the

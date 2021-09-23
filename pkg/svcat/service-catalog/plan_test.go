@@ -18,17 +18,18 @@ package servicecatalog_test
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	. "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/kubernetes-sigs/service-catalog/pkg/util"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	. "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 var _ = Describe("Plan", func() {

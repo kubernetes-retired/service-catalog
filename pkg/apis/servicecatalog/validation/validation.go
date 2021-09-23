@@ -17,9 +17,11 @@ limitations under the License.
 package validation
 
 import (
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"regexp"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 var hexademicalStringRegexp = regexp.MustCompile("^[[:xdigit:]]*$")

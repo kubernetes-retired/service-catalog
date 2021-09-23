@@ -22,14 +22,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/spf13/cobra"
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/spf13/cobra"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
-type deprovisonCmd struct {
+type deprovisionCmd struct {
 	*command.Namespaced
 	*command.Waitable
 
@@ -40,7 +40,7 @@ type deprovisonCmd struct {
 
 // NewDeprovisionCmd builds a "svcat deprovision" command
 func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
-	deprovisonCmd := &deprovisonCmd{
+	deprovisonCmd := &deprovisionCmd{
 		Namespaced: command.NewNamespaced(cxt),
 		Waitable:   command.NewWaitable(),
 	}
@@ -73,7 +73,7 @@ func NewDeprovisionCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *deprovisonCmd) Validate(args []string) error {
+func (c *deprovisionCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("an instance name is required")
 	}
@@ -82,11 +82,11 @@ func (c *deprovisonCmd) Validate(args []string) error {
 	return nil
 }
 
-func (c *deprovisonCmd) Run() error {
+func (c *deprovisionCmd) Run() error {
 	return c.deprovision()
 }
 
-func (c *deprovisonCmd) deprovision() error {
+func (c *deprovisionCmd) deprovision() error {
 	var err error
 	if c.abandon {
 		fmt.Fprintln(c.Output, "This action is not reversible and may cause you to be charged for the broker resources that are abandoned. If you have any bindings for this instance, please delete them manually with svcat unbind --abandon --name bindingName")

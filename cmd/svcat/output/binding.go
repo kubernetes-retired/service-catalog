@@ -21,9 +21,10 @@ import (
 	"io"
 	"sort"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	svcatsdk "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"k8s.io/api/core/v1"
 )
 
 func getBindingStatusShort(status v1beta1.ServiceBindingStatus) string {
@@ -122,7 +123,7 @@ func WriteAssociatedBindings(w io.Writer, bindings []v1beta1.ServiceBinding) {
 }
 
 // WriteAssociatedSecret prints the secret data associated with a binding.
-func WriteAssociatedSecret(w io.Writer, secret *v1.Secret, err error, showSecrets bool) {
+func WriteAssociatedSecret(w io.Writer, secret *corev1.Secret, err error, showSecrets bool) {
 	// Don't print anything the secret isn't ready yet
 	if secret == nil && err == nil {
 		return

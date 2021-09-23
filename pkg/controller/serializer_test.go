@@ -17,13 +17,13 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"reflect"
 	"testing"
 
-	"bytes"
-	"encoding/base64"
-	"github.com/google/gofuzz"
+	fuzz "github.com/google/gofuzz"
 )
 
 // Tests in this file test this package's serialize() function by "round

@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/webhook/server"

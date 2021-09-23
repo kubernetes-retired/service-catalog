@@ -18,13 +18,13 @@ package validation
 
 import (
 	"context"
+	"net/http"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
-	"net/http"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
 )
 
 // StaticCreate performs basic ClusterServiceClass validation for a Create operation.

@@ -20,18 +20,18 @@ import (
 	"bytes"
 	"time"
 
-	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 )
 
 var _ = Describe("Register Command", func() {
@@ -174,7 +174,7 @@ var _ = Describe("Register Command", func() {
 			metaRelistDuration = &metav1.Duration{Duration: relistDuration}
 
 			brokerToReturn = &v1beta1.ClusterServiceBroker{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: brokerName,
 				},
 				Spec: v1beta1.ClusterServiceBrokerSpec{

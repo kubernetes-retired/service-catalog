@@ -18,10 +18,9 @@ package controller
 
 import (
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
-
-	"k8s.io/klog"
 )
 
 // ClientBuilder allows you to get clients and configs for controllers

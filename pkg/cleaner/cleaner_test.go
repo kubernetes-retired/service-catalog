@@ -18,18 +18,19 @@ package cleaner
 
 import (
 	"context"
-	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	admv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
-	"testing"
+
+	scfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 )
 
 const (
@@ -51,21 +52,21 @@ func TestCleaner_RemoveCRDs(t *testing.T) {
 	assert.NoError(t, clr.RemoveCRDs(cmNamespace, cmName, []string{mutatingWebhookConfiguration}))
 
 	// Then
-	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
+	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Items, 1)
 	assert.Equal(t, "NotServiceCatalogCRD", list.Items[0].Name)
 
-	deployment, err := fakeClik8s.AppsV1().Deployments(cmNamespace).Get(context.Background(), cmName, v1.GetOptions{})
+	deployment, err := fakeClik8s.AppsV1().Deployments(cmNamespace).Get(context.Background(), cmName, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, int32(0), deployment.Status.Replicas)
 
-	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, mwcList.Items, 1)
 	assert.Equal(t, "custom-mutating-webhook-configuration", mwcList.Items[0].Name)
 
-	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, vwcList.Items, 1)
 }
@@ -82,17 +83,17 @@ func TestCleaner_RemoveCRDsNoDeployment(t *testing.T) {
 	assert.NoError(t, clr.RemoveCRDs(cmNamespace, cmName, []string{mutatingWebhookConfiguration}))
 
 	// Then
-	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
+	list, err := fakeCliext.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Items, 1)
 	assert.Equal(t, "NotServiceCatalogCRD", list.Items[0].Name)
 
-	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	mwcList, err := fakeClik8s.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, mwcList.Items, 1)
 	assert.Equal(t, "custom-mutating-webhook-configuration", mwcList.Items[0].Name)
 
-	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	vwcList, err := fakeClik8s.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	assert.NoError(t, err)
 	assert.Len(t, vwcList.Items, 1)
 }

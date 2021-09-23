@@ -20,6 +20,11 @@ import (
 	"bytes"
 	"fmt"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
@@ -27,10 +32,6 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/pflag"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Get Class Command", func() {
@@ -96,7 +97,7 @@ var _ = Describe("Get Class Command", func() {
 			namespace = "potato"
 
 			classToReturn = &v1beta1.ClusterServiceClass{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: classKubeName,
 				},
 				Spec: v1beta1.ClusterServiceClassSpec{
@@ -109,7 +110,7 @@ var _ = Describe("Get Class Command", func() {
 				},
 			}
 			namespacedClassToReturn = &v1beta1.ServiceClass{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      namespacedClassKubeName,
 					Namespace: namespace,
 				},

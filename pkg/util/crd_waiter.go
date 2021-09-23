@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/util/wait"
 	restclient "k8s.io/client-go/rest"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 )
 
 // WaitForServiceCatalogCRDs waits for Service Catalog CRDs to be activated in main api-server

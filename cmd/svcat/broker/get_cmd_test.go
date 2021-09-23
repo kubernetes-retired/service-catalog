@@ -20,16 +20,17 @@ import (
 	"bytes"
 	"fmt"
 
-	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
+	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 )
 
 var _ = Describe("Get Broker Command", func() {
@@ -67,7 +68,7 @@ var _ = Describe("Get Broker Command", func() {
 			fakeApp, _ := svcat.NewApp(nil, nil, "default")
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
 			fakeSDK.RetrieveBrokersReturns(
-				[]servicecatalog.Broker{&v1beta1.ServiceBroker{ObjectMeta: v1.ObjectMeta{Name: "minibroker", Namespace: "default"}}},
+				[]servicecatalog.Broker{&v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "minibroker", Namespace: "default"}}},
 				nil)
 			fakeApp.SvcatClient = fakeSDK
 			cmd := GetCmd{
@@ -97,8 +98,8 @@ var _ = Describe("Get Broker Command", func() {
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
 			fakeSDK.RetrieveBrokersReturns(
 				[]servicecatalog.Broker{
-					&v1beta1.ServiceBroker{ObjectMeta: v1.ObjectMeta{Name: "minibroker", Namespace: "default"}},
-					&v1beta1.ServiceBroker{ObjectMeta: v1.ObjectMeta{Name: "ups-broker", Namespace: "test-ns"}},
+					&v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "minibroker", Namespace: "default"}},
+					&v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "ups-broker", Namespace: "test-ns"}},
 				},
 				nil)
 			fakeApp.SvcatClient = fakeSDK
@@ -130,8 +131,8 @@ var _ = Describe("Get Broker Command", func() {
 			fakeSDK := new(servicecatalogfakes.FakeSvcatClient)
 			fakeSDK.RetrieveBrokersReturns(
 				[]servicecatalog.Broker{
-					&v1beta1.ClusterServiceBroker{ObjectMeta: v1.ObjectMeta{Name: "global-broker"}},
-					&v1beta1.ServiceBroker{ObjectMeta: v1.ObjectMeta{Name: "minibroker", Namespace: "default"}},
+					&v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "global-broker"}},
+					&v1beta1.ServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "minibroker", Namespace: "default"}},
 				},
 				nil)
 			fakeApp.SvcatClient = fakeSDK
@@ -168,7 +169,7 @@ var _ = Describe("Get Broker Command", func() {
 				brokerURL = "www.foobar.com"
 				namespace = "default"
 				csb = &v1beta1.ClusterServiceBroker{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: brokerName,
 					},
 					Spec: v1beta1.ClusterServiceBrokerSpec{

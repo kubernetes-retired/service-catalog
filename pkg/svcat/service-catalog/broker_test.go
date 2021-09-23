@@ -21,18 +21,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	apisservicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/testing"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	apisservicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	. "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Broker", func() {
@@ -87,7 +86,7 @@ var _ = Describe("Broker", func() {
 		})
 	})
 	Describe("Deregister", func() {
-		It("deletes a ClusterServiceBroker by calling the v1beta1 Delete method with the passed in arguement", func() {
+		It("deletes a ClusterServiceBroker by calling the v1beta1 Delete method with the passed in argument", func() {
 			brokerName := "foobar"
 			scopeOptions := ScopeOptions{
 				Namespace: "",
@@ -101,7 +100,7 @@ var _ = Describe("Broker", func() {
 			Expect(actions[0].Matches("delete", "clusterservicebrokers")).To(BeTrue())
 			Expect(actions[0].(testing.DeleteActionImpl).Name).To(Equal(brokerName))
 		})
-		It("deletes a namespaced ServiceBroker by calling the v1beta1 Delete method with the passed in arguement", func() {
+		It("deletes a namespaced ServiceBroker by calling the v1beta1 Delete method with the passed in argument", func() {
 			scopeOptions := ScopeOptions{
 				Namespace: sb.Namespace,
 				Scope:     NamespaceScope,

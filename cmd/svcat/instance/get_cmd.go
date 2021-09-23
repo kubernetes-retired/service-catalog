@@ -19,9 +19,10 @@ package instance
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
-	"github.com/spf13/cobra"
 )
 
 type getCmd struct {
@@ -68,11 +69,11 @@ func (c *getCmd) Validate(args []string) error {
 		c.name = args[0]
 
 		if c.ClassFilter != "" {
-			return fmt.Errorf("class filter is not supported when specifiying instance name")
+			return fmt.Errorf("class filter is not supported when specifying instance name")
 		}
 
 		if c.PlanFilter != "" {
-			return fmt.Errorf("plan filter is not supported when specifiying instance name")
+			return fmt.Errorf("plan filter is not supported when specifying instance name")
 		}
 	}
 

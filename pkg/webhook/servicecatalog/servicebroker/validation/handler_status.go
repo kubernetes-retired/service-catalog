@@ -17,14 +17,15 @@ limitations under the License.
 package validation
 
 import (
+	"context"
+	"net/http"
+
+	admissionTypes "k8s.io/api/admission/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scv "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/validation"
 	"github.com/kubernetes-sigs/service-catalog/pkg/webhookutil"
-	admissionTypes "k8s.io/api/admission/v1beta1"
-
-	"context"
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // StatusValidationHandler provides status update resource validation handler

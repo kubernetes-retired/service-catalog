@@ -29,10 +29,7 @@ import (
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
-
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/util"
-
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -40,12 +37,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	clientgotesting "k8s.io/client-go/testing"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	"github.com/kubernetes-sigs/service-catalog/test/fake"
 	sctestutil "github.com/kubernetes-sigs/service-catalog/test/util"
-	corev1 "k8s.io/api/core/v1"
-	clientgotesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -1847,7 +1845,7 @@ func TestReconcileServiceInstanceDelete(t *testing.T) {
 
 // TestReconcileServiceInstanceDeleteBlockedByCredentials tests
 // deleting/deprovisioning an instance that has ServiceBindings.
-// Instance reconcilation will set the Ready condition to false with a msg
+// Instance reconciliation will set the Ready condition to false with a msg
 // indicating the delete is blocked until the credentials are removed.
 func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
@@ -1916,7 +1914,7 @@ func TestReconcileServiceInstanceDeleteBlockedByCredentials(t *testing.T) {
 	fakeCatalogClient.ClearActions()
 	fakeKubeClient.ClearActions()
 
-	// credentials were removed, verify the next reconcilation removes
+	// credentials were removed, verify the next reconciliation removes
 	// the instance
 
 	instance = updateObject.(*v1beta1.ServiceInstance)
@@ -4863,7 +4861,7 @@ func TestReconcileServiceInstanceUpdateParameters(t *testing.T) {
 }
 
 // TestReconcileServiceInstanceDeleteParameters tests updating a
-// ServiceInstance to delete all its paramaters
+// ServiceInstance to delete all its parameters
 func TestReconcileServiceInstanceDeleteParameters(t *testing.T) {
 	fakeKubeClient, fakeCatalogClient, fakeClusterServiceBrokerClient, testController, sharedInformers := newTestController(t, fakeosb.FakeClientConfiguration{
 		UpdateInstanceReaction: &fakeosb.UpdateInstanceReaction{

@@ -18,11 +18,13 @@ package server
 
 import (
 	"fmt"
-	"github.com/kubernetes-sigs/service-catalog/pkg/cleaner"
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/cleaner"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 )
 
 // RunCommand executes one of the command from CleanerOptions

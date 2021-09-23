@@ -18,6 +18,7 @@ package migration
 
 import (
 	"fmt"
+
 	"github.com/spf13/pflag"
 )
 
@@ -69,7 +70,7 @@ func (c *Options) AddFlags(fs *pflag.FlagSet) {
 func (c *Options) Validate() error {
 	switch c.Action {
 	case backupActionName:
-		if err := c.requiredParamaters(map[string]string{
+		if err := c.requiredParameters(map[string]string{
 			serviceCatalogNamespaceParameter: c.ReleaseNamespace,
 			controllerManagerNameParameter:   c.ControllerManagerName,
 			apiserverNameParameter:           c.ApiserverName,
@@ -78,7 +79,7 @@ func (c *Options) Validate() error {
 			return err
 		}
 	case restoreActionName:
-		if err := c.requiredParamaters(map[string]string{
+		if err := c.requiredParameters(map[string]string{
 			serviceCatalogNamespaceParameter: c.ReleaseNamespace,
 			controllerManagerNameParameter:   c.ControllerManagerName,
 			webhookServiceNameParameter:      c.WebhookServiceName,
@@ -97,7 +98,7 @@ func (c *Options) Validate() error {
 	return nil
 }
 
-func (c *Options) requiredParamaters(parameters map[string]string) error {
+func (c *Options) requiredParameters(parameters map[string]string) error {
 	for name, value := range parameters {
 		if value == "" {
 			return fmt.Errorf("%s must not be empty", name)

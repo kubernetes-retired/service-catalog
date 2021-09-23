@@ -20,10 +20,10 @@ import (
 	"io/ioutil"
 	"strings"
 
-	utiltemplate "github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/util/template"
+	"github.com/spf13/pflag"
 	"k8s.io/component-base/cli/flag"
 
-	"github.com/spf13/pflag"
+	utiltemplate "github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/util/template"
 )
 
 type serverRunFunc func(s *Server, args []string, stopCh <-chan struct{}) error

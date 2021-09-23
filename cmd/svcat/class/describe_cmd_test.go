@@ -20,18 +20,18 @@ import (
 	"bytes"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/class"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/pflag"
 )
 
 var _ = Describe("Describe Command", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Describe Command", func() {
 			planName = "10mb-mysql"
 
 			classToReturn = &v1beta1.ClusterServiceClass{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: classKubeName,
 				},
 				Spec: v1beta1.ClusterServiceClassSpec{
@@ -109,7 +109,7 @@ var _ = Describe("Describe Command", func() {
 				},
 			}
 			planToReturn = &v1beta1.ClusterServicePlan{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: planKubeName,
 				},
 				Spec: v1beta1.ClusterServicePlanSpec{
@@ -125,7 +125,7 @@ var _ = Describe("Describe Command", func() {
 				},
 			}
 			namespacedClassToReturn = &v1beta1.ServiceClass{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      namespacedClassKubeName,
 					Namespace: namespace,
 				},

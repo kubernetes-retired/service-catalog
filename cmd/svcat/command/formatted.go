@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	"github.com/spf13/pflag"
+
+	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 )
 
 // HasFormatFlags represents a command that can have its output formatted.

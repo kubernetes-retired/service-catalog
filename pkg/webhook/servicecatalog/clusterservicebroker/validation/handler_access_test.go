@@ -19,19 +19,21 @@ package validation_test
 import (
 	"context"
 	"errors"
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/clusterservicebroker/validation"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	"k8s.io/api/authorization/v1"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"testing"
+
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/webhook/servicecatalog/clusterservicebroker/validation"
 )
 
 const (
@@ -48,12 +50,12 @@ type fakedClient struct {
 
 // Create overrides real client Create method for the test
 func (m *fakedClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
-	if _, ok := obj.(*v1.SubjectAccessReview); !ok {
+	if _, ok := obj.(*authorizationv1.SubjectAccessReview); !ok {
 		return errors.New("Input object is not SubjectAccessReview type")
 	}
 
-	if obj.(*v1.SubjectAccessReview).Spec.ResourceAttributes.Name == AllowedSecretName {
-		obj.(*v1.SubjectAccessReview).Status.Allowed = true
+	if obj.(*authorizationv1.SubjectAccessReview).Spec.ResourceAttributes.Name == AllowedSecretName {
+		obj.(*authorizationv1.SubjectAccessReview).Status.Allowed = true
 	}
 
 	return nil

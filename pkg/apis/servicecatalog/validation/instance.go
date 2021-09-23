@@ -19,13 +19,14 @@ package validation
 import (
 	"fmt"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
-	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"sigs.k8s.io/yaml"
+
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
 )
 
 const lastOperationMaxLength int = 10000

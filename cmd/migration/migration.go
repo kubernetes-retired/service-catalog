@@ -20,14 +20,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/cleaner"
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-sigs/service-catalog/pkg/migration"
-	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 	k8sClientSet "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/cleaner"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/pkg/migration"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 const (

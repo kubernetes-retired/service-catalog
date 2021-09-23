@@ -22,8 +22,9 @@ import (
 	"fmt"
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
-	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 	"k8s.io/klog"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
 )
 
 // proxyclient provides a functional implementation of the OSB V2 Client

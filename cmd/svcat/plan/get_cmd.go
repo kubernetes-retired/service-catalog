@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/spf13/cobra"
 )
 
 // GetCmd contains the information needed to get a specific plan or all plans
@@ -86,7 +87,7 @@ func NewGetCmd(ctx *command.Context) *cobra.Command {
 	return cmd
 }
 
-// Validate parses the provided arugments and errors if they are formatted incorrectly
+// Validate parses the provided arguments and errors if they are formatted incorrectly
 func (c *GetCmd) Validate(args []string) error {
 	if len(args) > 0 {
 		if c.LookupByKubeName {

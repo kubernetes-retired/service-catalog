@@ -19,9 +19,10 @@ package broker
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/spf13/cobra"
 )
 
 // DeregisterCmd contains the info needed to delete a broker

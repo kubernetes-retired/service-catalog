@@ -21,8 +21,9 @@ import (
 	"io"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -34,7 +35,7 @@ const (
 	// FormatJSON is the --output flag value for json output.
 	FormatJSON = "json"
 
-	// FormatTable is the --output flag value for tablular output.
+	// FormatTable is the --output flag value for tabular output.
 	FormatTable = "table"
 
 	// FormatYAML is the --output flag value for yaml output.
@@ -48,7 +49,7 @@ func formatStatusShort(condition string, conditionStatus v1beta1.ConditionStatus
 	return reason
 }
 
-func formatStatusFull(condition string, conditionStatus v1beta1.ConditionStatus, reason string, message string, timestamp v1.Time) string {
+func formatStatusFull(condition string, conditionStatus v1beta1.ConditionStatus, reason string, message string, timestamp metav1.Time) string {
 	status := formatStatusShort(condition, conditionStatus, reason)
 	if status == "" {
 		return ""

@@ -19,8 +19,9 @@ package v1beta1
 import (
 	"strconv"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/filter"
 	"k8s.io/apimachinery/pkg/labels"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/filter"
 )
 
 // These are functions to support filtering. This is where we can add more fields

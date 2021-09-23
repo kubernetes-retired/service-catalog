@@ -21,13 +21,13 @@ import (
 	"strings"
 	"testing"
 
+	k8sfake "k8s.io/client-go/kubernetes/fake"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
+	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg"
 	svcatfake "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
-	k8sfake "k8s.io/client-go/kubernetes/fake"
-
-	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 )
 
 func TestVersionCommand(t *testing.T) {

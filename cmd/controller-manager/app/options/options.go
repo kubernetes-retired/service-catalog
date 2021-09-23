@@ -23,15 +23,15 @@ package options
 import (
 	"time"
 
+	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	"github.com/spf13/pflag"
+	genericoptions "k8s.io/apiserver/pkg/server/options"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 
-	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/componentconfig"
 	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
 	k8scomponentconfig "github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/apis/componentconfig"
 	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/client/leaderelectionconfig"
-	genericoptions "k8s.io/apiserver/pkg/server/options"
 )
 
 const (

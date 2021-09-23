@@ -18,6 +18,7 @@ limitations under the License.
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -26,40 +27,33 @@ import (
 	goruntime "runtime"
 	"strconv"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/util"
-	"k8s.io/client-go/kubernetes"
-	v1coordination "k8s.io/client-go/kubernetes/typed/coordination/v1"
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-
-	"k8s.io/api/core/v1"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/record"
-
-	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/util/configz"
-	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
-	"github.com/kubernetes-sigs/service-catalog/pkg/metrics/osbclientproxy"
-
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/server/healthz"
+	"k8s.io/client-go/kubernetes"
+	v1coordination "k8s.io/client-go/kubernetes/typed/coordination/v1"
+	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-sigs/service-catalog/cmd/controller-manager/app/options"
 	servicecatalogv1beta1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	settingsv1alpha1 "github.com/kubernetes-sigs/service-catalog/pkg/apis/settings/v1alpha1"
 	servicecataloginformers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions"
 	"github.com/kubernetes-sigs/service-catalog/pkg/controller"
+	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/util/configz"
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics"
+	"github.com/kubernetes-sigs/service-catalog/pkg/metrics/osbclientproxy"
 	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-
-	"context"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"k8s.io/klog"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
 )
 
 // NewControllerManagerCommand creates a *cobra.Command object with default
@@ -208,7 +202,7 @@ func Run(controllerManagerOptions *options.ControllerManagerServer) error {
 	defer loggingWatch.Stop()
 	recordingWatch := eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: k8sKubeClient.CoreV1().Events("")})
 	defer recordingWatch.Stop()
-	recorder := eventBroadcaster.NewRecorder(eventsScheme, v1.EventSource{Component: controllerManagerAgentName})
+	recorder := eventBroadcaster.NewRecorder(eventsScheme, corev1.EventSource{Component: controllerManagerAgentName})
 
 	// 'run' is the logic to run the controllers for the controller manager
 	run := func(ctx context.Context) {

@@ -19,8 +19,9 @@ package main
 import (
 	"os"
 
-	"github.com/kubernetes-sigs/service-catalog/cmd/healthcheck/framework"
 	"k8s.io/klog"
+
+	"github.com/kubernetes-sigs/service-catalog/cmd/healthcheck/framework"
 )
 
 func main() {

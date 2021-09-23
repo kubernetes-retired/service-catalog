@@ -28,8 +28,7 @@ import (
 	"time"
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
-	"k8s.io/klog"
-
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,13 +36,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	corev1 "k8s.io/api/core/v1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalogclientset "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
@@ -1274,7 +1272,7 @@ func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *met
 }
 
 // shouldStartOrphanMitigation returns whether an error with the given status
-// code indicates that orphan migitation should start.
+// code indicates that orphan mitigation should start.
 func shouldStartOrphanMitigation(statusCode int) bool {
 	is2XX := statusCode >= 200 && statusCode < 300
 	is5XX := statusCode >= 500 && statusCode < 600

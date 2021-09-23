@@ -62,7 +62,7 @@ func TestGetClusterIDConcurrently(t *testing.T) {
 
 }
 
-// TestGetClusterIDRoundTrip soley tests the controllers ID accessor
+// TestGetClusterIDRoundTrip solely tests the controllers ID accessor
 // functions to ensure we get back out what we put in.
 func TestGetClusterIDRoundTrip(t *testing.T) {
 	_, _, _, tc, _ := newTestController(t, noFakeActions())
@@ -187,7 +187,7 @@ func TestMonitorConfigMapConfigmapWithOtherData(t *testing.T) {
 	kc, _, _, tc, _ := newTestController(t, noFakeActions())
 	kc.AddReactor("get", "configmaps", func(action clientgotesting.Action) (bool, runtime.Object, error) {
 		m := make(map[string]string)
-		m["notid"] = "other-non-id-stuff-that-needs-to-be-perserved"
+		m["notid"] = "other-non-id-stuff-that-needs-to-be-preserved"
 		return true, &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: DefaultClusterIDConfigMapName,

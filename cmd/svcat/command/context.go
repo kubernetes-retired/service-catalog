@@ -19,8 +19,9 @@ package command
 import (
 	"io"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	"github.com/spf13/viper"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 )
 
 // Context is ambient data necessary to run any svcat command.

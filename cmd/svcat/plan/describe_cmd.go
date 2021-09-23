@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/spf13/cobra"
 )
 
 // DescribeCmd contains the needed info to fetch detailed info about a specific
@@ -91,7 +92,7 @@ func (c *DescribeCmd) Validate(args []string) error {
 }
 
 // Run determines how we are fetching a plan based
-// on the provided arugments, and fetches the specified
+// on the provided arguments, and fetches the specified
 // plan
 func (c *DescribeCmd) Run() error {
 	var plan servicecatalog.Plan

@@ -24,7 +24,7 @@ import (
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
 )
@@ -106,7 +106,7 @@ func (r *CRDProbe) IsReady() (bool, error) {
 }
 
 func (r *CRDProbe) check(ctx context.Context) (bool, error) {
-	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"svcat": "true"}).String()})
+	list, err := r.client.ApiextensionsV1beta1().CustomResourceDefinitions().List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set{"svcat": "true"}).String()})
 	if err != nil {
 		return false, fmt.Errorf("failed to list CustomResourceDefinition: %s", err)
 	}

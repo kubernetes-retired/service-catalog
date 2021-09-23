@@ -22,14 +22,15 @@ import (
 	"log"
 	"time"
 
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
+
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/pkg/probe"
 )
 
 // Cleaner provides functionality to remove all ServiceCatalog CRDs/CRs
@@ -90,7 +91,7 @@ func (c *Cleaner) RemoveCRDs(releaseNamespace, controllerManagerName string, web
 
 func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 	klog.V(4).Infof("Fetching deployment %s/%s", namespace, controllerName)
-	deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, v1.GetOptions{})
+	deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, metav1.GetOptions{})
 	switch {
 	case err == nil:
 	case apierrors.IsNotFound(err):
@@ -104,14 +105,14 @@ func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 	replicas := int32(0)
 	deploymentCopy := deployment.DeepCopy()
 	deploymentCopy.Spec.Replicas = &replicas
-	_, err = c.client.AppsV1().Deployments(deploymentCopy.Namespace).Update(context.Background(), deploymentCopy, v1.UpdateOptions{})
+	_, err = c.client.AppsV1().Deployments(deploymentCopy.Namespace).Update(context.Background(), deploymentCopy, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update deployment %s/%s: %v", namespace, controllerName, err)
 	}
 
 	err = wait.Poll(3*time.Second, 120*time.Second, func() (done bool, err error) {
 		klog.V(4).Info("Waiting for deployment scales down...")
-		deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, v1.GetOptions{})
+		deployment, err := c.client.AppsV1().Deployments(namespace).Get(context.Background(), controllerName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -132,7 +133,7 @@ func (c *Cleaner) scaleDownController(namespace, controllerName string) error {
 
 func (c *Cleaner) removeWebhookConfigurations(names []string) error {
 	klog.V(4).Info("Removing all ServiceCatalog MutatingWebhookConfigurations")
-	listMutating, err := c.client.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	listMutating, err := c.client.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get MutatingWebhookConfiguration list: %v", err)
 	}
@@ -141,14 +142,14 @@ func (c *Cleaner) removeWebhookConfigurations(names []string) error {
 		if !elementExist(mwc.Name, names) {
 			continue
 		}
-		err = c.client.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().Delete(context.Background(), mwc.Name, v1.DeleteOptions{})
+		err = c.client.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().Delete(context.Background(), mwc.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to remove MutatingWebhookConfiguration %s: %v", mwc.Name, err)
 		}
 	}
 
 	klog.V(4).Info("Removing all ServiceCatalog ValidatingWebhookConfigurations")
-	listValidating, err := c.client.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), v1.ListOptions{})
+	listValidating, err := c.client.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		log.Fatalf("failed to get ValidatingWebhookConfiguration list: %v", err)
 	}
@@ -157,7 +158,7 @@ func (c *Cleaner) removeWebhookConfigurations(names []string) error {
 		if !elementExist(vwc.Name, names) {
 			continue
 		}
-		err = c.client.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete(context.Background(), vwc.Name, v1.DeleteOptions{})
+		err = c.client.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete(context.Background(), vwc.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to remove ValidatingWebhookConfiguration %s: %v", vwc.Name, err)
 		}
@@ -178,7 +179,7 @@ func elementExist(needle string, stack []string) bool {
 
 func (c *Cleaner) removeCRDs(apiextensionsClient apiextensionsclientset.Interface) error {
 	klog.V(4).Info("Removing all ServiceCatalog CustomResourceDefinitions")
-	list, err := apiextensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
+	list, err := apiextensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list CustomResourceDefinition: %s", err)
 	}
@@ -186,7 +187,7 @@ func (c *Cleaner) removeCRDs(apiextensionsClient apiextensionsclientset.Interfac
 		if !probe.IsServiceCatalogCustomResourceDefinition(crd) {
 			continue
 		}
-		err := apiextensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(context.Background(), crd.Name, v1.DeleteOptions{})
+		err := apiextensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(context.Background(), crd.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to remove CRD %q: %s", crd.Name, err)
 		}
@@ -197,7 +198,7 @@ func (c *Cleaner) removeCRDs(apiextensionsClient apiextensionsclientset.Interfac
 
 func (c *Cleaner) checkCRDsNotExist(apiextensionsClient apiextensionsclientset.Interface) error {
 	klog.V(4).Info("Checking all ServiceCatalog CustomResourceDefinitions are removed")
-	list, err := apiextensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), v1.ListOptions{})
+	list, err := apiextensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list CustomResourceDefinition: %s", err)
 	}

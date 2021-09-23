@@ -25,11 +25,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"k8s.io/api/core/v1"
+	apicorev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,6 +39,9 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/yaml"
+
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 )
 
 // Service provides methods (Backup and Restore) to perform a migration from API Server version (0.2.x) to CRDs version (0.3.0).
@@ -544,7 +545,7 @@ func (m *Service) backupResource(obj interface{}, filePrefix string, uid types.U
 // BackupResources saves all Service Catalog resources to files.
 func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 	klog.Infoln("Saving resources")
-	serviceBrokers, err := m.scInterface.ServiceBrokers(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	serviceBrokers, err := m.scInterface.ServiceBrokers(apicorev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing ServiceBrokers")
 	}
@@ -566,7 +567,7 @@ func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 		}
 	}
 
-	serviceClasses, err := m.scInterface.ServiceClasses(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	serviceClasses, err := m.scInterface.ServiceClasses(apicorev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing Service Classes")
 	}
@@ -588,7 +589,7 @@ func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 		}
 	}
 
-	servicePlans, err := m.scInterface.ServicePlans(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	servicePlans, err := m.scInterface.ServicePlans(apicorev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing ServicePlans")
 	}
@@ -610,7 +611,7 @@ func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 		}
 	}
 
-	serviceInstances, err := m.scInterface.ServiceInstances(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	serviceInstances, err := m.scInterface.ServiceInstances(apicorev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing ServiceInstances")
 	}
@@ -621,7 +622,7 @@ func (m *Service) BackupResources() (*ServiceCatalogResources, error) {
 		}
 	}
 
-	serviceBindings, err := m.scInterface.ServiceBindings(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	serviceBindings, err := m.scInterface.ServiceBindings(apicorev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing ServiceBindings")
 
@@ -668,7 +669,7 @@ func (m *Service) AddOwnerReferenceToSecret(sb *sc.ServiceBinding) error {
 // RemoveOwnerReferenceFromSecrets removes owner references from secrets created for service bindings.
 func (m *Service) RemoveOwnerReferenceFromSecrets() error {
 	klog.Info("Removing owner references from secrets")
-	serviceBindings, err := m.scInterface.ServiceBindings(v1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	serviceBindings, err := m.scInterface.ServiceBindings(apicorev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}

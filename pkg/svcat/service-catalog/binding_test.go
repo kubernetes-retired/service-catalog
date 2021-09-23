@@ -19,17 +19,16 @@ package servicecatalog_test
 import (
 	"fmt"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/testing"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	. "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Binding", func() {
@@ -339,7 +338,7 @@ var _ = Describe("Binding", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("not found"))
 			actions := svcCatClient.Actions()
-			// The only expected action is the get call to retrive binding, because if the binding is not found, no delete call will be made
+			// The only expected action is the get call to retrieve binding, because if the binding is not found, no delete call will be made
 			Expect(actions[0].Matches("get", "servicebindings")).To(BeTrue())
 			Expect(actions[0].(testing.GetActionImpl).Name).To(Equal(fakeNamespacedName.Name))
 			Expect(actions[0].(testing.GetActionImpl).Namespace).To(Equal(fakeNamespacedName.Namespace))

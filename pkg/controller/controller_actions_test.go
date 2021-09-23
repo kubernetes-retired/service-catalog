@@ -21,9 +21,10 @@ import (
 	"reflect"
 
 	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/testing"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 type kubeClientAction struct {

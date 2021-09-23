@@ -17,9 +17,10 @@ limitations under the License.
 package svcat
 
 import (
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	k8sclient "k8s.io/client-go/kubernetes"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 )
 
 // App is the underlying application behind the svcat cli.

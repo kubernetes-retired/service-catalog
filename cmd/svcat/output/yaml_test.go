@@ -20,8 +20,9 @@ import (
 	"bytes"
 	"testing"
 
-	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 )
 
 func TestWriteParameters(t *testing.T) {

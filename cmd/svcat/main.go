@@ -21,6 +21,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	k8sclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/binding"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/broker"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/browsing"
@@ -34,14 +43,6 @@ import (
 	svcatclient "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	"github.com/kubernetes-sigs/service-catalog/pkg/util/kube"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	k8sclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
 )
 
 // These are build-time values, set during an official release

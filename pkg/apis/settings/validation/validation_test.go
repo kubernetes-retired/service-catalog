@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/settings"
@@ -78,18 +78,18 @@ func TestValidatePodPresets(t *testing.T) {
 					},
 				},
 			},
-			Volumes: []v1.Volume{{Name: "vol", VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}}}},
-			Env:     []v1.EnvVar{{Name: "abc", Value: "value"}, {Name: "ABC", Value: "value"}},
-			EnvFrom: []v1.EnvFromSource{
+			Volumes: []corev1.Volume{{Name: "vol", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
+			Env:     []corev1.EnvVar{{Name: "abc", Value: "value"}, {Name: "ABC", Value: "value"}},
+			EnvFrom: []corev1.EnvFromSource{
 				{
-					ConfigMapRef: &v1.ConfigMapEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: "abc"},
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "abc"},
 					},
 				},
 				{
 					Prefix: "pre_",
-					ConfigMapRef: &v1.ConfigMapEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: "abc"},
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "abc"},
 					},
 				},
 			},
@@ -118,21 +118,21 @@ func TestValidatePodPresets(t *testing.T) {
 					},
 				},
 			},
-			Volumes: []v1.Volume{{Name: "vol", VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}}}},
-			Env:     []v1.EnvVar{{Name: "abc", Value: "value"}, {Name: "ABC", Value: "value"}},
-			VolumeMounts: []v1.VolumeMount{
+			Volumes: []corev1.Volume{{Name: "vol", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
+			Env:     []corev1.EnvVar{{Name: "abc", Value: "value"}, {Name: "ABC", Value: "value"}},
+			VolumeMounts: []corev1.VolumeMount{
 				{Name: "vol", MountPath: "/foo"},
 			},
-			EnvFrom: []v1.EnvFromSource{
+			EnvFrom: []corev1.EnvFromSource{
 				{
-					ConfigMapRef: &v1.ConfigMapEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: "abc"},
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "abc"},
 					},
 				},
 				{
 					Prefix: "pre_",
-					ConfigMapRef: &v1.ConfigMapEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: "abc"},
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "abc"},
 					},
 				},
 			},
@@ -164,21 +164,21 @@ func TestValidatePodPresetsiVolumeMountError(t *testing.T) {
 					},
 				},
 			},
-			Volumes: []v1.Volume{{Name: "vol", VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}}}},
-			VolumeMounts: []v1.VolumeMount{
+			Volumes: []corev1.Volume{{Name: "vol", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}},
+			VolumeMounts: []corev1.VolumeMount{
 				{Name: "dne", MountPath: "/foo"},
 			},
-			Env: []v1.EnvVar{{Name: "abc", Value: "value"}, {Name: "ABC", Value: "value"}},
-			EnvFrom: []v1.EnvFromSource{
+			Env: []corev1.EnvVar{{Name: "abc", Value: "value"}, {Name: "ABC", Value: "value"}},
+			EnvFrom: []corev1.EnvFromSource{
 				{
-					ConfigMapRef: &v1.ConfigMapEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: "abc"},
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "abc"},
 					},
 				},
 				{
 					Prefix: "pre_",
-					ConfigMapRef: &v1.ConfigMapEnvSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: "abc"},
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "abc"},
 					},
 				},
 			},

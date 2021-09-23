@@ -17,10 +17,11 @@ limitations under the License.
 package versions
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/output"
 	"github.com/kubernetes-sigs/service-catalog/pkg"
-	"github.com/spf13/cobra"
 )
 
 type versionCmd struct {

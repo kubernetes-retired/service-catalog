@@ -22,18 +22,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/testing"
 
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	. "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Instances", func() {
@@ -291,7 +290,7 @@ var _ = Describe("Instances", func() {
 		})
 	})
 	Describe("InstanceParentHierarchy", func() {
-		It("calls the v1beta1 generated Get function repeatedly to build the heirarchy of the passed in service isntance", func() {
+		It("calls the v1beta1 generated Get function repeatedly to build the hierarchy of the passed in service instance", func() {
 			broker := &v1beta1.ClusterServiceBroker{ObjectMeta: metav1.ObjectMeta{Name: "foobar_broker"}}
 			class := &v1beta1.ClusterServiceClass{
 				ObjectMeta: metav1.ObjectMeta{

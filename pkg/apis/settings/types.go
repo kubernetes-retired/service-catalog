@@ -17,7 +17,7 @@ limitations under the License.
 package settings
 
 import (
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,16 +42,16 @@ type PodPresetSpec struct {
 	Selector metav1.LabelSelector
 	// Env defines the collection of EnvVar to inject into containers.
 	// +optional
-	Env []v1.EnvVar
+	Env []corev1.EnvVar
 	// EnvFrom defines the collection of EnvFromSource to inject into containers.
 	// +optional
-	EnvFrom []v1.EnvFromSource
+	EnvFrom []corev1.EnvFromSource
 	// Volumes defines the collection of Volume to inject into the pod.
 	// +optional
-	Volumes []v1.Volume
+	Volumes []corev1.Volume
 	// VolumeMounts defines the collection of VolumeMount to inject into containers.
 	// +optional
-	VolumeMounts []v1.VolumeMount
+	VolumeMounts []corev1.VolumeMount
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

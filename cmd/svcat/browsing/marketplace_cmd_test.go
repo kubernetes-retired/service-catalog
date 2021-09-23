@@ -19,6 +19,10 @@ package browsing_test
 import (
 	"bytes"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/browsing"
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
@@ -27,9 +31,6 @@ import (
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Register Command", func() {

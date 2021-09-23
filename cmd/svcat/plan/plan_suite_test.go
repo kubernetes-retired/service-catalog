@@ -17,10 +17,10 @@ limitations under the License.
 package plan_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"testing"
 
 	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 )

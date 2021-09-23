@@ -17,12 +17,12 @@ limitations under the License.
 package command
 
 import (
+	"errors"
 	"fmt"
 
-	"errors"
-
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/pflag"
+
+	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
 )
 
 // HasScopedFlags represents a command that can be scoped

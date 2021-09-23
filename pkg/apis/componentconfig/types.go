@@ -23,8 +23,9 @@ package componentconfig
 import (
 	"time"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/apis/componentconfig"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/kubernetes/pkg/apis/componentconfig"
 )
 
 // ControllerManagerConfiguration encapsulates configuration for the

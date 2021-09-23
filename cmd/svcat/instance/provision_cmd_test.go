@@ -21,19 +21,20 @@ import (
 	"encoding/json"
 	"time"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/command"
 	. "github.com/kubernetes-sigs/service-catalog/cmd/svcat/instance"
-	"github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
+	svcattest "github.com/kubernetes-sigs/service-catalog/cmd/svcat/test"
 	_ "github.com/kubernetes-sigs/service-catalog/internal/test"
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/kubernetes-sigs/service-catalog/pkg/svcat"
 	servicecatalog "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog"
-	"github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	servicecatalogfakes "github.com/kubernetes-sigs/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
 )
 
 var _ = Describe("Provision Command", func() {
@@ -181,7 +182,7 @@ var _ = Describe("Provision Command", func() {
 			Expect(err).To(BeNil())
 			specParams := &runtime.RawExtension{Raw: paramsJSON}
 			instanceToReturn = &v1beta1.ServiceInstance{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 				},
@@ -201,12 +202,12 @@ var _ = Describe("Provision Command", func() {
 				},
 			}
 			classToReturn = &v1beta1.ClusterServiceClass{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: classKubeName,
 				},
 			}
 			planToReturn = &v1beta1.ClusterServicePlan{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: planKubeName,
 				},
 			}
@@ -352,7 +353,7 @@ var _ = Describe("Provision Command", func() {
 		})
 		It("sets scope to namespaced for RetrievePlanByClassIDAndName and sets ProvisionClusterInstance to false if provisioning a namespace class instance", func() {
 			instanceToReturn = &v1beta1.ServiceInstance{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
 					Namespace: namespace,
 				},
@@ -371,12 +372,12 @@ var _ = Describe("Provision Command", func() {
 				},
 			}
 			classToReturn = &v1beta1.ServiceClass{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: classKubeName,
 				},
 			}
 			planToReturn = &v1beta1.ServicePlan{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: planKubeName,
 				},
 			}

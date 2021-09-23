@@ -28,22 +28,21 @@ import (
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
 	fakeosb "github.com/kubernetes-sigs/go-open-service-broker-client/v2/fake"
-	scmeta "github.com/kubernetes-sigs/service-catalog/pkg/api/meta"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	v1beta1informers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
-	sctestutil "github.com/kubernetes-sigs/service-catalog/test/util"
 	corev1 "k8s.io/api/core/v1"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
-	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
-	"github.com/kubernetes-sigs/service-catalog/test/fake"
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	clientgotesting "k8s.io/client-go/testing"
+
+	scmeta "github.com/kubernetes-sigs/service-catalog/pkg/api/meta"
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1beta1informers "github.com/kubernetes-sigs/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-sigs/service-catalog/pkg/features"
+	"github.com/kubernetes-sigs/service-catalog/test/fake"
+	sctestutil "github.com/kubernetes-sigs/service-catalog/test/util"
 )
 
 // TestReconcileServiceBindingNotInitializedStatus tests reconcileBinding to ensure that
@@ -2603,7 +2602,7 @@ func TestReconcileServiceBindingWithSecretParameters(t *testing.T) {
 func TestReconcileBindingWithSetOrphanMitigation(t *testing.T) {
 	// Anonymous struct fields:
 	// bindReactionError: the error to return from the bind attempt
-	// setOrphanMitigation: flag for whether or not orphan migitation
+	// setOrphanMitigation: flag for whether or not orphan mitigation
 	//                      should be performed
 	cases := []struct {
 		name                string

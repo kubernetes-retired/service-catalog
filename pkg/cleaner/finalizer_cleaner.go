@@ -19,20 +19,22 @@ package cleaner
 import (
 	"context"
 	"fmt"
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
-	"time"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	sc "github.com/kubernetes-sigs/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/kubernetes-sigs/service-catalog/pkg/pretty"
 )
 
 const (
-	finalizerCheckPerdiodTime = 1 * time.Second
-	finalizerCheckTimeout     = 30 * time.Second
+	finalizerCheckPeriodTime = 1 * time.Second
+	finalizerCheckTimeout    = 30 * time.Second
 )
 
 // FinalizerCleaner is responsible for removing ServiceCatalog finalizers from ServiceCatalog CRs
@@ -100,7 +102,7 @@ func (fc *FinalizerCleaner) RemoveFinalizers() error {
 }
 
 func removeFinalizerFromClusterServiceBroker(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ClusterServiceBroker, err)
 	}
@@ -109,13 +111,13 @@ func removeFinalizerFromClusterServiceBroker(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(broker.Finalizers)
 		toUpdate := broker.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ClusterServiceBrokerName(toUpdate.Name), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -127,7 +129,7 @@ func removeFinalizerFromClusterServiceBroker(client sc.Interface) error {
 }
 
 func removeFinalizerFromServiceBroker(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ServiceBrokers(v1.NamespaceAll).List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ServiceBrokers(metav1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ServiceBroker, err)
 	}
@@ -136,13 +138,13 @@ func removeFinalizerFromServiceBroker(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(broker.Finalizers)
 		toUpdate := broker.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ServiceBrokers(toUpdate.Namespace).Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ServiceBrokers(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ServiceBrokerName(toUpdate.Name), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ServiceBrokers(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ServiceBrokers(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -154,7 +156,7 @@ func removeFinalizerFromServiceBroker(client sc.Interface) error {
 }
 
 func removeFinalizerFromClusterServiceClass(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ClusterServiceClasses().List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ClusterServiceClasses().List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ClusterServiceClass, err)
 	}
@@ -163,13 +165,13 @@ func removeFinalizerFromClusterServiceClass(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(class.Finalizers)
 		toUpdate := class.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ClusterServiceClasses().Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ClusterServiceClasses().Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ClusterServiceClassName(toUpdate), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ClusterServiceClasses().Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ClusterServiceClasses().Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -181,7 +183,7 @@ func removeFinalizerFromClusterServiceClass(client sc.Interface) error {
 }
 
 func removeFinalizerFromServiceClass(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ServiceClasses(v1.NamespaceAll).List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ServiceClasses(metav1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ServiceClass, err)
 	}
@@ -190,13 +192,13 @@ func removeFinalizerFromServiceClass(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(class.Finalizers)
 		toUpdate := class.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ServiceClasses(toUpdate.Namespace).Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ServiceClasses(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ServiceClassName(toUpdate), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ServiceClasses(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ServiceClasses(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -208,7 +210,7 @@ func removeFinalizerFromServiceClass(client sc.Interface) error {
 }
 
 func removeFinalizerFromClusterServicePlan(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ClusterServicePlans().List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ClusterServicePlans().List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ClusterServicePlan, err)
 	}
@@ -217,13 +219,13 @@ func removeFinalizerFromClusterServicePlan(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(plan.Finalizers)
 		toUpdate := plan.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ClusterServicePlans().Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ClusterServicePlans().Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ClusterServicePlanName(toUpdate), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ClusterServicePlans().Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ClusterServicePlans().Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -235,7 +237,7 @@ func removeFinalizerFromClusterServicePlan(client sc.Interface) error {
 }
 
 func removeFinalizerFromServicePlan(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ServicePlans(v1.NamespaceAll).List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ServicePlans(metav1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ServicePlan, err)
 	}
@@ -244,13 +246,13 @@ func removeFinalizerFromServicePlan(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(plan.Finalizers)
 		toUpdate := plan.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ServicePlans(toUpdate.Namespace).Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ServicePlans(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ServicePlanName(toUpdate), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ServicePlans(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ServicePlans(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -262,7 +264,7 @@ func removeFinalizerFromServicePlan(client sc.Interface) error {
 }
 
 func removeFinalizerFromServiceInstance(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ServiceInstances(v1.NamespaceAll).List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ServiceInstances(metav1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ServiceInstance, err)
 	}
@@ -271,13 +273,13 @@ func removeFinalizerFromServiceInstance(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(instance.Finalizers)
 		toUpdate := instance.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ServiceInstances(toUpdate.Namespace).Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ServiceInstances(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ServiceInstanceName(toUpdate), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ServiceInstances(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ServiceInstances(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {
@@ -289,7 +291,7 @@ func removeFinalizerFromServiceInstance(client sc.Interface) error {
 }
 
 func removeFinalizerFromServiceBinding(client sc.Interface) error {
-	list, err := client.ServicecatalogV1beta1().ServiceBindings(v1.NamespaceAll).List(context.Background(), v1.ListOptions{})
+	list, err := client.ServicecatalogV1beta1().ServiceBindings(metav1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to list %s: %s", pretty.ServiceBinding, err)
 	}
@@ -298,13 +300,13 @@ func removeFinalizerFromServiceBinding(client sc.Interface) error {
 		finalizersList := removeServiceCatalogFinalizer(binding.Finalizers)
 		toUpdate := binding.DeepCopy()
 		toUpdate.Finalizers = finalizersList
-		_, err := client.ServicecatalogV1beta1().ServiceBindings(toUpdate.Namespace).Update(context.Background(), toUpdate, v1.UpdateOptions{})
+		_, err := client.ServicecatalogV1beta1().ServiceBindings(toUpdate.Namespace).Update(context.Background(), toUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update %s: %s", pretty.ServiceBindingName(toUpdate), err)
 		}
-		err = wait.Poll(finalizerCheckPerdiodTime, finalizerCheckTimeout, func() (done bool, err error) {
+		err = wait.Poll(finalizerCheckPeriodTime, finalizerCheckTimeout, func() (done bool, err error) {
 			klog.V(4).Info("waiting for the finalizer to be removed")
-			cr, err := client.ServicecatalogV1beta1().ServiceBindings(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, v1.GetOptions{})
+			cr, err := client.ServicecatalogV1beta1().ServiceBindings(toUpdate.Namespace).Get(context.Background(), toUpdate.Name, metav1.GetOptions{})
 			return checkFinalizerIsRemoved(cr, err)
 		})
 		if err != nil {

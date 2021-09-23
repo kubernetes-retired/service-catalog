@@ -21,15 +21,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"github.com/kubernetes-sigs/service-catalog/pkg/util"
-	"github.com/kubernetes-sigs/service-catalog/test/fake"
-
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/kubernetes-sigs/service-catalog/pkg/util"
+	"github.com/kubernetes-sigs/service-catalog/test/fake"
 )
 
 func TestReconcileServicePlanRemovedFromCatalog(t *testing.T) {
@@ -158,7 +158,7 @@ func reconcileServicePlanKey(t *testing.T, testController *controller, servicePl
 	clone := servicePlan.DeepCopy()
 	key, err := cache.MetaNamespaceKeyFunc(servicePlan)
 	if err != nil {
-		t.Fatalf("unexpected error while buidling service plan key: %v", err)
+		t.Fatalf("unexpected error while building service plan key: %v", err)
 	}
 
 	err = testController.reconcileServicePlanKey(key)

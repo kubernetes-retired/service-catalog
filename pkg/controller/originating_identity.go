@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	osb "github.com/kubernetes-sigs/go-open-service-broker-client/v2"
+
 	"github.com/kubernetes-sigs/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
