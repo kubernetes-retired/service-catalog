@@ -40,7 +40,7 @@ rules:
       resources: ["serviceinstances"]
       verbs:     ["get","list","watch", "update"]
     - apiGroups: ["servicecatalog.k8s.io"]
-      resources: ["servicebindings"]
+      resources: ["servicebindings","servicebindings/finalizers"]
       verbs:     ["get","list","watch", "update", "delete"]
     - apiGroups: ["servicecatalog.k8s.io"]
       resources: ["clusterservicebrokers/status","clusterserviceclasses/status","clusterserviceplans/status","serviceinstances/status","servicebindings/status"]
