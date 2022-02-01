@@ -94,9 +94,9 @@ spec:
       storage: 200Mi
 {{- if .Values.persistence.storageClass }}
   {{- if (eq "-" .Values.persistence.storageClass) }}
-      storageClassName: ""
+  storageClassName: ""
   {{- else }}
-      storageClassName: "{{ .Values.persistence.storageClass }}"
+  storageClassName: "{{ .Values.persistence.storageClass }}"
   {{- end }}
 {{- end }}
 
